@@ -1,0 +1,205 @@
+openapi: 3.0.0
+info:
+    description: Working Day Service
+    title: Working Day Service
+    version: '1.0'
+    
+servers:
+  - url: localhost
+    description: production
+    
+paths:
+    /v1/employees:
+        get:
+            description: Get list of employees
+            parameters:
+              - in: header
+                name: user_id
+                description: Id of the head of the employees
+                schema:
+                    type: string
+            responses:
+                '200':
+                    description: Employee information
+                    content:
+                        application/json:
+                            schema:
+                                type: array
+                                items:
+                                    $ref: '#/components/schemas/ListEmployee'
+                    
+    /v1/employee/add:
+        post:
+            description: Add new employee
+            parameters:
+              - in: header
+                name: user_id
+                description: Id of admin
+                schema:
+                    type: string
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/EmployeeAddRequest'
+            responses:
+                '200':
+                    description: Login information
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/LoginInfo'
+
+    /v1/employee/add-head:
+        post:
+            description: Add head of the employee
+            parameters:
+              - in: query
+                name: employee_id
+                description: Id of the employee to add head to
+                schema:
+                    type: string
+              - in: header
+                name: user_id
+                description: Id of admin
+                schema:
+                    type: string
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/EmployeeAddHeadRequest'
+            responses:
+                '200':
+                    description: Head was added
+                            
+
+    /v1/employee/remove:
+        post:
+            description: Remove new employee
+            parameters:
+              - in: query
+                name: employee_id
+                description: Id of the employee to remove
+                schema:
+                    type: string
+              - in: header
+                name: user_id
+                description: Id of admin
+                schema:
+                    type: string
+            responses:
+                '200':
+                    description: Employee was removed
+
+    /v1/employee/info:
+        get:
+            description: Get employee info
+            parameters:
+              - in: query
+                name: employee_id
+                description: Id of the employee to check
+                schema:
+                    type: string
+              - in: header
+                name: user_id
+                description: Id of session user
+                schema:
+                    type: string
+            responses:
+                '200':
+                    description: Employee information
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Employee'
+
+components:
+    schemas:
+        ListEmployee:
+            type: object
+            additionalProperties: false
+            required:
+              - id
+              - name
+              - surname
+            properties:
+                id:
+                    type: string
+                name:
+                    type: string
+                surname:
+                    type: string
+                patronymic:
+                    type: string
+                photo_link:
+                    type: string
+                    
+        EmployeeAddRequest:
+            type: object
+            additionalProperties: false
+            required:
+              - name
+              - surname
+            properties:
+                name:
+                    type: string
+                surname:
+                    type: string
+                patronymic:
+                    type: string
+                    
+        LoginInfo:
+            type: object
+            additionalProperties: false
+            required:
+                - login
+                - password
+            properties:
+                login:
+                    type: string
+                password:
+                    type: string
+
+        EmployeeAddHeadRequest:
+            type: object
+            additionalProperties: false
+            required:
+              - head_id
+            properties:
+                head_id:
+                    type: string
+        
+        Employee:
+            type: object
+            additionalProperties: false
+            required:
+              - id
+              - name
+              - surname
+            properties:
+                id:
+                    type: string
+                name:
+                    type: string
+                surname:
+                    type: string
+                phone:
+                    type: string
+                email:
+                    type: string
+                birthday:
+                    type: string
+                photo_link:
+                    type: string
+                login:
+                    type: string
+                password:
+                    type: string
+                head_id:
+                    type: string
+
+                
+                            

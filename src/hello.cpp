@@ -8,7 +8,7 @@
 #include <userver/storages/postgres/component.hpp>
 #include <userver/utils/assert.hpp>
 
-namespace pg_service_template {
+namespace working_day {
 
 namespace {
 
@@ -21,7 +21,7 @@ class Hello final : public userver::server::handlers::HttpHandlerBase {
       : HttpHandlerBase(config, component_context),
         pg_cluster_(
             component_context
-                .FindComponent<userver::components::Postgres>("postgres-db-1")
+                .FindComponent<userver::components::Postgres>("key-value")
                 .GetCluster()) {}
 
   std::string HandleRequestThrow(
@@ -44,7 +44,7 @@ class Hello final : public userver::server::handlers::HttpHandlerBase {
       }
     }
 
-    return pg_service_template::SayHelloTo(name, user_type);
+    return working_day::SayHelloTo(name, user_type);
   }
 
   userver::storages::postgres::ClusterPtr pg_cluster_;
@@ -69,8 +69,8 @@ std::string SayHelloTo(std::string_view name, UserType type) {
 
 void AppendHello(userver::components::ComponentList& component_list) {
   component_list.Append<Hello>();
-  component_list.Append<userver::components::Postgres>("postgres-db-1");
+  component_list.Append<userver::components::Postgres>("key-value");
   component_list.Append<userver::clients::dns::Component>();
 }
 
-}  // namespace pg_service_template
+}  // namespace working_day

@@ -6,4 +6,4 @@ is_testing: false
 
 server-port: 8080
 
-dbconnection: 'postgresql://user:password@service-postgres:5432/pg_service_template_db_1'
+dbconnection: 'postgresql://trenin17:trenin17@rc1b-dk3v16aam2cveh01.mdb.yandexcloud.net:6432/employees'
