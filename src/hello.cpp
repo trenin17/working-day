@@ -3,6 +3,7 @@
 #include <fmt/format.h>
 
 #include <userver/clients/dns/component.hpp>
+#include <userver/logging/log.hpp>
 #include <userver/server/handlers/http_handler_base.hpp>
 #include <userver/storages/postgres/cluster.hpp>
 #include <userver/storages/postgres/component.hpp>
@@ -31,16 +32,21 @@ class Hello final : public userver::server::handlers::HttpHandlerBase {
 
     auto user_type = UserType::kFirstTime;
     if (!name.empty()) {
-      auto result = pg_cluster_->Execute(
-          userver::storages::postgres::ClusterHostType::kMaster,
-          "INSERT INTO hello_schema.users(name, count) VALUES($1, 1) "
-          "ON CONFLICT (name) "
-          "DO UPDATE SET count = users.count + 1 "
-          "RETURNING users.count",
-          name);
+      try {
+        LOG_INFO() << "Executing query";
+        auto result = pg_cluster_->Execute(
+            userver::storages::postgres::ClusterHostType::kMaster,
+            "INSERT INTO hello_schema.users(name, count) VALUES($1, 1) "
+            "ON CONFLICT (name) "
+            "DO UPDATE SET count = users.count + 1 "
+            "RETURNING users.count",
+            name);
 
-      if (result.AsSingleRow<int>() > 1) {
-        user_type = UserType::kKnown;
+        if (result.AsSingleRow<int>() > 1) {
+          user_type = UserType::kKnown;
+        }
+      } catch (std::exception& e) {
+        LOG_ERROR() << e.what();
       }
     }
 

@@ -1,6 +1,6 @@
 # yaml
 
-config_vars: @CONFIG_VAR_PATH@
+config_vars: /home/trenin/project/working_day/configs/config_vars.yaml
 
 components_manager:
     coro_pool:
@@ -38,7 +38,7 @@ components_manager:
         dynamic-config:                      # Dynamic config storage options, do nothing
             fs-cache-path: ''
         dynamic-config-fallbacks:            # Load options from file and push them into the dynamic config storage.
-            fallback-path: @CONFIG_FALLBACK_PATH@
+            fallback-path: /home/trenin/project/working_day/configs/dynamic_config_fallback.json
         testsuite-support: {}
 
         http-client:
@@ -57,13 +57,19 @@ components_manager:
             throttling_enabled: false
             url_trailing_slash: strict-match
 
+        secdist: {}
+        default-secdist-provider:
+            config: /home/trenin/project/working_day/configs/secdist.json
+            missing-ok: true
+            environment-secrets-key: SECDIST_CONFIG
+
         handler-hello:                    # Finally! Our handler.
             path: /v1/hello               # Registering handler by URL '/v1/hello'.
             method: POST                  # It will only reply to POST requests.
             task_processor: main-task-processor  # Run it on CPU bound task processor
 
         key-value:
-            dbconnection: 'postgresql:///employees?host=rc1b-dk3v16aam2cveh01.mdb.yandexcloud.net&port=6432&user=trenin17'
+            dbalias: pg_working_day
             blocking_task_processor: fs-task-processor
             dns_resolver: async
             sync-start: true
