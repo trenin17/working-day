@@ -1,6 +1,6 @@
 # yaml
 
-config_vars: /home/trenin/project/working_day/configs/config_vars.yaml
+config_vars: configs/config_vars.yaml
 
 components_manager:
     coro_pool:
@@ -38,7 +38,7 @@ components_manager:
         dynamic-config:                      # Dynamic config storage options, do nothing
             fs-cache-path: ''
         dynamic-config-fallbacks:            # Load options from file and push them into the dynamic config storage.
-            fallback-path: /home/trenin/project/working_day/configs/dynamic_config_fallback.json
+            fallback-path: configs/dynamic_config_fallback.json
         testsuite-support: {}
 
         http-client:
@@ -59,12 +59,12 @@ components_manager:
 
         secdist: {}
         default-secdist-provider:
-            config: /home/trenin/project/working_day/configs/secdist.json
+            config: configs/secdist.json
             missing-ok: true
             environment-secrets-key: SECDIST_CONFIG
 
-        handler-hello:                    # Finally! Our handler.
-            path: /v1/hello               # Registering handler by URL '/v1/hello'.
+        handler-v1-employee-add:
+            path: /v1/employee/add           
             method: POST                  # It will only reply to POST requests.
             task_processor: main-task-processor  # Run it on CPU bound task processor
 

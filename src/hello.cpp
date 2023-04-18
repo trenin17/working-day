@@ -2,6 +2,8 @@
 
 #include <fmt/format.h>
 
+#include <nlohmann/json.hpp>
+
 #include <userver/clients/dns/component.hpp>
 #include <userver/logging/log.hpp>
 #include <userver/server/handlers/http_handler_base.hpp>

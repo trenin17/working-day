@@ -3,16 +3,25 @@ project(working_day CXX)
 
 include(third_party/userver/cmake/SetupEnvironment.cmake)
 include(GNUInstallDirs)
+include(FetchContent)
+
+FetchContent_Declare(json URL https://github.com/nlohmann/json/releases/download/v3.11.2/json.tar.xz)
+FetchContent_MakeAvailable(json)
 
 add_subdirectory(third_party/userver)
 
+
+set(CMAKE_EXPORT_COMPILE_COMMANDS, 1)
 
 # Common sources
 add_library(${PROJECT_NAME}_objs OBJECT
     src/hello.hpp
     src/hello.cpp
+	src/views/v1/employee/add/view.hpp
+	src/views/v1/employee/add/view.cpp
 )
 target_link_libraries(${PROJECT_NAME}_objs PUBLIC userver-core userver-postgresql)
+target_link_libraries(${PROJECT_NAME}_objs PRIVATE nlohmann_json::nlohmann_json)
 
 
 # The Service

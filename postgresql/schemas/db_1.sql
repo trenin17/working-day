@@ -1,8 +1,11 @@
-DROP SCHEMA IF EXISTS hello_schema CASCADE;
+DROP SCHEMA IF EXISTS working_day CASCADE;
 
-CREATE SCHEMA IF NOT EXISTS hello_schema;
+CREATE SCHEMA IF NOT EXISTS working_day;
 
-CREATE TABLE IF NOT EXISTS hello_schema.users (
-    name TEXT PRIMARY KEY,
-    count INTEGER DEFAULT(1)
+CREATE TABLE IF NOT EXISTS working_day.employees (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    surname TEXT NOT NULL,
+    patronymic TEXT,
+    password TEXT
 );
