@@ -19,6 +19,14 @@ add_library(${PROJECT_NAME}_objs OBJECT
     src/hello.cpp
 	src/views/v1/employee/add/view.hpp
 	src/views/v1/employee/add/view.cpp
+	src/views/v1/employee/add_head/view.hpp
+	src/views/v1/employee/add_head/view.cpp
+	src/views/v1/employee/info/view.hpp
+	src/views/v1/employee/info/view.cpp
+	src/views/v1/employee/remove/view.hpp
+	src/views/v1/employee/remove/view.cpp
+	src/views/v1/employees/view.hpp
+	src/views/v1/employees/view.cpp
 )
 target_link_libraries(${PROJECT_NAME}_objs PUBLIC userver-core userver-postgresql)
 target_link_libraries(${PROJECT_NAME}_objs PRIVATE nlohmann_json::nlohmann_json)

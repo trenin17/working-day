@@ -7,5 +7,9 @@ CREATE TABLE IF NOT EXISTS working_day.employees (
     name TEXT NOT NULL,
     surname TEXT NOT NULL,
     patronymic TEXT,
-    password TEXT
+    password TEXT,
+    head_id TEXT,
+    photo_link TEXT
 );
+
+CREATE INDEX idx_employee_by_head ON working_day.employees(head_id);

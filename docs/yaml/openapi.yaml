@@ -5,7 +5,7 @@ info:
     version: '1.0'
     
 servers:
-  - url: 158.160.29.24
+  - url: http://51.250.96.48:8080
     description: production
     
 paths:
@@ -27,6 +27,12 @@ paths:
                                 type: array
                                 items:
                                     $ref: '#/components/schemas/ListEmployee'
+                '401':
+                    description: Unauthorized
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
                     
     /v1/employee/add:
         post:
@@ -80,6 +86,12 @@ paths:
             responses:
                 '200':
                     description: Head was added
+                '401':
+                    description: Unauthorized
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
                             
 
     /v1/employee/remove:
@@ -99,6 +111,12 @@ paths:
             responses:
                 '200':
                     description: Employee was removed
+                '401':
+                    description: Unauthorized
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
 
     /v1/employee/info:
         get:
@@ -121,6 +139,12 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/Employee'
+                '401':
+                    description: Unauthorized
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
 
 components:
     schemas:
@@ -202,8 +226,6 @@ components:
                 birthday:
                     type: string
                 photo_link:
-                    type: string
-                login:
                     type: string
                 password:
                     type: string

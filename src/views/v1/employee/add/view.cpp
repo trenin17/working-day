@@ -65,7 +65,8 @@ class AddEmployeeHandler final : public userver::server::handlers::HttpHandlerBa
     const auto& user_id = request.GetHeader("user_id");
 
     if (user_id.empty()) {
-      throw std::invalid_argument("Unauthorized request");
+      request.GetHttpResponse().SetStatus(userver::server::http::HttpStatus::kUnauthorized);
+      return "Unauthorized";
     }
 
     AddEmployeeRequest request_body(request.RequestBody());
