@@ -14,18 +14,20 @@ namespace views::v1::employee::remove {
 
 namespace {
 
-class RemoveEmployeeHandler final : public userver::server::handlers::HttpHandlerBase {
+class RemoveEmployeeHandler final
+    : public userver::server::handlers::HttpHandlerBase {
  public:
   static constexpr std::string_view kName = "handler-v1-employee-remove";
 
-  RemoveEmployeeHandler(const userver::components::ComponentConfig& config,
-        const userver::components::ComponentContext& component_context)
+  RemoveEmployeeHandler(
+      const userver::components::ComponentConfig& config,
+      const userver::components::ComponentContext& component_context)
       : HttpHandlerBase(config, component_context),
         pg_cluster_(
             component_context
                 .FindComponent<userver::components::Postgres>("key-value")
                 .GetCluster()) {}
-  
+
   std::string HandleRequestThrow(
       const userver::server::http::HttpRequest& request,
       userver::server::request::RequestContext&) const override {
@@ -33,15 +35,16 @@ class RemoveEmployeeHandler final : public userver::server::handlers::HttpHandle
     const auto& employee_id = request.GetArg("employee_id");
 
     if (user_id.empty() || employee_id.empty()) {
-      request.GetHttpResponse().SetStatus(userver::server::http::HttpStatus::kUnauthorized);
+      request.GetHttpResponse().SetStatus(
+          userver::server::http::HttpStatus::kUnauthorized);
       return "Unauthorized";
     }
 
     auto result = pg_cluster_->Execute(
-          userver::storages::postgres::ClusterHostType::kMaster,
-          "DELETE FROM working_day.employees "
-          "WHERE id = $1",
-          employee_id);
+        userver::storages::postgres::ClusterHostType::kMaster,
+        "DELETE FROM working_day.employees "
+        "WHERE id = $1",
+        employee_id);
 
     return "";
   }
@@ -50,10 +53,10 @@ class RemoveEmployeeHandler final : public userver::server::handlers::HttpHandle
   userver::storages::postgres::ClusterPtr pg_cluster_;
 };
 
-} // namespace
+}  // namespace
 
 void AppendRemoveEmployee(userver::components::ComponentList& component_list) {
   component_list.Append<RemoveEmployeeHandler>();
 }
 
-} // namespace views::v1::employee::remove
+}  // namespace views::v1::employee::remove

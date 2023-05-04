@@ -8,11 +8,19 @@ COPY src /app/src/
 COPY third_party /app/third_party/
 COPY tests /app/tests/
 
-WORKDIR "/app"
-
 RUN apt-get update 
-RUN DEBIAN_FRONTEND=noninteractive apt-get install -y $(cat third_party/userver/scripts/docs/en/deps/ubuntu-22.04.md | tr '\n' ' ')
-RUN apt-get install -y wget git
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y $(cat /app/third_party/userver/scripts/docs/en/deps/ubuntu-22.04.md | tr '\n' ' ')
+
+RUN apt-get install -y wget git libcurl4-openssl-dev libssl-dev uuid-dev zlib1g-dev libpulse-dev
+
+RUN git clone --recurse-submodules https://github.com/aws/aws-sdk-cpp
+RUN mkdir sdk_build
+WORKDIR "/sdk_build"
+RUN cmake ../aws-sdk-cpp -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=/usr/local/ -DCMAKE_INSTALL_PREFIX=/usr/local/ -DBUILD_ONLY="s3;sts"
+RUN make
+RUN make install
+
+WORKDIR "/app"
 
 RUN mkdir --parents ~/.postgresql
 RUN wget "https://storage.yandexcloud.net/cloud-certs/CA.pem" --output-document ~/.postgresql/root.crt

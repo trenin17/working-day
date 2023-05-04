@@ -41,7 +41,7 @@ def service_env() -> dict:
             "databases": {
                 "pg_working_day": [
                     {
-                        "shard_number" : 0,
+                        "shard_number": 0,
                         "hosts": [
                             "host=rc1b-dk3v16aam2cveh01.mdb.yandexcloud.net port=6432 user=trenin17 password=trenin17 dbname=working_day_db_1"
                         ]

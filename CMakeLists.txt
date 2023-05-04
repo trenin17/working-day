@@ -12,6 +12,11 @@ add_subdirectory(third_party/userver)
 
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS, 1)
+if(NOT BUILD_SHARED_LIBS)
+    set(BUILD_SHARED_LIBS ON)
+endif()
+
+find_package(AWSSDK REQUIRED COMPONENTS s3 sts)
 
 # Common sources
 add_library(${PROJECT_NAME}_objs OBJECT
@@ -27,9 +32,18 @@ add_library(${PROJECT_NAME}_objs OBJECT
 	src/views/v1/employee/remove/view.cpp
 	src/views/v1/employees/view.hpp
 	src/views/v1/employees/view.cpp
+	src/views/v1/profile/upload_photo/view.hpp
+	src/views/v1/profile/upload_photo/view.cpp
+	src/views/v1/profile/edit/view.hpp
+	src/views/v1/profile/edit/view.cpp
+	src/utils/s3_presigned_links.hpp
+	src/utils/s3_presigned_links.cpp
 )
 target_link_libraries(${PROJECT_NAME}_objs PUBLIC userver-core userver-postgresql)
 target_link_libraries(${PROJECT_NAME}_objs PRIVATE nlohmann_json::nlohmann_json)
+target_link_libraries(${PROJECT_NAME}_objs PRIVATE ${AWSSDK_LINK_LIBRARIES}
+${AWSSDK_PLATFORM_DEPS})
+target_include_directories(${PROJECT_NAME}_objs PRIVATE src/)
 
 
 # The Service

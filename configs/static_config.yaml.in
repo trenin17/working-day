@@ -88,6 +88,16 @@ components_manager:
             method: GET
             task_processor: main-task-processor
 
+        handler-v1-profile-upload-photo:
+            path: /v1/profile/upload-photo         
+            method: POST
+            task_processor: main-task-processor
+        
+        handler-v1-profile-edit:
+            path: /v1/profile/edit
+            method: POST
+            task_processor: main-task-processor
+
         key-value:
             dbalias: pg_working_day
             blocking_task_processor: fs-task-processor
