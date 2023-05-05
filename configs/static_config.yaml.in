@@ -77,6 +77,11 @@ components_manager:
             path: /v1/employee/info          
             method: GET
             task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer  # Authorization type that was specified in main()
+                scopes:     # Required user scopes for that handler
+                  - read
 
         handler-v1-employee-remove:
             path: /v1/employee/remove          
@@ -98,11 +103,20 @@ components_manager:
             method: POST
             task_processor: main-task-processor
 
+        handler-v1-authorize:
+            path: /v1/authorize
+            method: POST
+            task_processor: main-task-processor
+
         key-value:
             dbalias: pg_working_day
             blocking_task_processor: fs-task-processor
             dns_resolver: async
             sync-start: true
+
+        auth-pg-cache:
+            pgcomponent: key-value
+            update-interval: 10s
 
         dns-client:
             fs-task-processor: fs-task-processor

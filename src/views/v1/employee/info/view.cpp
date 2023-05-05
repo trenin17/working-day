@@ -67,8 +67,8 @@ class InfoEmployeeHandler final
 
   std::string HandleRequestThrow(
       const userver::server::http::HttpRequest& request,
-      userver::server::request::RequestContext&) const override {
-    const auto& user_id = request.GetHeader("user_id");
+      userver::server::request::RequestContext& ctx) const override {
+    const auto& user_id = ctx.GetData<std::string>("user_id");
     const auto& employee_id = request.GetArg("employee_id");
 
     if (user_id.empty() || employee_id.empty()) {

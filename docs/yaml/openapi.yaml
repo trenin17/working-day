@@ -5,7 +5,7 @@ info:
     version: '1.0'
     
 servers:
-  - url: http://51.250.19.140:8080
+  - url: http://158.160.6.232:8080
     description: production
     
 paths:
@@ -128,8 +128,8 @@ paths:
                 schema:
                     type: string
               - in: header
-                name: user_id
-                description: Id of session user
+                name: Authorization
+                description: Token of session user
                 schema:
                     type: string
             responses:
@@ -189,6 +189,29 @@ paths:
                     description: Information was updated
                 '401':
                     description: Unauthorized
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+
+    /v1/authorize:
+        post:
+            description: Authorize user
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/AuthorizeRequest'
+            responses:
+                '200':
+                    description: Authorized successfully
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/AuthorizeResponse'
+                '404':
+                    description: Not found
                     content:
                         application/json:
                             schema:
@@ -290,4 +313,24 @@ components:
                     type: string
                 birthday:
                     type: string
-                            
+        
+        AuthorizeRequest:
+            type: object
+            additionalProperties: false
+            required:
+              - login
+              - password
+            properties:
+                login:
+                    type: string
+                password:
+                    type: string
+
+        AuthorizeResponse:
+            type: object
+            additionalProperties: false
+            required:
+              - token
+            properties:
+                token:
+                    type: string

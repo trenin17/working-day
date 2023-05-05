@@ -7,6 +7,7 @@ enum LinkType {
   Download = 2,
 };
 
-std::string GeneratePhotoPresignedLink(const std::string& key, const LinkType type);
+std::string GeneratePhotoPresignedLink(const std::string& key,
+                                       const LinkType type);
 
-} // namespace utils::s3_presigned_links
+}  // namespace utils::s3_presigned_links

@@ -48,7 +48,8 @@ class ProfileUploadPhotoHandler final
     }
 
     auto photo_id = userver::utils::generators::GenerateUuid();
-    auto upload_link = utils::s3_presigned_links::GeneratePhotoPresignedLink(photo_id, utils::s3_presigned_links::Upload);
+    auto upload_link = utils::s3_presigned_links::GeneratePhotoPresignedLink(
+        photo_id, utils::s3_presigned_links::Upload);
 
     auto result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kMaster,
@@ -66,7 +67,8 @@ class ProfileUploadPhotoHandler final
 
 }  // namespace
 
-void AppendProfileUploadPhoto(userver::components::ComponentList& component_list) {
+void AppendProfileUploadPhoto(
+    userver::components::ComponentList& component_list) {
   component_list.Append<ProfileUploadPhotoHandler>();
 }
 

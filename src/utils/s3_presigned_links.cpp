@@ -7,37 +7,38 @@
 
 namespace utils::s3_presigned_links {
 
-std::string GeneratePhotoPresignedLink(const std::string& key, const LinkType type) {
+std::string GeneratePhotoPresignedLink(const std::string& key,
+                                       const LinkType type) {
   std::string result;
 
   Aws::SDKOptions options;
-    Aws::InitAPI(options);
-    {
+  Aws::InitAPI(options);
+  {
+    Aws::Client::ClientConfiguration config;
+    config.region = Aws::String("ru-central1");
+    config.endpointOverride = Aws::String("https://storage.yandexcloud.net");
 
-        Aws::Client::ClientConfiguration config;
-        config.region = Aws::String("ru-central1");
-        config.endpointOverride = Aws::String("https://storage.yandexcloud.net");
+    Aws::String bucket_name = "trenin17-results";
+    Aws::S3::S3Client s3_client(config);
 
-        Aws::String bucket_name = "trenin17-results";
-        Aws::S3::S3Client s3_client(config);
+    switch (type) {
+      case LinkType::Upload:
+        result = s3_client.GeneratePresignedUrl(
+            bucket_name, key, Aws::Http::HttpMethod::HTTP_PUT, 600);
+        break;
 
-        switch (type)
-        {
-        case LinkType::Upload:
-          result = s3_client.GeneratePresignedUrl(bucket_name, key, Aws::Http::HttpMethod::HTTP_PUT, 600);
-          break;
-        
-        case LinkType::Download:
-          result = s3_client.GeneratePresignedUrl(bucket_name, key, Aws::Http::HttpMethod::HTTP_GET, 600);
-          break;
+      case LinkType::Download:
+        result = s3_client.GeneratePresignedUrl(
+            bucket_name, key, Aws::Http::HttpMethod::HTTP_GET, 600);
+        break;
 
-        default:
-          break;
-        }
+      default:
+        break;
     }
-    Aws::ShutdownAPI(options);
+  }
+  Aws::ShutdownAPI(options);
 
-    return result;
+  return result;
 }
 
-} // namespace utils::s3_presigned_links
+}  // namespace utils::s3_presigned_links

@@ -86,7 +86,10 @@ class EmployeesHandler final
         userver::storages::postgres::kRowTag)};
     for (auto& employee : response.employees) {
       if (employee.photo_link.has_value()) {
-        employee.photo_link = utils::s3_presigned_links::GeneratePhotoPresignedLink(employee.photo_link.value(), utils::s3_presigned_links::Download);
+        employee.photo_link =
+            utils::s3_presigned_links::GeneratePhotoPresignedLink(
+                employee.photo_link.value(),
+                utils::s3_presigned_links::Download);
       }
     }
     return response.ToJSON();

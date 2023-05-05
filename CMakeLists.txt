@@ -38,6 +38,11 @@ add_library(${PROJECT_NAME}_objs OBJECT
 	src/views/v1/profile/edit/view.cpp
 	src/utils/s3_presigned_links.hpp
 	src/utils/s3_presigned_links.cpp
+	src/auth/user_info_cache.hpp
+	src/auth/auth_bearer.hpp
+	src/auth/auth_bearer.cpp
+	src/views/v1/authorize/view.hpp
+	src/views/v1/authorize/view.cpp
 )
 target_link_libraries(${PROJECT_NAME}_objs PUBLIC userver-core userver-postgresql)
 target_link_libraries(${PROJECT_NAME}_objs PRIVATE nlohmann_json::nlohmann_json)
