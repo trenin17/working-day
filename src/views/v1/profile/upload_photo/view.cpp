@@ -38,14 +38,8 @@ class ProfileUploadPhotoHandler final
 
   std::string HandleRequestThrow(
       const userver::server::http::HttpRequest& request,
-      userver::server::request::RequestContext&) const override {
-    const auto& user_id = request.GetHeader("user_id");
-
-    if (user_id.empty()) {
-      request.GetHttpResponse().SetStatus(
-          userver::server::http::HttpStatus::kUnauthorized);
-      return "Unauthorized";
-    }
+      userver::server::request::RequestContext& ctx) const override {
+    const auto& user_id = ctx.GetData<std::string>("user_id");
 
     auto photo_id = userver::utils::generators::GenerateUuid();
     auto upload_link = utils::s3_presigned_links::GeneratePhotoPresignedLink(

@@ -2,7 +2,7 @@
 
 #include <userver/server/handlers/auth/auth_checker_factory.hpp>
 
-namespace samples::pg {
+namespace auth {
 
 class CheckerFactory final
     : public userver::server::handlers::auth::AuthCheckerFactoryBase {
@@ -14,5 +14,5 @@ class CheckerFactory final
       const override;
 };
 
-}  // namespace samples::pg
+}  // namespace auth
    /// [auth checker factory decl]

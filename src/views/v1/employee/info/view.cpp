@@ -71,7 +71,7 @@ class InfoEmployeeHandler final
     const auto& user_id = ctx.GetData<std::string>("user_id");
     const auto& employee_id = request.GetArg("employee_id");
 
-    if (user_id.empty() || employee_id.empty()) {
+    if (employee_id.empty()) {
       request.GetHttpResponse().SetStatus(
           userver::server::http::HttpStatus::kUnauthorized);
       return "Unauthorized";
@@ -84,6 +84,12 @@ class InfoEmployeeHandler final
         "FROM working_day.employees "
         "WHERE id = $1",
         employee_id);
+
+    if (result.IsEmpty()) {
+      request.GetHttpResponse().SetStatus(
+          userver::server::http::HttpStatus::kNotFound);
+      return "Not Found";
+    }
 
     InfoEmployeeResponse response{result.AsSingleRow<InfoEmployeeResponse>(
         userver::storages::postgres::kRowTag)};

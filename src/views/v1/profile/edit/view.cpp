@@ -34,9 +34,12 @@ class ProfileEditRequest {
     if (j.contains("birthday")) {
       birthday = j["birthday"];
     }
+    if (j.contains("password")) {
+      password = j["password"];
+    }
   }
 
-  std::optional<std::string> phone, email, birthday;
+  std::optional<std::string> phone, email, birthday, password;
 };
 
 class ProfileEditHandler final
@@ -55,40 +58,20 @@ class ProfileEditHandler final
 
   std::string HandleRequestThrow(
       const userver::server::http::HttpRequest& request,
-      userver::server::request::RequestContext&) const override {
-    const auto& user_id = request.GetHeader("user_id");
-
-    if (user_id.empty()) {
-      request.GetHttpResponse().SetStatus(
-          userver::server::http::HttpStatus::kUnauthorized);
-      return "Unauthorized";
-    }
+      userver::server::request::RequestContext& ctx) const override {
+    const auto& user_id = ctx.GetData<std::string>("user_id");
 
     ProfileEditRequest request_body(request.RequestBody());
-
-    /*std::string query = "UPDATE working_day.employees SET ";
-    size_t num_changes = 0;
-    if (request_body.phone) {
-      num_changes++;
-      query += "phone = $" + std::to_string(num_changes+1) + ", ";
-    }
-    if (request_body.email) {
-      num_changes++;
-      query += "email = $" + std::to_string(num_changes+1) + ", ";
-    }
-    if (request_body.birthday) {
-      num_changes++;
-      query += "birthday = $" + std::to_string(num_changes+1) + ", ";
-    }*/
 
     auto result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kMaster,
         "UPDATE working_day.employees "
         "SET phone = case when $2 is null then phone else $2 end, "
         "email = case when $3 is null then email else $3 end, "
-        "birthday = case when $4 is null then birthday else $4 end "
+        "birthday = case when $4 is null then birthday else $4 end, "
+        "password = case when $5 is null then password else $5 end, "
         "WHERE id = $1",
-        user_id, request_body.phone, request_body.email, request_body.birthday);
+        user_id, request_body.phone, request_body.email, request_body.birthday, request_body.password);
 
     return "";
   }

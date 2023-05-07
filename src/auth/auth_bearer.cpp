@@ -4,7 +4,7 @@
 
 #include <algorithm>
 
-namespace samples::pg {
+namespace auth {
 
 class AuthCheckerBearer final
     : public userver::server::handlers::auth::AuthCheckerBase {
@@ -79,6 +79,12 @@ AuthCheckerBearer::AuthCheckResult AuthCheckerBearer::CheckAuth(
 
   /// [auth checker definition 5]
   request_context.SetData("user_id", info.user_id);
+  if (std::find(info.scopes.begin(), info.scopes.end(), "admin") !=
+        info.scopes.end()) {
+    request_context.SetData("role", "admin");
+  } else {
+    request_context.SetData("role", "user");
+  }
   return {};
 }
 /// [auth checker definition 5]
@@ -94,4 +100,4 @@ userver::server::handlers::auth::AuthCheckerBasePtr CheckerFactory::operator()(
 }
 /// [auth checker factory definition]
 
-}  // namespace samples::pg
+}  // namespace auth

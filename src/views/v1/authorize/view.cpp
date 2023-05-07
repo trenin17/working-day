@@ -31,15 +31,16 @@ class AuthorizeResponse {
   std::string ToJSON() const {
     json j;
     j["token"] = token;
+    j["role"] = role;
     return j.dump();
   }
 
-  std::string token;
+  std::string token, role;
 };
 
 class UserInfo {
  public:
-  std::string id, password;
+  std::string id, password, role;
 };
 
 class AuthorizeHandler final
@@ -63,7 +64,7 @@ class AuthorizeHandler final
 
     auto result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kSlave,
-        "SELECT id, password FROM working_day.employees "
+        "SELECT id, password, role FROM working_day.employees "
         "WHERE id = $1",
         request_body.login);
 
@@ -81,14 +82,21 @@ class AuthorizeHandler final
       return "Wrong password";
     }
 
+    std::vector<std::string> scopes = {"user"};
+    if (user_info.role == "admin") {
+      scopes.push_back("admin");
+    }
+
     auto token = userver::utils::generators::GenerateUuid();
     auto auth_result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kMaster,
         "INSERT INTO working_day.auth_tokens (token, user_id, scopes) "
-        "VALUES ($1, $2, ARRAY ['read'])",
-        token, user_info.id);
+        "VALUES ($1, $2, $3)",
+        token, user_info.id, scopes); // TODO: update user token instead of inserting
 
-    return token;
+    AuthorizeResponse response{token, user_info.role};
+
+    return response.ToJSON();
   }
 
  private:

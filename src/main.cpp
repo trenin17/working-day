@@ -22,7 +22,7 @@
 
 int main(int argc, char* argv[]) {
   userver::server::handlers::auth::RegisterAuthCheckerFactory(
-      "bearer", std::make_unique<samples::pg::CheckerFactory>());
+      "bearer", std::make_unique<auth::CheckerFactory>());
 
   auto component_list =
       userver::components::MinimalServerComponentList()
@@ -34,7 +34,7 @@ int main(int argc, char* argv[]) {
           .Append<userver::components::DefaultSecdistProvider>()
           .Append<userver::components::Postgres>("key-value")
           .Append<userver::clients::dns::Component>()
-          .Append<samples::pg::AuthCache>();
+          .Append<auth::AuthCache>();
 
   views::v1::employee::add::AppendAddEmployee(component_list);
   views::v1::employee::add_head::AppendAddHeadEmployee(component_list);

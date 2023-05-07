@@ -31,10 +31,9 @@ class RemoveEmployeeHandler final
   std::string HandleRequestThrow(
       const userver::server::http::HttpRequest& request,
       userver::server::request::RequestContext&) const override {
-    const auto& user_id = request.GetHeader("user_id");
     const auto& employee_id = request.GetArg("employee_id");
 
-    if (user_id.empty() || employee_id.empty()) {
+    if (employee_id.empty()) {
       request.GetHttpResponse().SetStatus(
           userver::server::http::HttpStatus::kUnauthorized);
       return "Unauthorized";

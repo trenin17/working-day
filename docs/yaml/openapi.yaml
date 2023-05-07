@@ -14,8 +14,8 @@ paths:
             description: Get list of employees
             parameters:
               - in: header
-                name: user_id
-                description: Id of the head of the employees
+                name: Authorization
+                description: Token of session user
                 schema:
                     type: string
             responses:
@@ -39,8 +39,8 @@ paths:
             description: Add new employee
             parameters:
               - in: header
-                name: user_id
-                description: Id of admin
+                name: Authorization
+                description: Token of session user
                 schema:
                     type: string
             requestBody:
@@ -73,8 +73,8 @@ paths:
                 schema:
                     type: string
               - in: header
-                name: user_id
-                description: Id of admin
+                name: Authorization
+                description: Token of session user
                 schema:
                     type: string
             requestBody:
@@ -104,8 +104,8 @@ paths:
                 schema:
                     type: string
               - in: header
-                name: user_id
-                description: Id of admin
+                name: Authorization
+                description: Token of session user
                 schema:
                     type: string
             responses:
@@ -145,14 +145,20 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/ErrorMessage'
+                '404':
+                    description: Not found
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
 
     /v1/profile/upload-photo:
         post:
             description: Upload personal photo
             parameters:
               - in: header
-                name: user_id
-                description: Id of session user
+                name: Authorization
+                description: Token of session user
                 schema:
                     type: string
             responses:
@@ -174,8 +180,8 @@ paths:
             description: Edit personal information
             parameters:
               - in: header
-                name: user_id
-                description: Id of session user
+                name: Authorization
+                description: Token of session user
                 schema:
                     type: string
             requestBody:
@@ -313,6 +319,8 @@ components:
                     type: string
                 birthday:
                     type: string
+                password:
+                    type: string
         
         AuthorizeRequest:
             type: object
@@ -331,6 +339,9 @@ components:
             additionalProperties: false
             required:
               - token
+              - role
             properties:
                 token:
+                    type: string
+                role:
                     type: string

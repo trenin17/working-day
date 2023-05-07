@@ -65,13 +65,23 @@ components_manager:
 
         handler-v1-employee-add:
             path: /v1/employee/add           
-            method: POST                  # It will only reply to POST requests.
-            task_processor: main-task-processor  # Run it on CPU bound task processor
+            method: POST
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - admin
 
         handler-v1-employee-add-head:
             path: /v1/employee/add-head           
             method: POST
             task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - admin
 
         handler-v1-employee-info:
             path: /v1/employee/info          
@@ -79,29 +89,49 @@ components_manager:
             task_processor: main-task-processor
             auth:
                 types:
-                  - bearer  # Authorization type that was specified in main()
-                scopes:     # Required user scopes for that handler
-                  - read
+                  - bearer
+                scopes:
+                  - user
 
         handler-v1-employee-remove:
             path: /v1/employee/remove          
             method: POST
             task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - admin
 
         handler-v1-employees:
             path: /v1/employees         
             method: GET
             task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - user
 
         handler-v1-profile-upload-photo:
             path: /v1/profile/upload-photo         
             method: POST
             task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - user
         
         handler-v1-profile-edit:
             path: /v1/profile/edit
             method: POST
             task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - user
 
         handler-v1-authorize:
             path: /v1/authorize

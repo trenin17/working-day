@@ -63,13 +63,6 @@ class AddEmployeeHandler final
   std::string HandleRequestThrow(
       const userver::server::http::HttpRequest& request,
       userver::server::request::RequestContext&) const override {
-    const auto& user_id = request.GetHeader("user_id");
-
-    if (user_id.empty()) {
-      request.GetHttpResponse().SetStatus(
-          userver::server::http::HttpStatus::kUnauthorized);
-      return "Unauthorized";
-    }
 
     AddEmployeeRequest request_body(request.RequestBody());
 
@@ -79,11 +72,11 @@ class AddEmployeeHandler final
     auto result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kMaster,
         "INSERT INTO working_day.employees(id, name, surname, patronymic, "
-        "password) VALUES($1, $2, $3, $4, $5) "
+        "password, role) VALUES($1, $2, $3, $4, $5, $6) "
         "ON CONFLICT (id) "
         "DO NOTHING",
         id, request_body.name, request_body.surname, request_body.patronymic,
-        password);
+        password, "user");
 
     AddEmployeeResponse response(id, password);
     return response.ToJSON();
