@@ -10,3 +10,7 @@ CREATE TABLE IF NOT EXISTS working_day.actions (
 );
 
 CREATE INDEX idx_actions_by_user_id ON working_day.actions(user_id);
+
+CREATE INDEX idx_actions_by_user_id_start_date ON working_day.actions(user_id ASC, start_date ASC);
+
+CREATE INDEX idx_actions_by_user_id_end_date ON working_day.actions(user_id ASC, end_date ASC);

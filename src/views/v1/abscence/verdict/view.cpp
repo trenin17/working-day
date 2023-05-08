@@ -53,8 +53,10 @@ class AbscenceVerdictHandler final
     AbscenceVerdictRequest request_body(request.RequestBody());
     auto user_id = ctx.GetData<std::string>("user_id");
     std::string action_status = "denied";
+    std::string notification_text = "Ваш запрос на отпуск был отклонен.";
     if (request_body.approve) {
       action_status = "approved";
+      notification_text = "Ваш запрос на отпуск был одобрен.";
     }
 
     auto trx = pg_cluster_->Begin("verdict_abscence",
@@ -74,11 +76,11 @@ class AbscenceVerdictHandler final
       
     auto notification_id = userver::utils::generators::GenerateUuid();
     result = trx.Execute(
-        "INSERT INTO working_day.notifications(id, type, user_id, sender_id) "
-        "VALUES($1, $2, $3, $4) "
+        "INSERT INTO working_day.notifications(id, type, text, user_id, sender_id) "
+        "VALUES($1, $2, $3, $4, $5) "
         "ON CONFLICT (id) "
         "DO NOTHING",
-        notification_id, action_info.type + "_" + action_status, action_info.employee_id, user_id);
+        notification_id, action_info.type + "_" + action_status, notification_text, action_info.employee_id, user_id);
 
     trx.Commit();
 

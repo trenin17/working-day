@@ -69,8 +69,10 @@ class AbscenceRequestHandler final
     auto action_id = userver::utils::generators::GenerateUuid();
 
     std::optional<std::string> action_status;
+    std::string notification_text = "Unknown notification";
     if (request_body.type == "vacation") {
       action_status = "pending";
+      notification_text = "Ваш сотрудник запросил отпуск. Подтвердите или отклоните его.";
     }
 
     auto trx = pg_cluster_->Begin("request_abscence",
@@ -92,11 +94,11 @@ class AbscenceRequestHandler final
     if (request_body.type == "vacation") {
       auto notification_id = userver::utils::generators::GenerateUuid();
       result = trx.Execute(
-          "INSERT INTO working_day.notifications(id, type, user_id, sender_id) "
-          "VALUES($1, $2, $3, $4) "
+          "INSERT INTO working_day.notifications(id, type, text, user_id, sender_id) "
+          "VALUES($1, $2, $3, $4, $5) "
           "ON CONFLICT (id) "
           "DO NOTHING",
-          notification_id, request_body.type + "_request", head_id.value_or(user_id), user_id);
+          notification_id, request_body.type + "_request", notification_text, head_id.value_or(user_id), user_id);
     }
 
     trx.Commit();

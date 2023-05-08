@@ -158,6 +158,26 @@ components_manager:
                 scopes:
                   - user
 
+        handler-v1-notifications:
+            path: /v1/notifications
+            method: POST
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - user
+
+        handler-v1-actions:
+            path: /v1/actions
+            method: POST
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - user
+
         key-value:
             dbalias: pg_working_day
             blocking_task_processor: fs-task-processor

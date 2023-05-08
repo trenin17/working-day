@@ -47,6 +47,10 @@ add_library(${PROJECT_NAME}_objs OBJECT
 	src/views/v1/abscence/request/view.cpp
 	src/views/v1/abscence/verdict/view.hpp
 	src/views/v1/abscence/verdict/view.cpp
+	src/views/v1/notifications/view.hpp
+	src/views/v1/notifications/view.cpp
+	src/views/v1/actions/view.hpp
+	src/views/v1/actions/view.cpp
 )
 target_link_libraries(${PROJECT_NAME}_objs PUBLIC userver-core userver-postgresql)
 target_link_libraries(${PROJECT_NAME}_objs PRIVATE nlohmann_json::nlohmann_json)

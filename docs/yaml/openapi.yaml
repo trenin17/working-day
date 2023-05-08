@@ -252,6 +252,35 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/ErrorMessage'
 
+    /v1/actions:
+        post:
+            description: Get list of user actions for a certain period
+            parameters:
+              - in: header
+                name: Authorization
+                description: Token of session user
+                schema:
+                    type: string
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/ActionsRequest'
+            responses:
+                '200':
+                    description: List of user actions
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ActionsResponse'
+                '401':
+                    description: Unauthorized
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+
     /v1/abscence/request:
         post:
             description: Request an abscence
@@ -442,6 +471,17 @@ components:
             type: object
             additionalProperties: false
             required:
+              - notifications
+            properties:
+                notifications:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/Notification'
+
+        Notification:
+            type: object
+            additionalProperties: false
+            required:
               - id
               - type
               - is_read
@@ -456,6 +496,48 @@ components:
                 sender_id:
                     type: string
                 text:
+                    type: string
+
+        ActionsRequest:
+            type: object
+            additionalProperties: false
+            properties:
+                from:
+                    type: string
+                    description: Timestamp for start of a period
+                to:
+                    type: string
+                    description: Timestamp for end of a period
+
+        ActionsResponse:
+            type: object
+            additionalProperties: false
+            required:
+              - actions
+            properties:
+                actions:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/UserAction'
+
+        UserAction:
+            type: object
+            additionalProperties: false
+            required:
+              - id
+              - type
+              - start_date
+              - end_date
+            properties:
+                id:
+                    type: string
+                type:
+                    type: string
+                start_date:
+                    type: string
+                end_date:
+                    type: string
+                status:
                     type: string
 
         AbscenceRequestRequest:
