@@ -5,7 +5,7 @@ info:
     version: '1.0'
     
 servers:
-  - url: http://158.160.6.232:8080
+  - url: http://158.160.27.153:8080
     description: production
     
 paths:
@@ -223,6 +223,89 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/ErrorMessage'
 
+    /v1/notifications:
+        post:
+            description: Get list of notifications
+            parameters:
+              - in: header
+                name: Authorization
+                description: Token of session user
+                schema:
+                    type: string
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/NotificationsRequest'
+            responses:
+                '200':
+                    description: List of notifications
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/NotificationsResponse'
+                '401':
+                    description: Unauthorized
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+
+    /v1/abscence/request:
+        post:
+            description: Request an abscence
+            parameters:
+              - in: header
+                name: Authorization
+                description: Token of session user
+                schema:
+                    type: string
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/AbscenceRequestRequest'
+            responses:
+                '200':
+                    description: Abscence was requested
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/AbscenceRequestResponse'
+                '401':
+                    description: Unauthorized
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+
+    /v1/abscence/verdict:
+        post:
+            description: Approve or deny an abscence
+            parameters:
+              - in: header
+                name: Authorization
+                description: Token of session user
+                schema:
+                    type: string
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/AbscenceVerdictRequest'
+            responses:
+                '200':
+                    description: Verdict was sent
+                '401':
+                    description: Unauthorized
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+
 components:
     schemas:
         ErrorMessage:
@@ -345,3 +428,70 @@ components:
                     type: string
                 role:
                     type: string
+
+        NotificationsRequest:
+            type: object
+            additionalProperties: false
+            properties:
+                #Not supported yet
+                earlier_than:
+                    type: string
+                    description: Timestamp that should be later than every notification timestamp
+
+        NotificationsResponse:
+            type: object
+            additionalProperties: false
+            required:
+              - id
+              - type
+              - is_read
+              - text
+            properties:
+                id:
+                    type: string
+                type:
+                    type: string
+                is_read:
+                    type: boolean
+                sender_id:
+                    type: string
+                text:
+                    type: string
+
+        AbscenceRequestRequest:
+            type: object
+            additionalProperties: false
+            required:
+              - start_date
+              - end_date
+              - type
+            properties:
+                start_date:
+                    type: string
+                end_date:
+                    type: string
+                type: 
+                    type: string
+                    enum:
+                      - vacation
+        
+        AbscenceRequestResponse:
+            type: object
+            additionalProperties: false
+            required:
+              - action_id
+            properties:
+                action_id:
+                    type: string
+
+        AbscenceVerdictRequest:
+            type: object
+            additionalProperties: false
+            required:
+              - action_id
+              - approve
+            properties:
+                action_id:
+                    type: string
+                approve:
+                    type: boolean

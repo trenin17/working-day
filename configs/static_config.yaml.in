@@ -138,6 +138,26 @@ components_manager:
             method: POST
             task_processor: main-task-processor
 
+        handler-v1-abscence-request:
+            path: /v1/abscence/request
+            method: POST
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - user
+
+        handler-v1-abscence-verdict:
+            path: /v1/abscence/verdict
+            method: POST
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - user
+
         key-value:
             dbalias: pg_working_day
             blocking_task_processor: fs-task-processor

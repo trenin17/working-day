@@ -43,6 +43,10 @@ add_library(${PROJECT_NAME}_objs OBJECT
 	src/auth/auth_bearer.cpp
 	src/views/v1/authorize/view.hpp
 	src/views/v1/authorize/view.cpp
+	src/views/v1/abscence/request/view.hpp
+	src/views/v1/abscence/request/view.cpp
+	src/views/v1/abscence/verdict/view.hpp
+	src/views/v1/abscence/verdict/view.cpp
 )
 target_link_libraries(${PROJECT_NAME}_objs PUBLIC userver-core userver-postgresql)
 target_link_libraries(${PROJECT_NAME}_objs PRIVATE nlohmann_json::nlohmann_json)
