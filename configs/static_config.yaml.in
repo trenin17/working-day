@@ -42,7 +42,6 @@ components_manager:
         testsuite-support: {}
 
         http-client:
-            load-enabled: $is_testing
             fs-task-processor: fs-task-processor
 
         tests-control:
@@ -171,6 +170,16 @@ components_manager:
         handler-v1-actions:
             path: /v1/actions
             method: POST
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - user
+
+        handler-v1-documents-vacation:
+            path: /v1/documents/vacation
+            method: GET
             task_processor: main-task-processor
             auth:
                 types:

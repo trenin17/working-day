@@ -5,8 +5,8 @@
 
 #include <userver/components/component_list.hpp>
 
-namespace views::v1::abscence::verdict {
+namespace views::v1::abscence::request {
 
-void AppendAbscenceVerdict(userver::components::ComponentList& component_list);
+void AppendAbscenceRequest(userver::components::ComponentList& component_list);
 
-}  // namespace views::v1::abscence::verdict
+}  // namespace views::v1::abscence::request

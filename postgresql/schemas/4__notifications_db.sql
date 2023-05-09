@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS working_day.notifications (
     user_id TEXT NOT NULL,
     is_read BOOLEAN NOT NULL DEFAULT FALSE,
     sender_id TEXT,
+    action_id TEXT,
     created TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 

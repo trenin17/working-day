@@ -27,6 +27,9 @@ class Notification {
     if (sender_id) {
       j["sender_id"] = sender_id.value();
     }
+    if (action_id) {
+      j["action_id"] = action_id.value();
+    }
     j["created"] = userver::utils::datetime::Timestring(created, "UTC", "%Y-%m-%dT%H:%M:%E6S");
 
     return j.dump();
@@ -34,7 +37,7 @@ class Notification {
 
   std::string id, type, text;
   bool is_read;
-  std::optional<std::string> sender_id;
+  std::optional<std::string> sender_id, action_id;
   userver::storages::postgres::TimePoint created;
 };
 
@@ -72,7 +75,7 @@ class NotificationsHandler final
 
     auto result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kSlave,
-        "SELECT id, type, text, is_read, sender_id, created "
+        "SELECT id, type, text, is_read, sender_id, action_id, created "
         "FROM working_day.notifications "
         "WHERE user_id = $1",
         user_id);

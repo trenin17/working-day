@@ -335,6 +335,40 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/ErrorMessage'
 
+    /v1/documents/vacation:
+        get:
+            description: Generate vacation document
+            parameters:
+              - in: header
+                name: Authorization
+                description: Token of session user
+                schema:
+                    type: string
+              - in: query
+                name: action_id
+                description: Id of vacation action
+                schema:
+                    type: string
+            responses:
+                '200':
+                    description: Generated document download link
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/DocumentsVacationResponse'
+                '400':
+                    description: Action type is not vacation
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+                '401':
+                    description: Unauthorized
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+
 components:
     schemas:
         ErrorMessage:
@@ -486,6 +520,7 @@ components:
               - type
               - is_read
               - text
+              - created
             properties:
                 id:
                     type: string
@@ -496,6 +531,10 @@ components:
                 sender_id:
                     type: string
                 text:
+                    type: string
+                action_id:
+                    type: string
+                created:
                     type: string
 
         ActionsRequest:
@@ -577,3 +616,12 @@ components:
                     type: string
                 approve:
                     type: boolean
+
+        DocumentsVacationResponse:
+            type: object
+            additionalProperties: false
+            required:
+              - download_link
+            properties:
+                download_link:
+                    type: string
