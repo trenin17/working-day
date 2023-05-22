@@ -16,11 +16,12 @@ RUN make install
 
 WORKDIR "/app"
 
-RUN mkdir --parents ~/.postgresql ~/.aws
+RUN mkdir --parents ~/.postgresql ~/.aws /aws
 RUN wget "https://storage.yandexcloud.net/cloud-certs/CA.pem" --output-document ~/.postgresql/root.crt
 RUN chmod 0600 ~/.postgresql/root.crt
 
-COPY ~/.aws ~/.aws/ 
+COPY aws /aws/ 
+RUN cp -r /aws/* ~/.aws
 COPY CMakeLists.txt Makefile Makefile.local /app
 COPY configs /app/configs/
 COPY src /app/src/

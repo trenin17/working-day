@@ -51,6 +51,18 @@ class InfoEmployeeResponse {
       password, head_id;
 };
 
+class ErrorMessage {
+ public:
+  std::string ToJSON() const {
+    json j;
+    j["message"] = message;
+
+    return j.dump();
+  }
+
+  std::string message;
+};
+
 class InfoEmployeeHandler final
     : public userver::server::handlers::HttpHandlerBase {
  public:
@@ -74,7 +86,7 @@ class InfoEmployeeHandler final
     if (employee_id.empty()) {
       request.GetHttpResponse().SetStatus(
           userver::server::http::HttpStatus::kUnauthorized);
-      return "Unauthorized";
+      return ErrorMessage{"Unauthorized"}.ToJSON();
     }
 
     auto result = pg_cluster_->Execute(
@@ -88,7 +100,7 @@ class InfoEmployeeHandler final
     if (result.IsEmpty()) {
       request.GetHttpResponse().SetStatus(
           userver::server::http::HttpStatus::kNotFound);
-      return "Not Found";
+      return ErrorMessage{"Not Found"}.ToJSON();
     }
 
     InfoEmployeeResponse response{result.AsSingleRow<InfoEmployeeResponse>(

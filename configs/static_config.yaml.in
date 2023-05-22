@@ -187,6 +187,16 @@ components_manager:
                 scopes:
                   - user
 
+        handler-v1-attendance-add:
+            path: /v1/attendance/add
+            method: POST
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - manager
+
         key-value:
             dbalias: pg_working_day
             blocking_task_processor: fs-task-processor

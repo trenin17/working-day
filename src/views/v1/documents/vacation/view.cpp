@@ -77,6 +77,18 @@ class LinkRequest {
   std::optional<std::string> employee_patronymic, head_patronymic, employee_position, head_position;
 };
 
+class ErrorMessage {
+ public:
+  std::string ToJSON() const {
+    json j;
+    j["message"] = message;
+    
+    return j.dump();
+  }
+
+  std::string message;
+};
+
 class DocumentsVacationHandler final
     : public userver::server::handlers::HttpHandlerBase {
  public:
@@ -114,7 +126,7 @@ class DocumentsVacationHandler final
       trx.Rollback();
       request.GetHttpResponse().SetStatus(
           userver::server::http::HttpStatus::kBadRequest);
-      return "Wrong action type";
+      return ErrorMessage{"Wrong action type"}.ToJSON();
     }
 
     LOG_INFO() << "Employee id: (" << action_info.employee_id << ")";

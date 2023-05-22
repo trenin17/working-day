@@ -25,6 +25,18 @@ class AddHeadEmployeeRequest {
   std::string employee_id, head_id;
 };
 
+class ErrorMessage {
+ public:
+  std::string ToJSON() const {
+    json j;
+    j["message"] = message;
+
+    return j.dump();
+  }
+
+  std::string message;
+};
+
 class AddHeadEmployeeHandler final
     : public userver::server::handlers::HttpHandlerBase {
  public:
@@ -47,7 +59,7 @@ class AddHeadEmployeeHandler final
     if (employee_id.empty()) {
       request.GetHttpResponse().SetStatus(
           userver::server::http::HttpStatus::kUnauthorized);
-      return "Unauthorized";
+      return ErrorMessage{"Unauthorized"}.ToJSON();
     }
 
     AddHeadEmployeeRequest request_body(employee_id, request.RequestBody());

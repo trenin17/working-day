@@ -24,6 +24,7 @@
 #include "views/v1/notifications/view.hpp"
 #include "views/v1/actions/view.hpp"
 #include "views/v1/documents/vacation/view.hpp"
+#include "views/v1/attendance/add/view.hpp"
 
 int main(int argc, char* argv[]) {
   userver::server::handlers::auth::RegisterAuthCheckerFactory(
@@ -54,6 +55,7 @@ int main(int argc, char* argv[]) {
   views::v1::notifications::AppendNotifications(component_list);
   views::v1::actions::AppendActions(component_list);
   views::v1::documents::vacation::AppendDocumentsVacation(component_list);
+  views::v1::attendance::add::AppendAttendanceAdd(component_list);
   
   return userver::utils::DaemonMain(argc, argv, component_list);
 }

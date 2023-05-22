@@ -25,9 +25,10 @@ class AddEmployeeRequest {
     if (j.contains("patronymic")) {
       patronymic = j["patronymic"];
     }
+    role = j["role"];
   }
 
-  std::string name, surname;
+  std::string name, surname, role;
   std::optional<std::string> patronymic;
 };
 
@@ -76,7 +77,7 @@ class AddEmployeeHandler final
         "ON CONFLICT (id) "
         "DO NOTHING",
         id, request_body.name, request_body.surname, request_body.patronymic,
-        password, "user");
+        password, request_body.role);
 
     AddEmployeeResponse response(id, password);
     return response.ToJSON();

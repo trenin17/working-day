@@ -167,7 +167,7 @@ paths:
                     content:
                         application/json:
                             schema:
-                                type: string
+                                $ref: '#/components/schemas/UploadPhotoResponse'
                 '401':
                     description: Unauthorized
                     content:
@@ -369,10 +369,47 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/ErrorMessage'
 
+    /v1/attendance/add:
+        post:
+            description: Add attendance hours for a certain employee
+            parameters:
+              - in: header
+                name: Authorization
+                description: Token of session user
+                schema:
+                    type: string
+              - in: query
+                name: employee_id
+                description: Id of employee to add attendance for
+                schema:
+                    type: string
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/AttendanceAddRequest'
+            responses:
+                '200':
+                    description: Attendance was added successfully
+                '401':
+                    description: Unauthorized
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+                
+
 components:
     schemas:
         ErrorMessage:
-            type: string
+            type: object
+            additionalProperties: false
+            required:
+              - message
+            properties:
+                message:
+                    type: string
 
         ListEmployee:
             type: object
@@ -399,6 +436,7 @@ components:
             required:
               - name
               - surname
+              - role
             properties:
                 name:
                     type: string
@@ -406,6 +444,8 @@ components:
                     type: string
                 patronymic:
                     type: string
+                role: 
+                    $ref: '#/components/schemas/Role'
                     
         LoginInfo:
             type: object
@@ -490,7 +530,7 @@ components:
                 token:
                     type: string
                 role:
-                    type: string
+                    $ref: '#/components/schemas/Role'
 
         NotificationsRequest:
             type: object
@@ -624,4 +664,32 @@ components:
               - download_link
             properties:
                 download_link:
+                    type: string
+
+        UploadPhotoResponse:
+            type: object
+            additionalProperties: false
+            required:
+              - url
+            properties:
+                url:
+                    type: string
+        
+        Role:
+            type: string
+            enum:
+              - user
+              - admin
+              - manager
+
+        AttendanceAddRequest:
+            type: object
+            additionalProperties: false
+            required:
+              - start_date
+              - end_date
+            properties:
+                start_date:
+                    type: string
+                end_date:
                     type: string

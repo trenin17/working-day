@@ -14,6 +14,18 @@ namespace views::v1::employee::remove {
 
 namespace {
 
+class ErrorMessage {
+ public:
+  std::string ToJSON() const {
+    json j;
+    j["message"] = message;
+
+    return j.dump();
+  }
+
+  std::string message;
+};
+
 class RemoveEmployeeHandler final
     : public userver::server::handlers::HttpHandlerBase {
  public:
@@ -36,7 +48,7 @@ class RemoveEmployeeHandler final
     if (employee_id.empty()) {
       request.GetHttpResponse().SetStatus(
           userver::server::http::HttpStatus::kUnauthorized);
-      return "Unauthorized";
+      return ErrorMessage{"Unauthorized"}.ToJSON();
     }
 
     auto result = pg_cluster_->Execute(

@@ -22,6 +22,19 @@ namespace views::v1::profile::upload_photo {
 
 namespace {
 
+class UploadPhotoResponse {
+ public:
+  
+  std::string ToJSON() {
+    json j;
+    j["url"] = url;
+
+    return j.dump();
+  }
+
+  std::string url;
+};
+
 class ProfileUploadPhotoHandler final
     : public userver::server::handlers::HttpHandlerBase {
  public:
@@ -52,7 +65,8 @@ class ProfileUploadPhotoHandler final
         "WHERE id = $1",
         user_id, photo_id);
 
-    return upload_link;
+    UploadPhotoResponse response{upload_link};
+    return response.ToJSON();
   }
 
  private:

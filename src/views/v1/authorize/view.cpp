@@ -43,6 +43,18 @@ class UserInfo {
   std::string id, password, role;
 };
 
+class ErrorMessage {
+ public:
+  std::string ToJSON() const {
+    json j;
+    j["message"] = message;
+
+    return j.dump();
+  }
+
+  std::string message;
+};
+
 class AuthorizeHandler final
     : public userver::server::handlers::HttpHandlerBase {
  public:
@@ -71,7 +83,7 @@ class AuthorizeHandler final
     if (result.IsEmpty()) {
       request.GetHttpResponse().SetStatus(
           userver::server::http::HttpStatus::kNotFound);
-      return "No such user";
+      return ErrorMessage{"No such user"}.ToJSON();
     }
 
     auto user_info =
@@ -79,12 +91,12 @@ class AuthorizeHandler final
     if (user_info.password != request_body.password) {
       request.GetHttpResponse().SetStatus(
           userver::server::http::HttpStatus::kNotFound);
-      return "Wrong password";
+      return ErrorMessage{"Wrong password"}.ToJSON();
     }
 
     std::vector<std::string> scopes = {"user"};
-    if (user_info.role == "admin") {
-      scopes.push_back("admin");
+    if (user_info.role != "user") {
+      scopes.push_back(user_info.role);
     }
 
     auto token = userver::utils::generators::GenerateUuid();

@@ -69,7 +69,7 @@ class ProfileEditHandler final
         "SET phone = case when $2 is null then phone else $2 end, "
         "email = case when $3 is null then email else $3 end, "
         "birthday = case when $4 is null then birthday else $4 end, "
-        "password = case when $5 is null then password else $5 end, "
+        "password = case when $5 is null then password else $5 end "
         "WHERE id = $1",
         user_id, request_body.phone, request_body.email, request_body.birthday, request_body.password);
 

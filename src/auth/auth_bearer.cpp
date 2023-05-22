@@ -81,9 +81,9 @@ AuthCheckerBearer::AuthCheckResult AuthCheckerBearer::CheckAuth(
   request_context.SetData("user_id", info.user_id);
   if (std::find(info.scopes.begin(), info.scopes.end(), "admin") !=
         info.scopes.end()) {
-    request_context.SetData("role", "admin");
+    request_context.SetData("is_admin", true);
   } else {
-    request_context.SetData("role", "user");
+    request_context.SetData("is_admin", false);
   }
   return {};
 }
