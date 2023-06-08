@@ -18,7 +18,7 @@ namespace {
 
 class ListEmployee {
  public:
-  std::string ToJSON() const {
+  json ToJSONObject() const {
     json j;
     j["id"] = id;
     j["name"] = name;
@@ -30,7 +30,7 @@ class ListEmployee {
       j["photo_link"] = photo_link.value();
     }
 
-    return j.dump();
+    return j;
   }
 
   std::string id, name, surname;
@@ -40,9 +40,10 @@ class ListEmployee {
 class EmployeesResponse {
  public:
   std::string ToJSON() const {
-    json j = json::array();
+    json j;
+    j["employees"] = json::array();
     for (const auto& employee : employees) {
-      j.push_back(employee.ToJSON());
+      j["employees"].push_back(employee.ToJSONObject());
     }
     return j.dump();
   }

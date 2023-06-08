@@ -20,8 +20,11 @@ class ActionsRequest {
  public:
   ActionsRequest(const std::string& body) {
     auto j = json::parse(body);
-    from = userver::utils::datetime::Stringtime(j["from"], "UTC", "%Y-%m-%dT%H:%M:%E6S"); // Something weird with timezone
-    to = userver::utils::datetime::Stringtime(j["to"], "UTC", "%Y-%m-%dT%H:%M:%E6S");
+    from = userver::utils::datetime::Stringtime(
+        j["from"], "UTC",
+        "%Y-%m-%dT%H:%M:%E6S");  // Something weird with timezone
+    to = userver::utils::datetime::Stringtime(j["to"], "UTC",
+                                              "%Y-%m-%dT%H:%M:%E6S");
   }
 
   userver::storages::postgres::TimePoint from, to;
@@ -33,8 +36,10 @@ class UserAction {
     json j;
     j["id"] = id;
     j["type"] = type;
-    j["start_date"] = userver::utils::datetime::Timestring(start_date, "UTC", "%Y-%m-%dT%H:%M:%E6S");
-    j["end_date"] = userver::utils::datetime::Timestring(end_date, "UTC", "%Y-%m-%dT%H:%M:%E6S");
+    j["start_date"] = userver::utils::datetime::Timestring(
+        start_date, "UTC", "%Y-%m-%dT%H:%M:%E6S");
+    j["end_date"] = userver::utils::datetime::Timestring(end_date, "UTC",
+                                                         "%Y-%m-%dT%H:%M:%E6S");
     if (status) {
       j["status"] = status.value();
     }
@@ -60,14 +65,12 @@ class ActionsResponse {
   std::vector<UserAction> actions;
 };
 
-class ActionsHandler final
-    : public userver::server::handlers::HttpHandlerBase {
+class ActionsHandler final : public userver::server::handlers::HttpHandlerBase {
  public:
   static constexpr std::string_view kName = "handler-v1-actions";
 
-  ActionsHandler(
-      const userver::components::ComponentConfig& config,
-      const userver::components::ComponentContext& component_context)
+  ActionsHandler(const userver::components::ComponentConfig& config,
+                 const userver::components::ComponentContext& component_context)
       : HttpHandlerBase(config, component_context),
         pg_cluster_(
             component_context

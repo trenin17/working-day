@@ -7,5 +7,5 @@ is_testing: true
 server-port: 8080
 
 # working_day_db_1 is the service name + _ + filename of the db_1.sql
-#dbconnection: 'postgresql://testsuite@localhost:15433/working_day_db_1'
-dbconnection: 'postgresql://trenin17:trenin17@rc1b-dk3v16aam2cveh01.mdb.yandexcloud.net:6432/employees'
+dbconnection: 'postgresql://testsuite@localhost:15433/working_day_db_1'
+# dbconnection: 'postgresql://trenin17:trenin17@rc1b-dk3v16aam2cveh01.mdb.yandexcloud.net:6432/employees'

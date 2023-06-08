@@ -71,7 +71,8 @@ class ProfileEditHandler final
         "birthday = case when $4 is null then birthday else $4 end, "
         "password = case when $5 is null then password else $5 end "
         "WHERE id = $1",
-        user_id, request_body.phone, request_body.email, request_body.birthday, request_body.password);
+        user_id, request_body.phone, request_body.email, request_body.birthday,
+        request_body.password);
 
     return "";
   }

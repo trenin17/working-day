@@ -2,6 +2,7 @@
 #include <userver/clients/http/component.hpp>
 #include <userver/components/minimal_server_component_list.hpp>
 #include <userver/server/handlers/ping.hpp>
+#include <userver/server/handlers/server_monitor.hpp>
 #include <userver/server/handlers/tests_control.hpp>
 #include <userver/storages/postgres/component.hpp>
 #include <userver/storages/secdist/component.hpp>
@@ -11,20 +12,20 @@
 
 #include "auth/auth_bearer.hpp"
 #include "auth/user_info_cache.hpp"
+#include "views/v1/abscence/request/view.hpp"
+#include "views/v1/abscence/verdict/view.hpp"
+#include "views/v1/actions/view.hpp"
+#include "views/v1/attendance/add/view.hpp"
 #include "views/v1/authorize/view.hpp"
+#include "views/v1/documents/vacation/view.hpp"
 #include "views/v1/employee/add/view.hpp"
 #include "views/v1/employee/add_head/view.hpp"
 #include "views/v1/employee/info/view.hpp"
 #include "views/v1/employee/remove/view.hpp"
 #include "views/v1/employees/view.hpp"
+#include "views/v1/notifications/view.hpp"
 #include "views/v1/profile/edit/view.hpp"
 #include "views/v1/profile/upload_photo/view.hpp"
-#include "views/v1/abscence/request/view.hpp"
-#include "views/v1/abscence/verdict/view.hpp"
-#include "views/v1/notifications/view.hpp"
-#include "views/v1/actions/view.hpp"
-#include "views/v1/documents/vacation/view.hpp"
-#include "views/v1/attendance/add/view.hpp"
 
 int main(int argc, char* argv[]) {
   userver::server::handlers::auth::RegisterAuthCheckerFactory(
@@ -33,6 +34,7 @@ int main(int argc, char* argv[]) {
   auto component_list =
       userver::components::MinimalServerComponentList()
           .Append<userver::server::handlers::Ping>()
+          .Append<userver::server::handlers::ServerMonitor>()
           .Append<userver::components::TestsuiteSupport>()
           .Append<userver::components::HttpClient>()
           .Append<userver::server::handlers::TestsControl>()
@@ -56,6 +58,6 @@ int main(int argc, char* argv[]) {
   views::v1::actions::AppendActions(component_list);
   views::v1::documents::vacation::AppendDocumentsVacation(component_list);
   views::v1::attendance::add::AppendAttendanceAdd(component_list);
-  
+
   return userver::utils::DaemonMain(argc, argv, component_list);
 }

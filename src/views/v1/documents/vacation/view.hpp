@@ -7,6 +7,7 @@
 
 namespace views::v1::documents::vacation {
 
-void AppendDocumentsVacation(userver::components::ComponentList& component_list);
+void AppendDocumentsVacation(
+    userver::components::ComponentList& component_list);
 
 }  // namespace views::v1::documents::vacation

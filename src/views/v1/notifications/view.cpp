@@ -30,7 +30,8 @@ class Notification {
     if (action_id) {
       j["action_id"] = action_id.value();
     }
-    j["created"] = userver::utils::datetime::Timestring(created, "UTC", "%Y-%m-%dT%H:%M:%E6S");
+    j["created"] = userver::utils::datetime::Timestring(created, "UTC",
+                                                        "%Y-%m-%dT%H:%M:%E6S");
 
     return j.dump();
   }
@@ -80,8 +81,9 @@ class NotificationsHandler final
         "WHERE user_id = $1",
         user_id);
 
-    NotificationsResponse response{result.AsContainer<std::vector<Notification>>(
-        userver::storages::postgres::kRowTag)};
+    NotificationsResponse response{
+        result.AsContainer<std::vector<Notification>>(
+            userver::storages::postgres::kRowTag)};
 
     return response.ToJSON();
   }

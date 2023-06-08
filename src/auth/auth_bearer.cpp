@@ -80,7 +80,7 @@ AuthCheckerBearer::AuthCheckResult AuthCheckerBearer::CheckAuth(
   /// [auth checker definition 5]
   request_context.SetData("user_id", info.user_id);
   if (std::find(info.scopes.begin(), info.scopes.end(), "admin") !=
-        info.scopes.end()) {
+      info.scopes.end()) {
     request_context.SetData("is_admin", true);
   } else {
     request_context.SetData("is_admin", false);

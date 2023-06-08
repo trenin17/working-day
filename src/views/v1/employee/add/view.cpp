@@ -64,7 +64,6 @@ class AddEmployeeHandler final
   std::string HandleRequestThrow(
       const userver::server::http::HttpRequest& request,
       userver::server::request::RequestContext&) const override {
-
     AddEmployeeRequest request_body(request.RequestBody());
 
     auto id = userver::utils::generators::GenerateUuid();

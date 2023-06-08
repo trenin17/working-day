@@ -24,7 +24,6 @@ namespace {
 
 class UploadPhotoResponse {
  public:
-  
   std::string ToJSON() {
     json j;
     j["url"] = url;

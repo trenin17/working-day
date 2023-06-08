@@ -8,6 +8,8 @@
 #include <userver/storages/postgres/cluster.hpp>
 #include <userver/storages/postgres/component.hpp>
 
+#include "utils/s3_presigned_links.hpp"
+
 using json = nlohmann::json;
 
 namespace views::v1::employee::info {
@@ -105,6 +107,13 @@ class InfoEmployeeHandler final
 
     InfoEmployeeResponse response{result.AsSingleRow<InfoEmployeeResponse>(
         userver::storages::postgres::kRowTag)};
+
+    if (response.photo_link.has_value()) {
+      response.photo_link =
+          utils::s3_presigned_links::GeneratePhotoPresignedLink(
+              response.photo_link.value(), utils::s3_presigned_links::Download);
+    }
+
     return response.ToJSON();
   }
 

@@ -5,7 +5,7 @@ info:
     version: '1.0'
     
 servers:
-  - url: http://158.160.27.153:8080
+  - url: http://84.201.137.230:8080
     description: production
     
 paths:
@@ -24,9 +24,7 @@ paths:
                     content:
                         application/json:
                             schema:
-                                type: array
-                                items:
-                                    $ref: '#/components/schemas/ListEmployee'
+                                $ref: '#/components/schemas/EmployeesResponse'
                 '401':
                     description: Unauthorized
                     content:
@@ -429,6 +427,17 @@ components:
                     type: string
                 photo_link:
                     type: string
+
+        EmployeesResponse:
+            type: object
+            additionalProperties: false
+            required:
+              - employees
+            properties:
+                employees:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/ListEmployee'
                     
         EmployeeAddRequest:
             type: object
