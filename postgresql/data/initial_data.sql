@@ -4,7 +4,9 @@ VALUES ('first_id', 'First', 'A'),
 ON CONFLICT (id)
 DO NOTHING;
 
+
 INSERT INTO working_day.auth_tokens(token, user_id, scopes)
 VALUES ('first_token', 'first_id', ARRAY ['user', 'admin'])
+       ('second_token', 'second_id', ARRAY ['user'])
 ON CONFLICT (token)
 DO NOTHING;

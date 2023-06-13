@@ -1,6 +1,6 @@
 import os
 
-exclude = ["third_party", ".github", ".pgdata", ".vscode", "aws", "build", "build_release", ".git", ".cores", "__pycache__", ".pytest_cache"]
+exclude = ["third_party", ".github", ".pgdata", ".vscode", "aws", "build", "build_release", "build_debug", ".git", ".cores", "__pycache__", ".pytest_cache"]
 
 lc = {}
 endings = {}
@@ -13,6 +13,7 @@ for root, dirs, files in os.walk(".", topdown=True):
     for file in files:
         ending = file[file.find('.')+1:]
         num = 0
+        print(file)
         with open(os.path.join(root, file), 'r') as fp:
             num = len(fp.readlines())
 

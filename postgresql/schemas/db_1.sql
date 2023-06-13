@@ -2,6 +2,15 @@ DROP SCHEMA IF EXISTS working_day CASCADE;
 
 CREATE SCHEMA IF NOT EXISTS working_day;
 
+DROP TABLE IF EXISTS working_day.auth_tokens;
+
+CREATE TABLE IF NOT EXISTS working_day.auth_tokens (
+    token TEXT PRIMARY KEY NOT NULL,
+    user_id TEXT NOT NULL,
+    scopes TEXT[] NOT NULL,
+    updated TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 CREATE TABLE IF NOT EXISTS working_day.employees (
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL,
@@ -20,15 +29,6 @@ ADD COLUMN IF NOT EXISTS email TEXT,
 ADD COLUMN IF NOT EXISTS birthday TEXT,
 ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'user',
 ADD COLUMN IF NOT EXISTS position TEXT;
-
-DROP TABLE IF EXISTS working_day.auth_tokens;
-
-CREATE TABLE IF NOT EXISTS working_day.auth_tokens (
-    token TEXT PRIMARY KEY NOT NULL,
-    user_id TEXT NOT NULL,
-    scopes TEXT[] NOT NULL,
-    updated TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
 
 DROP TABLE IF EXISTS working_day.notifications;
 

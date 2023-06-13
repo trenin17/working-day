@@ -31,6 +31,12 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/ErrorMessage'
+                '403':
+                    description: Wrong authorization token
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
                     
     /v1/employee/add:
         post:
@@ -56,6 +62,12 @@ paths:
                                 $ref: '#/components/schemas/LoginInfo'
                 '401':
                     description: Unauthorized
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+                '403':
+                    description: Wrong authorization token
                     content:
                         application/json:
                             schema:
@@ -90,6 +102,12 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/ErrorMessage'
+                '403':
+                    description: Wrong authorization token
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
                             
 
     /v1/employee/remove:
@@ -111,6 +129,12 @@ paths:
                     description: Employee was removed
                 '401':
                     description: Unauthorized
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+                '403':
+                    description: Wrong authorization token
                     content:
                         application/json:
                             schema:
@@ -139,6 +163,12 @@ paths:
                                 $ref: '#/components/schemas/Employee'
                 '401':
                     description: Unauthorized
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+                '403':
+                    description: Wrong authorization token
                     content:
                         application/json:
                             schema:
@@ -172,6 +202,12 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/ErrorMessage'
+                '403':
+                    description: Wrong authorization token
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
 
     /v1/profile/edit:
         post:
@@ -193,6 +229,12 @@ paths:
                     description: Information was updated
                 '401':
                     description: Unauthorized
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+                '403':
+                    description: Wrong authorization token
                     content:
                         application/json:
                             schema:
@@ -249,6 +291,12 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/ErrorMessage'
+                '403':
+                    description: Wrong authorization token
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
 
     /v1/actions:
         post:
@@ -274,6 +322,12 @@ paths:
                                 $ref: '#/components/schemas/ActionsResponse'
                 '401':
                     description: Unauthorized
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+                '403':
+                    description: Wrong authorization token
                     content:
                         application/json:
                             schema:
@@ -307,6 +361,12 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/ErrorMessage'
+                '403':
+                    description: Wrong authorization token
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
 
     /v1/abscence/verdict:
         post:
@@ -328,6 +388,12 @@ paths:
                     description: Verdict was sent
                 '401':
                     description: Unauthorized
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+                '403':
+                    description: Wrong authorization token
                     content:
                         application/json:
                             schema:
@@ -366,6 +432,12 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/ErrorMessage'
+                '403':
+                    description: Wrong authorization token
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
 
     /v1/attendance/add:
         post:
@@ -392,6 +464,12 @@ paths:
                     description: Attendance was added successfully
                 '401':
                     description: Unauthorized
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+                '403':
+                    description: Wrong authorization token
                     content:
                         application/json:
                             schema:
