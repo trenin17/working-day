@@ -1,18 +1,8 @@
 # working_day
 
-Template of a C++ service that uses [userver framework](https://github.com/userver-framework/userver) with PostgreSQL.
+Service for convenient staff management that allows employees of any kind of business to track thier payments, absence and vacations as well as to store their work-related personal information. It is also intended to ease the work of the accounting office by automating some of their regular processes. The service is made in the form of an iOS app that communicates with and takes information from the cloud backend server.
 
-
-## Download and Build
-
-To create your own userver-based service follow the following steps:
-
-1. Press the green "Use this template button" at the top of this github page
-2. Clone the service `git clone your-service-repo && cd your-service-repo`
-3. Give a propper name to your service and replace all the occurences of "working_day" string with that name
-   (could be done via `find . -not -path "./third_party/*" -not -path ".git/*" -not -path './build_*' -type f | xargs sed -i 's/working_day/YOUR_SERVICE_NAME/g'`).
-4. Feel free to tweak, adjust or fully rewrite the source code of your service.
-
+Docker image: https://hub.docker.com/r/trenin17/working_day
 
 ## Makefile
 
@@ -38,10 +28,3 @@ Makefile contains typicaly useful targets for development:
 * `make docker-clean-data` - stop docker containers and clean database data
 
 Edit `Makefile.local` to change the default configuration and build options.
-
-
-## License
-
-The original template is distributed under the [Apache-2.0 License](https://github.com/userver-framework/userver/blob/develop/LICENSE)
-and [CLA](https://github.com/userver-framework/userver/blob/develop/CONTRIBUTING.md). Services based on the template may change
-the license and CLA.
