@@ -25,9 +25,13 @@ class ActionsRequest {
         "%Y-%m-%dT%H:%M:%E6S");  // Something weird with timezone
     to = userver::utils::datetime::Stringtime(j["to"], "UTC",
                                               "%Y-%m-%dT%H:%M:%E6S");
+    if (j.contains("employee_id")) {
+      employee_id = j["employee_id"];
+    }
   }
 
   userver::storages::postgres::TimePoint from, to;
+  std::optional<std::string> employee_id;
 };
 
 class UserAction {
@@ -90,7 +94,7 @@ class ActionsHandler final : public userver::server::handlers::HttpHandlerBase {
         "FROM working_day.actions "
         "WHERE (user_id = $1 AND start_date >= $2 AND start_date <= $3) "
         "OR (user_id = $1 AND end_date >= $2 AND end_date <= $3)",
-        user_id, request_body.from, request_body.to);
+        request_body.employee_id.value_or(user_id), request_body.from, request_body.to);
 
     ActionsResponse response{result.AsContainer<std::vector<UserAction>>(
         userver::storages::postgres::kRowTag)};

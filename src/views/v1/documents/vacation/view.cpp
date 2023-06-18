@@ -17,18 +17,6 @@ namespace views::v1::documents::vacation {
 
 namespace {
 
-class DocumentsVacationRequest {
- public:
-  DocumentsVacationRequest(const std::string& body) {
-    auto j = json::parse(body);
-    action_id = j["action_id"];
-    approve = j["approve"].get<bool>();
-  }
-
-  std::string action_id;
-  bool approve;
-};
-
 class ActionInfo {
  public:
   std::string employee_id, type;

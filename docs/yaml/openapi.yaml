@@ -674,6 +674,9 @@ components:
         ActionsRequest:
             type: object
             additionalProperties: false
+            required:
+              - from
+              - to
             properties:
                 from:
                     type: string
@@ -681,6 +684,9 @@ components:
                 to:
                     type: string
                     description: Timestamp for end of a period
+                employee_id:
+                    type: string
+                    description: If head wants to watch employee's actions
 
         ActionsResponse:
             type: object
