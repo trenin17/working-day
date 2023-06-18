@@ -653,10 +653,17 @@ components:
                     type: string
                 type:
                     type: string
+                    enum:
+                      - vacation_request  # Vacation request from your employee
+                      - vacation_approved # Head approved your vacation request
+                      - vacation_denied   # Head denied your vacation request
+                      - vacation_request_approved # You approved vacation request from your employee
+                      - vacation_request_denied   # You denied vacation request from your employee
+                      - attendance_added  # Manager added your attendance
                 is_read:
                     type: boolean
-                sender_id:
-                    type: string
+                sender:
+                    $ref: "#/components/schemas/ListEmployee"
                 text:
                     type: string
                 action_id:
@@ -737,9 +744,12 @@ components:
             additionalProperties: false
             required:
               - action_id
+              - notification_id
               - approve
             properties:
                 action_id:
+                    type: string
+                notification_id:
                     type: string
                 approve:
                     type: boolean

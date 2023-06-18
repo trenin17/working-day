@@ -16,16 +16,38 @@ namespace views::v1::notifications {
 
 namespace {
 
+class ListEmployee {
+ public:
+  json ToJSONObject() const {
+    json j;
+    j["id"] = id;
+    j["name"] = name;
+    j["surname"] = surname;
+    if (patronymic) {
+      j["patronymic"] = patronymic.value();
+    }
+    if (photo_link) {
+      j["photo_link"] = utils::s3_presigned_links::GeneratePhotoPresignedLink(
+          photo_link.value(), utils::s3_presigned_links::LinkType::Download);
+    }
+
+    return j;
+  }
+
+  std::string id, name, surname;
+  std::optional<std::string> patronymic, photo_link;
+};
+
 class Notification {
  public:
-  std::string ToJSON() const {
+  json ToJSONObject() const {
     json j;
     j["id"] = id;
     j["type"] = type;
     j["text"] = text;
     j["is_read"] = is_read;
-    if (sender_id) {
-      j["sender_id"] = sender_id.value();
+    if (sender) {
+      j["sender"] = sender.value().ToJSONObject();
     }
     if (action_id) {
       j["action_id"] = action_id.value();
@@ -33,21 +55,23 @@ class Notification {
     j["created"] = userver::utils::datetime::Timestring(created, "UTC",
                                                         "%Y-%m-%dT%H:%M:%E6S");
 
-    return j.dump();
+    return j;
   }
 
   std::string id, type, text;
   bool is_read;
-  std::optional<std::string> sender_id, action_id;
+  std::optional<ListEmployee> sender;
+  std::optional<std::string> action_id;
   userver::storages::postgres::TimePoint created;
 };
 
 class NotificationsResponse {
  public:
   std::string ToJSON() const {
-    json j = json::array();
+    json j;
+    j["notifications"] = json::array();
     for (const auto& notification : notifications) {
-      j.push_back(notification.ToJSON());
+      j["notifications"].push_back(notification.ToJSONObject());
     }
     return j.dump();
   }
@@ -76,8 +100,14 @@ class NotificationsHandler final
 
     auto result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kSlave,
-        "SELECT id, type, text, is_read, sender_id, action_id, created "
+        "SELECT working_day.notifications.id, type, text, is_read, ROW "
+        "(working_day.employees.id, working_day.employees.name, "
+        "working_day.employees.surname, working_day.employees.patronymic, "
+        "working_day.employees.photo_link), "
+        "action_id, created "
         "FROM working_day.notifications "
+        "LEFT JOIN working_day.employees "
+        "ON working_day.employees.id = working_day.notifications.sender_id "
         "WHERE user_id = $1",
         user_id);
 

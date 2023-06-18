@@ -32,7 +32,7 @@ class ActionsRequest {
 
 class UserAction {
  public:
-  std::string ToJSON() const {
+  json ToJSONObject() const {
     json j;
     j["id"] = id;
     j["type"] = type;
@@ -44,7 +44,7 @@ class UserAction {
       j["status"] = status.value();
     }
 
-    return j.dump();
+    return j;
   }
 
   std::string id, type;
@@ -55,9 +55,10 @@ class UserAction {
 class ActionsResponse {
  public:
   std::string ToJSON() const {
-    json j = json::array();
+    json j;
+    j["actions"] = json::array();
     for (const auto& action : actions) {
-      j.push_back(action.ToJSON());
+      j["actions"].push_back(action.ToJSONObject());
     }
     return j.dump();
   }

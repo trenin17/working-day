@@ -20,10 +20,11 @@ class AbscenceVerdictRequest {
   AbscenceVerdictRequest(const std::string& body) {
     auto j = json::parse(body);
     action_id = j["action_id"];
+    notification_id = j["notification_id"];
     approve = j["approve"].get<bool>();
   }
 
-  std::string action_id;
+  std::string action_id, notification_id;
   bool approve;
 };
 
@@ -75,6 +76,12 @@ class AbscenceVerdictHandler final
         "SET status = $2"
         "WHERE id = $1 ",
         request_body.action_id, action_status);
+
+    result = trx.Execute(
+        "UPDATE working_day.notifications "
+        "SET type = $2"
+        "WHERE id = $1 ",
+        request_body.notification_id, "vacation_request_" + action_status);
 
     auto notification_id = userver::utils::generators::GenerateUuid();
     result = trx.Execute(
