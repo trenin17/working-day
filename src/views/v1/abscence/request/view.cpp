@@ -13,16 +13,19 @@ using json = nlohmann::json;
 
 namespace views::v1::abscence::request {
 
+const std::string tz = "UTC";
+
 namespace {
 
 class AbscenceRequestRequest {
  public:
   AbscenceRequestRequest(const std::string& body) {
+    using namespace userver::utils::datetime;
+    using namespace std::literals::chrono_literals;
     auto j = json::parse(body);
-    start_date = userver::utils::datetime::Stringtime(j["start_date"], "UTC",
-                                                      "%Y-%m-%dT%H:%M:%E6S");
-    end_date = userver::utils::datetime::Stringtime(j["end_date"], "UTC",
-                                                    "%Y-%m-%dT%H:%M:%E6S");
+    start_date = Stringtime(Timestring(Stringtime(j["start_date"], tz, "%Y-%m-%dT%H:%M:%E6S"), tz, "%Y-%m-%d"), tz, "%Y-%m-%d");
+    end_date = Stringtime(Timestring(Stringtime(j["end_date"], tz, "%Y-%m-%dT%H:%M:%E6S"), tz, "%Y-%m-%d"), tz, "%Y-%m-%d");
+    end_date += 1439min; // + 23:59
     type = j["type"];
   }
 
@@ -73,7 +76,10 @@ class AbscenceRequestHandler final
     if (request_body.type == "vacation") {
       action_status = "pending";
       notification_text =
-          "Ваш сотрудник запросил отпуск. Подтвердите или отклоните его.";
+          "Ваш сотрудник запросил отпуск c " +
+          userver::utils::datetime::Timestring(request_body.start_date, tz, "%d.%m.%Y") +
+          " по " + userver::utils::datetime::Timestring(request_body.end_date, tz, "%d.%m.%Y") +
+          ". Подтвердите или отклоните его.";
     }
 
     auto trx = pg_cluster_->Begin(
@@ -102,12 +108,12 @@ class AbscenceRequestHandler final
       auto notification_id = userver::utils::generators::GenerateUuid();
       result = trx.Execute(
           "INSERT INTO working_day.notifications(id, type, text, user_id, "
-          "sender_id) "
-          "VALUES($1, $2, $3, $4, $5) "
+          "sender_id, action_id) "
+          "VALUES($1, $2, $3, $4, $5, $6) "
           "ON CONFLICT (id) "
           "DO NOTHING",
           notification_id, request_body.type + "_request", notification_text,
-          head_id.value_or(user_id), user_id);
+          head_id.value_or(user_id), user_id, action_id);
     }
 
     trx.Commit();

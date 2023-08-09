@@ -108,7 +108,8 @@ class NotificationsHandler final
         "FROM working_day.notifications "
         "LEFT JOIN working_day.employees "
         "ON working_day.employees.id = working_day.notifications.sender_id "
-        "WHERE user_id = $1",
+        "WHERE user_id = $1 "
+        "LIMIT 100",
         user_id);
 
     NotificationsResponse response{

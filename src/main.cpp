@@ -26,6 +26,7 @@
 #include "views/v1/notifications/view.hpp"
 #include "views/v1/profile/edit/view.hpp"
 #include "views/v1/profile/upload_photo/view.hpp"
+#include "views/v1/abscence/split/view.hpp"
 
 int main(int argc, char* argv[]) {
   userver::server::handlers::auth::RegisterAuthCheckerFactory(
@@ -58,6 +59,7 @@ int main(int argc, char* argv[]) {
   views::v1::actions::AppendActions(component_list);
   views::v1::documents::vacation::AppendDocumentsVacation(component_list);
   views::v1::attendance::add::AppendAttendanceAdd(component_list);
+  views::v1::abscence::split::AppendAbscenceSplit(component_list);
 
   return userver::utils::DaemonMain(argc, argv, component_list);
 }

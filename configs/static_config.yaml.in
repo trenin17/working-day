@@ -39,7 +39,7 @@ components_manager:
             fs-task-processor: fs-task-processor
             loggers:
                 default:
-                    file_path: '@stderr'
+                    file_path: '/tmp/logs/working_day/log.txt'
                     level: $logger-level
                     overflow_behavior: discard  # Drop logs if the system is too busy to write them down.
 
@@ -213,6 +213,16 @@ components_manager:
                 scopes:
                   - manager
 
+        handler-v1-abscence-split:
+            path: /v1/abscence/split
+            method: POST
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - user
+
         key-value:
             dbalias: pg_working_day
             blocking_task_processor: fs-task-processor
@@ -221,7 +231,7 @@ components_manager:
 
         auth-pg-cache:
             pgcomponent: key-value
-            update-interval: 10s
+            update-interval: 30s
 
         dns-client:
             fs-task-processor: fs-task-processor

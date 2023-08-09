@@ -47,6 +47,7 @@ class UserAction {
     if (status) {
       j["status"] = status.value();
     }
+    j["blocking_actions_ids"] = blocking_actions_ids;
 
     return j;
   }
@@ -54,6 +55,7 @@ class UserAction {
   std::string id, type;
   userver::storages::postgres::TimePoint start_date, end_date;
   std::optional<std::string> status;
+  std::vector<std::string> blocking_actions_ids;
 };
 
 class ActionsResponse {
@@ -90,7 +92,7 @@ class ActionsHandler final : public userver::server::handlers::HttpHandlerBase {
 
     auto result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kSlave,
-        "SELECT id, type, start_date, end_date, status "
+        "SELECT id, type, start_date, end_date, status, blocking_actions_ids "
         "FROM working_day.actions "
         "WHERE (user_id = $1 AND start_date >= $2 AND start_date <= $3) "
         "OR (user_id = $1 AND end_date >= $2 AND end_date <= $3)",

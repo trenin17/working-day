@@ -63,8 +63,9 @@ class AddEmployeeHandler final
 
   std::string HandleRequestThrow(
       const userver::server::http::HttpRequest& request,
-      userver::server::request::RequestContext&) const override {
+      userver::server::request::RequestContext& ctx) const override {
     AddEmployeeRequest request_body(request.RequestBody());
+    auto company_id = ctx.GetData<std::string>("company_id");
 
     auto id = userver::utils::generators::GenerateUuid();
     auto password = userver::utils::generators::GenerateUuid();
@@ -72,11 +73,11 @@ class AddEmployeeHandler final
     auto result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kMaster,
         "INSERT INTO working_day.employees(id, name, surname, patronymic, "
-        "password, role) VALUES($1, $2, $3, $4, $5, $6) "
+        "password, role, company_id) VALUES($1, $2, $3, $4, $5, $6, $7) "
         "ON CONFLICT (id) "
         "DO NOTHING",
         id, request_body.name, request_body.surname, request_body.patronymic,
-        password, request_body.role);
+        password, request_body.role, company_id);
 
     AddEmployeeResponse response(id, password);
     return response.ToJSON();

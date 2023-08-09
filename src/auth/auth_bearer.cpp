@@ -13,8 +13,9 @@ class AuthCheckerBearer final
 
   AuthCheckerBearer(
       const AuthCache& auth_cache,
-      std::vector<userver::server::auth::UserScope> required_scopes)
-      : auth_cache_(auth_cache), required_scopes_(std::move(required_scopes)) {}
+      std::vector<userver::server::auth::UserScope> required_scopes,
+      userver::storages::postgres::ClusterPtr pg_cluster)
+      : auth_cache_(auth_cache), required_scopes_(std::move(required_scopes)), pg_cluster_(pg_cluster) {}
 
   [[nodiscard]] AuthCheckResult CheckAuth(
       const userver::server::http::HttpRequest& request,
@@ -25,6 +26,7 @@ class AuthCheckerBearer final
  private:
   const AuthCache& auth_cache_;
   const std::vector<userver::server::auth::UserScope> required_scopes_;
+  userver::storages::postgres::ClusterPtr pg_cluster_;
 };
 /// [auth checker declaration]
 
@@ -60,13 +62,32 @@ AuthCheckerBearer::AuthCheckResult AuthCheckerBearer::CheckAuth(
   const auto cache_snapshot = auth_cache_.Get();
 
   auto it = cache_snapshot->find(token);
+  std::optional<UserDbInfo> not_cached_info;
   if (it == cache_snapshot->end()) {
-    return AuthCheckResult{AuthCheckResult::Status::kForbidden};
+    LOG_INFO() << "Trying to search token in database";
+    auto result = pg_cluster_->Execute(
+        userver::storages::postgres::ClusterHostType::kMaster,
+        static_cast<std::string>(AuthCachePolicy::kQuery) + 
+        " WHERE token = $1",
+        token);
+    if (result.IsEmpty()) {
+      LOG_INFO() << "Search of token in database was unsuccessful";
+      return AuthCheckResult{AuthCheckResult::Status::kForbidden};
+    }
+    LOG_INFO() << "Search of token in database was successful";
+    not_cached_info = result.AsSingleRow<UserDbInfo>(
+        userver::storages::postgres::kRowTag);
   }
   /// [auth checker definition 3]
 
   /// [auth checker definition 4]
-  const UserDbInfo& info = it->second;
+  UserDbInfo info;
+  if (not_cached_info.has_value()) {
+    info = not_cached_info.value();
+  } else {
+    info = it->second;
+  }
+
   for (const auto& scope : required_scopes_) {
     if (std::find(info.scopes.begin(), info.scopes.end(), scope.GetValue()) ==
         info.scopes.end()) {
@@ -85,6 +106,7 @@ AuthCheckerBearer::AuthCheckResult AuthCheckerBearer::CheckAuth(
   } else {
     request_context.SetData("is_admin", false);
   }
+  request_context.SetData("company_id", info.company_id);
   return {};
 }
 /// [auth checker definition 5]
@@ -96,7 +118,9 @@ userver::server::handlers::auth::AuthCheckerBasePtr CheckerFactory::operator()(
     const userver::server::handlers::auth::AuthCheckerSettings&) const {
   auto scopes = auth_config["scopes"].As<userver::server::auth::UserScopes>({});
   const auto& auth_cache = context.FindComponent<AuthCache>();
-  return std::make_shared<AuthCheckerBearer>(auth_cache, std::move(scopes));
+  return std::make_shared<AuthCheckerBearer>(auth_cache, std::move(scopes), context
+                .FindComponent<userver::components::Postgres>("key-value")
+                .GetCluster());
 }
 /// [auth checker factory definition]
 

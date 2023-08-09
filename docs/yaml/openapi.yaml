@@ -399,6 +399,41 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/ErrorMessage'
 
+    /v1/abscence/split:
+        post:
+            description: Split an abscence
+            parameters:
+              - in: header
+                name: Authorization
+                description: Token of session user
+                schema:
+                    type: string
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/AbscenceSplitRequest'
+            responses:
+                '200':
+                    description: Abscence was requested
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/AbscenceSplitResponse'
+                '401':
+                    description: Unauthorized
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+                '403':
+                    description: Wrong authorization token
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+
     /v1/documents/vacation:
         get:
             description: Generate vacation document
@@ -413,6 +448,14 @@ paths:
                 description: Id of vacation action
                 schema:
                     type: string
+              - in: query
+                name: request_type
+                description: Vacation request type
+                schema:
+                    type: string
+                    enum:
+                      - create
+                      - split
             responses:
                 '200':
                     description: Generated document download link
@@ -648,6 +691,7 @@ components:
               - is_read
               - text
               - created
+              - action_id
             properties:
                 id:
                     type: string
@@ -657,8 +701,6 @@ components:
                       - vacation_request  # Vacation request from your employee
                       - vacation_approved # Head approved your vacation request
                       - vacation_denied   # Head denied your vacation request
-                      - vacation_request_approved # You approved vacation request from your employee
-                      - vacation_request_denied   # You denied vacation request from your employee
                       - attendance_added  # Manager added your attendance
                 is_read:
                     type: boolean
@@ -707,17 +749,25 @@ components:
               - type
               - start_date
               - end_date
+              - blocking_actions_ids
             properties:
                 id:
                     type: string
                 type:
                     type: string
+                    enum:
+                      - vacation
+                      - attendance
                 start_date:
                     type: string
                 end_date:
                     type: string
                 status:
                     type: string
+                blocking_actions_ids:
+                    type: array
+                    items:
+                        type: string
 
         AbscenceRequestRequest:
             type: object
@@ -750,7 +800,6 @@ components:
             additionalProperties: false
             required:
               - action_id
-              - notification_id
               - approve
             properties:
                 action_id:
@@ -795,4 +844,28 @@ components:
                 start_date:
                     type: string
                 end_date:
+                    type: string
+
+        AbscenceSplitRequest:
+            type: object
+            additionalProperties: false
+            required:
+              - action_id
+              - split_date
+            properties:
+                action_id:
+                    type: string
+                split_date:
+                    type: string
+        
+        AbscenceSplitResponse:
+            type: object
+            additionalProperties: false
+            required:
+              - first_action_id
+              - second_action_id
+            properties:
+                first_action_id:
+                    type: string
+                second_action_id:
                     type: string

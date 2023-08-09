@@ -83,12 +83,10 @@ class InfoEmployeeHandler final
       const userver::server::http::HttpRequest& request,
       userver::server::request::RequestContext& ctx) const override {
     const auto& user_id = ctx.GetData<std::string>("user_id");
-    const auto& employee_id = request.GetArg("employee_id");
+    auto employee_id = request.GetArg("employee_id");
 
     if (employee_id.empty()) {
-      request.GetHttpResponse().SetStatus(
-          userver::server::http::HttpStatus::kUnauthorized);
-      return ErrorMessage{"Unauthorized"}.ToJSON();
+      employee_id = user_id;
     }
 
     auto result = pg_cluster_->Execute(

@@ -21,6 +21,7 @@ class ActionInfo {
  public:
   std::string employee_id, type;
   userver::storages::postgres::TimePoint start_date, end_date;
+  std::vector<std::string> blocking_actions_ids;
 };
 
 class EmployeeInfo {
@@ -39,6 +40,7 @@ class LinkRequest {
  public:
   std::string ToJSON() {
     json j;
+    j["request_type"] = request_type;
     j["employee_name"] = employee_name;
     j["employee_surname"] = employee_surname;
     j["head_name"] = head_name;
@@ -57,14 +59,27 @@ class LinkRequest {
     if (head_position) {
       j["head_position"] = head_position.value();
     }
+    if (first_start_date) {
+      j["first_start_date"] = first_start_date.value();
+    }
+    if (first_end_date) {
+      j["first_end_date"] = first_end_date.value();
+    }
+    if (second_start_date) {
+      j["second_start_date"] = second_start_date.value();
+    }
+    if (second_end_date) {
+      j["second_end_date"] = second_end_date.value();
+    }
 
     return j.dump();
   }
 
-  std::string employee_name, employee_surname, head_name, head_surname,
+  std::string request_type, employee_name, employee_surname, head_name, head_surname,
       start_date, end_date;
   std::optional<std::string> employee_patronymic, head_patronymic,
-      employee_position, head_position;
+      employee_position, head_position, first_start_date, first_end_date,
+      second_start_date, second_end_date;
 };
 
 class ErrorMessage {
@@ -100,8 +115,11 @@ class DocumentsVacationHandler final
       const userver::server::http::HttpRequest& request,
       userver::server::request::RequestContext& ctx) const override {
     auto action_id = request.GetArg("action_id");
+    auto request_type = request.GetArg("request_type");
+    if (request_type.empty()) {
+      request_type = "create";
+    }
     auto user_id = ctx.GetData<std::string>("user_id");
-    LOG_INFO() << "Action id: (" << action_id << ")";
 
     auto trx = pg_cluster_->Begin(
         "documents_vacation",
@@ -110,11 +128,18 @@ class DocumentsVacationHandler final
 
     auto action_info =
         trx.Execute(
-               "SELECT user_id, type, start_date, end_date "
+               "SELECT user_id, type, start_date, end_date, blocking_actions_ids "
                "FROM working_day.actions "
                "WHERE id = $1",
                action_id)
             .AsSingleRow<ActionInfo>(userver::storages::postgres::kRowTag);
+
+    if (request_type == "split" && action_info.blocking_actions_ids.size() != 2) {
+      trx.Rollback();
+      request.GetHttpResponse().SetStatus(
+          userver::server::http::HttpStatus::kBadRequest);
+      return ErrorMessage{"Action was not split or was split the wrong way"}.ToJSON();
+    }
 
     if (action_info.type != "vacation") {
       trx.Rollback();
@@ -145,9 +170,8 @@ class DocumentsVacationHandler final
                employee_info.head_id.value_or(action_info.employee_id))
             .AsSingleRow<HeadInfo>(userver::storages::postgres::kRowTag);
 
-    trx.Commit();
-
-    LinkRequest link_request{.employee_name = employee_info.name,
+    LinkRequest link_request{.request_type = request_type,
+                             .employee_name = employee_info.name,
                              .employee_surname = employee_info.surname,
                              .head_name = head_info.name,
                              .head_surname = head_info.surname,
@@ -160,18 +184,42 @@ class DocumentsVacationHandler final
                              .employee_position = employee_info.position,
                              .head_position = head_info.position};
 
+    if (request_type == "split") {
+      auto first_action = trx.Execute(
+              "SELECT user_id, type, start_date, end_date, blocking_actions_ids "
+              "FROM working_day.actions "
+              "WHERE id = $1",
+              action_info.blocking_actions_ids[0])
+          .AsSingleRow<ActionInfo>(userver::storages::postgres::kRowTag);
+      auto second_action = trx.Execute(
+              "SELECT user_id, type, start_date, end_date, blocking_actions_ids "
+              "FROM working_day.actions "
+              "WHERE id = $1",
+              action_info.blocking_actions_ids[1])
+          .AsSingleRow<ActionInfo>(userver::storages::postgres::kRowTag);
+      
+      using namespace userver::utils::datetime;
+      link_request.first_start_date = Timestring(first_action.start_date, "UTC", "%d.%m.%Y");
+      link_request.first_end_date = Timestring(first_action.end_date, "UTC", "%d.%m.%Y");
+      link_request.second_start_date = Timestring(second_action.start_date, "UTC", "%d.%m.%Y");
+      link_request.second_end_date = Timestring(second_action.end_date, "UTC", "%d.%m.%Y");
+    }
+
+    trx.Commit();
+
     auto response =
         http_client_.CreateRequest()
             ->get(
-                "https://functions.yandexcloud.net/"
-                "d4e9q7pe491dibgraf4u?file_key=" +
+                "https://functions.yandexcloud.net/d4emv61q8h6eu2rs2f67?file_key=" +
                 userver::utils::generators::
                     GenerateUuid())  // HTTP GET translations_url_ URL
             ->data(link_request.ToJSON())
             ->retry(2)  // retry once in case of error
-            ->timeout(std::chrono::milliseconds{2000})
+            ->timeout(std::chrono::milliseconds{5000})
             ->perform();  // start performing the request
     response->raise_for_status();
+
+    LOG_INFO() << link_request.ToJSON();
 
     return response->body();
   }

@@ -61,3 +61,16 @@ CREATE INDEX idx_actions_by_user_id ON working_day.actions(user_id);
 CREATE INDEX idx_actions_by_user_id_start_date ON working_day.actions(user_id ASC, start_date ASC);
 
 CREATE INDEX idx_actions_by_user_id_end_date ON working_day.actions(user_id ASC, end_date ASC);
+
+ALTER TABLE working_day.employees
+ADD COLUMN IF NOT EXISTS company_id TEXT NOT NULL DEFAULT '1';
+
+CREATE TABLE IF NOT EXISTS working_day.companies (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    ceo_id TEXT
+);
+
+ALTER TABLE working_day.actions
+ADD COLUMN IF NOT EXISTS underlying_action_id TEXT,
+ADD COLUMN IF NOT EXISTS blocking_actions_ids TEXT[] NOT NULL DEFAULT ARRAY []::TEXT[];
