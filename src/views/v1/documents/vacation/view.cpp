@@ -10,6 +10,8 @@
 #include <userver/storages/postgres/cluster.hpp>
 #include <userver/storages/postgres/component.hpp>
 #include <userver/utils/uuid4.hpp>
+#include <userver/components/component_config.hpp>
+#include <userver/components/component_context.hpp>
 
 using json = nlohmann::json;
 
@@ -209,14 +211,14 @@ class DocumentsVacationHandler final
 
     auto response =
         http_client_.CreateRequest()
-            ->get(
+            .get(
                 "https://functions.yandexcloud.net/d4emv61q8h6eu2rs2f67?file_key=" +
                 userver::utils::generators::
                     GenerateUuid())  // HTTP GET translations_url_ URL
-            ->data(link_request.ToJSON())
-            ->retry(2)  // retry once in case of error
-            ->timeout(std::chrono::milliseconds{5000})
-            ->perform();  // start performing the request
+            .data(link_request.ToJSON())
+            .retry(2)  // retry once in case of error
+            .timeout(std::chrono::milliseconds{5000})
+            .perform();  // start performing the request
     response->raise_for_status();
 
     LOG_INFO() << link_request.ToJSON();

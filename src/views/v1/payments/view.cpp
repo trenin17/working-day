@@ -9,56 +9,53 @@
 #include <userver/storages/postgres/component.hpp>
 #include <userver/components/component_config.hpp>
 #include <userver/components/component_context.hpp>
-
-#include "utils/s3_presigned_links.hpp"
+#include <userver/components/component_config.hpp>
+#include <userver/components/component_context.hpp>
 
 using json = nlohmann::json;
 
-namespace views::v1::employees {
+namespace views::v1::payments {
 
 namespace {
 
-class ListEmployee {
+class Payment {
  public:
   json ToJSONObject() const {
     json j;
     j["id"] = id;
-    j["name"] = name;
-    j["surname"] = surname;
-    if (patronymic) {
-      j["patronymic"] = patronymic.value();
-    }
-    if (photo_link) {
-      j["photo_link"] = photo_link.value();
-    }
-
+    j["user_id"] = user_id;
+    j["amount"] = amount;
+    j["payroll_date"] = userver::utils::datetime::Timestring(payroll_date, "UTC",
+                                                        "%Y-%m-%dT%H:%M:%E6S");
+    
     return j;
   }
 
-  std::string id, name, surname;
-  std::optional<std::string> patronymic, photo_link;
+  std::string id, user_id;
+  double amount;
+  userver::storages::postgres::TimePoint payroll_date;
 };
 
-class EmployeesResponse {
+class PaymentsResponse {
  public:
   std::string ToJSON() const {
     json j;
-    j["employees"] = json::array();
-    for (const auto& employee : employees) {
-      j["employees"].push_back(employee.ToJSONObject());
+    j["payments"] = json::array();
+    for (const auto& payment : payments) {
+      j["payments"].push_back(payment.ToJSONObject());
     }
     return j.dump();
   }
 
-  std::vector<ListEmployee> employees;
+  std::vector<Payment> payments;
 };
 
-class EmployeesHandler final
+class PaymentsHandler final
     : public userver::server::handlers::HttpHandlerBase {
  public:
-  static constexpr std::string_view kName = "handler-v1-employees";
+  static constexpr std::string_view kName = "handler-v1-payments";
 
-  EmployeesHandler(
+  PaymentsHandler(
       const userver::components::ComponentConfig& config,
       const userver::components::ComponentContext& component_context)
       : HttpHandlerBase(config, component_context),
@@ -74,21 +71,16 @@ class EmployeesHandler final
 
     auto result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kSlave,
-        "SELECT id, name, surname, patronymic, photo_link "
-        "FROM working_day.employees "
-        "WHERE head_id = $1",
+        "SELECT id, user_id, amount, payroll_date "
+        "FROM working_day.payments "
+        "WHERE user_id = $1 "
+        "LIMIT 100",
         user_id);
 
-    EmployeesResponse response{result.AsContainer<std::vector<ListEmployee>>(
-        userver::storages::postgres::kRowTag)};
-    for (auto& employee : response.employees) {
-      if (employee.photo_link.has_value()) {
-        employee.photo_link =
-            utils::s3_presigned_links::GeneratePhotoPresignedLink(
-                employee.photo_link.value(),
-                utils::s3_presigned_links::Download);
-      }
-    }
+    PaymentsResponse response{
+        result.AsContainer<std::vector<Payment>>(
+            userver::storages::postgres::kRowTag)};
+
     return response.ToJSON();
   }
 
@@ -98,8 +90,8 @@ class EmployeesHandler final
 
 }  // namespace
 
-void AppendEmployees(userver::components::ComponentList& component_list) {
-  component_list.Append<EmployeesHandler>();
+void AppendPayments(userver::components::ComponentList& component_list) {
+  component_list.Append<PaymentsHandler>();
 }
 
-}  // namespace views::v1::employees
+}  // namespace views::v1::payments

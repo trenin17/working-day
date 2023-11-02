@@ -8,6 +8,8 @@
 #include <userver/storages/postgres/cluster.hpp>
 #include <userver/storages/postgres/component.hpp>
 #include <userver/utils/uuid4.hpp>
+#include <userver/components/component_config.hpp>
+#include <userver/components/component_context.hpp>
 
 using json = nlohmann::json;
 
@@ -49,21 +51,6 @@ class HeadId {
 
 class UserAction {
  public:
-  json ToJSONObject() const {
-    json j;
-    j["id"] = id;
-    j["type"] = type;
-    j["start_date"] = userver::utils::datetime::Timestring(
-        start_date, "UTC", "%Y-%m-%dT%H:%M:%E6S");
-    j["end_date"] = userver::utils::datetime::Timestring(end_date, "UTC",
-                                                         "%Y-%m-%dT%H:%M:%E6S");
-    if (status) {
-      j["status"] = status.value();
-    }
-
-    return j;
-  }
-
   std::string id, type;
   userver::storages::postgres::TimePoint start_date, end_date;
   std::optional<std::string> status;
@@ -101,9 +88,7 @@ class AbscenceSplitHandler final
     AbscenceSplitRequest request_body(request.RequestBody());
     auto user_id = ctx.GetData<std::string>("user_id");
 
-    std::optional<std::string> action_status;
     std::string notification_text = "Unknown notification";
-    action_status = "pending";
 
     using namespace std::literals::chrono_literals;
     auto trx = pg_cluster_->Begin(
@@ -116,6 +101,7 @@ class AbscenceSplitHandler final
         "WHERE id = $1",
         request_body.action_id)
       .AsSingleRow<UserAction>(userver::storages::postgres::kRowTag);
+    auto action_status = action_to_split.status;
     
     if (request_body.split_date < action_to_split.start_date || request_body.split_date > action_to_split.end_date) {
       trx.Rollback();
@@ -144,6 +130,17 @@ class AbscenceSplitHandler final
         "SET blocking_actions_ids = $2 "
         "WHERE id = $1",
         request_body.action_id, std::vector{first_action_id, second_action_id});
+
+    auto notification_id = userver::utils::generators::GenerateUuid();
+    result = trx.Execute(
+        "INSERT INTO working_day.notifications(id, type, text, user_id, "
+        "sender_id, action_id) "
+        "VALUES($1, $2, $3, $4, $5, $6) "
+        "ON CONFLICT (id) "
+        "DO NOTHING",
+        notification_id, action_to_split.type + "_split",
+        "Ваш отпуск с " + userver::utils::datetime::Timestring(action_to_split.start_date, "UTC", "%d.%m.%Y") + " был разделен на две части.",
+        user_id, user_id, request_body.action_id);
 
     /* TODO
     auto head_id =

@@ -10,6 +10,8 @@
 #include <userver/storages/postgres/cluster.hpp>
 #include <userver/storages/postgres/component.hpp>
 #include <userver/utils/assert.hpp>
+#include <userver/components/component_config.hpp>
+#include <userver/components/component_context.hpp>
 
 namespace working_day {
 

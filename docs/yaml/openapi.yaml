@@ -416,11 +416,52 @@ paths:
                             $ref: '#/components/schemas/AbscenceSplitRequest'
             responses:
                 '200':
-                    description: Abscence was requested
+                    description: Abscence was split
                     content:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/AbscenceSplitResponse'
+                '400':
+                    description: Wrong split date
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+                '401':
+                    description: Unauthorized
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+                '403':
+                    description: Wrong authorization token
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+
+    /v1/abscence/reschedule:
+        post:
+            description: Reschedule an abscence
+            parameters:
+              - in: header
+                name: Authorization
+                description: Token of session user
+                schema:
+                    type: string
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/AbscenceRescheduleRequest'
+            responses:
+                '200':
+                    description: Abscence was rescheduled
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/AbscenceRescheduleResponse'
                 '401':
                     description: Unauthorized
                     content:
@@ -517,7 +558,54 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/ErrorMessage'
-                
+
+    /v1/payments/add-bulk:
+        post:
+            description: Add bulk payment updates
+            parameters:
+              - in: header
+                name: Authorization
+                description: Token of session user
+                schema:
+                    type: string
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/PaymentsAddBulkRequest'
+            responses:
+                '200':
+                    description: New payments were added successfully
+                '401':
+                    description: Unauthorized
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+                '403':
+                    description: Wrong authorization token
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+
+    /v1/payments:
+        get:
+            description: Get employee's payments
+            parameters:
+              - in: header
+                name: Authorization
+                description: Token of session user
+                schema:
+                    type: string
+            responses:
+                '200':
+                    description: Payments for employee
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/PaymentsResponse'
 
 components:
     schemas:
@@ -833,6 +921,7 @@ components:
               - user
               - admin
               - manager
+              - robot
 
         AttendanceAddRequest:
             type: object
@@ -869,3 +958,64 @@ components:
                     type: string
                 second_action_id:
                     type: string
+
+        AbscenceRescheduleRequest:
+            type: object
+            additionalProperties: false
+            required:
+              - action_id
+              - reschedule_date
+            properties:
+                action_id:
+                    type: string
+                reschedule_date:
+                    type: string
+
+        AbscenceRescheduleResponse:
+            type: object
+            additionalProperties: false
+            required:
+              - action_id
+            properties:
+                action_id:
+                    type: string
+
+        PaymentsAddBulkRequest:
+            type: object
+            additionalProperties: false
+            required:
+              - payments
+            properties:
+                payments:
+                    type: array
+                    items:
+                        $ref: "#/components/schemas/Payment"
+        
+        Payment:
+            type: object
+            additionalProperties: false
+            required:
+              - id
+              - user_id
+              - amount
+              - payroll_date
+            properties:
+                id:
+                    type: string
+                user_id:
+                    type: string
+                amount:
+                    type: number
+                payroll_date:
+                    type: string
+
+        PaymentsResponse:
+            type: object
+            additionalProperties: false
+            required:
+              - payments
+            properties:
+                payments:
+                    type: array
+                    items:
+                        $ref: "#/components/schemas/Payment"

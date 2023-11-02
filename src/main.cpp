@@ -27,6 +27,9 @@
 #include "views/v1/profile/edit/view.hpp"
 #include "views/v1/profile/upload_photo/view.hpp"
 #include "views/v1/abscence/split/view.hpp"
+#include "views/v1/abscence/reschedule/view.hpp"
+#include "views/v1/payments/add_bulk/view.hpp"
+#include "views/v1/payments/view.hpp"
 
 int main(int argc, char* argv[]) {
   userver::server::handlers::auth::RegisterAuthCheckerFactory(
@@ -60,6 +63,9 @@ int main(int argc, char* argv[]) {
   views::v1::documents::vacation::AppendDocumentsVacation(component_list);
   views::v1::attendance::add::AppendAttendanceAdd(component_list);
   views::v1::abscence::split::AppendAbscenceSplit(component_list);
+  views::v1::abscence::reschedule::AppendAbscenceReschedule(component_list);
+  views::v1::payments::add_bulk::AppendPaymentsAddBulk(component_list);
+  views::v1::payments::AppendPayments(component_list);
 
   return userver::utils::DaemonMain(argc, argv, component_list);
 }

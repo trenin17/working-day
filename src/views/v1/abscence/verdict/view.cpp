@@ -8,6 +8,8 @@
 #include <userver/storages/postgres/cluster.hpp>
 #include <userver/storages/postgres/component.hpp>
 #include <userver/utils/uuid4.hpp>
+#include <userver/components/component_config.hpp>
+#include <userver/components/component_context.hpp>
 
 using json = nlohmann::json;
 
@@ -103,12 +105,12 @@ class AbscenceVerdictHandler final
     auto notification_id = userver::utils::generators::GenerateUuid();
     auto result = trx.Execute(
         "INSERT INTO working_day.notifications(id, type, text, user_id, "
-        "sender_id) "
-        "VALUES($1, $2, $3, $4, $5) "
+        "sender_id, action_id) "
+        "VALUES($1, $2, $3, $4, $5, $6) "
         "ON CONFLICT (id) "
         "DO NOTHING",
         notification_id, action_info.type + "_" + action_status,
-        notification_text, action_info.employee_id, user_id);
+        notification_text, action_info.employee_id, user_id, request_body.action_id);
 
     trx.Commit();
 

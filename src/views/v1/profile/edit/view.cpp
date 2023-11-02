@@ -13,6 +13,8 @@
 #include <userver/storages/postgres/component.hpp>
 #include <userver/utils/boost_uuid4.hpp>
 #include <userver/utils/uuid4.hpp>
+#include <userver/components/component_config.hpp>
+#include <userver/components/component_context.hpp>
 
 using json = nlohmann::json;
 

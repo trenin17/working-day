@@ -49,7 +49,7 @@ def plural_form(number, first, second, third):
 
     return third
     
-def duration(start_date, end_date):
+def get_duration(start_date, end_date):
     start_dd = datetime.strptime(start_date, '%d.%m.%Y')
     end_dd = datetime.strptime(end_date, '%d.%m.%Y')
 
@@ -107,14 +107,18 @@ def handler(event, context):
     head_position = body.get('head_position', "")
     start_date = body['start_date']
     end_date = body['end_date']
-    duration = duration(start_date, end_date)
+    duration = get_duration(start_date, end_date)
 
     first_start_date = body.get('first_start_date', "")
     second_start_date = body.get('second_start_date', "")
     first_end_date = body.get('first_end_date', "")
     second_end_date = body.get('second_end_date', "")
-    first_duration = duration(first_start_date, first_end_date)
-    second_duration = duration(second_start_date, second_end_date)
+    first_duration = ""
+    if first_start_date != "" and first_end_date != "":
+        first_duration = get_duration(first_start_date, first_end_date)
+    second_duration = ""
+    if second_start_date != "" and second_end_date != "":
+        second_duration = get_duration(second_start_date, second_end_date)
 
     employee_initials = ""
     if employee_patronymic == "":

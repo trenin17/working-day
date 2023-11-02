@@ -223,6 +223,36 @@ components_manager:
                 scopes:
                   - user
 
+        handler-v1-abscence-reschedule:
+            path: /v1/abscence/reschedule
+            method: POST
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - user
+
+        handler-v1-payments-add-bulk:
+            path: /v1/payments/add-bulk
+            method: POST
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - admin # TODO: make robot
+
+        handler-v1-payments:
+            path: /v1/payments
+            method: POST
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - user
+
         key-value:
             dbalias: pg_working_day
             blocking_task_processor: fs-task-processor

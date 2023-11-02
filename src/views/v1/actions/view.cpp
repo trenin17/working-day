@@ -7,6 +7,8 @@
 #include <userver/server/handlers/http_handler_base.hpp>
 #include <userver/storages/postgres/cluster.hpp>
 #include <userver/storages/postgres/component.hpp>
+#include <userver/components/component_config.hpp>
+#include <userver/components/component_context.hpp>
 
 #include "utils/s3_presigned_links.hpp"
 
@@ -22,7 +24,7 @@ class ActionsRequest {
     auto j = json::parse(body);
     from = userver::utils::datetime::Stringtime(
         j["from"], "UTC",
-        "%Y-%m-%dT%H:%M:%E6S");  // Something weird with timezone
+        "%Y-%m-%dT%H:%M:%E6S");
     to = userver::utils::datetime::Stringtime(j["to"], "UTC",
                                               "%Y-%m-%dT%H:%M:%E6S");
     if (j.contains("employee_id")) {
