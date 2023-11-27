@@ -30,4 +30,4 @@ COPY tests /app/tests/
 
 RUN make build-release
 
-CMD build_release/working_day -c configs/static_config.yaml 
+CMD build_release/working_day -c configs/static_config.yaml --config_vars configs/config_vars.yaml
