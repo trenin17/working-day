@@ -10,6 +10,9 @@
 #include <userver/testsuite/testsuite_support.hpp>
 #include <userver/utils/daemon_run.hpp>
 
+#include <aws/core/Aws.h>
+#include <aws/core/auth/AWSCredentialsProvider.h>
+
 #include "auth/auth_bearer.hpp"
 #include "auth/user_info_cache.hpp"
 #include "views/v1/abscence/request/view.hpp"
@@ -32,6 +35,9 @@
 #include "views/v1/payments/view.hpp"
 
 int main(int argc, char* argv[]) {
+  Aws::SDKOptions options;
+  Aws::InitAPI(options);
+
   userver::server::handlers::auth::RegisterAuthCheckerFactory(
       "bearer", std::make_unique<auth::CheckerFactory>());
 
@@ -67,5 +73,8 @@ int main(int argc, char* argv[]) {
   views::v1::payments::add_bulk::AppendPaymentsAddBulk(component_list);
   views::v1::payments::AppendPayments(component_list);
 
-  return userver::utils::DaemonMain(argc, argv, component_list);
+  int err_code = userver::utils::DaemonMain(argc, argv, component_list);
+
+  Aws::ShutdownAPI(options);
+  return err_code;
 }

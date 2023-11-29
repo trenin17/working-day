@@ -11,8 +11,6 @@ std::string GeneratePhotoPresignedLink(const std::string& key,
                                        const LinkType type) {
   std::string result;
 
-  Aws::SDKOptions options;
-  Aws::InitAPI(options);
   {
     Aws::Client::ClientConfiguration config;
     config.region = Aws::String("ru-central1");
@@ -36,7 +34,6 @@ std::string GeneratePhotoPresignedLink(const std::string& key,
         break;
     }
   }
-  Aws::ShutdownAPI(options);
 
   return result;
 }
