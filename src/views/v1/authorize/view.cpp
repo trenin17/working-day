@@ -107,7 +107,7 @@ class AuthorizeHandler final
         "INSERT INTO working_day.auth_tokens (token, user_id, scopes) "
         "VALUES ($1, $2, $3)",
         token, user_info.id,
-        scopes);  // TODO: update user token instead of inserting
+        scopes);
 
     AuthorizeResponse response{token, user_info.role};
 
