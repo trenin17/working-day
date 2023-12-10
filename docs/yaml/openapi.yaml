@@ -700,8 +700,12 @@ components:
                     type: string
                 surname:
                     type: string
-                phone:
+                patronymic:
                     type: string
+                phones:
+                    type: array
+                    items:
+                        type: string
                 email:
                     type: string
                 birthday:
@@ -712,18 +716,32 @@ components:
                     type: string
                 head_id:
                     type: string
+                telegram_id:
+                    type: string
+                vk_id:
+                    type: string
+                team:
+                    type: string
 
         ProfileEditRequest:
             type: object
             additionalProperties: false
             properties:
-                phone:
-                    type: string
+                phones:
+                    type: array
+                    items:
+                        type: string
                 email:
                     type: string
                 birthday:
                     type: string
                 password:
+                    type: string
+                telegram_id:
+                    type: string
+                vk_id:
+                    type: string
+                team:
                     type: string
         
         AuthorizeRequest:

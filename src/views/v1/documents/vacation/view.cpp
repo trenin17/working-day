@@ -116,6 +116,12 @@ class DocumentsVacationHandler final
   std::string HandleRequestThrow(
       const userver::server::http::HttpRequest& request,
       userver::server::request::RequestContext& ctx) const override {
+    //CORS
+    request.GetHttpResponse()
+        .SetHeader(static_cast<std::string>("Access-Control-Allow-Origin"), "*");
+    request.GetHttpResponse()
+        .SetHeader(static_cast<std::string>("Access-Control-Allow-Headers"), "*");
+    
     auto action_id = request.GetArg("action_id");
     auto request_type = request.GetArg("request_type");
     if (request_type.empty()) {

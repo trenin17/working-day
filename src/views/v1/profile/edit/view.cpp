@@ -27,8 +27,8 @@ class ProfileEditRequest {
   ProfileEditRequest(const std::string& body) {
     auto j = json::parse(body);
 
-    if (j.contains("phone")) {
-      phone = j["phone"];
+    if (j.contains("phones")) {
+      phones = j["phones"];
     }
     if (j.contains("email")) {
       email = j["email"];
@@ -39,9 +39,20 @@ class ProfileEditRequest {
     if (j.contains("password")) {
       password = j["password"];
     }
+    if (j.contains("telegram_id")) {
+      telegram_id = j["telegram_id"];
+    }
+    if (j.contains("vk_id")) {
+      vk_id = j["vk_id"];
+    }
+    if (j.contains("team")) {
+      team = j["team"];
+    }
   }
 
-  std::optional<std::string> phone, email, birthday, password;
+  std::optional<std::vector<std::string> > phones;
+  std::optional<std::string> email, birthday, password,
+      telegram_id, vk_id, team;
 };
 
 class ProfileEditHandler final
@@ -61,6 +72,12 @@ class ProfileEditHandler final
   std::string HandleRequestThrow(
       const userver::server::http::HttpRequest& request,
       userver::server::request::RequestContext& ctx) const override {
+    //CORS
+    request.GetHttpResponse()
+        .SetHeader(static_cast<std::string>("Access-Control-Allow-Origin"), "*");
+    request.GetHttpResponse()
+        .SetHeader(static_cast<std::string>("Access-Control-Allow-Headers"), "*");
+    
     const auto& user_id = ctx.GetData<std::string>("user_id");
 
     ProfileEditRequest request_body(request.RequestBody());
@@ -68,13 +85,16 @@ class ProfileEditHandler final
     auto result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kMaster,
         "UPDATE working_day.employees "
-        "SET phone = case when $2 is null then phone else $2 end, "
+        "SET phones = case when $2 is null then phones else $2 end, "
         "email = case when $3 is null then email else $3 end, "
         "birthday = case when $4 is null then birthday else $4 end, "
-        "password = case when $5 is null then password else $5 end "
+        "password = case when $5 is null then password else $5 end, "
+        "telegram_id = case when $6 is null then telegram_id else $6 end, "
+        "vk_id = case when $7 is null then vk_id else $7 end, "
+        "team = case when $8 is null then team else $8 end "
         "WHERE id = $1",
-        user_id, request_body.phone, request_body.email, request_body.birthday,
-        request_body.password);
+        user_id, request_body.phones, request_body.email, request_body.birthday,
+        request_body.password, request_body.telegram_id, request_body.vk_id, request_body.team);
 
     return "";
   }

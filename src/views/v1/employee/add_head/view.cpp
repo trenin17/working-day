@@ -57,6 +57,12 @@ class AddHeadEmployeeHandler final
   std::string HandleRequestThrow(
       const userver::server::http::HttpRequest& request,
       userver::server::request::RequestContext&) const override {
+    //CORS
+    request.GetHttpResponse()
+        .SetHeader(static_cast<std::string>("Access-Control-Allow-Origin"), "*");
+    request.GetHttpResponse()
+        .SetHeader(static_cast<std::string>("Access-Control-Allow-Headers"), "*");
+    
     const auto& employee_id = request.GetArg("employee_id");
 
     if (employee_id.empty()) {

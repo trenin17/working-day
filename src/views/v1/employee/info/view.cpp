@@ -18,6 +18,19 @@ namespace views::v1::employee::info {
 
 namespace {
 
+class HeadInfo {
+ public:
+  json ToJSONObject() const {
+    json j;
+    j["name"] = name;
+    j["surname"] = surname;
+
+    return j;
+  }
+
+  std::string name, surname;
+};
+
 class InfoEmployeeResponse {
  public:
   std::string ToJSON() const {
@@ -31,8 +44,8 @@ class InfoEmployeeResponse {
     if (photo_link) {
       j["photo_link"] = photo_link.value();
     }
-    if (phone) {
-      j["phone"] = phone.value();
+    if (phones) {
+      j["phones"] = phones.value();
     }
     if (email) {
       j["email"] = email.value();
@@ -46,13 +59,28 @@ class InfoEmployeeResponse {
     if (head_id) {
       j["head_id"] = head_id.value();
     }
+    if (telegram_id) {
+      j["telegram_id"] = telegram_id.value();
+    }
+    if (vk_id) {
+      j["vk_id"] = vk_id.value();
+    }
+    if (team) {
+      j["team"] = team.value();
+    }
+    if (head_info) {
+      j["head_info"] = head_info.value().ToJSONObject();
+    }
 
     return j.dump();
   }
 
   std::string id, name, surname;
-  std::optional<std::string> patronymic, photo_link, phone, email, birthday,
-      password, head_id;
+  std::optional<std::string> patronymic, photo_link;
+  std::optional<std::vector<std::string> > phones;
+  std::optional<std::string> email, birthday,
+      password, head_id, telegram_id, vk_id, team;
+  std::optional<HeadInfo> head_info;
 };
 
 class ErrorMessage {
@@ -84,6 +112,12 @@ class InfoEmployeeHandler final
   std::string HandleRequestThrow(
       const userver::server::http::HttpRequest& request,
       userver::server::request::RequestContext& ctx) const override {
+    //CORS
+    request.GetHttpResponse()
+        .SetHeader(static_cast<std::string>("Access-Control-Allow-Origin"), "*");
+    request.GetHttpResponse()
+        .SetHeader(static_cast<std::string>("Access-Control-Allow-Headers"), "*");
+    
     const auto& user_id = ctx.GetData<std::string>("user_id");
     auto employee_id = request.GetArg("employee_id");
 
@@ -93,10 +127,15 @@ class InfoEmployeeHandler final
 
     auto result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kSlave,
-        "SELECT id, name, surname, patronymic, photo_link, phone, email, "
-        "birthday, password, head_id "
-        "FROM working_day.employees "
-        "WHERE id = $1",
+        "SELECT employees.id, employees.name, employees.surname, employees.patronymic, "
+        "employees.photo_link, employees.phones, employees.email, "
+        "employees.birthday, employees.password, employees.head_id, "
+        "employees.telegram_id, employees.vk_id, employees.team, "
+        "ROW (heads.name, heads.surname) "
+        "FROM working_day.employees as employees "
+        "LEFT JOIN working_day.employees as heads "
+        "ON employees.head_id = heads.id "
+        "WHERE employees.id = $1",
         employee_id);
 
     if (result.IsEmpty()) {
