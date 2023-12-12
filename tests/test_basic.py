@@ -52,7 +52,8 @@ async def test_db_initial_data(service_client):
     )
 
     assert response.status == 200
-    assert response.text == '{"id":"first_id","name":"First","surname":"A"}'
+    assert response.text == ('{"id":"first_id","name":"First",'
+                             '"phones":[],"surname":"A"}')
 
 
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])
@@ -72,7 +73,8 @@ async def test_employees(service_client):
     )
 
     assert response.status == 200
-    assert response.text == '{"employees":[{"id":"second_id","name":"Second","surname":"B"}]}'
+    assert response.text == ('{"employees":[{"id":"second_id"'
+                             ',"name":"Second","surname":"B"}]}')
 
 
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])
@@ -110,6 +112,7 @@ async def test_add(service_client):
 
     assert response.status == 200
     new_id = json.loads(response.text)['login']
+    new_password = json.loads(response.text)['password']
 
     response = await service_client.get(
         '/v1/employee/info',
@@ -118,7 +121,9 @@ async def test_add(service_client):
     )
 
     assert response.status == 200
-    assert response.text == '{"id":new_id,"name":"Third","surname":"C"}'
+    assert response.text == ('{"id":"' + new_id + '","name":"Third",'
+                             '"password":"' + new_password + '",'
+                             '"phones":[],"surname":"C"}')
 
 
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])
@@ -146,7 +151,7 @@ async def test_edit(service_client):
     response = await service_client.post(
         '/v1/profile/edit',
         headers={'Authorization': 'Bearer second_token'},
-        json={'phone': '+7999999999'},
+        json={'phones': ['+7999999999']},
     )
 
     assert response.status == 200
@@ -160,9 +165,9 @@ async def test_edit(service_client):
     assert response.status == 200
 
     response_body = response.text
-    phone = json.loads(response_body)['phone']
+    phones = json.loads(response_body)['phones']
 
-    assert phone == '+7999999999'
+    assert phones == ['+7999999999']
 
     response = await service_client.post(
         '/v1/profile/edit',
@@ -227,7 +232,7 @@ async def test_authorize(service_client):
         headers={'Authorization': 'first_token'},
     )
 
-    assert response.status == 403
+    assert response.status == 401
 
     # No authorization header
     response = await service_client.get(

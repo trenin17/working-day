@@ -32,23 +32,3 @@ def pgsql_local(service_source_dir, pgsql_local_create):
         [service_source_dir.joinpath('postgresql/schemas')],
     )
     return pgsql_local_create(list(databases.values()))
-
-
-@pytest.fixture(scope='session')
-def service_env() -> dict:
-    SECDIST_CONFIG = {
-        "postgresql_settings": {
-            "databases": {
-                "pg_working_day": [
-                    {
-                        "shard_number": 0,
-                        "hosts": [
-                            "host=rc1b-dk3v16aam2cveh01.mdb.yandexcloud.net port=6432 user=trenin17 password=trenin17 dbname=working_day_db_1"
-                        ]
-                    }
-                ]
-            }
-        }
-    }
-
-    return {'SECDIST_CONFIG': json.dumps(SECDIST_CONFIG)}

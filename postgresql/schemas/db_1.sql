@@ -65,6 +65,9 @@ CREATE INDEX idx_actions_by_user_id_end_date ON working_day.actions(user_id ASC,
 ALTER TABLE working_day.employees
 ADD COLUMN IF NOT EXISTS company_id TEXT NOT NULL DEFAULT '1';
 
+ALTER TABLE working_day.auth_tokens
+ADD COLUMN IF NOT EXISTS company_id TEXT NOT NULL DEFAULT '1';
+
 CREATE TABLE IF NOT EXISTS working_day.companies (
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL,
@@ -85,3 +88,10 @@ CREATE TABLE IF NOT EXISTS working_day.payments (
 );
 
 CREATE INDEX idx_payments_by_user_id ON working_day.payments(user_id);
+
+ALTER TABLE working_day.employees
+DROP COLUMN IF EXISTS phone,
+ADD COLUMN IF NOT EXISTS phones TEXT[] NOT NULL DEFAULT ARRAY []::TEXT[],
+ADD COLUMN IF NOT EXISTS telegram_id TEXT,
+ADD COLUMN IF NOT EXISTS vk_id TEXT,
+ADD COLUMN IF NOT EXISTS team TEXT;

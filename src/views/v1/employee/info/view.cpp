@@ -131,7 +131,7 @@ class InfoEmployeeHandler final
         "employees.photo_link, employees.phones, employees.email, "
         "employees.birthday, employees.password, employees.head_id, "
         "employees.telegram_id, employees.vk_id, employees.team, "
-        "ROW (heads.name, heads.surname) "
+        "case when employees.head_id is null then null else ROW (heads.name, heads.surname) end "
         "FROM working_day.employees as employees "
         "LEFT JOIN working_day.employees as heads "
         "ON employees.head_id = heads.id "
