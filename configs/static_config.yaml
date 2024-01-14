@@ -128,6 +128,16 @@ components_manager:
                 scopes:
                   - user
 
+        handler-v1-add-company:
+            path: /v1/add_company       
+            method: POST
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - admin
+
         handler-v1-profile-upload-photo:
             path: /v1/profile/upload-photo         
             method: POST

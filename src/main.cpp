@@ -33,6 +33,7 @@
 #include "views/v1/abscence/reschedule/view.hpp"
 #include "views/v1/payments/add_bulk/view.hpp"
 #include "views/v1/payments/view.hpp"
+#include "views/v1/add_company/view.hpp"
 
 int main(int argc, char* argv[]) {
   Aws::SDKOptions options;
@@ -59,6 +60,7 @@ int main(int argc, char* argv[]) {
   views::v1::employee::info::AppendInfoEmployee(component_list);
   views::v1::employee::remove::AppendRemoveEmployee(component_list);
   views::v1::employees::AppendEmployees(component_list);
+  views::v1::add_company::AppendAddCompany(component_list);
   views::v1::profile::edit::AppendProfileEdit(component_list);
   views::v1::profile::upload_photo::AppendProfileUploadPhoto(component_list);
   views::v1::authorize::AppendAuthorize(component_list);

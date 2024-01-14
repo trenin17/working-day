@@ -37,6 +37,37 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/ErrorMessage'
+
+    /v1/add_company:
+        post:
+            description: Add new company
+            parameters:
+              - in: header
+                name: Authorization
+                description: Token of session user
+                schema:
+                    type: string
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CompanyAddRequest'
+            responses:
+                '200':
+                    description: Company added
+                '401':
+                    description: Unauthorized
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+                '403':
+                    description: Wrong authorization token
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
                     
     /v1/employee/add:
         post:
@@ -609,6 +640,18 @@ paths:
 
 components:
     schemas:
+        CompanyAddRequest:
+            type: object
+            additionalProperties: false
+            required:
+              - company_name
+              - ceo_name
+            properties:
+                company_name:
+                    type: string
+                ceo_name:
+                    type: string
+
         ErrorMessage:
             type: object
             additionalProperties: false
