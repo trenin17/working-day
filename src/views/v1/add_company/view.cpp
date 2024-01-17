@@ -12,6 +12,8 @@
 #include <userver/utils/boost_uuid4.hpp>
 #include <userver/utils/uuid4.hpp>
 #include <userver/engine/task/task.hpp>
+#include "userver/utils/async.hpp"
+#include <userver/engine/task/task_with_result.hpp>
 
 
 using json = nlohmann::json;
@@ -56,21 +58,6 @@ class ErrorMessage {
 
   std::string message;
 };
-/*
-void AsyncFunc(userver::storages::postgres::ClusterPtr pg_cluster, std::string id, std::string company_name, std::string ceo_name) {
-  
-  LOG_INFO() << "Before";
-
-  auto result = pg_cluster->Execute(
-        userver::storages::postgres::ClusterHostType::kMaster,
-        "INSERT INTO working_day.companies(id, name, ceo_id) ",
-        "VALUES ($1, $2, $3) "
-        "ON CONFLICT (id) "
-        "DO NOTHING;",
-        id, company_name, ceo_name);
-
-  LOG_INFO() << "After";
-}*/
 
 class AddCompanyHandler final
     : public userver::server::handlers::HttpHandlerBase {
@@ -92,41 +79,39 @@ class AddCompanyHandler final
 
     AddCompanyRequest request_body(request.RequestBody());
 
-    auto id = userver::utils::generators::GenerateUuid();
-
     if (request_body.company_name.empty() || request_body.ceo_name.empty()) {
       request.GetHttpResponse().SetStatus(
           userver::server::http::HttpStatus::kUnauthorized);
       return ErrorMessage{"Names are empty"}.ToJSON();
     }
 
+    auto tasks = tasks_.Lock();
+    tasks->push_back(
+      userver::utils::AsyncBackground("AsyncBackgroundTest", userver::engine::current_task::GetTaskProcessor(), &AddFunc, pg_cluster_, request_body));
 
-    LOG_INFO() << "Before";
+    return "";
+  }
 
-    auto result = pg_cluster_->Execute(
-        userver::storages::postgres::ClusterHostType::kMaster,
-        "SELECT id, name, ceo_id FROM working_day.companies WHERE name = $1",
-        request_body.company_name);
+ private:
+  static AddCompanyResponse AddFunc(userver::storages::postgres::ClusterPtr cluster, AddCompanyRequest request_body) {
+      auto id = userver::utils::generators::GenerateUuid();
+      
+      auto result = cluster->Execute(
+            userver::storages::postgres::ClusterHostType::kMaster,
+            "INSERT INTO working_day.companies(id, name, ceo_id) "
+            "VALUES ($1, $2, $3) "
+            "ON CONFLICT (id) "
+            "DO NOTHING;",
+            id, request_body.company_name, request_body.ceo_name);
 
-    LOG_INFO() << result.AsSingleRow<std::string>();
+      AddCompanyResponse response(id);
 
-    LOG_INFO() << "After";
-
-
-    /*std::string SQLResponse = result.AsSingleRow<std::string>();
-    if (SQLResponse.empty()) {
-      std::cout << "empty" << std::endl;
-    }
-    std::cout << SQLResponse << std::endl;*/
-
-    AddCompanyResponse response(id);
-
-    return response.ToJSON();
-
+      return response;
   }
 
  private:
   userver::storages::postgres::ClusterPtr pg_cluster_;
+  mutable userver::concurrent::Variable<std::vector<userver::engine::TaskWithResult<AddCompanyResponse>>> tasks_;
 };
 
 }  // namespace
