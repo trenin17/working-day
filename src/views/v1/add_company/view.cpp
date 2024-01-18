@@ -87,16 +87,17 @@ class AddCompanyHandler final
 
     auto tasks = tasks_.Lock();
     tasks->push_back(
-      userver::utils::AsyncBackground("AsyncBackgroundTest", userver::engine::current_task::GetTaskProcessor(), &AddFunc, pg_cluster_, request_body));
+      userver::utils::AsyncBackground("AsyncBackgroundTest", userver::engine::current_task::GetTaskProcessor(),
+          [this, r = std::move(request_body)]() -> AddCompanyResponse {return this->AddFunc(r);}));
 
     return "";
   }
 
  private:
-  static AddCompanyResponse AddFunc(userver::storages::postgres::ClusterPtr cluster, AddCompanyRequest request_body) {
+  AddCompanyResponse AddFunc(AddCompanyRequest request_body) const {
       auto id = userver::utils::generators::GenerateUuid();
       
-      auto result = cluster->Execute(
+      auto result = pg_cluster_->Execute(
             userver::storages::postgres::ClusterHostType::kMaster,
             "INSERT INTO working_day.companies(id, name, ceo_id) "
             "VALUES ($1, $2, $3) "
