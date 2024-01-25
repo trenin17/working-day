@@ -1,6 +1,7 @@
 #include "view.hpp"
 
 #include <nlohmann/json.hpp>
+#include </home/ansar/wd4/diploma/src/views/v1/reverse_index/view.hpp>
 
 #include <userver/clients/dns/component.hpp>
 #include <userver/logging/log.hpp>
@@ -87,6 +88,11 @@ class AddEmployeeHandler final
         "DO NOTHING",
         id, request_body.name, request_body.surname, request_body.patronymic,
         password, request_body.role, company_id);
+
+    std::vector<std::string> fields{request_body.name, request_body.surname, request_body.patronymic.value_or(""), request_body.role, company_id};
+    views::v1::reverse_index::ReverseIndexRequest r_index_request(pg_cluster_, id, fields);
+    views::v1::reverse_index::ReverseIndex& rInd = views::v1::reverse_index::ReverseIndex::getInstance();
+    std::string res = rInd.AddReverseIndex(r_index_request);
 
     AddEmployeeResponse response(id, password);
     return response.ToJSON();
