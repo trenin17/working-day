@@ -1,7 +1,7 @@
 #include "view.hpp"
+#include "../../reverse_index/view.hpp"
 
 #include <nlohmann/json.hpp>
-#include </home/ansar/wd4/diploma/src/views/v1/reverse_index/view.hpp>
 
 #include <userver/clients/dns/component.hpp>
 #include <userver/logging/log.hpp>
