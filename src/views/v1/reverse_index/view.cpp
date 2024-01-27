@@ -14,52 +14,78 @@
 #include <userver/utils/uuid4.hpp>
 #include "userver/utils/async.hpp"
 
+#include <queue>
+
 using json = nlohmann::json;
 
 namespace views::v1::reverse_index {
 
 std::string ReverseIndexResponse::ToJSON() const {
   nlohmann::json j;
-  j["id"] = id;
+  j["id"] = employee_id;
   return j.dump();
 }
 
-std::string ReverseIndex::AddReverseIndex(
-    const ReverseIndexRequest& request) {
-  if (!request.cluster || request.fields.empty() || request.id.empty()) {
-    return "Invalid arguments";
+class ReverseIndex {
+ public:
+  void AddReverseIndex(const ReverseIndexRequest& request) {
+    if (!request.cluster || request.fields.empty() ||
+        request.employee_id.empty()) {
+      LOG_WARNING() << "Invalid arguments for indexation";
+      return;
+    }
+
+    auto tasks = tasks_.Lock();
+
+    while (!tasks->empty() && tasks->front().IsFinished()) {
+      tasks->pop();
+    }
+
+    tasks->push(userver::utils::AsyncBackground(
+        "ReverseIndexAdd", userver::engine::current_task::GetTaskProcessor(),
+        [this, r = std::move(request)]() -> ReverseIndexResponse {
+          return this->ReverseIndexFunc(r);
+        }));
   }
 
-  auto tasks = tasks_.Lock();
-  tasks->push_back(userver::utils::AsyncBackground(
-      "ReverseIndexAdd", userver::engine::current_task::GetTaskProcessor(),
-      [this, r = std::move(request)]() -> ReverseIndexResponse {
-        return this->ReverseIndexFunc(r);
-      }));
-
-  return "";
-}
-
-ReverseIndex& ReverseIndex::getInstance() {
-  static ReverseIndex instance;
-  return instance;
-}
-
-ReverseIndexResponse ReverseIndex::ReverseIndexFunc(
-    ReverseIndexRequest request) const {
-  for (std::string& field : request.fields) {
-    auto result = request.cluster->Execute(
-        userver::storages::postgres::ClusterHostType::kMaster,
-        "INSERT INTO working_day.reverse_index(key, ids)"
-        "VALUES ($1, ARRAY[$2])"
-        "ON CONFLICT (key) DO UPDATE SET ids = array_append(reverse_index.ids, "
-        "$2);",
-        field, request.id);
+  static ReverseIndex& GetInstance() {
+    static ReverseIndex instance;
+    return instance;
   }
 
-  ReverseIndexResponse response(request.id);
+ private:
+  ReverseIndex() = default;
+  ~ReverseIndex() = default;
 
-  return response;
+  ReverseIndex(const ReverseIndex&) = delete;
+  ReverseIndex& operator=(const ReverseIndex&) = delete;
+
+  ReverseIndexResponse ReverseIndexFunc(
+      const ReverseIndexRequest& request) const {
+    for (auto& field : request.fields) {
+      if (!field.has_value()) continue;
+      auto result = request.cluster->Execute(
+          userver::storages::postgres::ClusterHostType::kMaster,
+          "INSERT INTO working_day.reverse_index(key, ids)"
+          "VALUES ($1, ARRAY[$2])"
+          "ON CONFLICT (key) DO UPDATE SET ids = "
+          "array_append(reverse_index.ids, "
+          "$2);",
+          field.value(), request.employee_id);
+    }
+
+    ReverseIndexResponse response(request.employee_id);
+
+    return response;
+  }
+
+  userver::concurrent::Variable<
+      std::queue<userver::engine::TaskWithResult<ReverseIndexResponse>>>
+      tasks_;
+};
+
+void AddReverseIndex(const ReverseIndexRequest& request) {
+  return ReverseIndex::GetInstance().AddReverseIndex(request);
 }
 
-}
+}  // namespace views::v1::reverse_index

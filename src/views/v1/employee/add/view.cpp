@@ -1,18 +1,17 @@
 #include "view.hpp"
-#include "../../reverse_index/view.hpp"
+#include "views/v1/reverse_index/view.hpp"
 
 #include <nlohmann/json.hpp>
 
 #include <userver/clients/dns/component.hpp>
+#include <userver/components/component_config.hpp>
+#include <userver/components/component_context.hpp>
 #include <userver/logging/log.hpp>
 #include <userver/server/handlers/http_handler_base.hpp>
 #include <userver/storages/postgres/cluster.hpp>
 #include <userver/storages/postgres/component.hpp>
 #include <userver/utils/boost_uuid4.hpp>
 #include <userver/utils/uuid4.hpp>
-#include <userver/components/component_config.hpp>
-#include <userver/components/component_context.hpp>
-
 
 using json = nlohmann::json;
 
@@ -68,12 +67,12 @@ class AddEmployeeHandler final
   std::string HandleRequestThrow(
       const userver::server::http::HttpRequest& request,
       userver::server::request::RequestContext& ctx) const override {
-    //CORS
-    request.GetHttpResponse()
-        .SetHeader(static_cast<std::string>("Access-Control-Allow-Origin"), "*");
-    request.GetHttpResponse()
-        .SetHeader(static_cast<std::string>("Access-Control-Allow-Headers"), "*");
-    
+    // CORS
+    request.GetHttpResponse().SetHeader(
+        static_cast<std::string>("Access-Control-Allow-Origin"), "*");
+    request.GetHttpResponse().SetHeader(
+        static_cast<std::string>("Access-Control-Allow-Headers"), "*");
+
     AddEmployeeRequest request_body(request.RequestBody());
     auto company_id = ctx.GetData<std::string>("company_id");
 
@@ -89,10 +88,13 @@ class AddEmployeeHandler final
         id, request_body.name, request_body.surname, request_body.patronymic,
         password, request_body.role, company_id);
 
-    std::vector<std::string> fields{request_body.name, request_body.surname, request_body.patronymic.value_or(""), request_body.role, company_id};
-    views::v1::reverse_index::ReverseIndexRequest r_index_request(pg_cluster_, id, fields);
-    views::v1::reverse_index::ReverseIndex& rInd = views::v1::reverse_index::ReverseIndex::getInstance();
-    std::string res = rInd.AddReverseIndex(r_index_request);
+    views::v1::reverse_index::ReverseIndexRequest r_index_request{
+        pg_cluster_, id,
+        std::vector<std::optional<std::string>>{
+            request_body.name, request_body.surname, request_body.patronymic,
+            request_body.role, company_id}};
+
+    views::v1::reverse_index::AddReverseIndex(r_index_request);
 
     AddEmployeeResponse response(id, password);
     return response.ToJSON();
