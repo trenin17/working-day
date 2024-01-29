@@ -63,8 +63,9 @@ add_library(${PROJECT_NAME}_objs OBJECT
 	src/views/v1/payments/add_bulk/view.cpp
 	src/views/v1/payments/view.hpp
 	src/views/v1/payments/view.cpp
-	src/views/v1/reverse_index/view.hpp
-	src/views/v1/reverse_index/view.cpp
+	src/core/reverse_index/view.hpp
+	src/core/reverse_index/view.cpp
+	
 )
 target_link_libraries(${PROJECT_NAME}_objs PUBLIC userver-core userver-postgresql)
 target_link_libraries(${PROJECT_NAME}_objs PRIVATE nlohmann_json::nlohmann_json)

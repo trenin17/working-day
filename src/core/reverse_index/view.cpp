@@ -20,11 +20,19 @@ using json = nlohmann::json;
 
 namespace views::v1::reverse_index {
 
-std::string ReverseIndexResponse::ToJSON() const {
-  nlohmann::json j;
-  j["id"] = employee_id;
-  return j.dump();
-}
+class ReverseIndexResponse {
+ public:
+  ReverseIndexResponse(const std::string& employee_id)
+      : employee_id(employee_id) {}
+
+  std::string ToJSON() const {
+    nlohmann::json j;
+    j["employee_id"] = employee_id;
+    return j.dump();
+  }
+
+  std::string employee_id;
+};
 
 class ReverseIndex {
  public:

@@ -10,16 +10,6 @@
 
 namespace views::v1::reverse_index {
 
-class ReverseIndexResponse {
- public:
-  ReverseIndexResponse(const std::string& employee_id)
-      : employee_id(employee_id) {}
-
-  std::string ToJSON() const;
-
-  std::string employee_id;
-};
-
 class ReverseIndexRequest {
  public:
   ReverseIndexRequest(userver::storages::postgres::ClusterPtr cluster,

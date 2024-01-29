@@ -1,5 +1,5 @@
 #include "view.hpp"
-#include "views/v1/reverse_index/view.hpp"
+#include "core/reverse_index/view.hpp"
 
 #include <nlohmann/json.hpp>
 
