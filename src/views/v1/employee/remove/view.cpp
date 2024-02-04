@@ -1,4 +1,5 @@
 #include "view.hpp"
+#include "core/reverse_index/view.hpp"
 
 #include <nlohmann/json.hpp>
 
@@ -58,6 +59,13 @@ class RemoveEmployeeHandler final
           userver::server::http::HttpStatus::kUnauthorized);
       return ErrorMessage{"Unauthorized"}.ToJSON();
     }
+
+    std::vector<std::optional<std::string>> old_values =
+        views::v1::reverse_index::GetAllFields(pg_cluster_, employee_id);
+    views::v1::reverse_index::ReverseIndexRequest r_index_request{
+        pg_cluster_, employee_id, std::move(old_values)};
+
+    views::v1::reverse_index::DeleteReverseIndex(r_index_request);
 
     auto result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kMaster,
