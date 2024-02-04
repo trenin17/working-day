@@ -93,7 +93,7 @@ class ProfileEditHandler final
     std::vector<std::optional<std::string>> old_values = views::v1::reverse_index::GetEditFields(pg_cluster_, user_id, request_body.field_types);
     std::vector<std::optional<std::string>> new_values{
             request_body.email, request_body.birthday,
-            request_body.password, request_body.telegram_id, request_body.vk_id, request_body.team};
+            request_body.telegram_id, request_body.vk_id, request_body.team};
     if (request_body.phones.has_value()) {
       new_values.insert(new_values.end(), request_body.phones.value().begin(), request_body.phones.value().end());
     }
