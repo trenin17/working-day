@@ -4,7 +4,6 @@
 #include <aws/core/auth/AWSCredentialsProvider.h>
 #include <aws/http/http.h>
 #include <aws/s3/S3Client.h>
-#include <nlohmann/json.hpp>
 
 #include <userver/clients/dns/component.hpp>
 #include <userver/logging/log.hpp>
@@ -16,43 +15,20 @@
 #include <userver/components/component_config.hpp>
 #include <userver/components/component_context.hpp>
 
-using json = nlohmann::json;
+#include "core/json_compatible/struct.hpp"
 
 namespace views::v1::profile::edit {
 
 namespace {
 
-class ProfileEditRequest {
- public:
-  ProfileEditRequest(const std::string& body) {
-    auto j = json::parse(body);
-
-    if (j.contains("phones")) {
-      phones = j["phones"];
-    }
-    if (j.contains("email")) {
-      email = j["email"];
-    }
-    if (j.contains("birthday")) {
-      birthday = j["birthday"];
-    }
-    if (j.contains("password")) {
-      password = j["password"];
-    }
-    if (j.contains("telegram_id")) {
-      telegram_id = j["telegram_id"];
-    }
-    if (j.contains("vk_id")) {
-      vk_id = j["vk_id"];
-    }
-    if (j.contains("team")) {
-      team = j["team"];
-    }
-  }
-
-  std::optional<std::vector<std::string> > phones;
-  std::optional<std::string> email, birthday, password,
-      telegram_id, vk_id, team;
+struct ProfileEditRequest: public JsonCompatible {
+  REGISTER_STRUCT_FIELD_OPTIONAL(phones, std::vector<std::string>, "phones");
+  REGISTER_STRUCT_FIELD_OPTIONAL(email, std::string, "email");
+  REGISTER_STRUCT_FIELD_OPTIONAL(birthday, std::string, "birthday");
+  REGISTER_STRUCT_FIELD_OPTIONAL(password, std::string, "password");
+  REGISTER_STRUCT_FIELD_OPTIONAL(telegram_id, std::string, "telegram_id");
+  REGISTER_STRUCT_FIELD_OPTIONAL(vk_id, std::string, "vk_id");
+  REGISTER_STRUCT_FIELD_OPTIONAL(team, std::string, "team");
 };
 
 class ProfileEditHandler final
@@ -80,7 +56,8 @@ class ProfileEditHandler final
     
     const auto& user_id = ctx.GetData<std::string>("user_id");
 
-    ProfileEditRequest request_body(request.RequestBody());
+    ProfileEditRequest request_body;
+    request_body.ParseRegisteredFields(request.RequestBody());
 
     auto result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kMaster,

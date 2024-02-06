@@ -50,6 +50,7 @@ components_manager:
                 POSTGRES_DEFAULT_COMMAND_CONTROL:
                     network_timeout_ms: 750
                     statement_timeout_ms: 500
+
         testsuite-support: {}
 
         http-client:

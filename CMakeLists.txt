@@ -66,6 +66,8 @@ add_library(${PROJECT_NAME}_objs OBJECT
 	src/views/v1/payments/add_bulk/view.cpp
 	src/views/v1/payments/view.hpp
 	src/views/v1/payments/view.cpp
+	src/core/json_compatible/struct.hpp
+	src/core/json_compatible/struct.cpp
 )
 target_link_libraries(${PROJECT_NAME}_objs PUBLIC userver-postgresql)
 target_link_libraries(${PROJECT_NAME}_objs PRIVATE nlohmann_json::nlohmann_json)
@@ -95,9 +97,7 @@ target_link_libraries(${PROJECT_NAME}_benchmark PRIVATE ${PROJECT_NAME}_objs use
 add_google_benchmark_tests(${PROJECT_NAME}_benchmark)
 
 # Functional Tests
-include(UserverTestsuite)
-
-userver_testsuite_add_simple()
+add_subdirectory(tests)
 
 include(GNUInstallDirs)
 

@@ -11,33 +11,27 @@
 #include <userver/components/component_config.hpp>
 #include <userver/components/component_context.hpp>
 
+#include "core/json_compatible/struct.hpp"
+
 using json = nlohmann::json;
 
 namespace views::v1::authorize {
 
 namespace {
 
-class AuthorizeRequest {
- public:
-  AuthorizeRequest(const std::string& body) {
-    auto j = json::parse(body);
-    login = j["login"];
-    password = j["password"];
-  }
-
-  std::string login, password;
+struct AuthorizeRequest: public JsonCompatible {
+  REGISTER_STRUCT_FIELD(login, std::string, "login");
+  REGISTER_STRUCT_FIELD(password, std::string, "password");
 };
 
-class AuthorizeResponse {
- public:
-  std::string ToJSON() const {
-    json j;
-    j["token"] = token;
-    j["role"] = role;
-    return j.dump();
+struct AuthorizeResponse: public JsonCompatible {
+  AuthorizeResponse(const std::string& token_, const std::string& role_) {
+    token = token_;
+    role = role_;
   }
 
-  std::string token, role;
+  REGISTER_STRUCT_FIELD(token, std::string, "token");
+  REGISTER_STRUCT_FIELD(role, std::string, "role");
 };
 
 class UserInfo {
@@ -74,13 +68,8 @@ class AuthorizeHandler final
   std::string HandleRequestThrow(
       const userver::server::http::HttpRequest& request,
       userver::server::request::RequestContext&) const override {
-    //CORS
-    request.GetHttpResponse()
-        .SetHeader(static_cast<std::string>("Access-Control-Allow-Origin"), "*");
-    request.GetHttpResponse()
-        .SetHeader(static_cast<std::string>("Access-Control-Allow-Headers"), "*");
-    
-    AuthorizeRequest request_body(request.RequestBody());
+    AuthorizeRequest request_body;
+    request_body.ParseRegisteredFields(request.RequestBody());
 
     auto result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kSlave,
@@ -115,9 +104,9 @@ class AuthorizeHandler final
         token, user_info.id,
         scopes);
 
-    AuthorizeResponse response{token, user_info.role};
+    AuthorizeResponse response(token, user_info.role);
 
-    return response.ToJSON();
+    return response.ToJsonString();
   }
 
  private:

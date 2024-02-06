@@ -1,7 +1,5 @@
 #include "view.hpp"
 
-#include <nlohmann/json.hpp>
-
 #include <userver/clients/dns/component.hpp>
 #include <userver/logging/log.hpp>
 #include <userver/server/handlers/http_handler_base.hpp>
@@ -10,22 +8,18 @@
 #include <userver/components/component_config.hpp>
 #include <userver/components/component_context.hpp>
 
-using json = nlohmann::json;
+#include "core/json_compatible/struct.hpp"
 
 namespace views::v1::employee::remove {
 
 namespace {
 
-class ErrorMessage {
- public:
-  std::string ToJSON() const {
-    json j;
-    j["message"] = message;
-
-    return j.dump();
+struct ErrorMessage: public JsonCompatible {
+  ErrorMessage(const std::string& msg) {
+    message = msg;
   }
 
-  std::string message;
+  REGISTER_STRUCT_FIELD(message, std::string, "message");
 };
 
 class RemoveEmployeeHandler final
@@ -56,7 +50,8 @@ class RemoveEmployeeHandler final
     if (employee_id.empty()) {
       request.GetHttpResponse().SetStatus(
           userver::server::http::HttpStatus::kUnauthorized);
-      return ErrorMessage{"Unauthorized"}.ToJSON();
+      ErrorMessage err_msg("Unauthorized");
+      return err_msg.ToJsonString();
     }
 
     auto result = pg_cluster_->Execute(
