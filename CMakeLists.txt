@@ -68,6 +68,8 @@ add_library(${PROJECT_NAME}_objs OBJECT
 	src/views/v1/payments/view.cpp
 	src/core/json_compatible/struct.hpp
 	src/core/json_compatible/struct.cpp
+	src/utils/custom_implicit_options.hpp
+	src/utils/custom_implicit_options.cpp
 )
 target_link_libraries(${PROJECT_NAME}_objs PUBLIC userver-postgresql)
 target_link_libraries(${PROJECT_NAME}_objs PRIVATE nlohmann_json::nlohmann_json)

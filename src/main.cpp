@@ -33,6 +33,7 @@
 #include "views/v1/abscence/reschedule/view.hpp"
 #include "views/v1/payments/add_bulk/view.hpp"
 #include "views/v1/payments/view.hpp"
+#include "utils/custom_implicit_options.hpp"
 
 int main(int argc, char* argv[]) {
   Aws::SDKOptions options;
@@ -52,7 +53,8 @@ int main(int argc, char* argv[]) {
           .Append<userver::components::DefaultSecdistProvider>()
           .Append<userver::components::Postgres>("key-value")
           .Append<userver::clients::dns::Component>()
-          .Append<auth::AuthCache>();
+          .Append<auth::AuthCache>()
+          .Append<utils::custom_implicit_options::CustomImplicitOptions>();
 
   views::v1::employee::add::AppendAddEmployee(component_list);
   views::v1::employee::add_head::AppendAddHeadEmployee(component_list);

@@ -253,6 +253,12 @@ components_manager:
                   - bearer
                 scopes:
                   - user
+        
+        handler-implicit-http-options:
+            as_fallback: implicit-http-options
+            method: OPTIONS
+            task_processor: main-task-processor
+            throttling_enabled: false
 
         key-value:
             dbconnection: $dbconnection
