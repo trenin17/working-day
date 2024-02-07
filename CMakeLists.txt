@@ -1,7 +1,9 @@
 cmake_minimum_required(VERSION 3.12)
 project(working_day CXX)
 
-include(third_party/userver/cmake/SetupEnvironment.cmake)
+# Enable userver libraries that are needed in this project
+set(USERVER_FEATURE_POSTGRESQL ON CACHE BOOL "" FORCE)
+
 include(GNUInstallDirs)
 include(FetchContent)
 
@@ -9,6 +11,7 @@ FetchContent_Declare(json URL https://github.com/nlohmann/json/releases/download
 FetchContent_MakeAvailable(json)
 
 add_subdirectory(third_party/userver)
+userver_setup_environment()
 
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS, 1)
@@ -63,11 +66,15 @@ add_library(${PROJECT_NAME}_objs OBJECT
 	src/views/v1/payments/add_bulk/view.cpp
 	src/views/v1/payments/view.hpp
 	src/views/v1/payments/view.cpp
+	src/core/json_compatible/struct.hpp
+	src/core/json_compatible/struct.cpp
+	src/utils/custom_implicit_options.hpp
+	src/utils/custom_implicit_options.cpp
 	src/core/reverse_index/view.hpp
 	src/core/reverse_index/view.cpp
 	
 )
-target_link_libraries(${PROJECT_NAME}_objs PUBLIC userver-core userver-postgresql)
+target_link_libraries(${PROJECT_NAME}_objs PUBLIC userver-postgresql)
 target_link_libraries(${PROJECT_NAME}_objs PRIVATE nlohmann_json::nlohmann_json)
 target_link_libraries(${PROJECT_NAME}_objs PRIVATE ${AWSSDK_LINK_LIBRARIES}
 ${AWSSDK_PLATFORM_DEPS})
@@ -96,6 +103,8 @@ add_google_benchmark_tests(${PROJECT_NAME}_benchmark)
 
 # Functional Tests
 add_subdirectory(tests)
+
+include(GNUInstallDirs)
 
 if(DEFINED ENV{PREFIX})
 	message(STATUS "Set install prefix: $ENV{PREFIX}")

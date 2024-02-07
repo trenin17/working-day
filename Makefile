@@ -38,7 +38,7 @@ test-debug test-release: test-%: build-%
 	@cmake --build build_$* -j $(NPROCS) --target working_day_unittest
 	@cmake --build build_$* -j $(NPROCS) --target working_day_benchmark
 	@cd build_$* && ((test -t 1 && GTEST_COLOR=1 PYTEST_ADDOPTS="--color=yes" ctest -V) || ctest -V)
-	@pep8 tests
+	@pycodestyle tests
 
 # Start the service (via testsuite service runner)
 .PHONY: service-start-debug service-start-release

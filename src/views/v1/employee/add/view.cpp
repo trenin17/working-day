@@ -1,8 +1,6 @@
 #include "view.hpp"
 #include "core/reverse_index/view.hpp"
 
-#include <nlohmann/json.hpp>
-
 #include <userver/clients/dns/component.hpp>
 #include <userver/logging/log.hpp>
 #include <userver/server/handlers/http_handler_base.hpp>
@@ -12,42 +10,28 @@
 #include <userver/utils/uuid4.hpp>
 #include <userver/components/component_config.hpp>
 #include <userver/components/component_context.hpp>
+#include "core/json_compatible/struct.hpp"
 
-using json = nlohmann::json;
 
 namespace views::v1::employee::add {
 
 namespace {
 
-class AddEmployeeRequest {
- public:
-  AddEmployeeRequest(const std::string& body) {
-    auto j = json::parse(body);
-    name = j["name"];
-    surname = j["surname"];
-    if (j.contains("patronymic")) {
-      patronymic = j["patronymic"];
-    }
-    role = j["role"];
-  }
-
-  std::string name, surname, role;
-  std::optional<std::string> patronymic;
+struct AddEmployeeRequest: public JsonCompatible {
+  REGISTER_STRUCT_FIELD(name, std::string, "name");
+  REGISTER_STRUCT_FIELD(surname, std::string, "surname");
+  REGISTER_STRUCT_FIELD(role, std::string, "role");
+  REGISTER_STRUCT_FIELD_OPTIONAL(patronymic, std::string, "patronymic");
 };
 
-class AddEmployeeResponse {
- public:
-  AddEmployeeResponse(const std::string& l, const std::string& p)
-      : login(l), password(p) {}
-
-  std::string ToJSON() const {
-    nlohmann::json j;
-    j["login"] = login;
-    j["password"] = password;
-    return j.dump();
+struct AddEmployeeResponse: public JsonCompatible {
+  AddEmployeeResponse(const std::string& l, const std::string& p) {
+    login = l;
+    password = p;
   }
 
-  std::string login, password;
+  REGISTER_STRUCT_FIELD(login, std::string, "login");
+  REGISTER_STRUCT_FIELD(password, std::string, "password");
 };
 
 class AddEmployeeHandler final
@@ -73,7 +57,8 @@ class AddEmployeeHandler final
     request.GetHttpResponse()
         .SetHeader(static_cast<std::string>("Access-Control-Allow-Headers"), "*");
 
-    AddEmployeeRequest request_body(request.RequestBody());
+    AddEmployeeRequest request_body;
+    request_body.ParseRegisteredFields(request.RequestBody());
     auto company_id = ctx.GetData<std::string>("company_id");
 
     auto id = userver::utils::generators::GenerateUuid();
@@ -97,7 +82,7 @@ class AddEmployeeHandler final
     views::v1::reverse_index::AddReverseIndex(r_index_request);
 
     AddEmployeeResponse response(id, password);
-    return response.ToJSON();
+    return response.ToJsonString();
   }
 
  private:

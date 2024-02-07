@@ -1,11 +1,14 @@
 include(UserverTestsuite)
 
-set(CONFIG_VARS_PATH "${CMAKE_SOURCE_DIR}/configs/config_vars_testing.yaml")
+set(CONFIG_VARS_PATH "${CMAKE_SOURCE_DIR}/configs/config_vars.testsuite.yaml")
+message("CONFIG_VARS_PATH ${CONFIG_VARS_PATH}")
 if (EXISTS "${CONFIG_VARS_PATH}")
     set(PYTEST_ARGS_CONFIG_VARS "--service-config-vars=${CONFIG_VARS_PATH}")
 else()
     set(PYTEST_ARGS_CONFIG_VARS "")
 endif()
+
+message("PYTEST_ARGS_CONFIG_VARS ${PYTEST_ARGS_CONFIG_VARS}")
 
 userver_testsuite_add(
   SERVICE_TARGET working_day
