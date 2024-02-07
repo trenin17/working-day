@@ -1,5 +1,4 @@
 #include "view.hpp"
-#include "core/reverse_index/view.hpp"
 
 #include <aws/core/Aws.h>
 #include <aws/core/auth/AWSCredentialsProvider.h>
@@ -17,6 +16,7 @@
 #include <userver/components/component_context.hpp>
 
 #include "core/json_compatible/struct.hpp"
+#include "core/reverse_index/view.hpp"
 
 namespace views::v1::profile::edit {
 
@@ -31,6 +31,29 @@ struct ProfileEditRequest: public JsonCompatible {
   REGISTER_STRUCT_FIELD_OPTIONAL(vk_id, std::string, "vk_id");
   REGISTER_STRUCT_FIELD_OPTIONAL(team, std::string, "team");
 };
+
+std::vector<std::string> GetEditTypes(ProfileEditRequest& request) {
+  std::vector<std::string> types;
+  if (request.phones.has_value()) {
+    types.push_back("phones");
+  }
+  if (request.email.has_value()) {
+    types.push_back("email");
+  }
+  if (request.birthday.has_value()) {
+    types.push_back("birthday");
+  }
+  if (request.telegram_id.has_value()) {
+    types.push_back("telegram_id");
+  }
+  if (request.vk_id.has_value()) {
+    types.push_back("vk_id");
+  }
+  if (request.team.has_value()) {
+    types.push_back("team");
+  }
+  return types;
+}
 
 class ProfileEditHandler final
     : public userver::server::handlers::HttpHandlerBase {
@@ -60,7 +83,8 @@ class ProfileEditHandler final
     ProfileEditRequest request_body;
     request_body.ParseRegisteredFields(request.RequestBody());
 
-    std::vector<std::optional<std::string>> old_values = views::v1::reverse_index::GetEditFields(pg_cluster_, user_id, request_body.field_types);
+    auto edit_types = GetEditTypes(request_body);
+    std::vector<std::optional<std::string>> old_values = views::v1::reverse_index::GetEditFields(pg_cluster_, user_id, edit_types);
     std::vector<std::optional<std::string>> new_values{
             request_body.email, request_body.birthday,
             request_body.telegram_id, request_body.vk_id, request_body.team};
