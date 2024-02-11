@@ -1,6 +1,7 @@
 from wsgiref import headers
 import pytest
 import json
+from string import Template
 
 from testsuite.databases import pgsql
 
@@ -250,7 +251,150 @@ async def test_authorize(service_client):
     )
 
     assert response.status == 403
-    
+
+
+@pytest.mark.pgsql('db_1', files=['initial_data.sql'])
+async def test_search_add(service_client):
+    response = await service_client.post(
+        '/v1/employee/add',
+        headers={'Authorization': 'Bearer first_token'},
+        json={'name': 'Fourth', 'surname': 'D', 'role': 'user'},
+    )
+
+    assert response.status == 200
+    new_id = json.loads(response.text)['login']
+    new_password = json.loads(response.text)['password']
+
+    response = await service_client.get(
+        '/v1/search/basic',
+        json={'search_key': 'Fourth'},
+        headers={'Authorization': 'Bearer first_token'},
+    )
+
+    assert response.status == 200
+    response_required = Template('{"employees":[{"id":"${id}",'
+                                 '"name":"Fourth","surname":"D"}]}')
+    assert response.text == (response_required.substitute(id=new_id))
+
+
+@pytest.mark.pgsql('db_1', files=['initial_data.sql'])
+async def test_search_remove(service_client):
+    response = await service_client.post(
+        '/v1/employee/add',
+        headers={'Authorization': 'Bearer first_token'},
+        json={'name': 'Fifth', 'surname': 'E', 'role': 'user'},
+    )
+
+    assert response.status == 200
+    new_id = json.loads(response.text)['login']
+    new_password = json.loads(response.text)['password']
+
+    response = await service_client.post(
+        '/v1/employee/remove',
+        params={'employee_id': new_id},
+        headers={'Authorization': 'Bearer first_token'},
+        json={'name': 'Fifth', 'surname': 'E', 'role': 'user'},
+    )
+
+    assert response.status == 200
+
+    response = await service_client.get(
+        '/v1/search/basic',
+        json={'search_key': 'Fifth'},
+        headers={'Authorization': 'Bearer first_token'},
+    )
+
+    assert response.status == 200
+    assert response.text == ('{"employees":[]}')
+
+    response = await service_client.get(
+        '/v1/search/basic',
+        json={'search_key': 'E'},
+        headers={'Authorization': 'Bearer first_token'},
+    )
+
+    assert response.status == 200
+    assert response.text == ('{"employees":[]}')
+
+
+@pytest.mark.pgsql('db_1', files=['initial_data.sql'])
+async def test_search_edit(service_client):
+    # Add phone
+    response = await service_client.post(
+        '/v1/profile/edit',
+        headers={'Authorization': 'Bearer second_token'},
+        json={'phones': ['+1111']},
+    )
+
+    assert response.status == 200
+
+    response = await service_client.get(
+        '/v1/search/basic',
+        json={'search_key': '+1111'},
+        headers={'Authorization': 'Bearer second_token'},
+    )
+
+    assert response.status == 200
+    assert response.text == ('{"employees":[{"id":"second_id"'
+                             ',"name":"Second","surname":"B"}]}')
+
+    # Add email
+    response = await service_client.post(
+        '/v1/profile/edit',
+        headers={'Authorization': 'Bearer second_token'},
+        json={'email': '2@mail.com'},
+    )
+
+    assert response.status == 200
+
+    response = await service_client.get(
+        '/v1/search/basic',
+        json={'search_key': '2@mail.com'},
+        headers={'Authorization': 'Bearer second_token'},
+    )
+
+    assert response.status == 200
+    assert response.text == ('{"employees":[{"id":"second_id"'
+                             ',"name":"Second","surname":"B"}]}')
+
+    # Edit phone
+    response = await service_client.post(
+        '/v1/profile/edit',
+        headers={'Authorization': 'Bearer second_token'},
+        json={'phones': ['+2222']},
+    )
+
+    assert response.status == 200
+
+    response = await service_client.get(
+        '/v1/search/basic',
+        json={'search_key': '+1111'},
+        headers={'Authorization': 'Bearer second_token'},
+    )
+
+    assert response.status == 200
+    assert response.text == ('{"employees":[]}')
+
+    response = await service_client.get(
+        '/v1/search/basic',
+        json={'search_key': '+2222'},
+        headers={'Authorization': 'Bearer second_token'},
+    )
+
+    assert response.status == 200
+    assert response.text == ('{"employees":[{"id":"second_id"'
+                             ',"name":"Second","surname":"B"}]}')
+
+    response = await service_client.get(
+        '/v1/search/basic',
+        json={'search_key': '2@mail.com'},
+        headers={'Authorization': 'Bearer second_token'},
+    )
+
+    assert response.status == 200
+    assert response.text == ('{"employees":[{"id":"second_id"'
+                             ',"name":"Second","surname":"B"}]}')
+
 
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])
 async def test_end(service_client):

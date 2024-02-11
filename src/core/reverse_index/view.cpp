@@ -172,7 +172,7 @@ class ReverseIndex {
   void ClearTasks() {
     auto tasks = tasks_.Lock();
 
-    while (!tasks->empty() && tasks->front().IsFinished()) {
+    while (!tasks->empty()) {
       tasks->pop();
     }
   }

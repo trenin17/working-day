@@ -9,4 +9,4 @@ namespace views::v1::clear_tasks {
 
 void AppendClearTasks(userver::components::ComponentList& component_list);
 
-} 
+}

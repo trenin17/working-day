@@ -48,4 +48,4 @@ void AppendClearTasks(userver::components::ComponentList& component_list) {
   component_list.Append<ClearTasksHandler>();
 }
 
-}  // namespace views::v1::add_company
+}  // namespace views::v1::clear_tasks
