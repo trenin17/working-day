@@ -607,6 +607,13 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/PaymentsResponse'
 
+    /v1/clear-tasks:
+        get:
+            description: Clear the tasks queue
+            responses:
+                '200':
+                    description: Tasks were cleared
+
 components:
     schemas:
         ErrorMessage:

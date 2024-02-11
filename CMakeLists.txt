@@ -72,7 +72,8 @@ add_library(${PROJECT_NAME}_objs OBJECT
 	src/utils/custom_implicit_options.cpp
 	src/core/reverse_index/view.hpp
 	src/core/reverse_index/view.cpp
-	
+	src/views/v1/clear-tasks/view.hpp
+	src/views/v1/clear-tasks/view.cpp
 )
 target_link_libraries(${PROJECT_NAME}_objs PUBLIC userver-postgresql)
 target_link_libraries(${PROJECT_NAME}_objs PRIVATE nlohmann_json::nlohmann_json)

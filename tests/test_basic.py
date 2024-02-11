@@ -250,3 +250,12 @@ async def test_authorize(service_client):
     )
 
     assert response.status == 403
+    
+
+@pytest.mark.pgsql('db_1', files=['initial_data.sql'])
+async def test_end(service_client):
+    response = await service_client.post(
+        '/v1/clear-tasks',
+    )
+
+    assert response.status == 200
