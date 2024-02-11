@@ -170,6 +170,14 @@ class ReverseIndex {
     AddReverseIndex(add_req);
   }
 
+  void ClearTasks() {
+    auto tasks = tasks_.Lock();
+
+    while (!tasks->empty() && tasks->front().IsFinished()) {
+      tasks->pop();
+    }
+  }
+ 
   static ReverseIndex& GetInstance() {
     static ReverseIndex instance;
     return instance;
@@ -235,6 +243,10 @@ void DeleteReverseIndex(const ReverseIndexRequest& request) {
 
 void EditReverseIndex(EditIndexRequest& request) {
   return ReverseIndex::GetInstance().EditReverseIndex(request);
+}
+
+void ClearTasks() {
+  return ReverseIndex::GetInstance().ClearTasks();
 }
 
 }  // namespace views::v1::reverse_index

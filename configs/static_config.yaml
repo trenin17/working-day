@@ -253,6 +253,11 @@ components_manager:
                   - bearer
                 scopes:
                   - user
+
+        handler-v1-clear-tasks:
+            path: /v1/clear-tasks
+            method: POST
+            task_processor: main-task-processor
         
         handler-implicit-http-options:
             as_fallback: implicit-http-options

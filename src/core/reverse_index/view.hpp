@@ -52,4 +52,6 @@ void DeleteReverseIndex(const ReverseIndexRequest& request);
 
 void EditReverseIndex(EditIndexRequest& request);
 
+void ClearTasks();
+
 }  // namespace views::v1::reverse_index
