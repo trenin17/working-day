@@ -4,6 +4,8 @@
 #include <string>
 #include <string_view>
 
+#include <nlohmann/json.hpp>
+
 #include <userver/components/component_list.hpp>
 #include <userver/storages/postgres/cluster.hpp>
 #include <userver/storages/postgres/component.hpp>
@@ -17,40 +19,37 @@ std::vector<std::optional<std::string>> GetEditFields(
 std::vector<std::optional<std::string>> GetAllFields(
     userver::storages::postgres::ClusterPtr pg_cluster, std::string employee_id);
 
+
+class ReverseIndexResponse {
+ public:
+  ReverseIndexResponse(const std::string& employee_id)
+      : employee_id(employee_id) {}
+
+  std::string ToJSON() const {
+    nlohmann::json j;
+    j["employee_id"] = employee_id;
+    return j.dump();
+  }
+
+  std::string employee_id;
+};
+
 class ReverseIndexRequest {
  public:
-  ReverseIndexRequest(userver::storages::postgres::ClusterPtr cluster,
-                      std::string employee_id,
-                      std::vector<std::optional<std::string>>&& fields)
-      : cluster(cluster), employee_id(employee_id), fields(std::move(fields)) {}
-
+  std::function<ReverseIndexResponse(const ReverseIndexRequest&)> func;
   userver::storages::postgres::ClusterPtr cluster;
   std::string employee_id;
-  std::vector<std::optional<std::string>> fields;
+  std::optional<std::string> name, surname, patronymic, role, email, birthday, telegram_id, vk_id, team;
+  std::optional<std::vector<std::string>> phones;
 };
 
-class EditIndexRequest {
- public:
-  EditIndexRequest(userver::storages::postgres::ClusterPtr cluster,
-                   std::string employee_id,
-                   std::vector<std::optional<std::string>>&& old_fields,
-                   std::vector<std::optional<std::string>>&& new_fields)
-      : cluster(cluster),
-        employee_id(employee_id),
-        old_fields(std::move(old_fields)),
-        new_fields(std::move(new_fields)) {}
+void ReverseIndexHandler(const ReverseIndexRequest& request);
 
-  userver::storages::postgres::ClusterPtr cluster;
-  std::string employee_id;
-  std::vector<std::optional<std::string>> old_fields;
-  std::vector<std::optional<std::string>> new_fields;
-};
+ReverseIndexResponse AddReverseIndex(const ReverseIndexRequest& request);
 
-void AddReverseIndex(const ReverseIndexRequest& request);
+ReverseIndexResponse DeleteReverseIndex(const ReverseIndexRequest& request);
 
-void DeleteReverseIndex(const ReverseIndexRequest& request);
-
-void EditReverseIndex(EditIndexRequest& request);
+ReverseIndexResponse EditReverseIndex(const ReverseIndexRequest& request);
 
 void ClearTasks();
 

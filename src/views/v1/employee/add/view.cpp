@@ -74,12 +74,13 @@ class AddEmployeeHandler final
         password, request_body.role, company_id);
 
     views::v1::reverse_index::ReverseIndexRequest r_index_request{
+        [](const views::v1::reverse_index::ReverseIndexRequest& r) -> views::v1::reverse_index::ReverseIndexResponse
+        { return views::v1::reverse_index::AddReverseIndex(std::move(r)); },
         pg_cluster_, id,
-        std::vector<std::optional<std::string>>{
-            request_body.name, request_body.surname, request_body.patronymic,
-            request_body.role, company_id}};
+        request_body.name, request_body.surname, request_body.patronymic,
+        request_body.role};
 
-    views::v1::reverse_index::AddReverseIndex(r_index_request);
+    views::v1::reverse_index::ReverseIndexHandler(r_index_request);
 
     AddEmployeeResponse response(id, password);
     return response.ToJsonString();

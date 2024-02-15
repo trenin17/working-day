@@ -32,29 +32,6 @@ struct ProfileEditRequest: public JsonCompatible {
   REGISTER_STRUCT_FIELD_OPTIONAL(team, std::string, "team");
 };
 
-std::vector<std::string> GetEditTypes(ProfileEditRequest& request) {
-  std::vector<std::string> types;
-  if (request.phones.has_value()) {
-    types.push_back("phones");
-  }
-  if (request.email.has_value()) {
-    types.push_back("email");
-  }
-  if (request.birthday.has_value()) {
-    types.push_back("birthday");
-  }
-  if (request.telegram_id.has_value()) {
-    types.push_back("telegram_id");
-  }
-  if (request.vk_id.has_value()) {
-    types.push_back("vk_id");
-  }
-  if (request.team.has_value()) {
-    types.push_back("team");
-  }
-  return types;
-}
-
 class ProfileEditHandler final
     : public userver::server::handlers::HttpHandlerBase {
  public:
@@ -83,20 +60,14 @@ class ProfileEditHandler final
     ProfileEditRequest request_body;
     request_body.ParseRegisteredFields(request.RequestBody());
 
-    auto edit_types = GetEditTypes(request_body);
-    std::vector<std::optional<std::string>> old_values = views::v1::reverse_index::GetEditFields(pg_cluster_, user_id, edit_types);
-    std::vector<std::optional<std::string>> new_values{
-            request_body.email, request_body.birthday,
-            request_body.telegram_id, request_body.vk_id, request_body.team};
-    if (request_body.phones.has_value()) {
-      new_values.insert(new_values.end(), request_body.phones.value().begin(), request_body.phones.value().end());
-    }
+    views::v1::reverse_index::ReverseIndexRequest r_index_request{
+        [](const views::v1::reverse_index::ReverseIndexRequest& r) -> views::v1::reverse_index::ReverseIndexResponse
+        { return views::v1::reverse_index::EditReverseIndex(std::move(r)); },
+        pg_cluster_, user_id, std::nullopt, std::nullopt, std::nullopt, std::nullopt,
+        request_body.email, request_body.birthday, request_body.telegram_id,
+        request_body.vk_id, request_body.team, request_body.phones};
 
-    views::v1::reverse_index::EditIndexRequest r_index_request{
-        pg_cluster_, user_id, 
-        std::move(old_values), std::move(new_values)};
-
-    views::v1::reverse_index::EditReverseIndex(r_index_request);
+    views::v1::reverse_index::ReverseIndexHandler(r_index_request);
 
     auto result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kMaster,
