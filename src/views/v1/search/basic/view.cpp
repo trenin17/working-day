@@ -101,18 +101,30 @@ class SearchBasicHandler final
 
     SearchBasicResponse response;
     
-    // TODO сделать одним запросом WHERE ID in set
     if (IDs.has_value()) {
-      for (const auto& employee_id : IDs.value().ids) {
+      userver::storages::postgres::ParameterStore parameters;
+      std::string filter;
+
+      auto append = [&](const auto& value) {
+        auto separator = (parameters.IsEmpty() ? "(" : ", ");
+        parameters.PushBack(value);
+        filter += fmt::format("{}${}", separator, parameters.Size());        
+      };
+      
+      for (auto& val : IDs.value().ids) {
+        append(val);
+      }
+
+      if (parameters.Size() != 0) {
         auto result = pg_cluster_->Execute(
             userver::storages::postgres::ClusterHostType::kSlave,
             "SELECT id, name, surname, patronymic, photo_link "
             "FROM working_day.employees "
-            "WHERE id = $1",
-            employee_id);
+            "WHERE id IN " + filter + ");",
+            parameters);
 
-        response.employees.push_back(result.AsSingleRow<ListEmployee>(
-            userver::storages::postgres::kRowTag));
+        response.employees = result.AsContainer<std::vector<ListEmployee>>(
+            userver::storages::postgres::kRowTag);
       }
     }
 
