@@ -607,6 +607,48 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/PaymentsResponse'
 
+    /v1/clear-tasks:
+        get:
+            description: Clear the tasks queue
+            responses:
+                '200':
+                    description: Tasks were cleared
+
+    /v1/search/basic:
+        get:
+            description: Get employee by key
+            parameters:
+              - in: header
+                name: Authorization
+                description: Token of session user
+                schema:
+                    type: string
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/SearchBasicRequest'
+            responses:
+                '200':
+                    description: List of employees
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/SearchBasicResponse'
+                '401':
+                    description: Unauthorized
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+                '403':
+                    description: Wrong authorization token
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+
 components:
     schemas:
         ErrorMessage:
@@ -1037,3 +1079,23 @@ components:
                     type: array
                     items:
                         $ref: "#/components/schemas/Payment"
+
+        SearchBasicRequest:
+            type: object
+            additionalProperties: false
+            required:
+              - search_key
+            properties:
+                search_key:
+                    type: string
+            
+        SearchBasicResponse:
+            type: object
+            additionalProperties: false
+            required:
+              - employees
+            properties:
+                employees:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/ListEmployee'

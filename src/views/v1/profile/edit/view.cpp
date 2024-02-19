@@ -16,6 +16,7 @@
 #include <userver/components/component_context.hpp>
 
 #include "core/json_compatible/struct.hpp"
+#include "core/reverse_index/view.hpp"
 
 namespace views::v1::profile::edit {
 
@@ -30,6 +31,75 @@ struct ProfileEditRequest: public JsonCompatible {
   REGISTER_STRUCT_FIELD_OPTIONAL(vk_id, std::string, "vk_id");
   REGISTER_STRUCT_FIELD_OPTIONAL(team, std::string, "team");
 };
+
+struct EditValuesRow {
+    std::optional<std::vector<std::string>> phones;
+    std::optional<std::string> email, birthday, telegram_id, vk_id, team;
+  };
+
+views::v1::reverse_index::ReverseIndexResponse EditReverseIndexFunc(
+    const views::v1::reverse_index::ReverseIndexRequest& request)  {
+  
+  auto grab_result = request.cluster->Execute(
+        userver::storages::postgres::ClusterHostType::kMaster,
+        "SELECT CASE WHEN $2 IS NULL THEN NULL ELSE phones END, "
+        "CASE WHEN $3 IS NULL THEN NULL ELSE email END, "
+        "CASE WHEN $4 IS NULL THEN NULL ELSE birthday END, "
+        "CASE WHEN $5 IS NULL THEN NULL ELSE telegram_id END, "
+        "CASE WHEN $6 IS NULL THEN NULL ELSE vk_id END, "
+        "CASE WHEN $7 IS NULL THEN NULL ELSE team END "
+        "FROM working_day.employees "
+        "WHERE id = $1; ",
+        request.employee_id, request.phones, request.email, request.birthday,
+        request.telegram_id, request.vk_id, request.team);
+  
+  auto old_values = grab_result.AsSingleRow<EditValuesRow>(userver::storages::postgres::kRowTag);
+
+  std::vector<std::optional<std::string>> old_values_vec = {
+                                  old_values.email, old_values.birthday, old_values.telegram_id,
+                                  old_values.vk_id, old_values.team};
+  
+  if (old_values.phones.has_value()) {
+    old_values_vec.insert(old_values_vec.end(), old_values.phones.value().begin(), old_values.phones.value().end());
+  }
+
+  for (auto& field : old_values_vec) {
+    if (!field.has_value()) continue;
+
+    auto result = request.cluster->Execute(
+        userver::storages::postgres::ClusterHostType::kMaster,
+        "UPDATE working_day.reverse_index "
+        "SET ids = array_remove(ids, $2) "
+        "WHERE key = $1; ",
+        field.value(), request.employee_id);
+  }
+
+  std::vector<std::optional<std::string>> new_fields = {
+      request.name, request. surname, request.patronymic,
+      request.role, request.email, request.birthday,
+      request.telegram_id, request.vk_id, request.team
+  };
+
+  if (request.phones.has_value()) {
+    new_fields.insert(new_fields.end(), request.phones.value().begin(), request.phones.value().end());
+  }
+  
+  for (auto& field : new_fields ) {
+    if (!field.has_value()) continue;
+
+    auto result = request.cluster->Execute(
+        userver::storages::postgres::ClusterHostType::kMaster,
+        "INSERT INTO working_day.reverse_index(key, ids) "
+        "VALUES ($1, ARRAY[$2]) "
+        "ON CONFLICT (key) DO UPDATE SET ids = "
+        "array_append(reverse_index.ids, "
+        "$2);",
+        field.value(), request.employee_id);
+  }
+
+  views::v1::reverse_index::ReverseIndexResponse response(request.employee_id);
+  return response;
+}
 
 class ProfileEditHandler final
     : public userver::server::handlers::HttpHandlerBase {
@@ -58,6 +128,15 @@ class ProfileEditHandler final
 
     ProfileEditRequest request_body;
     request_body.ParseRegisteredFields(request.RequestBody());
+
+    views::v1::reverse_index::ReverseIndexRequest r_index_request{
+        [](const views::v1::reverse_index::ReverseIndexRequest& r) -> views::v1::reverse_index::ReverseIndexResponse
+        { return EditReverseIndexFunc(std::move(r)); },
+        pg_cluster_, user_id, std::nullopt, std::nullopt, std::nullopt, std::nullopt,
+        request_body.email, request_body.birthday, request_body.telegram_id,
+        request_body.vk_id, request_body.team, request_body.phones};
+
+    views::v1::reverse_index::ReverseIndexHandler(r_index_request);
 
     auto result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kMaster,

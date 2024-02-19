@@ -33,6 +33,8 @@
 #include "views/v1/abscence/reschedule/view.hpp"
 #include "views/v1/payments/add_bulk/view.hpp"
 #include "views/v1/payments/view.hpp"
+#include "views/v1/clear-tasks/view.hpp"
+#include "views/v1/search/basic/view.hpp"
 #include "utils/custom_implicit_options.hpp"
 
 int main(int argc, char* argv[]) {
@@ -74,6 +76,8 @@ int main(int argc, char* argv[]) {
   views::v1::abscence::reschedule::AppendAbscenceReschedule(component_list);
   views::v1::payments::add_bulk::AppendPaymentsAddBulk(component_list);
   views::v1::payments::AppendPayments(component_list);
+  views::v1::clear_tasks::AppendClearTasks(component_list);
+  views::v1::search_basic::AppendSearchBasic(component_list);
 
   int err_code = userver::utils::DaemonMain(argc, argv, component_list);
 
