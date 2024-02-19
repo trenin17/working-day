@@ -12,14 +12,6 @@
 
 namespace views::v1::reverse_index {
 
-std::vector<std::optional<std::string>> GetEditFields(
-    userver::storages::postgres::ClusterPtr pg_cluster, std::string employee_id,
-    std::vector<std::string>& field_types);
-
-std::vector<std::optional<std::string>> GetAllFields(
-    userver::storages::postgres::ClusterPtr pg_cluster, std::string employee_id);
-
-
 class ReverseIndexResponse {
  public:
   ReverseIndexResponse(const std::string& employee_id)
@@ -44,12 +36,6 @@ class ReverseIndexRequest {
 };
 
 void ReverseIndexHandler(const ReverseIndexRequest& request);
-
-ReverseIndexResponse AddReverseIndex(const ReverseIndexRequest& request);
-
-ReverseIndexResponse DeleteReverseIndex(const ReverseIndexRequest& request);
-
-ReverseIndexResponse EditReverseIndex(const ReverseIndexRequest& request);
 
 void ClearTasks();
 

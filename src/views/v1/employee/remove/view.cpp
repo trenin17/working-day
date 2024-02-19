@@ -23,6 +23,49 @@ struct ErrorMessage: public JsonCompatible {
   REGISTER_STRUCT_FIELD(message, std::string, "message");
 };
 
+struct AllValuesRow {
+    std::string name, surname, role;
+    std::optional<std::string> patronymic;
+    std::vector<std::string> phones;
+    std::optional<std::string> email, birthday, telegram_id, vk_id, team;
+  };
+
+views::v1::reverse_index::ReverseIndexResponse DeleteReverseIndexFunc(
+    const views::v1::reverse_index::ReverseIndexRequest& request)  {
+  auto result =
+      request.cluster->Execute(userver::storages::postgres::ClusterHostType::kMaster,
+                          "SELECT name, surname, role, patronymic, phones, "
+                          "email, birthday, telegram_id, vk_id, team "
+                          "FROM working_day.employees "
+                          "WHERE id = $1;",
+                          request.employee_id);
+
+  auto values_res =
+      result.AsSingleRow<AllValuesRow>(userver::storages::postgres::kRowTag);
+
+  std::vector<std::optional<std::string>> old_values = {
+      values_res.name,        values_res.surname, values_res.role,
+      values_res.patronymic,  values_res.email,   values_res.birthday,
+      values_res.telegram_id, values_res.vk_id,   values_res.team
+  };
+
+  old_values.insert(old_values.end(), values_res.phones.begin(), values_res.phones.end());
+
+  for (auto& field : old_values) {
+    if (!field.has_value()) continue;
+
+    auto result = request.cluster->Execute(
+        userver::storages::postgres::ClusterHostType::kMaster,
+        "UPDATE working_day.reverse_index "
+        "SET ids = array_remove(ids, $2) "
+        "WHERE key = $1; ",
+        field.value(), request.employee_id);
+  }
+
+  views::v1::reverse_index::ReverseIndexResponse response(request.employee_id);
+  return response;
+}
+
 class RemoveEmployeeHandler final
     : public userver::server::handlers::HttpHandlerBase {
  public:
@@ -57,7 +100,7 @@ class RemoveEmployeeHandler final
 
     views::v1::reverse_index::ReverseIndexRequest r_index_request{
         [](const views::v1::reverse_index::ReverseIndexRequest& r) -> views::v1::reverse_index::ReverseIndexResponse
-        { return views::v1::reverse_index::DeleteReverseIndex(std::move(r)); },
+        { return DeleteReverseIndexFunc(std::move(r)); },
         pg_cluster_, employee_id};
 
     views::v1::reverse_index::ReverseIndexHandler(r_index_request);

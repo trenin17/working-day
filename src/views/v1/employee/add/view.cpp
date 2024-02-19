@@ -34,6 +34,36 @@ struct AddEmployeeResponse: public JsonCompatible {
   REGISTER_STRUCT_FIELD(password, std::string, "password");
 };
 
+views::v1::reverse_index::ReverseIndexResponse AddReverseIndexFunc(
+  const views::v1::reverse_index::ReverseIndexRequest& request) {
+  std::vector<std::optional<std::string>> fields = {
+      request.name, request. surname, request.patronymic,
+      request.role, request.email, request.birthday,
+      request.telegram_id, request.vk_id, request.team
+  };
+
+  if (request.phones.has_value()) {
+    fields.insert(fields.end(), request.phones.value().begin(), request.phones.value().end());
+  }
+  
+  for (auto& field : fields ) {
+    if (!field.has_value()) continue;
+
+    auto result = request.cluster->Execute(
+        userver::storages::postgres::ClusterHostType::kMaster,
+        "INSERT INTO working_day.reverse_index(key, ids) "
+        "VALUES ($1, ARRAY[$2]) "
+        "ON CONFLICT (key) DO UPDATE SET ids = "
+        "array_append(reverse_index.ids, "
+        "$2);",
+        field.value(), request.employee_id);
+  }
+
+  views::v1::reverse_index::ReverseIndexResponse response(request.employee_id);
+
+  return response;
+}
+
 class AddEmployeeHandler final
     : public userver::server::handlers::HttpHandlerBase {
  public:
@@ -75,7 +105,7 @@ class AddEmployeeHandler final
 
     views::v1::reverse_index::ReverseIndexRequest r_index_request{
         [](const views::v1::reverse_index::ReverseIndexRequest& r) -> views::v1::reverse_index::ReverseIndexResponse
-        { return views::v1::reverse_index::AddReverseIndex(std::move(r)); },
+        { return AddReverseIndexFunc(std::move(r)); },
         pg_cluster_, id,
         request_body.name, request_body.surname, request_body.patronymic,
         request_body.role};
