@@ -11,6 +11,7 @@
 #include <userver/components/component_config.hpp>
 #include <userver/components/component_context.hpp>
 #include "core/json_compatible/struct.hpp"
+#include <userver/storages/postgres/parameter_store.hpp>
 
 
 namespace views::v1::employee::add {
@@ -37,7 +38,7 @@ struct AddEmployeeResponse: public JsonCompatible {
 views::v1::reverse_index::ReverseIndexResponse AddReverseIndexFunc(
   const views::v1::reverse_index::ReverseIndexRequest& request) {
   std::vector<std::optional<std::string>> fields = {
-      request.name, request. surname, request.patronymic,
+      request.name, request.surname, request.patronymic,
       request.role, request.email, request.birthday,
       request.telegram_id, request.vk_id, request.team
   };
@@ -45,19 +46,31 @@ views::v1::reverse_index::ReverseIndexResponse AddReverseIndexFunc(
   if (request.phones.has_value()) {
     fields.insert(fields.end(), request.phones.value().begin(), request.phones.value().end());
   }
-  
-  for (auto& field : fields ) {
-    if (!field.has_value()) continue;
 
-    auto result = request.cluster->Execute(
-        userver::storages::postgres::ClusterHostType::kMaster,
-        "INSERT INTO working_day.reverse_index(key, ids) "
-        "VALUES ($1, ARRAY[$2]) "
-        "ON CONFLICT (key) DO UPDATE SET ids = "
-        "array_append(reverse_index.ids, "
-        "$2);",
-        field.value(), request.employee_id);
+  userver::storages::postgres::ParameterStore parameters;
+  std::string filter;
+  
+  parameters.PushBack(request.employee_id);
+
+  for (const auto& field : fields) {
+    if (field.has_value()) {
+      auto separator = (parameters.Size() == 1 ? "[" : ", ");
+      parameters.PushBack(field.value());
+      filter += fmt::format("{}${}", separator, parameters.Size()); 
+    }
   }
+
+  auto result = request.cluster->Execute(
+      userver::storages::postgres::ClusterHostType::kMaster,
+      "WITH input_data AS ( "
+      "  SELECT ARRAY" + filter + "] AS keys, $1 AS id "
+      ") "
+      "INSERT INTO working_day.reverse_index (key, ids) "
+      "SELECT key, ARRAY[id] AS ids "
+      "FROM input_data, LATERAL unnest(keys) AS key "
+      "ON CONFLICT (key) DO UPDATE "
+      "SET ids = array_append(working_day.reverse_index.ids, EXCLUDED.ids[1]); ",
+      parameters);
 
   views::v1::reverse_index::ReverseIndexResponse response(request.employee_id);
 

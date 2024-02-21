@@ -8,6 +8,7 @@
 #include <userver/storages/postgres/component.hpp>
 #include <userver/components/component_config.hpp>
 #include <userver/components/component_context.hpp>
+#include <userver/storages/postgres/parameter_store.hpp>
 
 #include "core/json_compatible/struct.hpp"
 
@@ -51,16 +52,27 @@ views::v1::reverse_index::ReverseIndexResponse DeleteReverseIndexFunc(
 
   old_values.insert(old_values.end(), values_res.phones.begin(), values_res.phones.end());
 
-  for (auto& field : old_values) {
-    if (!field.has_value()) continue;
+  userver::storages::postgres::ParameterStore parameters;
+  std::string filter;
+  
+  parameters.PushBack(request.employee_id);
 
-    auto result = request.cluster->Execute(
-        userver::storages::postgres::ClusterHostType::kMaster,
-        "UPDATE working_day.reverse_index "
-        "SET ids = array_remove(ids, $2) "
-        "WHERE key = $1; ",
-        field.value(), request.employee_id);
+  for (const auto& field : old_values) {
+    if (field.has_value()) {
+      auto separator = (parameters.Size() == 1 ? "(" : ", ");
+      parameters.PushBack(field.value());
+      filter += fmt::format("{}${}", separator, parameters.Size()); 
+    }
   }
+
+  auto result2 = request.cluster->Execute(
+      userver::storages::postgres::ClusterHostType::kMaster,
+      "UPDATE working_day.reverse_index "
+      "SET ids = array_remove(ids, $1) "
+      "WHERE key IN " + filter + "); "
+      "DELETE FROM working_day.reverse_index "
+      "WHERE key IN " + filter + "); AND ids = '{}'; ",
+      parameters);
 
   views::v1::reverse_index::ReverseIndexResponse response(request.employee_id);
   return response;

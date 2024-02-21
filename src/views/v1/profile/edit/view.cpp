@@ -63,17 +63,27 @@ views::v1::reverse_index::ReverseIndexResponse EditReverseIndexFunc(
     old_values_vec.insert(old_values_vec.end(), old_values.phones.value().begin(), old_values.phones.value().end());
   }
 
-  for (auto& field : old_values_vec) {
-    if (!field.has_value()) continue;
+  userver::storages::postgres::ParameterStore parameters;
+  std::string filter;
+  
+  parameters.PushBack(request.employee_id);
 
+  for (const auto& field : old_values_vec) {
+    if (field.has_value()) {
+      auto separator = (parameters.Size() == 1 ? "(" : ", ");
+      parameters.PushBack(field.value());
+      filter += fmt::format("{}${}", separator, parameters.Size()); 
+    }
+  }
+
+  if (parameters.Size() > 1) {
     auto result = request.cluster->Execute(
         userver::storages::postgres::ClusterHostType::kMaster,
         "UPDATE working_day.reverse_index "
-        "SET ids = array_remove(ids, $2) "
-        "WHERE key = $1; ",
-        field.value(), request.employee_id);
+        "SET ids = array_remove(ids, $1) "
+        "WHERE key IN " + filter + "); ",
+        parameters);
   }
-
   std::vector<std::optional<std::string>> new_fields = {
       request.name, request. surname, request.patronymic,
       request.role, request.email, request.birthday,
@@ -84,17 +94,31 @@ views::v1::reverse_index::ReverseIndexResponse EditReverseIndexFunc(
     new_fields.insert(new_fields.end(), request.phones.value().begin(), request.phones.value().end());
   }
   
-  for (auto& field : new_fields ) {
-    if (!field.has_value()) continue;
+  userver::storages::postgres::ParameterStore parameters2;
+  std::string filter2;
+  
+  parameters2.PushBack(request.employee_id);
 
-    auto result = request.cluster->Execute(
+  for (const auto& field : new_fields) {
+    if (field.has_value()) {
+      auto separator = (parameters2.Size() == 1 ? "[" : ", ");
+      parameters2.PushBack(field.value());
+      filter2 += fmt::format("{}${}", separator, parameters2.Size()); 
+    }
+  }
+
+  if (parameters2.Size() > 1) {
+    auto result2 = request.cluster->Execute(
         userver::storages::postgres::ClusterHostType::kMaster,
-        "INSERT INTO working_day.reverse_index(key, ids) "
-        "VALUES ($1, ARRAY[$2]) "
-        "ON CONFLICT (key) DO UPDATE SET ids = "
-        "array_append(reverse_index.ids, "
-        "$2);",
-        field.value(), request.employee_id);
+        "WITH input_data AS ( "
+        "  SELECT ARRAY" + filter2 + "] AS keys, $1 AS id "
+        ") "
+        "INSERT INTO working_day.reverse_index (key, ids) "
+        "SELECT key, ARRAY[id] AS ids "
+        "FROM input_data, LATERAL unnest(keys) AS key "
+        "ON CONFLICT (key) DO UPDATE "
+        "SET ids = array_append(working_day.reverse_index.ids, EXCLUDED.ids[1]); ",
+        parameters2);
   }
 
   views::v1::reverse_index::ReverseIndexResponse response(request.employee_id);
