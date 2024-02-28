@@ -76,6 +76,9 @@ add_library(${PROJECT_NAME}_objs OBJECT
 	src/views/v1/clear-tasks/view.cpp
 	src/views/v1/search/basic/view.hpp
 	src/views/v1/search/basic/view.cpp
+	src/views/v1/search/intersect/view.hpp
+	src/views/v1/search/intersect/view.cpp
+	
 )
 target_link_libraries(${PROJECT_NAME}_objs PUBLIC userver-postgresql)
 target_link_libraries(${PROJECT_NAME}_objs PRIVATE nlohmann_json::nlohmann_json)

@@ -616,7 +616,7 @@ paths:
 
     /v1/search/basic:
         get:
-            description: Get employee by key
+            description: Get employees by key
             parameters:
               - in: header
                 name: Authorization
@@ -635,7 +635,42 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/SearchBasicResponse'
+                                $ref: '#/components/schemas/SearchResponse'
+                '401':
+                    description: Unauthorized
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+                '403':
+                    description: Wrong authorization token
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+
+    /v1/search/intersect:
+        get:
+            description: Get employees by multiple keys
+            parameters:
+              - in: header
+                name: Authorization
+                description: Token of session user
+                schema:
+                    type: string
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/SearchIntersectRequest'
+            responses:
+                '200':
+                    description: List of employees
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/SearchResponse'
                 '401':
                     description: Unauthorized
                     content:
@@ -1088,8 +1123,22 @@ components:
             properties:
                 search_key:
                     type: string
+
+        SearchIntersectRequest:
+            type: object
+            additionalProperties: false
+            required:
+              - search_keys
+              - limit
+            properties:
+                search_keys:
+                    type: array
+                    items:
+                        type: string
+                limit:
+                    type: integer
             
-        SearchBasicResponse:
+        SearchResponse:
             type: object
             additionalProperties: false
             required:
