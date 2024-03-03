@@ -1,6 +1,6 @@
-#include "view.hpp"
+#define V1_SEARCH_BASIC
 
-#include <nlohmann/json.hpp>
+#include "view.hpp"
 
 #include <userver/clients/dns/component.hpp>
 #include <userver/components/component_config.hpp>
@@ -11,54 +11,13 @@
 #include <userver/storages/postgres/component.hpp>
 #include <userver/storages/postgres/parameter_store.hpp>
 
-#include "core/json_compatible/struct.hpp"
+#include "definitions/all.hpp"
 
 #include "utils/s3_presigned_links.hpp"
-
-using json = nlohmann::json;
 
 namespace views::v1::search_basic {
 
 namespace {
-
-class ListEmployee {
- public:
-  json ToJSONObject() const {
-    json j;
-    j["id"] = id;
-    j["name"] = name;
-    j["surname"] = surname;
-    if (patronymic) {
-      j["patronymic"] = patronymic.value();
-    }
-    if (photo_link) {
-      j["photo_link"] = photo_link.value();
-    }
-
-    return j;
-  }
-
-  std::string id, name, surname;
-  std::optional<std::string> patronymic, photo_link;
-};
-
-struct SearchBasicRequest: public JsonCompatible {
-  REGISTER_STRUCT_FIELD(search_key, std::string, "search_key");
-};
-
-class SearchBasicResponse {
- public:
-  std::string ToJSON() const {
-    json j;
-    j["employees"] = json::array();
-    for (const auto& employee : employees) {
-      j["employees"].push_back(employee.ToJSONObject());
-    }
-    return j.dump();
-  }
-
-  std::vector<ListEmployee> employees;
-};
 
 class SearchBasicHandler final
     : public userver::server::handlers::HttpHandlerBase {
@@ -137,7 +96,7 @@ class SearchBasicHandler final
       }
     }
     
-    return response.ToJSON();
+    return response.ToJsonString();
   }
 
  private:

@@ -1,6 +1,6 @@
-#include "view.hpp"
+#define V1_EMPLOYEES
 
-#include <nlohmann/json.hpp>
+#include "view.hpp"
 
 #include <userver/clients/dns/component.hpp>
 #include <userver/logging/log.hpp>
@@ -10,6 +10,7 @@
 #include <userver/components/component_config.hpp>
 #include <userver/components/component_context.hpp>
 
+#include "definitions/all.hpp"
 #include "utils/s3_presigned_links.hpp"
 
 using json = nlohmann::json;
@@ -17,41 +18,6 @@ using json = nlohmann::json;
 namespace views::v1::employees {
 
 namespace {
-
-class ListEmployee {
- public:
-  json ToJSONObject() const {
-    json j;
-    j["id"] = id;
-    j["name"] = name;
-    j["surname"] = surname;
-    if (patronymic) {
-      j["patronymic"] = patronymic.value();
-    }
-    if (photo_link) {
-      j["photo_link"] = photo_link.value();
-    }
-
-    return j;
-  }
-
-  std::string id, name, surname;
-  std::optional<std::string> patronymic, photo_link;
-};
-
-class EmployeesResponse {
- public:
-  std::string ToJSON() const {
-    json j;
-    j["employees"] = json::array();
-    for (const auto& employee : employees) {
-      j["employees"].push_back(employee.ToJSONObject());
-    }
-    return j.dump();
-  }
-
-  std::vector<ListEmployee> employees;
-};
 
 class EmployeesHandler final
     : public userver::server::handlers::HttpHandlerBase {
@@ -85,8 +51,9 @@ class EmployeesHandler final
         "WHERE head_id = $1",
         user_id);
 
-    EmployeesResponse response{result.AsContainer<std::vector<ListEmployee>>(
-        userver::storages::postgres::kRowTag)};
+    EmployeesResponse response;
+    response.employees = result.AsContainer<std::vector<ListEmployee>>(
+        userver::storages::postgres::kRowTag);
     for (auto& employee : response.employees) {
       if (employee.photo_link.has_value()) {
         employee.photo_link =
@@ -95,7 +62,7 @@ class EmployeesHandler final
                 utils::s3_presigned_links::Download);
       }
     }
-    return response.ToJSON();
+    return response.ToJsonString();
   }
 
  private:
