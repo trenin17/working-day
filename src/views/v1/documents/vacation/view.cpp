@@ -4,14 +4,14 @@
 
 #include <userver/clients/dns/component.hpp>
 #include <userver/clients/http/component.hpp>
+#include <userver/components/component_config.hpp>
+#include <userver/components/component_context.hpp>
 #include <userver/http/url.hpp>
 #include <userver/logging/log.hpp>
 #include <userver/server/handlers/http_handler_base.hpp>
 #include <userver/storages/postgres/cluster.hpp>
 #include <userver/storages/postgres/component.hpp>
 #include <userver/utils/uuid4.hpp>
-#include <userver/components/component_config.hpp>
-#include <userver/components/component_context.hpp>
 
 using json = nlohmann::json;
 
@@ -77,8 +77,8 @@ class LinkRequest {
     return j.dump();
   }
 
-  std::string request_type, employee_name, employee_surname, head_name, head_surname,
-      start_date, end_date;
+  std::string request_type, employee_name, employee_surname, head_name,
+      head_surname, start_date, end_date;
   std::optional<std::string> employee_patronymic, head_patronymic,
       employee_position, head_position, first_start_date, first_end_date,
       second_start_date, second_end_date;
@@ -116,12 +116,12 @@ class DocumentsVacationHandler final
   std::string HandleRequestThrow(
       const userver::server::http::HttpRequest& request,
       userver::server::request::RequestContext& ctx) const override {
-    //CORS
-    request.GetHttpResponse()
-        .SetHeader(static_cast<std::string>("Access-Control-Allow-Origin"), "*");
-    request.GetHttpResponse()
-        .SetHeader(static_cast<std::string>("Access-Control-Allow-Headers"), "*");
-    
+    // CORS
+    request.GetHttpResponse().SetHeader(
+        static_cast<std::string>("Access-Control-Allow-Origin"), "*");
+    request.GetHttpResponse().SetHeader(
+        static_cast<std::string>("Access-Control-Allow-Headers"), "*");
+
     auto action_id = request.GetArg("action_id");
     auto request_type = request.GetArg("request_type");
     if (request_type.empty()) {
@@ -136,17 +136,20 @@ class DocumentsVacationHandler final
 
     auto action_info =
         trx.Execute(
-               "SELECT user_id, type, start_date, end_date, blocking_actions_ids "
+               "SELECT user_id, type, start_date, end_date, "
+               "blocking_actions_ids "
                "FROM working_day.actions "
                "WHERE id = $1",
                action_id)
             .AsSingleRow<ActionInfo>(userver::storages::postgres::kRowTag);
 
-    if (request_type == "split" && action_info.blocking_actions_ids.size() != 2) {
+    if (request_type == "split" &&
+        action_info.blocking_actions_ids.size() != 2) {
       trx.Rollback();
       request.GetHttpResponse().SetStatus(
           userver::server::http::HttpStatus::kBadRequest);
-      return ErrorMessage{"Action was not split or was split the wrong way"}.ToJSON();
+      return ErrorMessage{"Action was not split or was split the wrong way"}
+          .ToJSON();
     }
 
     if (action_info.type != "vacation") {
@@ -193,24 +196,32 @@ class DocumentsVacationHandler final
                              .head_position = head_info.position};
 
     if (request_type == "split") {
-      auto first_action = trx.Execute(
-              "SELECT user_id, type, start_date, end_date, blocking_actions_ids "
-              "FROM working_day.actions "
-              "WHERE id = $1",
-              action_info.blocking_actions_ids[0])
-          .AsSingleRow<ActionInfo>(userver::storages::postgres::kRowTag);
-      auto second_action = trx.Execute(
-              "SELECT user_id, type, start_date, end_date, blocking_actions_ids "
-              "FROM working_day.actions "
-              "WHERE id = $1",
-              action_info.blocking_actions_ids[1])
-          .AsSingleRow<ActionInfo>(userver::storages::postgres::kRowTag);
-      
+      auto first_action =
+          trx.Execute(
+                 "SELECT user_id, type, start_date, end_date, "
+                 "blocking_actions_ids "
+                 "FROM working_day.actions "
+                 "WHERE id = $1",
+                 action_info.blocking_actions_ids[0])
+              .AsSingleRow<ActionInfo>(userver::storages::postgres::kRowTag);
+      auto second_action =
+          trx.Execute(
+                 "SELECT user_id, type, start_date, end_date, "
+                 "blocking_actions_ids "
+                 "FROM working_day.actions "
+                 "WHERE id = $1",
+                 action_info.blocking_actions_ids[1])
+              .AsSingleRow<ActionInfo>(userver::storages::postgres::kRowTag);
+
       using namespace userver::utils::datetime;
-      link_request.first_start_date = Timestring(first_action.start_date, "UTC", "%d.%m.%Y");
-      link_request.first_end_date = Timestring(first_action.end_date, "UTC", "%d.%m.%Y");
-      link_request.second_start_date = Timestring(second_action.start_date, "UTC", "%d.%m.%Y");
-      link_request.second_end_date = Timestring(second_action.end_date, "UTC", "%d.%m.%Y");
+      link_request.first_start_date =
+          Timestring(first_action.start_date, "UTC", "%d.%m.%Y");
+      link_request.first_end_date =
+          Timestring(first_action.end_date, "UTC", "%d.%m.%Y");
+      link_request.second_start_date =
+          Timestring(second_action.start_date, "UTC", "%d.%m.%Y");
+      link_request.second_end_date =
+          Timestring(second_action.end_date, "UTC", "%d.%m.%Y");
     }
 
     trx.Commit();
@@ -218,7 +229,8 @@ class DocumentsVacationHandler final
     auto response =
         http_client_.CreateRequest()
             .get(
-                "https://functions.yandexcloud.net/d4emv61q8h6eu2rs2f67?file_key=" +
+                "https://functions.yandexcloud.net/"
+                "d4emv61q8h6eu2rs2f67?file_key=" +
                 userver::utils::generators::
                     GenerateUuid())  // HTTP GET translations_url_ URL
             .data(link_request.ToJSON())

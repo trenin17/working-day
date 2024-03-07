@@ -3,26 +3,22 @@
 #include <optional>
 #include <vector>
 
-#include <userver/logging/log.hpp>
-
 #include <nlohmann/json.hpp>
 
 void JsonCompatible::ParseRegisteredFields(const std::string& body) {
-    auto json = nlohmann::json::parse(body);
-    for (auto& lambda : lambdas_parse_) {
-        lambda(json);
-    }
+  auto json = nlohmann::json::parse(body);
+  for (auto& lambda : lambdas_parse_) {
+    lambda(json);
+  }
 }
 
 nlohmann::json JsonCompatible::ToJson() const {
-    nlohmann::json json;
-    for (auto& lambda : lambdas_dump_) {
-        lambda(json);
-    }
+  nlohmann::json json;
+  for (auto& lambda : lambdas_dump_) {
+    lambda(json);
+  }
 
-    return json;
+  return json;
 }
 
-std::string JsonCompatible::ToJsonString() const {
-    return ToJson().dump();
-}
+std::string JsonCompatible::ToJsonString() const { return ToJson().dump(); }

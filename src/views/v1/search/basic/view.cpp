@@ -56,10 +56,11 @@ class SearchBasicHandler final
         "WHERE key = $1;",
         request_body.search_key);
 
-    auto IDs = result_ids.AsOptionalSingleRow<IDsRow>(userver::storages::postgres::kRowTag);
+    auto IDs = result_ids.AsOptionalSingleRow<IDsRow>(
+        userver::storages::postgres::kRowTag);
 
     SearchBasicResponse response;
-    
+
     if (IDs.has_value()) {
       userver::storages::postgres::ParameterStore parameters;
       std::string filter;
@@ -67,9 +68,9 @@ class SearchBasicHandler final
       auto append = [&](const auto& value) {
         auto separator = (parameters.IsEmpty() ? "(" : ", ");
         parameters.PushBack(value);
-        filter += fmt::format("{}${}", separator, parameters.Size());        
+        filter += fmt::format("{}${}", separator, parameters.Size());
       };
-      
+
       for (auto& val : IDs.value().ids) {
         append(val);
       }
@@ -79,7 +80,8 @@ class SearchBasicHandler final
             userver::storages::postgres::ClusterHostType::kSlave,
             "SELECT id, name, surname, patronymic, photo_link "
             "FROM working_day.employees "
-            "WHERE id IN " + filter + ");",
+            "WHERE id IN " +
+                filter + ");",
             parameters);
 
         response.employees = result.AsContainer<std::vector<ListEmployee>>(
@@ -95,7 +97,7 @@ class SearchBasicHandler final
                 utils::s3_presigned_links::Download);
       }
     }
-    
+
     return response.ToJsonString();
   }
 

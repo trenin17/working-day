@@ -3,14 +3,14 @@
 #include <nlohmann/json.hpp>
 
 #include <userver/clients/dns/component.hpp>
+#include <userver/components/component_config.hpp>
+#include <userver/components/component_context.hpp>
 #include <userver/logging/log.hpp>
 #include <userver/server/handlers/http_handler_base.hpp>
 #include <userver/storages/postgres/cluster.hpp>
 #include <userver/storages/postgres/component.hpp>
 #include <userver/utils/boost_uuid4.hpp>
 #include <userver/utils/uuid4.hpp>
-#include <userver/components/component_config.hpp>
-#include <userver/components/component_context.hpp>
 
 using json = nlohmann::json;
 
@@ -25,10 +25,9 @@ class Payment {
     user_id = body["user_id"];
     amount = body["amount"];
     payroll_date = userver::utils::datetime::Stringtime(
-        body["payroll_date"], "UTC",
-        "%Y-%m-%dT%H:%M:%E6S");
+        body["payroll_date"], "UTC", "%Y-%m-%dT%H:%M:%E6S");
   }
- 
+
   std::string id, user_id;
   double amount;
   userver::storages::postgres::TimePoint payroll_date;
@@ -38,7 +37,7 @@ class PaymentsAddBulkRequest {
  public:
   PaymentsAddBulkRequest(const std::string& body) {
     auto j = json::parse(body);
-    for (const auto& p: j["payments"]) {
+    for (const auto& p : j["payments"]) {
       Payment payment(p);
 
       ids.push_back(payment.id);
@@ -73,12 +72,12 @@ class PaymentsAddBulkHandler final
   std::string HandleRequestThrow(
       const userver::server::http::HttpRequest& request,
       userver::server::request::RequestContext& ctx) const override {
-    //CORS
-    request.GetHttpResponse()
-        .SetHeader(static_cast<std::string>("Access-Control-Allow-Origin"), "*");
-    request.GetHttpResponse()
-        .SetHeader(static_cast<std::string>("Access-Control-Allow-Headers"), "*");
-    
+    // CORS
+    request.GetHttpResponse().SetHeader(
+        static_cast<std::string>("Access-Control-Allow-Origin"), "*");
+    request.GetHttpResponse().SetHeader(
+        static_cast<std::string>("Access-Control-Allow-Headers"), "*");
+
     PaymentsAddBulkRequest request_body(request.RequestBody());
 
     auto result = pg_cluster_->Execute(
@@ -87,7 +86,8 @@ class PaymentsAddBulkHandler final
         "VALUES (UNNEST($1), UNNEST($2), UNNEST($3), UNNEST($4)) "
         "ON CONFLICT (id) "
         "DO NOTHING",
-        request_body.ids, request_body.user_ids, request_body.amounts, request_body.payroll_dates);
+        request_body.ids, request_body.user_ids, request_body.amounts,
+        request_body.payroll_dates);
 
     return "";
   }

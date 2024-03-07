@@ -268,6 +268,16 @@ components_manager:
                   - bearer
                 scopes:
                   - user
+
+        handler-v1-attendance-list-all:
+            path: /v1/attendance/list-all
+            method: POST
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - manager
         
         handler-implicit-http-options:
             as_fallback: implicit-http-options

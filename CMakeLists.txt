@@ -80,6 +80,8 @@ add_library(${PROJECT_NAME}_objs OBJECT
 	src/views/v1/search/basic/view.hpp
 	src/views/v1/search/basic/view.cpp
 	src/definitions/all.hpp
+	src/views/v1/attendance/list_all/view.hpp
+	src/views/v1/attendance/list_all/view.cpp
 )
 target_link_libraries(${PROJECT_NAME}_objs PUBLIC userver-postgresql)
 target_link_libraries(${PROJECT_NAME}_objs PRIVATE nlohmann_json::nlohmann_json)
@@ -102,11 +104,11 @@ add_google_tests(${PROJECT_NAME}_unittest)
 
 
 # Benchmarks
-add_executable(${PROJECT_NAME}_benchmark
-	src/hello_benchmark.cpp
-)
-target_link_libraries(${PROJECT_NAME}_benchmark PRIVATE ${PROJECT_NAME}_objs userver-ubench)
-add_google_benchmark_tests(${PROJECT_NAME}_benchmark)
+# add_executable(${PROJECT_NAME}_benchmark
+# 	src/hello_benchmark.cpp
+# )
+# target_link_libraries(${PROJECT_NAME}_benchmark PRIVATE ${PROJECT_NAME}_objs userver-ubench)
+# add_google_benchmark_tests(${PROJECT_NAME}_benchmark)
 
 # Functional Tests
 include(UserverTestsuite)

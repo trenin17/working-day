@@ -3,13 +3,13 @@
 #include <nlohmann/json.hpp>
 
 #include <userver/clients/dns/component.hpp>
+#include <userver/components/component_config.hpp>
+#include <userver/components/component_context.hpp>
 #include <userver/logging/log.hpp>
 #include <userver/server/handlers/http_handler_base.hpp>
 #include <userver/storages/postgres/cluster.hpp>
 #include <userver/storages/postgres/component.hpp>
 #include <userver/utils/uuid4.hpp>
-#include <userver/components/component_config.hpp>
-#include <userver/components/component_context.hpp>
 
 using json = nlohmann::json;
 
@@ -24,7 +24,10 @@ class AbscenceRescheduleRequest {
   AbscenceRescheduleRequest(const std::string& body) {
     using namespace userver::utils::datetime;
     auto j = json::parse(body);
-    reschedule_date = Stringtime(Timestring(Stringtime(j["reschedule_date"], tz, "%Y-%m-%dT%H:%M:%E6S"), tz, "%Y-%m-%d"), tz, "%Y-%m-%d");
+    reschedule_date = Stringtime(
+        Timestring(Stringtime(j["reschedule_date"], tz, "%Y-%m-%dT%H:%M:%E6S"),
+                   tz, "%Y-%m-%d"),
+        tz, "%Y-%m-%d");
     action_id = j["action_id"];
   }
 
@@ -85,12 +88,12 @@ class AbscenceRescheduleHandler final
   std::string HandleRequestThrow(
       const userver::server::http::HttpRequest& request,
       userver::server::request::RequestContext& ctx) const override {
-    //CORS
-    request.GetHttpResponse()
-        .SetHeader(static_cast<std::string>("Access-Control-Allow-Origin"), "*");
-    request.GetHttpResponse()
-        .SetHeader(static_cast<std::string>("Access-Control-Allow-Headers"), "*");
-    
+    // CORS
+    request.GetHttpResponse().SetHeader(
+        static_cast<std::string>("Access-Control-Allow-Origin"), "*");
+    request.GetHttpResponse().SetHeader(
+        static_cast<std::string>("Access-Control-Allow-Headers"), "*");
+
     AbscenceRescheduleRequest request_body(request.RequestBody());
     auto user_id = ctx.GetData<std::string>("user_id");
 
@@ -101,14 +104,15 @@ class AbscenceRescheduleHandler final
         "reschedule_abscence",
         userver::storages::postgres::ClusterHostType::kMaster, {});
 
-    auto action_to_reschedule = trx.Execute(
-        "SELECT id, type, start_date, end_date, status, user_id "
-        "FROM working_day.actions "
-        "WHERE id = $1",
-        request_body.action_id)
-      .AsSingleRow<UserAction>(userver::storages::postgres::kRowTag);
+    auto action_to_reschedule =
+        trx.Execute(
+               "SELECT id, type, start_date, end_date, status, user_id "
+               "FROM working_day.actions "
+               "WHERE id = $1",
+               request_body.action_id)
+            .AsSingleRow<UserAction>(userver::storages::postgres::kRowTag);
     auto action_status = action_to_reschedule.status;
-    
+
     auto new_action_id = userver::utils::generators::GenerateUuid();
 
     auto result = trx.Execute(
@@ -117,8 +121,11 @@ class AbscenceRescheduleHandler final
         "VALUES($1, $2, $3, $4, $5, $6, $7) "
         "ON CONFLICT (id) "
         "DO NOTHING",
-        new_action_id, action_to_reschedule.type , user_id, request_body.reschedule_date,
-        request_body.reschedule_date + (action_to_reschedule.end_date - action_to_reschedule.start_date), action_status, request_body.action_id);
+        new_action_id, action_to_reschedule.type, user_id,
+        request_body.reschedule_date,
+        request_body.reschedule_date +
+            (action_to_reschedule.end_date - action_to_reschedule.start_date),
+        action_status, request_body.action_id);
 
     result = trx.Execute(
         "UPDATE working_day.actions "
@@ -128,7 +135,14 @@ class AbscenceRescheduleHandler final
 
     std::string sender_id = user_id;
     if (user_id == action_to_reschedule.user_id) {
-      notification_text = "Ваш отпуск с " + userver::utils::datetime::Timestring(action_to_reschedule.start_date, "UTC", "%d.%m.%Y") + " был перенесен на " + userver::utils::datetime::Timestring(request_body.reschedule_date, "UTC", "%d.%m.%Y") + ".";
+      notification_text =
+          "Ваш отпуск с " +
+          userver::utils::datetime::Timestring(action_to_reschedule.start_date,
+                                               "UTC", "%d.%m.%Y") +
+          " был перенесен на " +
+          userver::utils::datetime::Timestring(request_body.reschedule_date,
+                                               "UTC", "%d.%m.%Y") +
+          ".";
 
       /* TODO
       auto head_id =
@@ -143,8 +157,10 @@ class AbscenceRescheduleHandler final
       if (request_body.type == "vacation") {
         notification_text =
             "Ваш сотрудник запросил отпуск c " +
-            userver::utils::datetime::Timestring(request_body.start_date, tz, "%d.%m.%Y") +
-            " по " + userver::utils::datetime::Timestring(request_body.end_date, tz, "%d.%m.%Y") +
+            userver::utils::datetime::Timestring(request_body.start_date, tz,
+      "%d.%m.%Y") + " по " +
+      userver::utils::datetime::Timestring(request_body.end_date, tz,
+      "%d.%m.%Y") +
             ". Подтвердите или отклоните его.";
       }
 
@@ -162,16 +178,23 @@ class AbscenceRescheduleHandler final
     } else {
       auto head_id =
           trx.Execute(
-                "SELECT head_id "
-                "FROM working_day.employees "
-                "WHERE id = $1",
-                user_id)
+                 "SELECT head_id "
+                 "FROM working_day.employees "
+                 "WHERE id = $1",
+                 user_id)
               .AsSingleRow<HeadId>(userver::storages::postgres::kRowTag)
               .head_id;
       if (head_id.has_value()) {
         sender_id = head_id.value();
       }
-      notification_text = "Вам предложили изменить дату отпуска с " + userver::utils::datetime::Timestring(action_to_reschedule.start_date, "UTC", "%d.%m.%Y") + " на " + userver::utils::datetime::Timestring(request_body.reschedule_date, "UTC", "%d.%m.%Y") + ".";
+      notification_text =
+          "Вам предложили изменить дату отпуска с " +
+          userver::utils::datetime::Timestring(action_to_reschedule.start_date,
+                                               "UTC", "%d.%m.%Y") +
+          " на " +
+          userver::utils::datetime::Timestring(request_body.reschedule_date,
+                                               "UTC", "%d.%m.%Y") +
+          ".";
     }
     auto notification_id = userver::utils::generators::GenerateUuid();
     result = trx.Execute(
@@ -181,8 +204,7 @@ class AbscenceRescheduleHandler final
         "ON CONFLICT (id) "
         "DO NOTHING",
         notification_id, action_to_reschedule.type + "_reschedule",
-        notification_text,
-        user_id, sender_id, request_body.action_id);
+        notification_text, user_id, sender_id, request_body.action_id);
 
     trx.Commit();
 
@@ -196,7 +218,8 @@ class AbscenceRescheduleHandler final
 
 }  // namespace
 
-void AppendAbscenceReschedule(userver::components::ComponentList& component_list) {
+void AppendAbscenceReschedule(
+    userver::components::ComponentList& component_list) {
   component_list.Append<AbscenceRescheduleHandler>();
 }
 
