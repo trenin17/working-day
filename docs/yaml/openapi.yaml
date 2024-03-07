@@ -437,7 +437,7 @@ paths:
                     description: Tasks were cleared
 
     /v1/search/basic:
-        get:
+        post:
             description: Get employee by key
             parameters:
               - in: header

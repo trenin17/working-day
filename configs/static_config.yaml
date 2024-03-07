@@ -261,7 +261,7 @@ components_manager:
 
         handler-v1-search-basic:
             path: /v1/search/basic
-            method: GET
+            method: POST
             task_processor: main-task-processor
             auth:
                 types:
