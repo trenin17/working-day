@@ -3,14 +3,12 @@
 #include <nlohmann/json.hpp>
 
 #include <userver/clients/dns/component.hpp>
+#include <userver/components/component_config.hpp>
+#include <userver/components/component_context.hpp>
 #include <userver/logging/log.hpp>
 #include <userver/server/handlers/http_handler_base.hpp>
 #include <userver/storages/postgres/cluster.hpp>
 #include <userver/storages/postgres/component.hpp>
-#include <userver/components/component_config.hpp>
-#include <userver/components/component_context.hpp>
-#include <userver/components/component_config.hpp>
-#include <userver/components/component_context.hpp>
 
 using json = nlohmann::json;
 
@@ -25,9 +23,9 @@ class Payment {
     j["id"] = id;
     j["user_id"] = user_id;
     j["amount"] = amount;
-    j["payroll_date"] = userver::utils::datetime::Timestring(payroll_date, "UTC",
-                                                        "%Y-%m-%dT%H:%M:%E6S");
-    
+    j["payroll_date"] = userver::utils::datetime::Timestring(
+        payroll_date, "UTC", "%Y-%m-%dT%H:%M:%E6S");
+
     return j;
   }
 
@@ -67,12 +65,12 @@ class PaymentsHandler final
   std::string HandleRequestThrow(
       const userver::server::http::HttpRequest& request,
       userver::server::request::RequestContext& ctx) const override {
-    //CORS
-    request.GetHttpResponse()
-        .SetHeader(static_cast<std::string>("Access-Control-Allow-Origin"), "*");
-    request.GetHttpResponse()
-        .SetHeader(static_cast<std::string>("Access-Control-Allow-Headers"), "*");
-    
+    // CORS
+    request.GetHttpResponse().SetHeader(
+        static_cast<std::string>("Access-Control-Allow-Origin"), "*");
+    request.GetHttpResponse().SetHeader(
+        static_cast<std::string>("Access-Control-Allow-Headers"), "*");
+
     const auto& user_id = ctx.GetData<std::string>("user_id");
 
     auto result = pg_cluster_->Execute(
@@ -83,9 +81,8 @@ class PaymentsHandler final
         "LIMIT 100",
         user_id);
 
-    PaymentsResponse response{
-        result.AsContainer<std::vector<Payment>>(
-            userver::storages::postgres::kRowTag)};
+    PaymentsResponse response{result.AsContainer<std::vector<Payment>>(
+        userver::storages::postgres::kRowTag)};
 
     return response.ToJSON();
   }

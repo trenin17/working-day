@@ -3,13 +3,13 @@
 #include <nlohmann/json.hpp>
 
 #include <userver/clients/dns/component.hpp>
+#include <userver/components/component_config.hpp>
+#include <userver/components/component_context.hpp>
 #include <userver/logging/log.hpp>
 #include <userver/server/handlers/http_handler_base.hpp>
 #include <userver/storages/postgres/cluster.hpp>
 #include <userver/storages/postgres/component.hpp>
 #include <userver/utils/uuid4.hpp>
-#include <userver/components/component_config.hpp>
-#include <userver/components/component_context.hpp>
 
 using json = nlohmann::json;
 
@@ -24,7 +24,10 @@ class AbscenceSplitRequest {
   AbscenceSplitRequest(const std::string& body) {
     using namespace userver::utils::datetime;
     auto j = json::parse(body);
-    split_date = Stringtime(Timestring(Stringtime(j["split_date"], tz, "%Y-%m-%dT%H:%M:%E6S"), tz, "%Y-%m-%d"), tz, "%Y-%m-%d");
+    split_date = Stringtime(
+        Timestring(Stringtime(j["split_date"], tz, "%Y-%m-%dT%H:%M:%E6S"), tz,
+                   "%Y-%m-%d"),
+        tz, "%Y-%m-%d");
     action_id = j["action_id"];
   }
 
@@ -85,12 +88,12 @@ class AbscenceSplitHandler final
   std::string HandleRequestThrow(
       const userver::server::http::HttpRequest& request,
       userver::server::request::RequestContext& ctx) const override {
-    //CORS
-    request.GetHttpResponse()
-        .SetHeader(static_cast<std::string>("Access-Control-Allow-Origin"), "*");
-    request.GetHttpResponse()
-        .SetHeader(static_cast<std::string>("Access-Control-Allow-Headers"), "*");
-    
+    // CORS
+    request.GetHttpResponse().SetHeader(
+        static_cast<std::string>("Access-Control-Allow-Origin"), "*");
+    request.GetHttpResponse().SetHeader(
+        static_cast<std::string>("Access-Control-Allow-Headers"), "*");
+
     AbscenceSplitRequest request_body(request.RequestBody());
     auto user_id = ctx.GetData<std::string>("user_id");
 
@@ -98,24 +101,26 @@ class AbscenceSplitHandler final
 
     using namespace std::literals::chrono_literals;
     auto trx = pg_cluster_->Begin(
-        "split_abscence",
-        userver::storages::postgres::ClusterHostType::kMaster, {});
+        "split_abscence", userver::storages::postgres::ClusterHostType::kMaster,
+        {});
 
-    auto action_to_split = trx.Execute(
-        "SELECT id, type, start_date, end_date, status "
-        "FROM working_day.actions "
-        "WHERE id = $1",
-        request_body.action_id)
-      .AsSingleRow<UserAction>(userver::storages::postgres::kRowTag);
+    auto action_to_split =
+        trx.Execute(
+               "SELECT id, type, start_date, end_date, status "
+               "FROM working_day.actions "
+               "WHERE id = $1",
+               request_body.action_id)
+            .AsSingleRow<UserAction>(userver::storages::postgres::kRowTag);
     auto action_status = action_to_split.status;
-    
-    if (request_body.split_date < action_to_split.start_date || request_body.split_date > action_to_split.end_date) {
+
+    if (request_body.split_date < action_to_split.start_date ||
+        request_body.split_date > action_to_split.end_date) {
       trx.Rollback();
       request.GetHttpResponse().SetStatus(
           userver::server::http::HttpStatus::kBadRequest);
       return ErrorMessage{"Selected date is not between action dates"}.ToJSON();
     }
-    
+
     auto first_action_id = userver::utils::generators::GenerateUuid();
     auto second_action_id = userver::utils::generators::GenerateUuid();
 
@@ -126,9 +131,10 @@ class AbscenceSplitHandler final
         "($8, $9, $10, $11, $12, $13, $14) "
         "ON CONFLICT (id) "
         "DO NOTHING",
-        first_action_id, action_to_split.type , user_id, action_to_split.start_date,
-        request_body.split_date + 1439min, action_status, request_body.action_id,
-        second_action_id, action_to_split.type , user_id, request_body.split_date + 1440min,
+        first_action_id, action_to_split.type, user_id,
+        action_to_split.start_date, request_body.split_date + 1439min,
+        action_status, request_body.action_id, second_action_id,
+        action_to_split.type, user_id, request_body.split_date + 1440min,
         action_to_split.end_date, action_status, request_body.action_id);
 
     result = trx.Execute(
@@ -145,7 +151,10 @@ class AbscenceSplitHandler final
         "ON CONFLICT (id) "
         "DO NOTHING",
         notification_id, action_to_split.type + "_split",
-        "Ваш отпуск с " + userver::utils::datetime::Timestring(action_to_split.start_date, "UTC", "%d.%m.%Y") + " был разделен на две части.",
+        "Ваш отпуск с " +
+            userver::utils::datetime::Timestring(action_to_split.start_date,
+                                                 "UTC", "%d.%m.%Y") +
+            " был разделен на две части.",
         user_id, user_id, request_body.action_id);
 
     /* TODO
@@ -161,8 +170,10 @@ class AbscenceSplitHandler final
     if (request_body.type == "vacation") {
       notification_text =
           "Ваш сотрудник запросил отпуск c " +
-          userver::utils::datetime::Timestring(request_body.start_date, tz, "%d.%m.%Y") +
-          " по " + userver::utils::datetime::Timestring(request_body.end_date, tz, "%d.%m.%Y") +
+          userver::utils::datetime::Timestring(request_body.start_date, tz,
+    "%d.%m.%Y") + " по " +
+    userver::utils::datetime::Timestring(request_body.end_date, tz, "%d.%m.%Y")
+    +
           ". Подтвердите или отклоните его.";
     }
 

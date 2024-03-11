@@ -3,13 +3,13 @@
 #include <nlohmann/json.hpp>
 
 #include <userver/clients/dns/component.hpp>
+#include <userver/components/component_config.hpp>
+#include <userver/components/component_context.hpp>
 #include <userver/logging/log.hpp>
 #include <userver/server/handlers/http_handler_base.hpp>
 #include <userver/storages/postgres/cluster.hpp>
 #include <userver/storages/postgres/component.hpp>
 #include <userver/utils/uuid4.hpp>
-#include <userver/components/component_config.hpp>
-#include <userver/components/component_context.hpp>
 
 using json = nlohmann::json;
 
@@ -56,12 +56,12 @@ class AbscenceVerdictHandler final
   std::string HandleRequestThrow(
       const userver::server::http::HttpRequest& request,
       userver::server::request::RequestContext& ctx) const override {
-    //CORS
-    request.GetHttpResponse()
-        .SetHeader(static_cast<std::string>("Access-Control-Allow-Origin"), "*");
-    request.GetHttpResponse()
-        .SetHeader(static_cast<std::string>("Access-Control-Allow-Headers"), "*");
-    
+    // CORS
+    request.GetHttpResponse().SetHeader(
+        static_cast<std::string>("Access-Control-Allow-Origin"), "*");
+    request.GetHttpResponse().SetHeader(
+        static_cast<std::string>("Access-Control-Allow-Headers"), "*");
+
     AbscenceVerdictRequest request_body(request.RequestBody());
     auto user_id = ctx.GetData<std::string>("user_id");
 
@@ -77,9 +77,13 @@ class AbscenceVerdictHandler final
                request_body.action_id)
             .AsSingleRow<ActionInfo>(userver::storages::postgres::kRowTag);
 
-    std::string notification_text = "Ваш запрос на отпуск с " +
-        userver::utils::datetime::Timestring(action_info.start_date, "UTC", "%d.%m.%Y") +
-        " по " + userver::utils::datetime::Timestring(action_info.end_date, "UTC", "%d.%m.%Y");
+    std::string notification_text =
+        "Ваш запрос на отпуск с " +
+        userver::utils::datetime::Timestring(action_info.start_date, "UTC",
+                                             "%d.%m.%Y") +
+        " по " +
+        userver::utils::datetime::Timestring(action_info.end_date, "UTC",
+                                             "%d.%m.%Y");
     std::string action_status = "denied";
     if (request_body.approve) {
       action_status = "approved";
@@ -87,7 +91,7 @@ class AbscenceVerdictHandler final
     } else {
       notification_text += " был отклонен.";
     }
-    
+
     if (action_status == "approved") {
       auto result = trx.Execute(
           "UPDATE working_day.actions "
@@ -116,7 +120,8 @@ class AbscenceVerdictHandler final
         "ON CONFLICT (id) "
         "DO NOTHING",
         notification_id, action_info.type + "_" + action_status,
-        notification_text, action_info.employee_id, user_id, request_body.action_id);
+        notification_text, action_info.employee_id, user_id,
+        request_body.action_id);
 
     trx.Commit();
 

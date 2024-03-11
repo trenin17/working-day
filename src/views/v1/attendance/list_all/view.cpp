@@ -1,4 +1,4 @@
-#define V1_EMPLOYEES
+#define V1_ATTENDANCE_LIST_ALL
 
 #include "view.hpp"
 
@@ -11,18 +11,17 @@
 #include <userver/storages/postgres/component.hpp>
 
 #include "definitions/all.hpp"
-#include "utils/s3_presigned_links.hpp"
 
-namespace views::v1::employees {
+namespace views::v1::attendance::list_all {
 
 namespace {
 
-class EmployeesHandler final
+class AttendanceListAllHandler final
     : public userver::server::handlers::HttpHandlerBase {
  public:
-  static constexpr std::string_view kName = "handler-v1-employees";
+  static constexpr std::string_view kName = "handler-v1-attendance-list-all";
 
-  EmployeesHandler(
+  AttendanceListAllHandler(
       const userver::components::ComponentConfig& config,
       const userver::components::ComponentContext& component_context)
       : HttpHandlerBase(config, component_context),
@@ -41,25 +40,27 @@ class EmployeesHandler final
         static_cast<std::string>("Access-Control-Allow-Headers"), "*");
 
     const auto& user_id = ctx.GetData<std::string>("user_id");
+    AttendanceListAllRequest request_body;
+    request_body.ParseRegisteredFields(request.RequestBody());
 
     auto result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kSlave,
-        "SELECT id, name, surname, patronymic, photo_link "
+        "SELECT working_day.actions.start_date, working_day.actions.end_date, "
+        "ROW"
+        "(working_day.employees.id, working_day.employees.name, "
+        "working_day.employees.surname, working_day.employees.patronymic, "
+        "NULL::text) "
         "FROM working_day.employees "
-        "WHERE head_id = $1",
-        user_id);
+        "LEFT JOIN working_day.actions "
+        "ON working_day.employees.id = working_day.actions.user_id AND "
+        "working_day.actions.start_date >= $2 AND working_day.actions.end_date "
+        "<= $3 AND working_day.actions.type = 'attendance' "
+        "WHERE working_day.employees.id <> $1",
+        user_id, request_body.from, request_body.to);
 
-    EmployeesResponse response;
-    response.employees = result.AsContainer<std::vector<ListEmployee>>(
+    AttendanceListAllResponse response;
+    response.attendances = result.AsContainer<std::vector<AttendanceListItem>>(
         userver::storages::postgres::kRowTag);
-    for (auto& employee : response.employees) {
-      if (employee.photo_link.has_value()) {
-        employee.photo_link =
-            utils::s3_presigned_links::GeneratePhotoPresignedLink(
-                employee.photo_link.value(),
-                utils::s3_presigned_links::Download);
-      }
-    }
     return response.ToJsonString();
   }
 
@@ -69,8 +70,9 @@ class EmployeesHandler final
 
 }  // namespace
 
-void AppendEmployees(userver::components::ComponentList& component_list) {
-  component_list.Append<EmployeesHandler>();
+void AppendAttendanceListAll(
+    userver::components::ComponentList& component_list) {
+  component_list.Append<AttendanceListAllHandler>();
 }
 
-}  // namespace views::v1::employees
+}  // namespace views::v1::attendance::list_all

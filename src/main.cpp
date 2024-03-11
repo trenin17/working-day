@@ -15,11 +15,16 @@
 
 #include "auth/auth_bearer.hpp"
 #include "auth/user_info_cache.hpp"
+#include "utils/custom_implicit_options.hpp"
 #include "views/v1/abscence/request/view.hpp"
+#include "views/v1/abscence/reschedule/view.hpp"
+#include "views/v1/abscence/split/view.hpp"
 #include "views/v1/abscence/verdict/view.hpp"
 #include "views/v1/actions/view.hpp"
 #include "views/v1/attendance/add/view.hpp"
+#include "views/v1/attendance/list_all/view.hpp"
 #include "views/v1/authorize/view.hpp"
+#include "views/v1/clear-tasks/view.hpp"
 #include "views/v1/documents/vacation/view.hpp"
 #include "views/v1/employee/add/view.hpp"
 #include "views/v1/employee/add_head/view.hpp"
@@ -27,13 +32,10 @@
 #include "views/v1/employee/remove/view.hpp"
 #include "views/v1/employees/view.hpp"
 #include "views/v1/notifications/view.hpp"
-#include "views/v1/profile/edit/view.hpp"
-#include "views/v1/profile/upload_photo/view.hpp"
-#include "views/v1/abscence/split/view.hpp"
-#include "views/v1/abscence/reschedule/view.hpp"
 #include "views/v1/payments/add_bulk/view.hpp"
 #include "views/v1/payments/view.hpp"
-#include "views/v1/clear-tasks/view.hpp"
+#include "views/v1/profile/edit/view.hpp"
+#include "views/v1/profile/upload_photo/view.hpp"
 #include "views/v1/search/basic/view.hpp"
 #include "views/v1/search/intersect/view.hpp"
 #include "utils/custom_implicit_options.hpp"
@@ -79,6 +81,7 @@ int main(int argc, char* argv[]) {
   views::v1::payments::AppendPayments(component_list);
   views::v1::clear_tasks::AppendClearTasks(component_list);
   views::v1::search_basic::AppendSearchBasic(component_list);
+  views::v1::attendance::list_all::AppendAttendanceListAll(component_list);
   views::v1::search_intersect::AppendSearchIntersect(component_list);
 
   int err_code = userver::utils::DaemonMain(argc, argv, component_list);

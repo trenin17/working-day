@@ -25,18 +25,6 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/EmployeesResponse'
-                '401':
-                    description: Unauthorized
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/ErrorMessage'
-                '403':
-                    description: Wrong authorization token
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/ErrorMessage'
                     
     /v1/employee/add:
         post:
@@ -60,18 +48,6 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/LoginInfo'
-                '401':
-                    description: Unauthorized
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/ErrorMessage'
-                '403':
-                    description: Wrong authorization token
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/ErrorMessage'
 
     /v1/employee/add-head:
         post:
@@ -96,18 +72,6 @@ paths:
             responses:
                 '200':
                     description: Head was added
-                '401':
-                    description: Unauthorized
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/ErrorMessage'
-                '403':
-                    description: Wrong authorization token
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/ErrorMessage'
                             
 
     /v1/employee/remove:
@@ -127,18 +91,6 @@ paths:
             responses:
                 '200':
                     description: Employee was removed
-                '401':
-                    description: Unauthorized
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/ErrorMessage'
-                '403':
-                    description: Wrong authorization token
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/ErrorMessage'
 
     /v1/employee/info:
         get:
@@ -161,12 +113,14 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/Employee'
+                # Applies for all handlers with authorization header
                 '401':
                     description: Unauthorized
                     content:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/ErrorMessage'
+                # Applies for all handlers with authorization header
                 '403':
                     description: Wrong authorization token
                     content:
@@ -196,18 +150,6 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/UploadPhotoResponse'
-                '401':
-                    description: Unauthorized
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/ErrorMessage'
-                '403':
-                    description: Wrong authorization token
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/ErrorMessage'
 
     /v1/profile/edit:
         post:
@@ -227,18 +169,6 @@ paths:
             responses:
                 '200':
                     description: Information was updated
-                '401':
-                    description: Unauthorized
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/ErrorMessage'
-                '403':
-                    description: Wrong authorization token
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/ErrorMessage'
 
     /v1/authorize:
         post:
@@ -285,18 +215,6 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/NotificationsResponse'
-                '401':
-                    description: Unauthorized
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/ErrorMessage'
-                '403':
-                    description: Wrong authorization token
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/ErrorMessage'
 
     /v1/actions:
         post:
@@ -320,18 +238,6 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/ActionsResponse'
-                '401':
-                    description: Unauthorized
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/ErrorMessage'
-                '403':
-                    description: Wrong authorization token
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/ErrorMessage'
 
     /v1/abscence/request:
         post:
@@ -355,18 +261,6 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/AbscenceRequestResponse'
-                '401':
-                    description: Unauthorized
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/ErrorMessage'
-                '403':
-                    description: Wrong authorization token
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/ErrorMessage'
 
     /v1/abscence/verdict:
         post:
@@ -386,18 +280,6 @@ paths:
             responses:
                 '200':
                     description: Verdict was sent
-                '401':
-                    description: Unauthorized
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/ErrorMessage'
-                '403':
-                    description: Wrong authorization token
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/ErrorMessage'
 
     /v1/abscence/split:
         post:
@@ -427,18 +309,6 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/ErrorMessage'
-                '401':
-                    description: Unauthorized
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/ErrorMessage'
-                '403':
-                    description: Wrong authorization token
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/ErrorMessage'
 
     /v1/abscence/reschedule:
         post:
@@ -462,18 +332,6 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/AbscenceRescheduleResponse'
-                '401':
-                    description: Unauthorized
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/ErrorMessage'
-                '403':
-                    description: Wrong authorization token
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/ErrorMessage'
 
     /v1/documents/vacation:
         get:
@@ -510,18 +368,6 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/ErrorMessage'
-                '401':
-                    description: Unauthorized
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/ErrorMessage'
-                '403':
-                    description: Wrong authorization token
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/ErrorMessage'
 
     /v1/attendance/add:
         post:
@@ -546,18 +392,6 @@ paths:
             responses:
                 '200':
                     description: Attendance was added successfully
-                '401':
-                    description: Unauthorized
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/ErrorMessage'
-                '403':
-                    description: Wrong authorization token
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/ErrorMessage'
 
     /v1/payments/add-bulk:
         post:
@@ -577,18 +411,6 @@ paths:
             responses:
                 '200':
                     description: New payments were added successfully
-                '401':
-                    description: Unauthorized
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/ErrorMessage'
-                '403':
-                    description: Wrong authorization token
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/ErrorMessage'
 
     /v1/payments:
         get:
@@ -615,7 +437,7 @@ paths:
                     description: Tasks were cleared
 
     /v1/search/basic:
-        get:
+        post:
             description: Get employees by key
             parameters:
               - in: header
@@ -671,18 +493,82 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/SearchResponse'
-                '401':
-                    description: Unauthorized
+
+    /v1/attendance/list-all:
+        post:
+            description: Get list of all employees' attendances for a given time period
+            parameters:
+              - in: header
+                name: Authorization
+                description: Token of session user
+                schema:
+                    type: string
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/AttendanceListAllRequest'
+            responses:
+                '200':
+                    description: List of attendances
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/ErrorMessage'
-                '403':
-                    description: Wrong authorization token
+                                $ref: '#/components/schemas/AttendanceListAllResponse'
+
+    /v1/documents/upload:
+        post:
+            description: Upload document
+            parameters:
+              - in: header
+                name: Authorization
+                description: Token of session user, available for managers only
+                schema:
+                    type: string
+            responses:
+                '200':
+                    description: Upload link
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/ErrorMessage'
+                                $ref: '#/components/schemas/UploadDocumentResponse'
+
+    /v1/documents/send:
+        post:
+            description: Send document
+            parameters:
+              - in: header
+                name: Authorization
+                description: Token of session user, available for managers only
+                schema:
+                    type: string
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/DocumentSendRequest'
+            responses:
+                '200':
+                    description: Document was sent
+
+    /v1/documents/list:
+        get:
+            description: Get list of documents
+            parameters:
+              - in: header
+                name: Authorization
+                description: Token of session user
+                schema:
+                    type: string
+            responses:
+                '200':
+                    description: List of documents
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/DocumentsListResponse'
 
 components:
     schemas:
@@ -694,6 +580,11 @@ components:
             properties:
                 message:
                     type: string
+
+        Timestamp:
+            type: string
+            description: Timestamp with the following format "%Y-%m-%dT%H:%M:%E6S" in UTC
+            format: date-time
 
         ListEmployee:
             type: object
@@ -851,9 +742,7 @@ components:
             properties:
                 #Not supported yet
                 earlier_than:
-                    type: string
-                    description: Timestamp that should be later than every notification timestamp
-
+                    $ref: '#/components/schemas/Timestamp'
         NotificationsResponse:
             type: object
             additionalProperties: false
@@ -904,11 +793,9 @@ components:
               - to
             properties:
                 from:
-                    type: string
-                    description: Timestamp for start of a period
+                    $ref: '#/components/schemas/Timestamp'
                 to:
-                    type: string
-                    description: Timestamp for end of a period
+                    $ref: '#/components/schemas/Timestamp'
                 employee_id:
                     type: string
                     description: If head wants to watch employee's actions
@@ -942,9 +829,9 @@ components:
                       - vacation
                       - attendance
                 start_date:
-                    type: string
+                    $ref: '#/components/schemas/Timestamp'
                 end_date:
-                    type: string
+                    $ref: '#/components/schemas/Timestamp'
                 status:
                     type: string
                 blocking_actions_ids:
@@ -961,9 +848,9 @@ components:
               - type
             properties:
                 start_date:
-                    type: string
+                    $ref: '#/components/schemas/Timestamp'
                 end_date:
-                    type: string
+                    $ref: '#/components/schemas/Timestamp'
                 type: 
                     type: string
                     enum:
@@ -1026,9 +913,9 @@ components:
               - end_date
             properties:
                 start_date:
-                    type: string
+                    $ref: '#/components/schemas/Timestamp'
                 end_date:
-                    type: string
+                    $ref: '#/components/schemas/Timestamp'
 
         AbscenceSplitRequest:
             type: object
@@ -1040,7 +927,7 @@ components:
                 action_id:
                     type: string
                 split_date:
-                    type: string
+                    $ref: '#/components/schemas/Timestamp'
         
         AbscenceSplitResponse:
             type: object
@@ -1064,7 +951,7 @@ components:
                 action_id:
                     type: string
                 reschedule_date:
-                    type: string
+                    $ref: '#/components/schemas/Timestamp'
 
         AbscenceRescheduleResponse:
             type: object
@@ -1102,7 +989,7 @@ components:
                 amount:
                     type: number
                 payroll_date:
-                    type: string
+                    $ref: '#/components/schemas/Timestamp'
 
         PaymentsResponse:
             type: object
@@ -1148,3 +1035,96 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/ListEmployee'
+
+        AttendanceListAllRequest:
+            type: object
+            additionalProperties: false
+            required:
+              - from
+              - to
+            properties:
+                from:
+                    $ref: '#/components/schemas/Timestamp'
+                to:
+                    $ref: '#/components/schemas/Timestamp'
+
+        AttendanceListAllResponse:
+            type: object
+            additionalProperties: false
+            required:
+              - attendances
+            properties:
+                attendances:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/AttendanceListItem'
+
+        AttendanceListItem:
+            type: object
+            additionalProperties: false
+            required:
+              - employee
+            properties:
+                employee:
+                    $ref: '#/components/schemas/ListEmployee'
+                start_date:
+                    $ref: '#/components/schemas/Timestamp'
+                end_date:
+                    $ref: '#/components/schemas/Timestamp'
+                    description: start_date and end_date should be in the same day
+
+        UploadDocumentResponse:
+            type: object
+            additionalProperties: false
+            required:
+              - url
+              - id
+            properties:
+                url:
+                    type: string
+                id:
+                    type: string
+                    description: Id to access the document
+
+        DocumentSendRequest:
+            type: object
+            additionalProperties: false
+            required:
+              - document
+              - employee_ids
+            properties:
+                document:
+                    $ref: '#/components/schemas/DocumentItem'
+                employee_ids:
+                    description: List of employee ids to send the document to
+                    type: array
+                    items:
+                        type: string
+
+        DocumentsListResponse:
+            type: object
+            additionalProperties: false
+            required:
+              - documents
+            properties:
+                documents:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/DocumentItem'
+
+        DocumentItem:
+            type: object
+            additionalProperties: false
+            required:
+              - id
+              - name
+              - sing_required
+            properties:
+                id:
+                    type: string
+                name:
+                    type: string
+                sing_required:
+                    type: boolean
+                description:
+                    type: string

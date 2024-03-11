@@ -1,12 +1,12 @@
 #include "view.hpp"
 
 #include <userver/clients/dns/component.hpp>
+#include <userver/components/component_config.hpp>
+#include <userver/components/component_context.hpp>
 #include <userver/logging/log.hpp>
 #include <userver/server/handlers/http_handler_base.hpp>
 #include <userver/storages/postgres/cluster.hpp>
 #include <userver/storages/postgres/component.hpp>
-#include <userver/components/component_config.hpp>
-#include <userver/components/component_context.hpp>
 #include "userver/utils/async.hpp"
 
 #include "core/reverse_index/view.hpp"
@@ -32,13 +32,12 @@ class ClearTasksHandler final
   std::string HandleRequestThrow(
       const userver::server::http::HttpRequest& request,
       userver::server::request::RequestContext&) const override {
-
     views::v1::reverse_index::ClearTasks();
 
     return "";
   }
 
-private:
+ private:
   userver::storages::postgres::ClusterPtr pg_cluster_;
 };
 

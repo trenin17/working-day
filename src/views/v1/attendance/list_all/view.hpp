@@ -5,9 +5,9 @@
 
 #include <userver/components/component_list.hpp>
 
-namespace views::v1::abscence::reschedule {
+namespace views::v1::attendance::list_all {
 
-void AppendAbscenceReschedule(
+void AppendAttendanceListAll(
     userver::components::ComponentList& component_list);
 
-}  // namespace views::v1::abscence::reschedule
+}  // namespace views::v1::attendance::list_all

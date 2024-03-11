@@ -4,10 +4,12 @@ project(working_day CXX)
 # Enable userver libraries that are needed in this project
 set(USERVER_FEATURE_POSTGRESQL ON CACHE BOOL "" FORCE)
 
+set(CMAKE_CXX_STANDARD 20)
+
 include(GNUInstallDirs)
 include(FetchContent)
 
-FetchContent_Declare(json URL https://github.com/nlohmann/json/releases/download/v3.11.2/json.tar.xz)
+FetchContent_Declare(json URL https://github.com/nlohmann/json/releases/download/v3.11.3/json.tar.xz)
 FetchContent_MakeAvailable(json)
 
 add_subdirectory(third_party/userver)
@@ -18,6 +20,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS, 1)
 if(NOT BUILD_SHARED_LIBS)
     set(BUILD_SHARED_LIBS ON)
 endif()
+
 
 find_package(AWSSDK REQUIRED COMPONENTS s3 sts)
 
@@ -76,6 +79,9 @@ add_library(${PROJECT_NAME}_objs OBJECT
 	src/views/v1/clear-tasks/view.cpp
 	src/views/v1/search/basic/view.hpp
 	src/views/v1/search/basic/view.cpp
+	src/definitions/all.hpp
+	src/views/v1/attendance/list_all/view.hpp
+	src/views/v1/attendance/list_all/view.cpp
 	src/views/v1/search/intersect/view.hpp
 	src/views/v1/search/intersect/view.cpp
 	
@@ -101,11 +107,11 @@ add_google_tests(${PROJECT_NAME}_unittest)
 
 
 # Benchmarks
-add_executable(${PROJECT_NAME}_benchmark
-	src/hello_benchmark.cpp
-)
-target_link_libraries(${PROJECT_NAME}_benchmark PRIVATE ${PROJECT_NAME}_objs userver-ubench)
-add_google_benchmark_tests(${PROJECT_NAME}_benchmark)
+# add_executable(${PROJECT_NAME}_benchmark
+# 	src/hello_benchmark.cpp
+# )
+# target_link_libraries(${PROJECT_NAME}_benchmark PRIVATE ${PROJECT_NAME}_objs userver-ubench)
+# add_google_benchmark_tests(${PROJECT_NAME}_benchmark)
 
 # Functional Tests
 include(UserverTestsuite)

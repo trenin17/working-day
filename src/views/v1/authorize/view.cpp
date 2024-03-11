@@ -3,13 +3,13 @@
 #include <nlohmann/json.hpp>
 
 #include <userver/clients/dns/component.hpp>
+#include <userver/components/component_config.hpp>
+#include <userver/components/component_context.hpp>
 #include <userver/logging/log.hpp>
 #include <userver/server/handlers/http_handler_base.hpp>
 #include <userver/storages/postgres/cluster.hpp>
 #include <userver/storages/postgres/component.hpp>
 #include <userver/utils/uuid4.hpp>
-#include <userver/components/component_config.hpp>
-#include <userver/components/component_context.hpp>
 
 #include "core/json_compatible/struct.hpp"
 
@@ -19,12 +19,12 @@ namespace views::v1::authorize {
 
 namespace {
 
-struct AuthorizeRequest: public JsonCompatible {
+struct AuthorizeRequest : public JsonCompatible {
   REGISTER_STRUCT_FIELD(login, std::string, "login");
   REGISTER_STRUCT_FIELD(password, std::string, "password");
 };
 
-struct AuthorizeResponse: public JsonCompatible {
+struct AuthorizeResponse : public JsonCompatible {
   AuthorizeResponse(const std::string& token_, const std::string& role_) {
     token = token_;
     role = role_;
@@ -68,6 +68,12 @@ class AuthorizeHandler final
   std::string HandleRequestThrow(
       const userver::server::http::HttpRequest& request,
       userver::server::request::RequestContext&) const override {
+    //CORS
+    request.GetHttpResponse()
+        .SetHeader(static_cast<std::string>("Access-Control-Allow-Origin"), "*");
+    request.GetHttpResponse()
+        .SetHeader(static_cast<std::string>("Access-Control-Allow-Headers"), "*");
+    
     AuthorizeRequest request_body;
     request_body.ParseRegisteredFields(request.RequestBody());
 
@@ -101,8 +107,7 @@ class AuthorizeHandler final
         userver::storages::postgres::ClusterHostType::kMaster,
         "INSERT INTO working_day.auth_tokens (token, user_id, scopes) "
         "VALUES ($1, $2, $3)",
-        token, user_info.id,
-        scopes);
+        token, user_info.id, scopes);
 
     AuthorizeResponse response(token, user_info.role);
 

@@ -3,12 +3,12 @@
 #include <nlohmann/json.hpp>
 
 #include <userver/clients/dns/component.hpp>
+#include <userver/components/component_config.hpp>
+#include <userver/components/component_context.hpp>
 #include <userver/logging/log.hpp>
 #include <userver/server/handlers/http_handler_base.hpp>
 #include <userver/storages/postgres/cluster.hpp>
 #include <userver/storages/postgres/component.hpp>
-#include <userver/components/component_config.hpp>
-#include <userver/components/component_context.hpp>
 
 #include "utils/s3_presigned_links.hpp"
 
@@ -22,9 +22,8 @@ class ActionsRequest {
  public:
   ActionsRequest(const std::string& body) {
     auto j = json::parse(body);
-    from = userver::utils::datetime::Stringtime(
-        j["from"], "UTC",
-        "%Y-%m-%dT%H:%M:%E6S");
+    from = userver::utils::datetime::Stringtime(j["from"], "UTC",
+                                                "%Y-%m-%dT%H:%M:%E6S");
     to = userver::utils::datetime::Stringtime(j["to"], "UTC",
                                               "%Y-%m-%dT%H:%M:%E6S");
     if (j.contains("employee_id")) {
@@ -89,12 +88,12 @@ class ActionsHandler final : public userver::server::handlers::HttpHandlerBase {
   std::string HandleRequestThrow(
       const userver::server::http::HttpRequest& request,
       userver::server::request::RequestContext& ctx) const override {
-    //CORS
-    request.GetHttpResponse()
-        .SetHeader(static_cast<std::string>("Access-Control-Allow-Origin"), "*");
-    request.GetHttpResponse()
-        .SetHeader(static_cast<std::string>("Access-Control-Allow-Headers"), "*");
-    
+    // CORS
+    request.GetHttpResponse().SetHeader(
+        static_cast<std::string>("Access-Control-Allow-Origin"), "*");
+    request.GetHttpResponse().SetHeader(
+        static_cast<std::string>("Access-Control-Allow-Headers"), "*");
+
     const auto& user_id = ctx.GetData<std::string>("user_id");
     ActionsRequest request_body(request.RequestBody());
 
@@ -104,7 +103,8 @@ class ActionsHandler final : public userver::server::handlers::HttpHandlerBase {
         "FROM working_day.actions "
         "WHERE (user_id = $1 AND start_date >= $2 AND start_date <= $3) "
         "OR (user_id = $1 AND end_date >= $2 AND end_date <= $3)",
-        request_body.employee_id.value_or(user_id), request_body.from, request_body.to);
+        request_body.employee_id.value_or(user_id), request_body.from,
+        request_body.to);
 
     ActionsResponse response{result.AsContainer<std::vector<UserAction>>(
         userver::storages::postgres::kRowTag)};

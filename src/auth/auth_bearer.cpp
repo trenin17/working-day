@@ -15,7 +15,9 @@ class AuthCheckerBearer final
       const AuthCache& auth_cache,
       std::vector<userver::server::auth::UserScope> required_scopes,
       userver::storages::postgres::ClusterPtr pg_cluster)
-      : auth_cache_(auth_cache), required_scopes_(std::move(required_scopes)), pg_cluster_(pg_cluster) {}
+      : auth_cache_(auth_cache),
+        required_scopes_(std::move(required_scopes)),
+        pg_cluster_(pg_cluster) {}
 
   [[nodiscard]] AuthCheckResult CheckAuth(
       const userver::server::http::HttpRequest& request,
@@ -67,16 +69,15 @@ AuthCheckerBearer::AuthCheckResult AuthCheckerBearer::CheckAuth(
     LOG_INFO() << "Trying to search token in database";
     auto result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kMaster,
-        static_cast<std::string>(AuthCachePolicy::kQuery) + 
-        " WHERE token = $1",
+        static_cast<std::string>(AuthCachePolicy::kQuery) + " WHERE token = $1",
         token);
     if (result.IsEmpty()) {
       LOG_INFO() << "Search of token in database was unsuccessful";
       return AuthCheckResult{AuthCheckResult::Status::kForbidden};
     }
     LOG_INFO() << "Search of token in database was successful";
-    not_cached_info = result.AsSingleRow<UserDbInfo>(
-        userver::storages::postgres::kRowTag);
+    not_cached_info =
+        result.AsSingleRow<UserDbInfo>(userver::storages::postgres::kRowTag);
   }
   /// [auth checker definition 3]
 
@@ -118,9 +119,10 @@ userver::server::handlers::auth::AuthCheckerBasePtr CheckerFactory::operator()(
     const userver::server::handlers::auth::AuthCheckerSettings&) const {
   auto scopes = auth_config["scopes"].As<userver::server::auth::UserScopes>({});
   const auto& auth_cache = context.FindComponent<AuthCache>();
-  return std::make_shared<AuthCheckerBearer>(auth_cache, std::move(scopes), context
-                .FindComponent<userver::components::Postgres>("key-value")
-                .GetCluster());
+  return std::make_shared<AuthCheckerBearer>(
+      auth_cache, std::move(scopes),
+      context.FindComponent<userver::components::Postgres>("key-value")
+          .GetCluster());
 }
 /// [auth checker factory definition]
 

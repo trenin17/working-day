@@ -261,13 +261,23 @@ components_manager:
 
         handler-v1-search-basic:
             path: /v1/search/basic
-            method: GET
+            method: POST
             task_processor: main-task-processor
             auth:
                 types:
                   - bearer
                 scopes:
                   - user
+
+        handler-v1-attendance-list-all:
+            path: /v1/attendance/list-all
+            method: POST
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - manager
 
         handler-v1-search-intersect:
             path: /v1/search/intersect

@@ -31,7 +31,8 @@ class ReverseIndexRequest {
   std::function<ReverseIndexResponse(const ReverseIndexRequest&)> func;
   userver::storages::postgres::ClusterPtr cluster;
   std::string employee_id;
-  std::optional<std::string> name, surname, patronymic, role, email, birthday, telegram_id, vk_id, team;
+  std::optional<std::string> name, surname, patronymic, role, email, birthday,
+      telegram_id, vk_id, team;
   std::optional<std::vector<std::string>> phones;
 };
 

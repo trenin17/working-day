@@ -21,7 +21,7 @@ using json = nlohmann::json;
 namespace views::v1::reverse_index {
 
 class ReverseIndex {
-public:
+ public:
   void ReverseIndexHandler(const ReverseIndexRequest& request) {
     if (!request.cluster || request.employee_id.empty()) {
       LOG_WARNING() << "Invalid arguments for indexation";
@@ -46,7 +46,7 @@ public:
       tasks->pop();
     }
   }
- 
+
   static ReverseIndex& GetInstance() {
     static ReverseIndex instance;
     return instance;
@@ -68,8 +68,6 @@ void ReverseIndexHandler(const ReverseIndexRequest& request) {
   return ReverseIndex::GetInstance().ReverseIndexHandler(request);
 }
 
-void ClearTasks() {
-  return ReverseIndex::GetInstance().ClearTasks();
-}
+void ClearTasks() { return ReverseIndex::GetInstance().ClearTasks(); }
 
 }  // namespace views::v1::reverse_index

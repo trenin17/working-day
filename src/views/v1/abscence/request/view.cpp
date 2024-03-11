@@ -3,13 +3,13 @@
 #include <nlohmann/json.hpp>
 
 #include <userver/clients/dns/component.hpp>
+#include <userver/components/component_config.hpp>
+#include <userver/components/component_context.hpp>
 #include <userver/logging/log.hpp>
 #include <userver/server/handlers/http_handler_base.hpp>
 #include <userver/storages/postgres/cluster.hpp>
 #include <userver/storages/postgres/component.hpp>
 #include <userver/utils/uuid4.hpp>
-#include <userver/components/component_config.hpp>
-#include <userver/components/component_context.hpp>
 
 using json = nlohmann::json;
 
@@ -25,9 +25,15 @@ class AbscenceRequestRequest {
     using namespace userver::utils::datetime;
     using namespace std::literals::chrono_literals;
     auto j = json::parse(body);
-    start_date = Stringtime(Timestring(Stringtime(j["start_date"], tz, "%Y-%m-%dT%H:%M:%E6S"), tz, "%Y-%m-%d"), tz, "%Y-%m-%d");
-    end_date = Stringtime(Timestring(Stringtime(j["end_date"], tz, "%Y-%m-%dT%H:%M:%E6S"), tz, "%Y-%m-%d"), tz, "%Y-%m-%d");
-    end_date += 1439min; // + 23:59
+    start_date = Stringtime(
+        Timestring(Stringtime(j["start_date"], tz, "%Y-%m-%dT%H:%M:%E6S"), tz,
+                   "%Y-%m-%d"),
+        tz, "%Y-%m-%d");
+    end_date = Stringtime(
+        Timestring(Stringtime(j["end_date"], tz, "%Y-%m-%dT%H:%M:%E6S"), tz,
+                   "%Y-%m-%d"),
+        tz, "%Y-%m-%d");
+    end_date += 1439min;  // + 23:59
     type = j["type"];
   }
 
@@ -68,12 +74,12 @@ class AbscenceRequestHandler final
   std::string HandleRequestThrow(
       const userver::server::http::HttpRequest& request,
       userver::server::request::RequestContext& ctx) const override {
-    //CORS
-    request.GetHttpResponse()
-        .SetHeader(static_cast<std::string>("Access-Control-Allow-Origin"), "*");
-    request.GetHttpResponse()
-        .SetHeader(static_cast<std::string>("Access-Control-Allow-Headers"), "*");
-    
+    // CORS
+    request.GetHttpResponse().SetHeader(
+        static_cast<std::string>("Access-Control-Allow-Origin"), "*");
+    request.GetHttpResponse().SetHeader(
+        static_cast<std::string>("Access-Control-Allow-Headers"), "*");
+
     AbscenceRequestRequest request_body(request.RequestBody());
     auto user_id = ctx.GetData<std::string>("user_id");
 
@@ -83,11 +89,13 @@ class AbscenceRequestHandler final
     std::string notification_text = "Unknown notification";
     if (request_body.type == "vacation") {
       action_status = "pending";
-      notification_text =
-          "Ваш сотрудник запросил отпуск c " +
-          userver::utils::datetime::Timestring(request_body.start_date, tz, "%d.%m.%Y") +
-          " по " + userver::utils::datetime::Timestring(request_body.end_date, tz, "%d.%m.%Y") +
-          ". Подтвердите или отклоните его.";
+      notification_text = "Ваш сотрудник запросил отпуск c " +
+                          userver::utils::datetime::Timestring(
+                              request_body.start_date, tz, "%d.%m.%Y") +
+                          " по " +
+                          userver::utils::datetime::Timestring(
+                              request_body.end_date, tz, "%d.%m.%Y") +
+                          ". Подтвердите или отклоните его.";
     }
 
     auto trx = pg_cluster_->Begin(
