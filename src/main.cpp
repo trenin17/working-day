@@ -25,6 +25,9 @@
 #include "views/v1/attendance/list_all/view.hpp"
 #include "views/v1/authorize/view.hpp"
 #include "views/v1/clear-tasks/view.hpp"
+#include "views/v1/documents/list/view.hpp"
+#include "views/v1/documents/send/view.hpp"
+#include "views/v1/documents/upload/view.hpp"
 #include "views/v1/documents/vacation/view.hpp"
 #include "views/v1/employee/add/view.hpp"
 #include "views/v1/employee/add_head/view.hpp"
@@ -37,9 +40,6 @@
 #include "views/v1/profile/edit/view.hpp"
 #include "views/v1/profile/upload_photo/view.hpp"
 #include "views/v1/search/basic/view.hpp"
-#include "views/v1/documents/upload/view.hpp"
-#include "views/v1/documents/send/view.hpp"
-#include "views/v1/documents/list/view.hpp"
 
 int main(int argc, char* argv[]) {
   Aws::SDKOptions options;

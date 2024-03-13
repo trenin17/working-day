@@ -44,32 +44,34 @@ class DocumentsSendHandler final
     DocumentSendRequest request_body;
     request_body.ParseRegisteredFields(request.RequestBody());
 
-    pg_cluster_->Execute(
-        userver::storages::postgres::ClusterHostType::kMaster,
-        "INSERT INTO working_day.documents(id, name, sign_required, description) "
-        "VALUES($1, $2, $3, $4)",
-        request_body.document.id, request_body.document.name, request_body.document.sign_required, request_body.document.description);
+    pg_cluster_->Execute(userver::storages::postgres::ClusterHostType::kMaster,
+                         "INSERT INTO working_day.documents(id, name, "
+                         "sign_required, description) "
+                         "VALUES($1, $2, $3, $4)",
+                         request_body.document.id, request_body.document.name,
+                         request_body.document.sign_required,
+                         request_body.document.description);
 
     LOG_INFO() << "BUILDING PARAMS";
     userver::storages::postgres::ParameterStore parameters;
     std::string filter;
     for (const auto& employee_id : request_body.employee_ids) {
-        filter += "($" + std::to_string(parameters.Size() + 1) + ", $" + std::to_string(parameters.Size() + 2) + "),";
-        parameters.PushBack(employee_id);
-        LOG_INFO() << "PUSH BACK 1";
-        parameters.PushBack(request_body.document.id);
-        LOG_INFO() << "PUSH BACK 2";
+      filter += "($" + std::to_string(parameters.Size() + 1) + ", $" +
+                std::to_string(parameters.Size() + 2) + "),";
+      parameters.PushBack(employee_id);
+      LOG_INFO() << "PUSH BACK 1";
+      parameters.PushBack(request_body.document.id);
+      LOG_INFO() << "PUSH BACK 2";
     }
     filter.pop_back();
     LOG_INFO() << "QUERY " << filter;
 
-    pg_cluster_->Execute(
-        userver::storages::postgres::ClusterHostType::kMaster,
-        "INSERT INTO working_day.employee_document "
-        "(employee_id, document_id) "
-        "VALUES " + filter,
-        parameters
-    );
+    pg_cluster_->Execute(userver::storages::postgres::ClusterHostType::kMaster,
+                         "INSERT INTO working_day.employee_document "
+                         "(employee_id, document_id) "
+                         "VALUES " +
+                             filter,
+                         parameters);
 
     return "";
   }
@@ -80,8 +82,7 @@ class DocumentsSendHandler final
 
 }  // namespace
 
-void AppendDocumentsSend(
-    userver::components::ComponentList& component_list) {
+void AppendDocumentsSend(userver::components::ComponentList& component_list) {
   component_list.Append<DocumentsSendHandler>();
 }
 

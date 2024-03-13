@@ -12,8 +12,8 @@
 #include <userver/utils/boost_uuid4.hpp>
 #include <userver/utils/uuid4.hpp>
 
-#include "utils/s3_presigned_links.hpp"
 #include <definitions/all.hpp>
+#include "utils/s3_presigned_links.hpp"
 
 namespace views::v1::documents::upload {
 
@@ -67,8 +67,7 @@ class DocumentsUploadHandler final
 
 }  // namespace
 
-void AppendDocumentsUpload(
-    userver::components::ComponentList& component_list) {
+void AppendDocumentsUpload(userver::components::ComponentList& component_list) {
   component_list.Append<DocumentsUploadHandler>();
 }
 

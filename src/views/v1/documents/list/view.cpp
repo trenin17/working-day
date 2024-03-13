@@ -45,9 +45,12 @@ class DocumentsListHandler final
 
     auto result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kMaster,
-        "SELECT working_day.documents.id, working_day.documents.name, working_day.documents.sign_required, working_day.documents.description "
+        "SELECT working_day.documents.id, working_day.documents.name, "
+        "working_day.documents.sign_required, "
+        "working_day.documents.description "
         "FROM working_day.documents "
-        "JOIN working_day.employee_document ON working_day.documents.id = working_day.employee_document.document_id "
+        "JOIN working_day.employee_document ON working_day.documents.id = "
+        "working_day.employee_document.document_id "
         "WHERE working_day.employee_document.employee_id = $1",
         user_id);
 
@@ -64,8 +67,7 @@ class DocumentsListHandler final
 
 }  // namespace
 
-void AppendDocumentsList(
-    userver::components::ComponentList& component_list) {
+void AppendDocumentsList(userver::components::ComponentList& component_list) {
   component_list.Append<DocumentsListHandler>();
 }
 
