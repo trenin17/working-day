@@ -457,6 +457,47 @@ async def test_attendance_list_all(service_client):
             ']}')
 
 
+@pytest.mark.pgsql('db_1', files=['initial_data.sql'])
+async def test_documents_send(service_client):
+    response = await service_client.post(
+        '/v1/employee/add',
+        headers={'Authorization': 'Bearer first_token'},
+        json={'name': 'Third', 'surname': 'C', 'role': 'manager'},
+    )
+    assert response.status == 200
+    employee_id = json.loads(response.text)['login']
+    password = json.loads(response.text)['password']
+
+    response = await service_client.post(
+        '/v1/authorize',
+        json={'login': employee_id, 'password': password},
+    )
+    assert response.status == 200
+    token = json.loads(response.text)['token']
+
+    response = await service_client.post(
+        '/v1/documents/send',
+        headers={'Authorization': 'Bearer ' + token},
+        json={'employee_ids': ['first_id', 'second_id'], 'document': {'id': 'id1', 'name': 'doc1', 'description': 'text1'}}
+    )
+    assert response.status == 200
+
+    response = await service_client.get(
+        '/v1/documents/list',
+        headers={'Authorization': 'Bearer first_token'}
+    )
+    assert response.status == 200
+    assert response.text == (
+            '{"documents":[{"description":"text1","id":"id1","name":"doc1","sign_required":false}]}')
+    
+    response = await service_client.get(
+        '/v1/documents/list',
+        headers={'Authorization': 'Bearer second_token'}
+    )
+    assert response.status == 200
+    assert response.text == (
+            '{"documents":[{"description":"text1","id":"id1","name":"doc1","sign_required":false}]}')
+
 
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])
 async def test_end(service_client):

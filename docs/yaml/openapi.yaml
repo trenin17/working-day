@@ -1069,13 +1069,12 @@ components:
             required:
               - id
               - name
-              - sing_required
             properties:
                 id:
                     type: string
                 name:
                     type: string
-                sing_required:
+                sign_required:
                     type: boolean
                 description:
                     type: string
