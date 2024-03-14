@@ -22,8 +22,9 @@ namespace views::v1::reverse_index {
 
 class ReverseIndex {
  public:
-  void ReverseIndexHandler(const ReverseIndexRequest& request) {
-    if (!request.cluster || request.employee_id.empty()) {
+  void ReverseIndexHandler(const ReverseIndexRequest& request, userver::storages::postgres::ClusterPtr cluster,
+                        const EmployeeAllData& data) {
+    if (!cluster || data.employee_id.empty()) {
       LOG_WARNING() << "Invalid arguments for indexation";
       return;
     }
@@ -36,7 +37,7 @@ class ReverseIndex {
 
     tasks->push(userver::utils::AsyncBackground(
         "ReverseIndexFunc", userver::engine::current_task::GetTaskProcessor(),
-        request.func, std::move(request)));
+        request.func, cluster, data));
   }
 
   void ClearTasks() {
@@ -64,8 +65,9 @@ class ReverseIndex {
       tasks_;
 };
 
-void ReverseIndexHandler(const ReverseIndexRequest& request) {
-  return ReverseIndex::GetInstance().ReverseIndexHandler(request);
+void ReverseIndexHandler(const ReverseIndexRequest& request, userver::storages::postgres::ClusterPtr cluster,
+                        const EmployeeAllData& data) {
+  return ReverseIndex::GetInstance().ReverseIndexHandler(request, cluster, data);
 }
 
 void ClearTasks() { return ReverseIndex::GetInstance().ClearTasks(); }

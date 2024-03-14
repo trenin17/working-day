@@ -22,22 +22,21 @@ namespace views::v1::employee::add {
 
 namespace {
 
-views::v1::reverse_index::ReverseIndexResponse AddReverseIndexFunc(
-    const views::v1::reverse_index::ReverseIndexRequest& request) {
+ReverseIndexResponse AddReverseIndexFunc(
+    userver::storages::postgres::ClusterPtr cluster, EmployeeAllData data) {
   std::vector<std::optional<std::string>> fields = {
-      request.name,        request.surname, request.patronymic,
-      request.role,        request.email,   request.birthday,
-      request.telegram_id, request.vk_id,   request.team};
+      data.name,     data.surname,     data.patronymic, data.role, data.email,
+      data.birthday, data.telegram_id, data.vk_id,      data.team};
 
-  if (request.phones.has_value()) {
-    fields.insert(fields.end(), request.phones.value().begin(),
-                  request.phones.value().end());
+  if (data.phones.has_value()) {
+    fields.insert(fields.end(), data.phones.value().begin(),
+                  data.phones.value().end());
   }
 
   userver::storages::postgres::ParameterStore parameters;
   std::string filter;
 
-  parameters.PushBack(request.employee_id);
+  parameters.PushBack(data.employee_id);
 
   for (const auto& field : fields) {
     if (field.has_value()) {
@@ -47,7 +46,7 @@ views::v1::reverse_index::ReverseIndexResponse AddReverseIndexFunc(
     }
   }
 
-  auto result = request.cluster->Execute(
+  auto result = cluster->Execute(
       userver::storages::postgres::ClusterHostType::kMaster,
       "WITH input_data AS ( "
       "  SELECT ARRAY" +
@@ -62,7 +61,7 @@ views::v1::reverse_index::ReverseIndexResponse AddReverseIndexFunc(
           "EXCLUDED.ids[1]); ",
       parameters);
 
-  views::v1::reverse_index::ReverseIndexResponse response(request.employee_id);
+  ReverseIndexResponse response(data.employee_id);
 
   return response;
 }
@@ -106,19 +105,17 @@ class AddEmployeeHandler final
         id, request_body.name, request_body.surname, request_body.patronymic,
         password, request_body.role, company_id);
 
-    views::v1::reverse_index::ReverseIndexRequest r_index_request{
-        [](const views::v1::reverse_index::ReverseIndexRequest& r)
-            -> views::v1::reverse_index::ReverseIndexResponse {
-          return AddReverseIndexFunc(std::move(r));
-        },
-        pg_cluster_,
-        id,
-        request_body.name,
-        request_body.surname,
-        request_body.patronymic,
-        request_body.role};
+    ReverseIndexRequest r_index_request{
+        [](userver::storages::postgres::ClusterPtr cluster,
+           EmployeeAllData data) -> ReverseIndexResponse {
+          return AddReverseIndexFunc(cluster, data);
+        }};
 
-    views::v1::reverse_index::ReverseIndexHandler(r_index_request);
+    EmployeeAllData data{id, request_body.name, request_body.surname,
+                         request_body.patronymic, request_body.role};
+
+    views::v1::reverse_index::ReverseIndexHandler(r_index_request, pg_cluster_,
+                                                  data);
 
     AddEmployeeResponse response(id, password);
     return response.ToJsonString();

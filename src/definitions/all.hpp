@@ -13,14 +13,17 @@
 #ifdef V1_ADD_EMPLOYEE
 #define USE_ADD_EMPLOYEE_REQUEST
 #define USE_ADD_EMPLOYEE_RESPONSE
+#define USE_REVERSE_INDEX
 #endif
 
 #ifdef V1_REMOVE_EMPLOYEE
 #define USE_ERROR_MESSAGE
+#define USE_REVERSE_INDEX
 #endif
 
 #ifdef V1_EDIT_EMPLOYEE
 #define USE_PROFILE_EDIT_REQUEST
+#define USE_REVERSE_INDEX
 #endif
 
 #ifdef V1_SEARCH_BASIC
@@ -35,6 +38,12 @@
 
 #ifdef USE_SEARCH_RESPONSE
 #define USE_LIST_EMPLOYEE
+#endif
+
+#ifdef USE_REVERSE_INDEX
+#define USE_REVERSE_INDEX_RESPONSE
+#define USE_EMPLOYEE_ALL_DATA
+#define USE_REVERSE_INDEX_REQUEST
 #endif
 
 #ifdef V1_ATTENDANCE_LIST_ALL
@@ -130,6 +139,34 @@ struct SearchAllRequest : public JsonCompatible {
 #ifdef USE_SEARCH_RESPONSE
 struct SearchResponse : public JsonCompatible {
   REGISTER_STRUCT_FIELD(employees, std::vector<ListEmployee>, "employees");
+};
+#endif
+
+#ifdef USE_REVERSE_INDEX_RESPONSE
+class ReverseIndexResponse : public JsonCompatible {
+ public:
+  ReverseIndexResponse(const std::string& employee_id)
+      : employee_id(employee_id) {}
+
+  REGISTER_STRUCT_FIELD(employee_id, std::string, "employee_id");
+};
+#endif
+
+#ifdef USE_EMPLOYEE_ALL_DATA
+class EmployeeAllData {
+ public:
+  std::string employee_id;
+  std::optional<std::string> name, surname, patronymic, role, email, birthday,
+      telegram_id, vk_id, team;
+  std::optional<std::vector<std::string>> phones;
+};
+#endif
+
+#ifdef USE_REVERSE_INDEX_REQUEST
+class ReverseIndexRequest {
+ public:
+  std::function<ReverseIndexResponse(userver::storages::postgres::ClusterPtr cluster,
+                        EmployeeAllData data)> func;
 };
 #endif
 

@@ -27,15 +27,15 @@ struct AllValuesRow {
   std::optional<std::string> email, birthday, telegram_id, vk_id, team;
 };
 
-views::v1::reverse_index::ReverseIndexResponse DeleteReverseIndexFunc(
-    const views::v1::reverse_index::ReverseIndexRequest& request) {
-  auto result = request.cluster->Execute(
-      userver::storages::postgres::ClusterHostType::kMaster,
-      "SELECT name, surname, role, patronymic, phones, "
-      "email, birthday, telegram_id, vk_id, team "
-      "FROM working_day.employees "
-      "WHERE id = $1;",
-      request.employee_id);
+ReverseIndexResponse DeleteReverseIndexFunc(
+    userver::storages::postgres::ClusterPtr cluster, EmployeeAllData data) {
+  auto result =
+      cluster->Execute(userver::storages::postgres::ClusterHostType::kMaster,
+                       "SELECT name, surname, role, patronymic, phones, "
+                       "email, birthday, telegram_id, vk_id, team "
+                       "FROM working_day.employees "
+                       "WHERE id = $1;",
+                       data.employee_id);
 
   auto values_res =
       result.AsSingleRow<AllValuesRow>(userver::storages::postgres::kRowTag);
@@ -51,7 +51,7 @@ views::v1::reverse_index::ReverseIndexResponse DeleteReverseIndexFunc(
   userver::storages::postgres::ParameterStore parameters;
   std::string filter;
 
-  parameters.PushBack(request.employee_id);
+  parameters.PushBack(data.employee_id);
 
   for (const auto& field : old_values) {
     if (field.has_value()) {
@@ -61,19 +61,19 @@ views::v1::reverse_index::ReverseIndexResponse DeleteReverseIndexFunc(
     }
   }
 
-  auto result2 = request.cluster->Execute(
-      userver::storages::postgres::ClusterHostType::kMaster,
-      "UPDATE working_day.reverse_index "
-      "SET ids = array_remove(ids, $1) "
-      "WHERE key IN " +
-          filter +
-          "); "
-          "DELETE FROM working_day.reverse_index "
-          "WHERE key IN " +
-          filter + "); AND ids = '{}'; ",
-      parameters);
+  auto result2 =
+      cluster->Execute(userver::storages::postgres::ClusterHostType::kMaster,
+                       "UPDATE working_day.reverse_index "
+                       "SET ids = array_remove(ids, $1) "
+                       "WHERE key IN " +
+                           filter +
+                           "); "
+                           "DELETE FROM working_day.reverse_index "
+                           "WHERE key IN " +
+                           filter + "); AND ids = '{}'; ",
+                       parameters);
 
-  views::v1::reverse_index::ReverseIndexResponse response(request.employee_id);
+  ReverseIndexResponse response(data.employee_id);
   return response;
 }
 
@@ -109,14 +109,16 @@ class RemoveEmployeeHandler final
       return err_msg.ToJsonString();
     }
 
-    views::v1::reverse_index::ReverseIndexRequest r_index_request{
-        [](const views::v1::reverse_index::ReverseIndexRequest& r)
-            -> views::v1::reverse_index::ReverseIndexResponse {
-          return DeleteReverseIndexFunc(std::move(r));
-        },
-        pg_cluster_, employee_id};
+    ReverseIndexRequest r_index_request{
+        [](userver::storages::postgres::ClusterPtr cluster,
+           EmployeeAllData data) -> ReverseIndexResponse {
+          return DeleteReverseIndexFunc(cluster, data);
+        }};
 
-    views::v1::reverse_index::ReverseIndexHandler(r_index_request);
+    EmployeeAllData data{employee_id};
+
+    views::v1::reverse_index::ReverseIndexHandler(r_index_request, pg_cluster_,
+                                                  data);
 
     auto result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kMaster,
