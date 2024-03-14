@@ -38,7 +38,6 @@
 #include "views/v1/profile/upload_photo/view.hpp"
 #include "views/v1/search/basic/view.hpp"
 #include "views/v1/search/intersect/view.hpp"
-#include "utils/custom_implicit_options.hpp"
 
 int main(int argc, char* argv[]) {
   Aws::SDKOptions options;

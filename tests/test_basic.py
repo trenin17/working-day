@@ -400,7 +400,7 @@ async def test_attendance_list_all(service_client):
             '"end_date":"2023-07-21T15:00:00.000000",'
             '"start_date":"2023-07-21T07:00:00.000000"},'
             '{"employee":{"id":"second_id","name":"Second","surname":"B"}}'
-            ']}')    
+            ']}')
     response = await service_client.post(
         '/v1/attendance/add',
         params={'employee_id': 'first_id'},
@@ -437,7 +437,7 @@ async def test_attendance_list_all(service_client):
             '{"employee":{"id":"second_id","name":"Second","surname":"B"},'
             '"end_date":"2023-07-22T15:00:00.000000",'
             '"start_date":"2023-07-22T07:00:00.000000"}'
-            ']}')    
+            ']}')
     response = await service_client.post(
         '/v1/attendance/list-all',
         headers={'Authorization': 'Bearer ' + token},
@@ -454,7 +454,6 @@ async def test_attendance_list_all(service_client):
             '"end_date":"2023-07-22T15:00:00.000000",'
             '"start_date":"2023-07-22T07:00:00.000000"}'
             ']}')
-
 
 
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])
@@ -505,7 +504,7 @@ async def test_search_intersect(service_client):
                                  '"name":"Eight","surname":"F"}]}')
     assert response.text == (response_required.substitute(id=new_id,
                                                           id2=new_id2))
-    
+
     response = await service_client.get(
         '/v1/search/intersect',
         json={'search_keys': ['F'], 'limit': 10},
@@ -519,8 +518,8 @@ async def test_search_intersect(service_client):
                                  '"name":"Eight","surname":"F"}]}')
     assert response.text == (response_required.substitute(id=new_id,
                                                           id2=new_id2))
-    
-    # three 
+
+    # three
     response = await service_client.post(
         '/v1/employee/add',
         headers={'Authorization': 'Bearer first_token'},

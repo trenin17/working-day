@@ -1,3 +1,5 @@
+#define V1_SEARCH_ALL
+
 #include "view.hpp"
 
 #include <nlohmann/json.hpp>
@@ -15,63 +17,13 @@
 #include <algorithm>
 
 #include "core/json_compatible/struct.hpp"
+#include "definitions/all.hpp"
 
 #include "utils/s3_presigned_links.hpp"
-
-using json = nlohmann::json;
 
 namespace views::v1::search_intersect {
 
 namespace {
-
-class ListEmployee {
- public:
-  json ToJSONObject() const {
-    json j;
-    j["id"] = id;
-    j["name"] = name;
-    j["surname"] = surname;
-    if (patronymic) {
-      j["patronymic"] = patronymic.value();
-    }
-    if (photo_link) {
-      j["photo_link"] = photo_link.value();
-    }
-
-    return j;
-  }
-
-  std::string id, name, surname;
-  std::optional<std::string> patronymic, photo_link;
-};
-
-struct SearchIntersectRequest: public JsonCompatible {
-public:
-  SearchIntersectRequest(const std::string& body) {
-    auto j = json::parse(body);
-    search_keys = j["search_keys"];
-    limit = j["limit"];
-  }
-
-  std::string login, password;
-
-  std::vector<std::string> search_keys;
-  int limit;
-};
-
-class SearchResponse {
- public:
-  std::string ToJSON() const {
-    json j;
-    j["employees"] = json::array();
-    for (const auto& employee : employees) {
-      j["employees"].push_back(employee.ToJSONObject());
-    }
-    return j.dump();
-  }
-
-  std::vector<ListEmployee> employees;
-};
 
 bool NextPerm(std::vector<bool>& p) {
     if (p.size() == 0) {
@@ -119,6 +71,36 @@ bool NextPerm(std::vector<bool>& p) {
     return true;
 }
 
+std::set<std::string> GetIds(const auto& id_sets, const int& limit) {
+    std::set<std::string> final_ids;
+    std::vector<bool> perm(id_sets.size());
+
+    do {
+        std::set<std::string> res;
+        bool flag = false;
+        for (size_t i = 0; i < perm.size(); ++i) {
+            if (perm[i]) {
+                continue;
+            }
+            if (!flag) {
+                res = id_sets[i].ids;
+                flag = true;
+            } else {
+                std::set<std::string> t;
+                set_intersection(res.begin(), res.end(), 
+                                 id_sets[i].ids.begin(), id_sets[i].ids.end(),
+                                 std::inserter(t, t.begin()));
+                res = t;
+            }
+        }
+
+        final_ids.insert(res.begin(), res.end());
+
+    } while (NextPerm(perm) && final_ids.size() < limit);
+
+    return final_ids;
+}
+
 class SearchIntersectHandler final
     : public userver::server::handlers::HttpHandlerBase {
  public:
@@ -154,7 +136,7 @@ class SearchIntersectHandler final
         filter += fmt::format("{}${}", separator, parameters.Size());        
     };    
 
-    SearchIntersectRequest request_body(request.RequestBody());
+    SearchAllRequest request_body;
     request_body.ParseRegisteredFields(request.RequestBody());
 
     // Getting a vector of sets of ids
@@ -176,31 +158,7 @@ class SearchIntersectHandler final
 
     // Intersecting sets
 
-    std::set<std::string> final_ids;
-    std::vector<bool> perm(id_sets.size());
-
-    do {
-        std::set<std::string> res;
-        bool flag = false;
-        for (size_t i = 0; i < perm.size(); ++i) {
-            if (perm[i]) {
-                continue;
-            }
-            if (!flag) {
-                res = id_sets[i].ids;
-                flag = true;
-            } else {
-                std::set<std::string> t;
-                set_intersection(res.begin(), res.end(), 
-                                 id_sets[i].ids.begin(), id_sets[i].ids.end(),
-                                 std::inserter(t, t.begin()));
-                res = t;
-            }
-        }
-
-        final_ids.insert(res.begin(), res.end());
-
-    } while (NextPerm(perm) && final_ids.size() < request_body.limit);
+    std::set<std::string> final_ids = GetIds(id_sets, request_body.limit);
 
     // fetching ids' values and returning them
 
@@ -234,7 +192,7 @@ class SearchIntersectHandler final
       }
     }
     
-    return response.ToJSON();
+    return response.ToJsonString();
   }
 
  private:

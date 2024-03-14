@@ -1,3 +1,5 @@
+#define V1_EDIT_EMPLOYEE
+
 #include "view.hpp"
 
 #include <aws/core/Aws.h>
@@ -18,19 +20,11 @@
 #include "core/json_compatible/struct.hpp"
 #include "core/reverse_index/view.hpp"
 
+#include "definitions/all.hpp"
+
 namespace views::v1::profile::edit {
 
 namespace {
-
-struct ProfileEditRequest : public JsonCompatible {
-  REGISTER_STRUCT_FIELD_OPTIONAL(phones, std::vector<std::string>, "phones");
-  REGISTER_STRUCT_FIELD_OPTIONAL(email, std::string, "email");
-  REGISTER_STRUCT_FIELD_OPTIONAL(birthday, std::string, "birthday");
-  REGISTER_STRUCT_FIELD_OPTIONAL(password, std::string, "password");
-  REGISTER_STRUCT_FIELD_OPTIONAL(telegram_id, std::string, "telegram_id");
-  REGISTER_STRUCT_FIELD_OPTIONAL(vk_id, std::string, "vk_id");
-  REGISTER_STRUCT_FIELD_OPTIONAL(team, std::string, "team");
-};
 
 struct EditValuesRow {
   std::optional<std::vector<std::string>> phones;

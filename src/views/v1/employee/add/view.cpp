@@ -1,3 +1,5 @@
+#define V1_ADD_EMPLOYEE
+
 #include "view.hpp"
 
 #include <userver/clients/dns/component.hpp>
@@ -11,29 +13,14 @@
 #include <userver/utils/boost_uuid4.hpp>
 #include <userver/utils/uuid4.hpp>
 
+#include "definitions/all.hpp"
+
 #include "core/json_compatible/struct.hpp"
 #include "core/reverse_index/view.hpp"
 
 namespace views::v1::employee::add {
 
 namespace {
-
-struct AddEmployeeRequest : public JsonCompatible {
-  REGISTER_STRUCT_FIELD(name, std::string, "name");
-  REGISTER_STRUCT_FIELD(surname, std::string, "surname");
-  REGISTER_STRUCT_FIELD(role, std::string, "role");
-  REGISTER_STRUCT_FIELD_OPTIONAL(patronymic, std::string, "patronymic");
-};
-
-struct AddEmployeeResponse : public JsonCompatible {
-  AddEmployeeResponse(const std::string& l, const std::string& p) {
-    login = l;
-    password = p;
-  }
-
-  REGISTER_STRUCT_FIELD(login, std::string, "login");
-  REGISTER_STRUCT_FIELD(password, std::string, "password");
-};
 
 views::v1::reverse_index::ReverseIndexResponse AddReverseIndexFunc(
     const views::v1::reverse_index::ReverseIndexRequest& request) {

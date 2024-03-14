@@ -1,3 +1,5 @@
+#define V1_REMOVE_EMPLOYEE
+
 #include "view.hpp"
 #include "core/reverse_index/view.hpp"
 
@@ -12,15 +14,11 @@
 
 #include "core/json_compatible/struct.hpp"
 
+#include "definitions/all.hpp"
+
 namespace views::v1::employee::remove {
 
 namespace {
-
-struct ErrorMessage : public JsonCompatible {
-  ErrorMessage(const std::string& msg) { message = msg; }
-
-  REGISTER_STRUCT_FIELD(message, std::string, "message");
-};
 
 struct AllValuesRow {
   std::string name, surname, role;
