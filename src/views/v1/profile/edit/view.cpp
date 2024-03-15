@@ -111,9 +111,10 @@ ReverseIndexResponse AddNewValuesFunc(
 
   parameters2.PushBack(data.employee_id);
 
-  for (const auto& field : new_fields) {
+  for (auto& field : new_fields) {
     if (field.has_value()) {
       auto separator = (parameters2.Size() == 1 ? "[" : ", ");
+      transform(field.value().begin(), field.value().end(), field.value().begin(), ::tolower); 
       parameters2.PushBack(field.value());
       filter2 += fmt::format("{}${}", separator, parameters2.Size());
     }

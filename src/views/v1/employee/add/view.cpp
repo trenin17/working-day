@@ -38,9 +38,10 @@ ReverseIndexResponse AddReverseIndexFunc(
 
   parameters.PushBack(data.employee_id);
 
-  for (const auto& field : fields) {
+  for (auto& field : fields) {
     if (field.has_value()) {
       auto separator = (parameters.Size() == 1 ? "[" : ", ");
+      transform(field.value().begin(), field.value().end(), field.value().begin(), ::tolower); 
       parameters.PushBack(field.value());
       filter += fmt::format("{}${}", separator, parameters.Size());
     }

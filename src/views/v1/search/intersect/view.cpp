@@ -143,6 +143,7 @@ class SearchIntersectHandler final
     userver::storages::postgres::ParameterStore parameters;
     std::string filter;
     for (auto& key : request_body.search_keys) {
+        transform(key.begin(), key.end(), key.begin(), ::tolower);
         append(key, parameters, filter);
     }
 
