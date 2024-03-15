@@ -279,9 +279,9 @@ components_manager:
                 scopes:
                   - manager
 
-        handler-v1-search-intersect:
-            path: /v1/search/intersect
-            method: GET
+        handler-v1-search-full:
+            path: /v1/search/full
+            method: POST
             task_processor: main-task-processor
             auth:
                 types:

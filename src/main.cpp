@@ -37,7 +37,7 @@
 #include "views/v1/profile/edit/view.hpp"
 #include "views/v1/profile/upload_photo/view.hpp"
 #include "views/v1/search/basic/view.hpp"
-#include "views/v1/search/intersect/view.hpp"
+#include "views/v1/search/full/view.hpp"
 
 int main(int argc, char* argv[]) {
   Aws::SDKOptions options;
@@ -81,7 +81,7 @@ int main(int argc, char* argv[]) {
   views::v1::clear_tasks::AppendClearTasks(component_list);
   views::v1::search_basic::AppendSearchBasic(component_list);
   views::v1::attendance::list_all::AppendAttendanceListAll(component_list);
-  views::v1::search_intersect::AppendSearchIntersect(component_list);
+  views::v1::search_full::AppendSearchFull(component_list);
 
   int err_code = userver::utils::DaemonMain(argc, argv, component_list);
 

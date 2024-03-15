@@ -471,8 +471,8 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/ErrorMessage'
 
-    /v1/search/intersect:
-        get:
+    /v1/search/full:
+        post:
             description: Get employees by multiple keys
             parameters:
               - in: header
@@ -485,7 +485,7 @@ paths:
                 content:
                     application/json:
                         schema:
-                            $ref: '#/components/schemas/SearchIntersectRequest'
+                            $ref: '#/components/schemas/SearchFullRequest'
             responses:
                 '200':
                     description: List of employees
@@ -1011,7 +1011,7 @@ components:
                 search_key:
                     type: string
 
-        SearchIntersectRequest:
+        SearchFullRequest:
             type: object
             additionalProperties: false
             required:

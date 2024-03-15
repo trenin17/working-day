@@ -217,6 +217,29 @@ async def test_authorize(service_client):
 
     assert response.status == 403
 
+@pytest.mark.pgsql('db_1', files=['initial_data.sql'])
+async def test_search_basic(service_client):
+    response = await service_client.post(
+        '/v1/employee/add',
+        headers={'Authorization': 'Bearer first_token'},
+        json={'name': 'Fourth', 'surname': 'D', 'role': 'user'},
+    )
+
+    assert response.status == 200
+    new_id = json.loads(response.text)['login']
+    new_password = json.loads(response.text)['password']
+
+    response = await service_client.post(
+        '/v1/search/basic',
+        json={'search_key': 'Fourth'},
+        headers={'Authorization': 'Bearer first_token'},
+    )
+
+    assert response.status == 200
+    response_required = Template('{"employees":[{"id":"${id}",'
+                                 '"name":"Fourth","surname":"D"}]}')
+    assert response.text == (response_required.substitute(id=new_id))
+    
 
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])
 async def test_search_add(service_client):
@@ -230,9 +253,9 @@ async def test_search_add(service_client):
     new_id = json.loads(response.text)['login']
     new_password = json.loads(response.text)['password']
 
-    response = await service_client.get(
-        '/v1/search/intersect',
-        json={'search_keys': ['Fourth'], 'limit': 1},
+    response = await service_client.post(
+        '/v1/search/full',
+        json={'search_keys': ['FOURTH'], 'limit': 1},
         headers={'Authorization': 'Bearer first_token'},
     )
 
@@ -263,8 +286,8 @@ async def test_search_remove(service_client):
 
     assert response.status == 200
 
-    response = await service_client.get(
-        '/v1/search/intersect',
+    response = await service_client.post(
+        '/v1/search/full',
         json={'search_keys': ['Fifth'], 'limit': 1},
         headers={'Authorization': 'Bearer first_token'},
     )
@@ -272,8 +295,8 @@ async def test_search_remove(service_client):
     assert response.status == 200
     assert response.text == ('{"employees":[]}')
 
-    response = await service_client.get(
-        '/v1/search/intersect',
+    response = await service_client.post(
+        '/v1/search/full',
         json={'search_keys': ['E'], 'limit': 1},
         headers={'Authorization': 'Bearer first_token'},
     )
@@ -293,8 +316,8 @@ async def test_search_edit(service_client):
 
     assert response.status == 200
 
-    response = await service_client.get(
-        '/v1/search/intersect',
+    response = await service_client.post(
+        '/v1/search/full',
         json={'search_keys': ['+1111'], 'limit': 1},
         headers={'Authorization': 'Bearer second_token'},
     )
@@ -312,8 +335,8 @@ async def test_search_edit(service_client):
 
     assert response.status == 200
 
-    response = await service_client.get(
-        '/v1/search/intersect',
+    response = await service_client.post(
+        '/v1/search/full',
         json={'search_keys': ['2@mail.com'], 'limit': 1},
         headers={'Authorization': 'Bearer second_token'},
     )
@@ -330,8 +353,8 @@ async def test_search_edit(service_client):
     )
 
     assert response.status == 200
-    response = await service_client.get(
-        '/v1/search/intersect',
+    response = await service_client.post(
+        '/v1/search/full',
         json={'search_keys': ['+1111'], 'limit': 1},
         headers={'Authorization': 'Bearer second_token'},
     )
@@ -339,8 +362,8 @@ async def test_search_edit(service_client):
     assert response.status == 200
     assert response.text == ('{"employees":[]}')
 
-    response = await service_client.get(
-        '/v1/search/intersect',
+    response = await service_client.post(
+        '/v1/search/full',
         json={'search_keys': ['+2222'], 'limit': 1},
         headers={'Authorization': 'Bearer second_token'},
     )
@@ -349,8 +372,8 @@ async def test_search_edit(service_client):
     assert response.text == ('{"employees":[{"id":"second_id"'
                              ',"name":"Second","surname":"B"}]}')
 
-    response = await service_client.get(
-        '/v1/search/intersect',
+    response = await service_client.post(
+        '/v1/search/full',
         json={'search_keys': ['2@mail.com'], 'limit': 1},
         headers={'Authorization': 'Bearer second_token'},
     )
@@ -457,8 +480,8 @@ async def test_attendance_list_all(service_client):
 
 
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])
-async def test_search_intersect(service_client):
-    # basic intersect
+async def test_search_full(service_client):
+    # basic full
     response = await service_client.post(
         '/v1/employee/add',
         headers={'Authorization': 'Bearer first_token'},
@@ -469,8 +492,8 @@ async def test_search_intersect(service_client):
     new_id = json.loads(response.text)['login']
     new_password = json.loads(response.text)['password']
 
-    response = await service_client.get(
-        '/v1/search/intersect',
+    response = await service_client.post(
+        '/v1/search/full',
         json={'search_keys': ['Seventh', 'F', 'user'], 'limit': 1},
         headers={'Authorization': 'Bearer first_token'},
     )
@@ -491,8 +514,8 @@ async def test_search_intersect(service_client):
     new_id2 = json.loads(response.text)['login']
     new_password2 = json.loads(response.text)['password']
 
-    response = await service_client.get(
-        '/v1/search/intersect',
+    response = await service_client.post(
+        '/v1/search/full',
         json={'search_keys': ['Seventh', 'F'], 'limit': 5},
         headers={'Authorization': 'Bearer first_token'},
     )
@@ -505,8 +528,8 @@ async def test_search_intersect(service_client):
     assert response.text == (response_required.substitute(id=new_id,
                                                           id2=new_id2))
 
-    response = await service_client.get(
-        '/v1/search/intersect',
+    response = await service_client.post(
+        '/v1/search/full',
         json={'search_keys': ['F'], 'limit': 10},
         headers={'Authorization': 'Bearer first_token'},
     )
@@ -530,8 +553,8 @@ async def test_search_intersect(service_client):
     new_id3 = json.loads(response.text)['login']
     new_password3 = json.loads(response.text)['password']
 
-    response = await service_client.get(
-        '/v1/search/intersect',
+    response = await service_client.post(
+        '/v1/search/full',
         json={'search_keys': ['Seventh', 'F'], 'limit': 10},
         headers={'Authorization': 'Bearer first_token'},
     )
