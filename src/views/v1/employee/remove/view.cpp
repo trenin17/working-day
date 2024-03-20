@@ -72,7 +72,7 @@ views::v1::reverse_index::ReverseIndexResponse DeleteReverseIndexFunc(
           "); "
           "DELETE FROM working_day.reverse_index "
           "WHERE key IN " +
-          filter + "); AND ids = '{}'; ",
+          filter + ") AND ids = '{}'; ",
       parameters);
 
   views::v1::reverse_index::ReverseIndexResponse response(request.employee_id);

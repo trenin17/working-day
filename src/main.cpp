@@ -40,6 +40,7 @@
 #include "views/v1/profile/edit/view.hpp"
 #include "views/v1/profile/upload_photo/view.hpp"
 #include "views/v1/search/basic/view.hpp"
+#include "views/v1/documents/download/view.hpp"
 
 int main(int argc, char* argv[]) {
   Aws::SDKOptions options;
@@ -86,6 +87,7 @@ int main(int argc, char* argv[]) {
   views::v1::documents::upload::AppendDocumentsUpload(component_list);
   views::v1::documents::send::AppendDocumentsSend(component_list);
   views::v1::documents::list::AppendDocumentsList(component_list);
+  views::v1::documents::download::AppendDocumentsDownload(component_list);
 
   int err_code = userver::utils::DaemonMain(argc, argv, component_list);
 

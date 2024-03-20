@@ -52,6 +52,10 @@
 #define USE_DOCUMENT_ITEM
 #endif
 
+#ifdef V1_DOCUMENTS_DOWNLOAD
+#define USE_DOWNLOAD_DOCUMENT_RESPONSE
+#endif
+
 #ifdef USE_LIST_EMPLOYEE
 struct ListEmployee : public JsonCompatible {
   // For postgres initialization type needs to be default constructible
@@ -163,5 +167,11 @@ struct DocumentSendRequest : public JsonCompatible {
 #ifdef USE_DOCUMENTS_LIST_RESPONSE
 struct DocumentsListResponse : public JsonCompatible {
   REGISTER_STRUCT_FIELD(documents, std::vector<DocumentItem>, "documents");
+};
+#endif
+
+#ifdef USE_DOWNLOAD_DOCUMENT_RESPONSE
+struct DownloadDocumentResponse : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(url, std::string, "url");
 };
 #endif

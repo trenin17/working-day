@@ -230,7 +230,7 @@ async def test_search_add(service_client):
     new_id = json.loads(response.text)['login']
     new_password = json.loads(response.text)['password']
 
-    response = await service_client.get(
+    response = await service_client.post(
         '/v1/search/basic',
         json={'search_key': 'Fourth'},
         headers={'Authorization': 'Bearer first_token'},
@@ -263,7 +263,7 @@ async def test_search_remove(service_client):
 
     assert response.status == 200
 
-    response = await service_client.get(
+    response = await service_client.post(
         '/v1/search/basic',
         json={'search_key': 'Fifth'},
         headers={'Authorization': 'Bearer first_token'},
@@ -272,7 +272,7 @@ async def test_search_remove(service_client):
     assert response.status == 200
     assert response.text == ('{"employees":[]}')
 
-    response = await service_client.get(
+    response = await service_client.post(
         '/v1/search/basic',
         json={'search_key': 'E'},
         headers={'Authorization': 'Bearer first_token'},
@@ -293,7 +293,7 @@ async def test_search_edit(service_client):
 
     assert response.status == 200
 
-    response = await service_client.get(
+    response = await service_client.post(
         '/v1/search/basic',
         json={'search_key': '+1111'},
         headers={'Authorization': 'Bearer second_token'},
@@ -312,7 +312,7 @@ async def test_search_edit(service_client):
 
     assert response.status == 200
 
-    response = await service_client.get(
+    response = await service_client.post(
         '/v1/search/basic',
         json={'search_key': '2@mail.com'},
         headers={'Authorization': 'Bearer second_token'},
@@ -331,7 +331,7 @@ async def test_search_edit(service_client):
 
     assert response.status == 200
 
-    response = await service_client.get(
+    response = await service_client.post(
         '/v1/search/basic',
         json={'search_key': '+1111'},
         headers={'Authorization': 'Bearer second_token'},
@@ -340,7 +340,7 @@ async def test_search_edit(service_client):
     assert response.status == 200
     assert response.text == ('{"employees":[]}')
 
-    response = await service_client.get(
+    response = await service_client.post(
         '/v1/search/basic',
         json={'search_key': '+2222'},
         headers={'Authorization': 'Bearer second_token'},
@@ -350,7 +350,7 @@ async def test_search_edit(service_client):
     assert response.text == ('{"employees":[{"id":"second_id"'
                              ',"name":"Second","surname":"B"}]}')
 
-    response = await service_client.get(
+    response = await service_client.post(
         '/v1/search/basic',
         json={'search_key': '2@mail.com'},
         headers={'Authorization': 'Bearer second_token'},

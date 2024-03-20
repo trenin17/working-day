@@ -308,6 +308,16 @@ components_manager:
                   - bearer
                 scopes:
                   - user
+        
+        handler-v1-documents-download:
+            path: /v1/documents/download
+            method: GET
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - user
 
         handler-implicit-http-options:
             as_fallback: implicit-http-options

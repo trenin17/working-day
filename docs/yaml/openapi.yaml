@@ -535,6 +535,28 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/DocumentsListResponse'
 
+    /v1/documents/download:
+        get:
+            description: Download document
+            parameters:
+              - in: header
+                name: Authorization
+                description: Token of session user, available for managers only
+                schema:
+                    type: string
+              - in: query
+                name: id
+                description: Id of the document
+                schema:
+                    type: string
+            responses:
+                '200':
+                    description: Download link
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/DownloadDocumentResponse'            
+
 components:
     schemas:
         ErrorMessage:
@@ -1077,4 +1099,13 @@ components:
                 sign_required:
                     type: boolean
                 description:
+                    type: string
+
+        DownloadDocumentResponse:
+            type: object
+            additionalProperties: false
+            required:
+              - url
+            properties:
+                url:
                     type: string
