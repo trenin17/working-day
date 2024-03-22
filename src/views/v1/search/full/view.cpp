@@ -1,4 +1,4 @@
-#define V1_SEARCH_ALL
+#define V1_SEARCH_FULL
 
 #include "view.hpp"
 
@@ -15,6 +15,7 @@
 #include <set>
 #include <vector>
 #include <algorithm>
+#include <sstream>
 
 #include "core/json_compatible/struct.hpp"
 #include "definitions/all.hpp"
@@ -101,6 +102,16 @@ std::set<std::string> GetIds(const auto& id_sets, const int& limit) {
     return final_ids;
 }
 
+std::vector<std::string> SplitBySpaces(std::string& str) {
+    std::string s;
+    std::stringstream ss(str);
+    std::vector<std::string> v;
+    while (std::getline(ss, s, ' ')) {
+        v.push_back(s);
+    }
+    return v;
+}
+
 class SearchFullHandler final
     : public userver::server::handlers::HttpHandlerBase {
  public:
@@ -136,13 +147,15 @@ class SearchFullHandler final
         filter += fmt::format("{}${}", separator, parameters.Size());        
     };    
 
-    SearchAllRequest request_body;
+    SearchFullRequest request_body;
     request_body.ParseRegisteredFields(request.RequestBody());
+
+    std::vector<std::string> search_keys = SplitBySpaces(request_body.search_keys);
 
     // Getting a vector of sets of ids
     userver::storages::postgres::ParameterStore parameters;
     std::string filter;
-    for (auto& key : request_body.search_keys) {
+    for (auto& key : search_keys) {
         transform(key.begin(), key.end(), key.begin(), ::tolower);
         append(key, parameters, filter);
     }

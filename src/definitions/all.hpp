@@ -31,8 +31,8 @@
 #define USE_SEARCH_RESPONSE
 #endif
 
-#ifdef V1_SEARCH_ALL
-#define USE_SEARCH_ALL_REQUEST
+#ifdef V1_SEARCH_FULL
+#define USE_SEARCH_FULL_REQUEST
 #define USE_SEARCH_RESPONSE
 #endif
 
@@ -153,9 +153,9 @@ struct SearchBasicRequest : public JsonCompatible {
 };
 #endif
 
-#ifdef USE_SEARCH_ALL_REQUEST
-struct SearchAllRequest : public JsonCompatible {
-  REGISTER_STRUCT_FIELD(search_keys, std::vector<std::string>, "search_keys");
+#ifdef USE_SEARCH_FULL_REQUEST
+struct SearchFullRequest : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(search_keys, std::string, "search_keys");
   REGISTER_STRUCT_FIELD(limit, int, "limit");
 };
 #endif

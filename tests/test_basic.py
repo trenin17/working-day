@@ -217,6 +217,7 @@ async def test_authorize(service_client):
 
     assert response.status == 403
 
+
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])
 async def test_search_basic(service_client):
     response = await service_client.post(
@@ -239,7 +240,7 @@ async def test_search_basic(service_client):
     response_required = Template('{"employees":[{"id":"${id}",'
                                  '"name":"Fourth","surname":"D"}]}')
     assert response.text == (response_required.substitute(id=new_id))
-    
+
 
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])
 async def test_search_add(service_client):
@@ -255,7 +256,7 @@ async def test_search_add(service_client):
 
     response = await service_client.post(
         '/v1/search/full',
-        json={'search_keys': ['FOURTH'], 'limit': 1},
+        json={'search_keys': 'FOURTH', 'limit': 1},
         headers={'Authorization': 'Bearer first_token'},
     )
 
@@ -288,7 +289,7 @@ async def test_search_remove(service_client):
 
     response = await service_client.post(
         '/v1/search/full',
-        json={'search_keys': ['Fifth'], 'limit': 1},
+        json={'search_keys': 'Fifth', 'limit': 1},
         headers={'Authorization': 'Bearer first_token'},
     )
 
@@ -297,7 +298,7 @@ async def test_search_remove(service_client):
 
     response = await service_client.post(
         '/v1/search/full',
-        json={'search_keys': ['E'], 'limit': 1},
+        json={'search_keys': 'E', 'limit': 1},
         headers={'Authorization': 'Bearer first_token'},
     )
 
@@ -318,7 +319,7 @@ async def test_search_edit(service_client):
 
     response = await service_client.post(
         '/v1/search/full',
-        json={'search_keys': ['+1111'], 'limit': 1},
+        json={'search_keys': '+1111', 'limit': 1},
         headers={'Authorization': 'Bearer second_token'},
     )
 
@@ -337,7 +338,7 @@ async def test_search_edit(service_client):
 
     response = await service_client.post(
         '/v1/search/full',
-        json={'search_keys': ['2@mail.com'], 'limit': 1},
+        json={'search_keys': '2@mail.com', 'limit': 1},
         headers={'Authorization': 'Bearer second_token'},
     )
 
@@ -355,7 +356,7 @@ async def test_search_edit(service_client):
     assert response.status == 200
     response = await service_client.post(
         '/v1/search/full',
-        json={'search_keys': ['+1111'], 'limit': 1},
+        json={'search_keys': '+1111', 'limit': 1},
         headers={'Authorization': 'Bearer second_token'},
     )
 
@@ -364,7 +365,7 @@ async def test_search_edit(service_client):
 
     response = await service_client.post(
         '/v1/search/full',
-        json={'search_keys': ['+2222'], 'limit': 1},
+        json={'search_keys': '+2222', 'limit': 1},
         headers={'Authorization': 'Bearer second_token'},
     )
 
@@ -374,7 +375,7 @@ async def test_search_edit(service_client):
 
     response = await service_client.post(
         '/v1/search/full',
-        json={'search_keys': ['2@mail.com'], 'limit': 1},
+        json={'search_keys': '2@mail.com', 'limit': 1},
         headers={'Authorization': 'Bearer second_token'},
     )
 
@@ -511,7 +512,8 @@ async def test_documents_send(service_client):
     )
     assert response.status == 200
     assert response.text == (
-        '{"documents":[{"description":"text1","id":"id1","name":"doc1","sign_required":false}]}')
+        '{"documents":[{"description":"text1","id":"id1",'
+        '"name":"doc1","sign_required":false}]}')
 
     response = await service_client.get(
         '/v1/documents/list',
@@ -519,7 +521,9 @@ async def test_documents_send(service_client):
     )
     assert response.status == 200
     assert response.text == (
-        '{"documents":[{"description":"text1","id":"id1","name":"doc1","sign_required":false}]}')
+        '{"documents":[{"description":"text1","id":"id1",'
+        '"name":"doc1","sign_required":false}]}')
+
 
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])
 async def test_search_full(service_client):
@@ -536,7 +540,7 @@ async def test_search_full(service_client):
 
     response = await service_client.post(
         '/v1/search/full',
-        json={'search_keys': ['Seventh', 'F', 'user'], 'limit': 1},
+        json={'search_keys': 'Seventh F user', 'limit': 1},
         headers={'Authorization': 'Bearer first_token'},
     )
 
@@ -558,7 +562,7 @@ async def test_search_full(service_client):
 
     response = await service_client.post(
         '/v1/search/full',
-        json={'search_keys': ['Seventh', 'F'], 'limit': 5},
+        json={'search_keys': 'Seventh F', 'limit': 5},
         headers={'Authorization': 'Bearer first_token'},
     )
 
@@ -572,7 +576,7 @@ async def test_search_full(service_client):
 
     response = await service_client.post(
         '/v1/search/full',
-        json={'search_keys': ['F'], 'limit': 10},
+        json={'search_keys': 'F', 'limit': 10},
         headers={'Authorization': 'Bearer first_token'},
     )
 
@@ -597,7 +601,7 @@ async def test_search_full(service_client):
 
     response = await service_client.post(
         '/v1/search/full',
-        json={'search_keys': ['Seventh', 'F'], 'limit': 10},
+        json={'search_keys': 'Seventh F', 'limit': 10},
         headers={'Authorization': 'Bearer first_token'},
     )
 
