@@ -141,6 +141,12 @@ inline void Dump(const std::string& field, const std::string& parameter_name,
 }
 
 template <>
+inline void Dump(const bool& field, const std::string& parameter_name,
+                 nlohmann::json& json) {
+  json[parameter_name] = field;
+}
+
+template <>
 inline void Dump(const std::vector<std::string>& field,
                  const std::string& parameter_name, nlohmann::json& json) {
   json[parameter_name] = field;

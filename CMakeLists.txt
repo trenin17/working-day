@@ -26,62 +26,37 @@ find_package(AWSSDK REQUIRED COMPONENTS s3 sts)
 
 # Common sources
 add_library(${PROJECT_NAME}_objs OBJECT
-    src/hello.hpp
     src/hello.cpp
-	src/views/v1/employee/add/view.hpp
 	src/views/v1/employee/add/view.cpp
-	src/views/v1/employee/add_head/view.hpp
 	src/views/v1/employee/add_head/view.cpp
-	src/views/v1/employee/info/view.hpp
 	src/views/v1/employee/info/view.cpp
-	src/views/v1/employee/remove/view.hpp
 	src/views/v1/employee/remove/view.cpp
-	src/views/v1/employees/view.hpp
 	src/views/v1/employees/view.cpp
-	src/views/v1/profile/upload_photo/view.hpp
 	src/views/v1/profile/upload_photo/view.cpp
-	src/views/v1/profile/edit/view.hpp
 	src/views/v1/profile/edit/view.cpp
-	src/utils/s3_presigned_links.hpp
 	src/utils/s3_presigned_links.cpp
-	src/auth/user_info_cache.hpp
-	src/auth/auth_bearer.hpp
 	src/auth/auth_bearer.cpp
-	src/views/v1/authorize/view.hpp
 	src/views/v1/authorize/view.cpp
-	src/views/v1/abscence/request/view.hpp
 	src/views/v1/abscence/request/view.cpp
-	src/views/v1/abscence/verdict/view.hpp
 	src/views/v1/abscence/verdict/view.cpp
-	src/views/v1/notifications/view.hpp
 	src/views/v1/notifications/view.cpp
-	src/views/v1/actions/view.hpp
 	src/views/v1/actions/view.cpp
-	src/views/v1/documents/vacation/view.hpp
 	src/views/v1/documents/vacation/view.cpp
-	src/views/v1/attendance/add/view.hpp
 	src/views/v1/attendance/add/view.cpp
-	src/views/v1/abscence/split/view.hpp
 	src/views/v1/abscence/split/view.cpp
-	src/views/v1/abscence/reschedule/view.hpp
 	src/views/v1/abscence/reschedule/view.cpp
-	src/views/v1/payments/add_bulk/view.hpp
 	src/views/v1/payments/add_bulk/view.cpp
-	src/views/v1/payments/view.hpp
 	src/views/v1/payments/view.cpp
-	src/core/json_compatible/struct.hpp
 	src/core/json_compatible/struct.cpp
-	src/utils/custom_implicit_options.hpp
 	src/utils/custom_implicit_options.cpp
-	src/core/reverse_index/view.hpp
 	src/core/reverse_index/view.cpp
-	src/views/v1/clear-tasks/view.hpp
 	src/views/v1/clear-tasks/view.cpp
-	src/views/v1/search/basic/view.hpp
 	src/views/v1/search/basic/view.cpp
-	src/definitions/all.hpp
-	src/views/v1/attendance/list_all/view.hpp
 	src/views/v1/attendance/list_all/view.cpp
+	src/views/v1/documents/upload/view.cpp
+	src/views/v1/documents/send/view.cpp
+	src/views/v1/documents/list/view.cpp
+	src/views/v1/documents/download/view.cpp
 	src/views/v1/search/full/view.hpp
 	src/views/v1/search/full/view.cpp
 )

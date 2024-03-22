@@ -25,6 +25,9 @@
 #include "views/v1/attendance/list_all/view.hpp"
 #include "views/v1/authorize/view.hpp"
 #include "views/v1/clear-tasks/view.hpp"
+#include "views/v1/documents/list/view.hpp"
+#include "views/v1/documents/send/view.hpp"
+#include "views/v1/documents/upload/view.hpp"
 #include "views/v1/documents/vacation/view.hpp"
 #include "views/v1/employee/add/view.hpp"
 #include "views/v1/employee/add_head/view.hpp"
@@ -37,6 +40,7 @@
 #include "views/v1/profile/edit/view.hpp"
 #include "views/v1/profile/upload_photo/view.hpp"
 #include "views/v1/search/basic/view.hpp"
+#include "views/v1/documents/download/view.hpp"
 #include "views/v1/search/full/view.hpp"
 
 int main(int argc, char* argv[]) {
@@ -80,8 +84,12 @@ int main(int argc, char* argv[]) {
   views::v1::payments::AppendPayments(component_list);
   views::v1::clear_tasks::AppendClearTasks(component_list);
   views::v1::search_basic::AppendSearchBasic(component_list);
-  views::v1::attendance::list_all::AppendAttendanceListAll(component_list);
   views::v1::search_full::AppendSearchFull(component_list);
+  views::v1::attendance::list_all::AppendAttendanceListAll(component_list);
+  views::v1::documents::upload::AppendDocumentsUpload(component_list);
+  views::v1::documents::send::AppendDocumentsSend(component_list);
+  views::v1::documents::list::AppendDocumentsList(component_list);
+  views::v1::documents::download::AppendDocumentsDownload(component_list);
 
   int err_code = userver::utils::DaemonMain(argc, argv, component_list);
 

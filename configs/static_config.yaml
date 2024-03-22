@@ -279,6 +279,47 @@ components_manager:
                 scopes:
                   - manager
 
+        handler-v1-documents-upload:
+            path: /v1/documents/upload
+            method: POST
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - manager
+
+        handler-v1-documents-send:
+            path: /v1/documents/send
+            method: POST
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - manager
+
+        handler-v1-documents-list:
+            path: /v1/documents/list
+            method: GET
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - user
+        
+        handler-v1-documents-download:
+            path: /v1/documents/download
+            method: GET
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - user
+
+
         handler-v1-search-full:
             path: /v1/search/full
             method: POST

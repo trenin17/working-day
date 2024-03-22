@@ -59,6 +59,30 @@
 #define USE_LIST_EMPLOYEE
 #endif
 
+#ifdef V1_DOCUMENTS_UPLOAD
+#define USE_UPLOAD_DOCUMENT_RESPONSE
+#endif
+
+#ifdef V1_DOCUMENTS_SEND
+#define USE_DOCUMENT_SEND_REQUEST
+#endif
+
+#ifdef USE_DOCUMENT_SEND_REQUEST
+#define USE_DOCUMENT_ITEM
+#endif
+
+#ifdef V1_DOCUMENTS_LIST
+#define USE_DOCUMENTS_LIST_RESPONSE
+#endif
+
+#ifdef USE_DOCUMENTS_LIST_RESPONSE
+#define USE_DOCUMENT_ITEM
+#endif
+
+#ifdef V1_DOCUMENTS_DOWNLOAD
+#define USE_DOWNLOAD_DOCUMENT_RESPONSE
+#endif
+
 #ifdef USE_LIST_EMPLOYEE
 struct ListEmployee : public JsonCompatible {
   // For postgres initialization type needs to be default constructible
@@ -209,5 +233,48 @@ struct AttendanceListItem : public JsonCompatible {
 struct AttendanceListAllResponse : public JsonCompatible {
   REGISTER_STRUCT_FIELD(attendances, std::vector<AttendanceListItem>,
                         "attendances");
+};
+#endif
+
+#ifdef USE_UPLOAD_DOCUMENT_RESPONSE
+struct UploadDocumentResponse : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(url, std::string, "url");
+  REGISTER_STRUCT_FIELD(id, std::string, "id");
+};
+#endif
+
+#ifdef USE_DOCUMENT_ITEM
+struct DocumentItem : public JsonCompatible {
+  DocumentItem() = default;
+
+  DocumentItem(DocumentItem&& other) { *this = std::move(other); }
+
+  DocumentItem& operator=(DocumentItem&& other) = default;
+
+  auto Introspect() { return std::tie(id, name, sign_required, description); }
+
+  REGISTER_STRUCT_FIELD(id, std::string, "id");
+  REGISTER_STRUCT_FIELD(name, std::string, "name");
+  REGISTER_STRUCT_FIELD(sign_required, bool, "sign_required", false);
+  REGISTER_STRUCT_FIELD_OPTIONAL(description, std::string, "description");
+};
+#endif
+
+#ifdef USE_DOCUMENT_SEND_REQUEST
+struct DocumentSendRequest : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(document, DocumentItem, "document");
+  REGISTER_STRUCT_FIELD(employee_ids, std::vector<std::string>, "employee_ids");
+};
+#endif
+
+#ifdef USE_DOCUMENTS_LIST_RESPONSE
+struct DocumentsListResponse : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(documents, std::vector<DocumentItem>, "documents");
+};
+#endif
+
+#ifdef USE_DOWNLOAD_DOCUMENT_RESPONSE
+struct DownloadDocumentResponse : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(url, std::string, "url");
 };
 #endif

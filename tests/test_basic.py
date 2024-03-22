@@ -418,12 +418,12 @@ async def test_attendance_list_all(service_client):
 
     assert response.status == 200
     assert response.text == (
-            '{"attendances":['
-            '{"employee":{"id":"first_id","name":"First","surname":"A"},'
-            '"end_date":"2023-07-21T15:00:00.000000",'
-            '"start_date":"2023-07-21T07:00:00.000000"},'
-            '{"employee":{"id":"second_id","name":"Second","surname":"B"}}'
-            ']}')
+        '{"attendances":['
+        '{"employee":{"id":"first_id","name":"First","surname":"A"},'
+        '"end_date":"2023-07-21T15:00:00.000000",'
+        '"start_date":"2023-07-21T07:00:00.000000"},'
+        '{"employee":{"id":"second_id","name":"Second","surname":"B"}}'
+        ']}')
     response = await service_client.post(
         '/v1/attendance/add',
         params={'employee_id': 'first_id'},
@@ -450,17 +450,17 @@ async def test_attendance_list_all(service_client):
 
     assert response.status == 200
     assert response.text == (
-            '{"attendances":['
-            '{"employee":{"id":"first_id","name":"First","surname":"A"},'
-            '"end_date":"2023-07-22T15:00:00.000000",'
-            '"start_date":"2023-07-22T07:00:00.000000"},'
-            '{"employee":{"id":"first_id","name":"First","surname":"A"},'
-            '"end_date":"2023-07-21T15:00:00.000000",'
-            '"start_date":"2023-07-21T07:00:00.000000"},'
-            '{"employee":{"id":"second_id","name":"Second","surname":"B"},'
-            '"end_date":"2023-07-22T15:00:00.000000",'
-            '"start_date":"2023-07-22T07:00:00.000000"}'
-            ']}')
+        '{"attendances":['
+        '{"employee":{"id":"first_id","name":"First","surname":"A"},'
+        '"end_date":"2023-07-22T15:00:00.000000",'
+        '"start_date":"2023-07-22T07:00:00.000000"},'
+        '{"employee":{"id":"first_id","name":"First","surname":"A"},'
+        '"end_date":"2023-07-21T15:00:00.000000",'
+        '"start_date":"2023-07-21T07:00:00.000000"},'
+        '{"employee":{"id":"second_id","name":"Second","surname":"B"},'
+        '"end_date":"2023-07-22T15:00:00.000000",'
+        '"start_date":"2023-07-22T07:00:00.000000"}'
+        ']}')
     response = await service_client.post(
         '/v1/attendance/list-all',
         headers={'Authorization': 'Bearer ' + token},
@@ -469,15 +469,57 @@ async def test_attendance_list_all(service_client):
 
     assert response.status == 200
     assert response.text == (
-            '{"attendances":['
-            '{"employee":{"id":"first_id","name":"First","surname":"A"},'
-            '"end_date":"2023-07-22T15:00:00.000000",'
-            '"start_date":"2023-07-22T07:00:00.000000"},'
-            '{"employee":{"id":"second_id","name":"Second","surname":"B"},'
-            '"end_date":"2023-07-22T15:00:00.000000",'
-            '"start_date":"2023-07-22T07:00:00.000000"}'
-            ']}')
+        '{"attendances":['
+        '{"employee":{"id":"first_id","name":"First","surname":"A"},'
+        '"end_date":"2023-07-22T15:00:00.000000",'
+        '"start_date":"2023-07-22T07:00:00.000000"},'
+        '{"employee":{"id":"second_id","name":"Second","surname":"B"},'
+        '"end_date":"2023-07-22T15:00:00.000000",'
+        '"start_date":"2023-07-22T07:00:00.000000"}'
+        ']}')
 
+
+@pytest.mark.pgsql('db_1', files=['initial_data.sql'])
+async def test_documents_send(service_client):
+    response = await service_client.post(
+        '/v1/employee/add',
+        headers={'Authorization': 'Bearer first_token'},
+        json={'name': 'Third', 'surname': 'C', 'role': 'manager'},
+    )
+    assert response.status == 200
+    employee_id = json.loads(response.text)['login']
+    password = json.loads(response.text)['password']
+
+    response = await service_client.post(
+        '/v1/authorize',
+        json={'login': employee_id, 'password': password},
+    )
+    assert response.status == 200
+    token = json.loads(response.text)['token']
+
+    response = await service_client.post(
+        '/v1/documents/send',
+        headers={'Authorization': 'Bearer ' + token},
+        json={'employee_ids': ['first_id', 'second_id'], 'document': {
+            'id': 'id1', 'name': 'doc1', 'description': 'text1'}}
+    )
+    assert response.status == 200
+
+    response = await service_client.get(
+        '/v1/documents/list',
+        headers={'Authorization': 'Bearer first_token'}
+    )
+    assert response.status == 200
+    assert response.text == (
+        '{"documents":[{"description":"text1","id":"id1","name":"doc1","sign_required":false}]}')
+
+    response = await service_client.get(
+        '/v1/documents/list',
+        headers={'Authorization': 'Bearer second_token'}
+    )
+    assert response.status == 200
+    assert response.text == (
+        '{"documents":[{"description":"text1","id":"id1","name":"doc1","sign_required":false}]}')
 
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])
 async def test_search_full(service_client):
