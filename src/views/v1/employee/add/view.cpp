@@ -22,8 +22,9 @@ namespace views::v1::employee::add {
 
 namespace {
 
-ReverseIndexResponse AddReverseIndexFunc(
-    userver::storages::postgres::ClusterPtr cluster, EmployeeAllData data) {
+core::reverse_index::ReverseIndexResponse AddReverseIndexFunc(
+    userver::storages::postgres::ClusterPtr cluster,
+    core::reverse_index::EmployeeAllData data) {
   std::vector<std::optional<std::string>> fields = {
       data.name,     data.surname,     data.patronymic, data.role, data.email,
       data.birthday, data.telegram_id, data.vk_id,      data.team};
@@ -41,7 +42,8 @@ ReverseIndexResponse AddReverseIndexFunc(
   for (auto& field : fields) {
     if (field.has_value()) {
       auto separator = (parameters.Size() == 1 ? "[" : ", ");
-      transform(field.value().begin(), field.value().end(), field.value().begin(), ::tolower); 
+      transform(field.value().begin(), field.value().end(),
+                field.value().begin(), ::tolower);
       parameters.PushBack(field.value());
       filter += fmt::format("{}${}", separator, parameters.Size());
     }
@@ -62,7 +64,7 @@ ReverseIndexResponse AddReverseIndexFunc(
           "EXCLUDED.ids[1]); ",
       parameters);
 
-  ReverseIndexResponse response(data.employee_id);
+  core::reverse_index::ReverseIndexResponse response(data.employee_id);
 
   return response;
 }
@@ -106,17 +108,17 @@ class AddEmployeeHandler final
         id, request_body.name, request_body.surname, request_body.patronymic,
         password, request_body.role, company_id);
 
-    ReverseIndexRequest r_index_request{
-        [](userver::storages::postgres::ClusterPtr cluster,
-           EmployeeAllData data) -> ReverseIndexResponse {
+    core::reverse_index::EmployeeAllData data{
+        id, request_body.name, request_body.surname, request_body.patronymic,
+        request_body.role};
+
+    userver::storages::postgres::ClusterPtr cluster = pg_cluster_;
+    core::reverse_index::ReverseIndexRequest r_index_request{
+        [cluster, data]() -> core::reverse_index::ReverseIndexResponse {
           return AddReverseIndexFunc(cluster, data);
         }};
 
-    EmployeeAllData data{id, request_body.name, request_body.surname,
-                         request_body.patronymic, request_body.role};
-
-    views::v1::reverse_index::ReverseIndexHandler(r_index_request, pg_cluster_,
-                                                  data);
+    core::reverse_index::ReverseIndexHandler(r_index_request);
 
     AddEmployeeResponse response(id, password);
     return response.ToJsonString();

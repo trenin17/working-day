@@ -1037,10 +1037,10 @@ components:
             type: object
             additionalProperties: false
             required:
-              - search_keys
+              - search_key
               - limit
             properties:
-                search_keys:
+                search_key:
                     type: string
                 limit:
                     type: integer

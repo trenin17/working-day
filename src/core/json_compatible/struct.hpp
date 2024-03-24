@@ -155,7 +155,7 @@ inline void Dump(const std::vector<std::string>& field,
 template <>
 inline void Dump(const int& field, const std::string& parameter_name,
                  nlohmann::json& json) {
-  json[parameter_name] = std::to_string(field);
+  json[parameter_name] = field;
 }
 
 template <DerivedFromJsonCompatible T>

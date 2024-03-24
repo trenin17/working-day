@@ -385,6 +385,98 @@ async def test_search_edit(service_client):
 
 
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])
+async def test_search_full(service_client):
+    # basic full
+    response = await service_client.post(
+        '/v1/employee/add',
+        headers={'Authorization': 'Bearer first_token'},
+        json={'name': 'Seventh', 'surname': 'F', 'role': 'user'},
+    )
+
+    assert response.status == 200
+    new_id = json.loads(response.text)['login']
+    new_password = json.loads(response.text)['password']
+
+    response = await service_client.post(
+        '/v1/search/full',
+        json={'search_keys': 'Seventh F user', 'limit': 1},
+        headers={'Authorization': 'Bearer first_token'},
+    )
+
+    assert response.status == 200
+    response_required = Template('{"employees":[{"id":"${id}",'
+                                 '"name":"Seventh","surname":"F"}]}')
+    assert response.text == (response_required.substitute(id=new_id))
+
+    # two people
+    response = await service_client.post(
+        '/v1/employee/add',
+        headers={'Authorization': 'Bearer first_token'},
+        json={'name': 'Eight', 'surname': 'F', 'role': 'user'},
+    )
+
+    assert response.status == 200
+    new_id2 = json.loads(response.text)['login']
+    new_password2 = json.loads(response.text)['password']
+
+    response = await service_client.post(
+        '/v1/search/full',
+        json={'search_keys': 'Seventh F', 'limit': 5},
+        headers={'Authorization': 'Bearer first_token'},
+    )
+
+    assert response.status == 200
+    response_required = Template('{"employees":[{"id":"${id}",'
+                                 '"name":"Seventh","surname":"F"},'
+                                 '{"id":"${id2}",'
+                                 '"name":"Eight","surname":"F"}]}')
+    assert response.text == (response_required.substitute(id=new_id,
+                                                          id2=new_id2))
+
+    response = await service_client.post(
+        '/v1/search/full',
+        json={'search_keys': 'F', 'limit': 10},
+        headers={'Authorization': 'Bearer first_token'},
+    )
+
+    assert response.status == 200
+    response_required = Template('{"employees":[{"id":"${id}",'
+                                 '"name":"Seventh","surname":"F"},'
+                                 '{"id":"${id2}",'
+                                 '"name":"Eight","surname":"F"}]}')
+    assert response.text == (response_required.substitute(id=new_id,
+                                                          id2=new_id2))
+
+    # three
+    response = await service_client.post(
+        '/v1/employee/add',
+        headers={'Authorization': 'Bearer first_token'},
+        json={'name': 'Seventh', 'surname': 'G', 'role': 'user'},
+    )
+
+    assert response.status == 200
+    new_id3 = json.loads(response.text)['login']
+    new_password3 = json.loads(response.text)['password']
+
+    response = await service_client.post(
+        '/v1/search/full',
+        json={'search_keys': 'Seventh F', 'limit': 10},
+        headers={'Authorization': 'Bearer first_token'},
+    )
+
+    assert response.status == 200
+    response_required = Template('{"employees":[{"id":"${id}",'
+                                 '"name":"Seventh","surname":"F"},'
+                                 '{"id":"${id2}",'
+                                 '"name":"Eight","surname":"F"},'
+                                 '{"id":"${id3}",'
+                                 '"name":"Seventh","surname":"G"}]}')
+    assert response.text == (response_required.substitute(id=new_id,
+                                                          id2=new_id2,
+                                                          id3=new_id3))
+
+
+@pytest.mark.pgsql('db_1', files=['initial_data.sql'])
 async def test_attendance_list_all(service_client):
     response = await service_client.post(
         '/v1/employee/add',
@@ -523,98 +615,6 @@ async def test_documents_send(service_client):
     assert response.text == (
         '{"documents":[{"description":"text1","id":"id1",'
         '"name":"doc1","sign_required":false}]}')
-
-
-@pytest.mark.pgsql('db_1', files=['initial_data.sql'])
-async def test_search_full(service_client):
-    # basic full
-    response = await service_client.post(
-        '/v1/employee/add',
-        headers={'Authorization': 'Bearer first_token'},
-        json={'name': 'Seventh', 'surname': 'F', 'role': 'user'},
-    )
-
-    assert response.status == 200
-    new_id = json.loads(response.text)['login']
-    new_password = json.loads(response.text)['password']
-
-    response = await service_client.post(
-        '/v1/search/full',
-        json={'search_keys': 'Seventh F user', 'limit': 1},
-        headers={'Authorization': 'Bearer first_token'},
-    )
-
-    assert response.status == 200
-    response_required = Template('{"employees":[{"id":"${id}",'
-                                 '"name":"Seventh","surname":"F"}]}')
-    assert response.text == (response_required.substitute(id=new_id))
-
-    # two people
-    response = await service_client.post(
-        '/v1/employee/add',
-        headers={'Authorization': 'Bearer first_token'},
-        json={'name': 'Eight', 'surname': 'F', 'role': 'user'},
-    )
-
-    assert response.status == 200
-    new_id2 = json.loads(response.text)['login']
-    new_password2 = json.loads(response.text)['password']
-
-    response = await service_client.post(
-        '/v1/search/full',
-        json={'search_keys': 'Seventh F', 'limit': 5},
-        headers={'Authorization': 'Bearer first_token'},
-    )
-
-    assert response.status == 200
-    response_required = Template('{"employees":[{"id":"${id}",'
-                                 '"name":"Seventh","surname":"F"},'
-                                 '{"id":"${id2}",'
-                                 '"name":"Eight","surname":"F"}]}')
-    assert response.text == (response_required.substitute(id=new_id,
-                                                          id2=new_id2))
-
-    response = await service_client.post(
-        '/v1/search/full',
-        json={'search_keys': 'F', 'limit': 10},
-        headers={'Authorization': 'Bearer first_token'},
-    )
-
-    assert response.status == 200
-    response_required = Template('{"employees":[{"id":"${id}",'
-                                 '"name":"Seventh","surname":"F"},'
-                                 '{"id":"${id2}",'
-                                 '"name":"Eight","surname":"F"}]}')
-    assert response.text == (response_required.substitute(id=new_id,
-                                                          id2=new_id2))
-
-    # three
-    response = await service_client.post(
-        '/v1/employee/add',
-        headers={'Authorization': 'Bearer first_token'},
-        json={'name': 'Seventh', 'surname': 'G', 'role': 'user'},
-    )
-
-    assert response.status == 200
-    new_id3 = json.loads(response.text)['login']
-    new_password3 = json.loads(response.text)['password']
-
-    response = await service_client.post(
-        '/v1/search/full',
-        json={'search_keys': 'Seventh F', 'limit': 10},
-        headers={'Authorization': 'Bearer first_token'},
-    )
-
-    assert response.status == 200
-    response_required = Template('{"employees":[{"id":"${id}",'
-                                 '"name":"Seventh","surname":"F"},'
-                                 '{"id":"${id2}",'
-                                 '"name":"Eight","surname":"F"},'
-                                 '{"id":"${id3}",'
-                                 '"name":"Seventh","surname":"G"}]}')
-    assert response.text == (response_required.substitute(id=new_id,
-                                                          id2=new_id2,
-                                                          id3=new_id3))
 
 
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])

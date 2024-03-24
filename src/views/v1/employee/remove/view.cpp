@@ -1,7 +1,6 @@
 #define V1_REMOVE_EMPLOYEE
 
 #include "view.hpp"
-#include "core/reverse_index/view.hpp"
 
 #include <userver/clients/dns/component.hpp>
 #include <userver/components/component_config.hpp>
@@ -13,6 +12,7 @@
 #include <userver/storages/postgres/parameter_store.hpp>
 
 #include "core/json_compatible/struct.hpp"
+#include "core/reverse_index/view.hpp"
 
 #include "definitions/all.hpp"
 
@@ -27,8 +27,9 @@ struct AllValuesRow {
   std::optional<std::string> email, birthday, telegram_id, vk_id, team;
 };
 
-ReverseIndexResponse DeleteReverseIndexFunc(
-    userver::storages::postgres::ClusterPtr cluster, EmployeeAllData data) {
+core::reverse_index::ReverseIndexResponse DeleteReverseIndexFunc(
+    userver::storages::postgres::ClusterPtr cluster,
+    core::reverse_index::EmployeeAllData data) {
   auto result =
       cluster->Execute(userver::storages::postgres::ClusterHostType::kMaster,
                        "SELECT name, surname, role, patronymic, phones, "
@@ -73,7 +74,7 @@ ReverseIndexResponse DeleteReverseIndexFunc(
                            filter + "); AND ids = '{}'; ",
                        parameters);
 
-  ReverseIndexResponse response(data.employee_id);
+  core::reverse_index::ReverseIndexResponse response(data.employee_id);
   return response;
 }
 
@@ -109,16 +110,15 @@ class RemoveEmployeeHandler final
       return err_msg.ToJsonString();
     }
 
-    ReverseIndexRequest r_index_request{
-        [](userver::storages::postgres::ClusterPtr cluster,
-           EmployeeAllData data) -> ReverseIndexResponse {
+    core::reverse_index::EmployeeAllData data{employee_id};
+
+    userver::storages::postgres::ClusterPtr cluster = pg_cluster_;
+    core::reverse_index::ReverseIndexRequest r_index_request{
+        [cluster, data]() -> core::reverse_index::ReverseIndexResponse {
           return DeleteReverseIndexFunc(cluster, data);
         }};
 
-    EmployeeAllData data{employee_id};
-
-    views::v1::reverse_index::ReverseIndexHandler(r_index_request, pg_cluster_,
-                                                  data);
+    core::reverse_index::ReverseIndexHandler(r_index_request);
 
     auto result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kMaster,

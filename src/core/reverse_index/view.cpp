@@ -18,26 +18,18 @@
 
 using json = nlohmann::json;
 
-namespace views::v1::reverse_index {
+namespace core::reverse_index {
 
 class ReverseIndex {
  public:
-  void ReverseIndexHandler(const ReverseIndexRequest& request, userver::storages::postgres::ClusterPtr cluster,
-                        const EmployeeAllData& data) {
-    if (!cluster || data.employee_id.empty()) {
-      LOG_WARNING() << "Invalid arguments for indexation";
-      return;
-    }
-
+  void ReverseIndexHandler(const ReverseIndexRequest& request) {
     auto tasks = tasks_.Lock();
-
     while (!tasks->empty() && tasks->front().IsFinished()) {
       tasks->pop();
     }
 
     tasks->push(userver::utils::AsyncBackground(
-        "ReverseIndexFunc", userver::engine::current_task::GetTaskProcessor(),
-        request.func, cluster, data));
+        "ReverseIndexFunc", userver::engine::current_task::GetTaskProcessor(), request.func));
   }
 
   void ClearTasks() {
@@ -65,11 +57,10 @@ class ReverseIndex {
       tasks_;
 };
 
-void ReverseIndexHandler(const ReverseIndexRequest& request, userver::storages::postgres::ClusterPtr cluster,
-                        const EmployeeAllData& data) {
-  return ReverseIndex::GetInstance().ReverseIndexHandler(request, cluster, data);
+void ReverseIndexHandler(const ReverseIndexRequest& request) {
+  return ReverseIndex::GetInstance().ReverseIndexHandler(request);
 }
 
 void ClearTasks() { return ReverseIndex::GetInstance().ClearTasks(); }
 
-}  // namespace views::v1::reverse_index
+}  // namespace core::reverse_index
