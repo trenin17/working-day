@@ -461,7 +461,7 @@ paths:
 
     /v1/search/suggest:
         post:
-            description: Get employees suggestion by keys
+            description: Get employees suggestion by key
             parameters:
               - in: header
                 name: Authorization
@@ -481,7 +481,7 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/SearchResponse'
-                                
+
 
     /v1/attendance/list-all:
         post:
@@ -1022,25 +1022,14 @@ components:
                 search_key:
                     type: string
 
-        SearchFullRequest:
-            type: object
-            additionalProperties: false
-            required:
-              - search_keys
-              - limit
-            properties:
-                search_keys:
-                    type: string
-                limit:
-                    type: integer
 
         SearchSuggestRequest:
             type: object
             additionalProperties: false
             required:
-              - search_keys
+              - search_key
             properties:
-                search_keys:
+                search_key:
                     type: string
             
         SearchResponse:

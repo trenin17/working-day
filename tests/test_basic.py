@@ -1,3 +1,4 @@
+import asyncio
 from wsgiref import headers
 import pytest
 import json
@@ -514,7 +515,7 @@ async def test_search_suggest(service_client):
 
     response = await service_client.post(
         '/v1/search/suggest',
-        json={'search_keys': 'ZZZZZZZ'},
+        json={'search_key': 'ZZZZZZZ'},
         headers={'Authorization': 'Bearer first_token'},
     )
 
@@ -523,14 +524,12 @@ async def test_search_suggest(service_client):
     
     response = await service_client.post(
         '/v1/search/suggest',
-        json={'search_keys': 'T1 Te'},
+        json={'search_key': 'T1 Test1 Bla'},
         headers={'Authorization': 'Bearer first_token'},
     )
     
     assert response.status == 200
-    response_required = Template('{"employees":[{"id":"${id}",'
-                                 '"name":"Test1","surname":"T1"}]}')
-    assert response.text == (response_required.substitute(id=new_id))
+    assert response.text == '{"employees":[]}'
     
     response = await service_client.post(
             '/v1/employee/add',
@@ -541,9 +540,11 @@ async def test_search_suggest(service_client):
     new_id2 = json.loads(response.text)['login']
     new_password2 = json.loads(response.text)['password']
     
+    await asyncio.sleep(1)
+    
     response = await service_client.post(
         '/v1/search/suggest',
-        json={'search_keys': 'T1 Test'},
+        json={'search_key': 'T1 Test'},
         headers={'Authorization': 'Bearer first_token'},
     )
     
@@ -554,7 +555,32 @@ async def test_search_suggest(service_client):
                                  '"name":"Test2","surname":"T1"}]}')
     assert response.text == (response_required.substitute(id=new_id, id2=new_id2))
     
-    # TODO fix empty key 
+    response = await service_client.post(
+        '/v1/search/suggest',
+        json={'search_key': 'Test'},
+        headers={'Authorization': 'Bearer first_token'},
+    )
+    
+    assert response.status == 200
+    response_required = Template('{"employees":[{"id":"${id}",'
+                                 '"name":"Test1","surname":"T1"},'
+                                 '{"id":"${id2}",'
+                                 '"name":"Test2","surname":"T1"}]}')
+    assert response.text == (response_required.substitute(id=new_id, id2=new_id2))
+    
+    response = await service_client.post(
+        '/v1/search/suggest',
+        json={'search_key': ''},
+        headers={'Authorization': 'Bearer first_token'},
+    )
+    
+    assert response.status == 200
+    response_required = Template('{"employees":[{"id":"${id}",'
+                                 '"name":"Test1","surname":"T1"},'
+                                 '{"id":"${id2}",'
+                                 '"name":"Test2","surname":"T1"}]}')
+    assert response.text == (response_required.substitute(id=new_id, id2=new_id2))
+
 
 
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])

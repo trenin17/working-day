@@ -269,16 +269,6 @@ components_manager:
                 scopes:
                   - user
 
-        handler-v1-search-full:
-            path: /v1/search/full
-            method: POST
-            task_processor: main-task-processor
-            auth:
-                types:
-                  - bearer
-                scopes:
-                  - user
-
         handler-v1-search-suggest:
           path: /v1/search/suggest
           method: POST

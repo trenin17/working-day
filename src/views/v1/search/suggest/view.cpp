@@ -4,6 +4,9 @@
 
 #include <nlohmann/json.hpp>
 
+#include <algorithm>
+#include <set>
+#include <sstream>
 #include <userver/clients/dns/component.hpp>
 #include <userver/components/component_config.hpp>
 #include <userver/components/component_context.hpp>
@@ -12,10 +15,7 @@
 #include <userver/storages/postgres/cluster.hpp>
 #include <userver/storages/postgres/component.hpp>
 #include <userver/storages/postgres/parameter_store.hpp>
-#include <set>
 #include <vector>
-#include <algorithm>
-#include <sstream>
 
 #include "core/json_compatible/struct.hpp"
 #include "definitions/all.hpp"
@@ -26,49 +26,54 @@ namespace views::v1::search_suggest {
 
 namespace {
 
-std::set<std::string> GetSuggestIds(auto& id_sets, auto& suggest_ids) {
-    id_sets.insert(id_sets.end(), suggest_ids.begin(), suggest_ids.end());
+std::set<std::string> GetSuggestIds(auto& id_sets, auto& suggest_ids,
+                                    size_t n_keys) {
+  if (id_sets.size() != n_keys - 1 || suggest_ids.size() == 0) {
+    return {};
+  }
 
-    if (id_sets.size() == 0) {
-        return {};
-    }
+  std::set<std::string> uni;
+  for (const auto& s : suggest_ids) {
+    std::set<std::string> t;
+    set_union(uni.begin(), uni.end(), s.ids.begin(), s.ids.end(),
+              std::inserter(t, t.begin()));
+    uni = t;
+  }
 
-    std::set<std::string> res = id_sets[0].ids;
+  std::set<std::string> res = uni;
 
-    for (size_t i = 1; i < id_sets.size(); ++i) {
-        std::set<std::string> t;
-                
-        set_intersection(res.begin(), res.end(), 
-                                        id_sets[i].ids.begin(), id_sets[i].ids.end(),
-                                        std::inserter(t, t.begin()));
+  for (const auto& set : id_sets) {
+    std::set<std::string> t;
+    set_intersection(res.begin(), res.end(), set.ids.begin(), set.ids.end(),
+                     std::inserter(t, t.begin()));
+    res = t;
+  }
 
-        res = t;
-    }
+  std::set<std::string> final;
+  const int suggest_size = 5;
+  for (int i = 0; i < suggest_size; ++i) {
+    if (!res.empty())
+      final.insert(res.extract(res.begin()).value());
+    else
+      break;
+  }
 
-    std::set<std::string> final;
-    const int suggest_size = 5;
-
-    for (int i = 0; i < suggest_size; ++i) {
-        if (!res.empty())
-            final.insert(res.extract(res.begin()).value());
-        else
-            break;
-    }
-
-    return final;
+  return final;
 }
 
 std::vector<std::string> SplitBySpaces(std::string& str) {
-    if (str.empty()) {
-        return {""};
-    }
-    std::string s;
-    std::stringstream ss(str);
-    std::vector<std::string> v;
-    while (std::getline(ss, s, ' ')) {
-        v.push_back(s);
-    }
-    return v;
+  if (str.empty()) {
+    return {""};
+  }
+  std::string s;
+  std::stringstream ss(str);
+  std::vector<std::string> v;
+  while (std::getline(ss, s, ' ')) {
+    // UNCOMMENT WHEN MERGED
+    // transform(s.begin(), s.end(), s.begin(), ::tolower);
+    v.push_back(s);
+  }
+  return v;
 }
 
 class SearchSuggestHandler final
@@ -99,73 +104,80 @@ class SearchSuggestHandler final
         static_cast<std::string>("Access-Control-Allow-Headers"), "*");
 
     // lambda to add parameters
-    auto append = [](const auto& value, userver::storages::postgres::ParameterStore& parameters, std::string& filter) {
-        auto separator = (parameters.IsEmpty() ? "(" : ", ");
-        parameters.PushBack(value);
-        filter += fmt::format("{}${}", separator, parameters.Size());        
-    };    
+    auto append = [](const auto& value,
+                     userver::storages::postgres::ParameterStore& parameters,
+                     std::string& filter) {
+      auto separator = (parameters.IsEmpty() ? "(" : ", ");
+      parameters.PushBack(value);
+      filter += fmt::format("{}${}", separator, parameters.Size());
+    };
 
     SearchSuggestRequest request_body;
     request_body.ParseRegisteredFields(request.RequestBody());
 
-    std::vector<std::string> search_keys = SplitBySpaces(request_body.search_keys);
+    std::vector<std::string> search_keys =
+        SplitBySpaces(request_body.search_key);
 
     // Getting a vector of sets of ids
     userver::storages::postgres::ParameterStore parameters;
     std::string filter;
     for (size_t i = 0; i < search_keys.size() - 1; ++i) {
-        transform(search_keys[i].begin(), search_keys[i].end(), search_keys[i].begin(), ::tolower);
-        append(search_keys[i], parameters, filter);
+      append(search_keys[i], parameters, filter);
     }
 
     std::vector<IDsRow> id_sets;
     if (parameters.Size() > 0) {
-        auto result1 = pg_cluster_->Execute(
-                userver::storages::postgres::ClusterHostType::kMaster,
-                "SELECT ids "
-                "FROM working_day.reverse_index "
-                "WHERE key IN " + filter + ");",
-                parameters);
-        
-        id_sets = result1.AsContainer<std::vector<IDsRow>>(
-            userver::storages::postgres::kRowTag);
+      auto result1 = pg_cluster_->Execute(
+          userver::storages::postgres::ClusterHostType::kMaster,
+          "SELECT ids "
+          "FROM working_day.reverse_index "
+          "WHERE key IN " +
+              filter + ");",
+          parameters);
+
+      id_sets = result1.AsContainer<std::vector<IDsRow>>(
+          userver::storages::postgres::kRowTag);
     }
 
     auto result2 = pg_cluster_->Execute(
-                userver::storages::postgres::ClusterHostType::kMaster,
-                "SELECT ids "
-                "FROM working_day.reverse_index "
-                "WHERE key LIKE '" + search_keys[search_keys.size() - 1] + "%' "
-                "ORDER BY key;");
-    
+        userver::storages::postgres::ClusterHostType::kMaster,
+        "SELECT ids "
+        "FROM working_day.reverse_index "
+        "WHERE key LIKE '" +
+            search_keys[search_keys.size() - 1] +
+            "%' "
+            "ORDER BY key;");
+
     auto suggest_id_sets = result2.AsContainer<std::vector<IDsRow>>(
         userver::storages::postgres::kRowTag);
 
     // Intersecting sets
 
-    std::set<std::string> final_ids = GetSuggestIds(id_sets, suggest_id_sets);
+    std::set<std::string> final_ids =
+        GetSuggestIds(id_sets, suggest_id_sets, search_keys.size());
 
     // fetching ids' values and returning them
 
     SearchResponse response;
-    
+
     userver::storages::postgres::ParameterStore parameters_fetch;
     std::string filter_fetch;
 
     for (auto& val : final_ids) {
-        append(val, parameters_fetch, filter_fetch);
+      append(val, parameters_fetch, filter_fetch);
     }
 
     if (parameters_fetch.Size() != 0) {
-        auto result = pg_cluster_->Execute(
-            userver::storages::postgres::ClusterHostType::kMaster,
-            "SELECT id, name, surname, patronymic, photo_link "
-            "FROM working_day.employees "
-            "WHERE id IN " + filter_fetch + ");",
-            parameters_fetch);
+      auto result = pg_cluster_->Execute(
+          userver::storages::postgres::ClusterHostType::kMaster,
+          "SELECT id, name, surname, patronymic, photo_link "
+          "FROM working_day.employees "
+          "WHERE id IN " +
+              filter_fetch + ");",
+          parameters_fetch);
 
-        response.employees = result.AsContainer<std::vector<ListEmployee>>(
-            userver::storages::postgres::kRowTag);
+      response.employees = result.AsContainer<std::vector<ListEmployee>>(
+          userver::storages::postgres::kRowTag);
     }
 
     for (auto& employee : response.employees) {
@@ -176,7 +188,7 @@ class SearchSuggestHandler final
                 utils::s3_presigned_links::Download);
       }
     }
-    
+
     return response.ToJsonString();
   }
 
