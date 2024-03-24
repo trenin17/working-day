@@ -149,7 +149,7 @@ struct SearchBasicRequest : public JsonCompatible {
 
 #ifdef USE_SEARCH_FULL_REQUEST
 struct SearchFullRequest : public JsonCompatible {
-  REGISTER_STRUCT_FIELD(search_keys, std::string, "search_keys");
+  REGISTER_STRUCT_FIELD(search_key, std::string, "search_key");
   REGISTER_STRUCT_FIELD(limit, int, "limit");
 };
 #endif

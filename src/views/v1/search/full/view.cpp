@@ -150,7 +150,7 @@ class SearchFullHandler final
     SearchFullRequest request_body;
     request_body.ParseRegisteredFields(request.RequestBody());
 
-    std::vector<std::string> search_keys = SplitBySpaces(request_body.search_keys);
+    std::vector<std::string> search_keys = SplitBySpaces(request_body.search_key);
 
     // Getting a vector of sets of ids
     userver::storages::postgres::ParameterStore parameters;

@@ -256,7 +256,7 @@ async def test_search_add(service_client):
 
     response = await service_client.post(
         '/v1/search/full',
-        json={'search_keys': 'FOURTH', 'limit': 1},
+        json={'search_key': 'FOURTH', 'limit': 1},
         headers={'Authorization': 'Bearer first_token'},
     )
 
@@ -289,7 +289,7 @@ async def test_search_remove(service_client):
 
     response = await service_client.post(
         '/v1/search/full',
-        json={'search_keys': 'Fifth', 'limit': 1},
+        json={'search_key': 'Fifth', 'limit': 1},
         headers={'Authorization': 'Bearer first_token'},
     )
 
@@ -298,7 +298,7 @@ async def test_search_remove(service_client):
 
     response = await service_client.post(
         '/v1/search/full',
-        json={'search_keys': 'E', 'limit': 1},
+        json={'search_key': 'E', 'limit': 1},
         headers={'Authorization': 'Bearer first_token'},
     )
 
@@ -319,7 +319,7 @@ async def test_search_edit(service_client):
 
     response = await service_client.post(
         '/v1/search/full',
-        json={'search_keys': '+1111', 'limit': 1},
+        json={'search_key': '+1111', 'limit': 1},
         headers={'Authorization': 'Bearer second_token'},
     )
 
@@ -338,7 +338,7 @@ async def test_search_edit(service_client):
 
     response = await service_client.post(
         '/v1/search/full',
-        json={'search_keys': '2@mail.com', 'limit': 1},
+        json={'search_key': '2@mail.com', 'limit': 1},
         headers={'Authorization': 'Bearer second_token'},
     )
 
@@ -356,7 +356,7 @@ async def test_search_edit(service_client):
     assert response.status == 200
     response = await service_client.post(
         '/v1/search/full',
-        json={'search_keys': '+1111', 'limit': 1},
+        json={'search_key': '+1111', 'limit': 1},
         headers={'Authorization': 'Bearer second_token'},
     )
 
@@ -365,7 +365,7 @@ async def test_search_edit(service_client):
 
     response = await service_client.post(
         '/v1/search/full',
-        json={'search_keys': '+2222', 'limit': 1},
+        json={'search_key': '+2222', 'limit': 1},
         headers={'Authorization': 'Bearer second_token'},
     )
 
@@ -375,7 +375,7 @@ async def test_search_edit(service_client):
 
     response = await service_client.post(
         '/v1/search/full',
-        json={'search_keys': '2@mail.com', 'limit': 1},
+        json={'search_key': '2@mail.com', 'limit': 1},
         headers={'Authorization': 'Bearer second_token'},
     )
 
@@ -399,7 +399,7 @@ async def test_search_full(service_client):
 
     response = await service_client.post(
         '/v1/search/full',
-        json={'search_keys': 'Seventh F user', 'limit': 1},
+        json={'search_key': 'Seventh F user', 'limit': 1},
         headers={'Authorization': 'Bearer first_token'},
     )
 
@@ -421,7 +421,7 @@ async def test_search_full(service_client):
 
     response = await service_client.post(
         '/v1/search/full',
-        json={'search_keys': 'Seventh F', 'limit': 5},
+        json={'search_key': 'Seventh F', 'limit': 5},
         headers={'Authorization': 'Bearer first_token'},
     )
 
@@ -435,7 +435,7 @@ async def test_search_full(service_client):
 
     response = await service_client.post(
         '/v1/search/full',
-        json={'search_keys': 'F', 'limit': 10},
+        json={'search_key': 'F', 'limit': 10},
         headers={'Authorization': 'Bearer first_token'},
     )
 
@@ -460,7 +460,7 @@ async def test_search_full(service_client):
 
     response = await service_client.post(
         '/v1/search/full',
-        json={'search_keys': 'Seventh F', 'limit': 10},
+        json={'search_key': 'Seventh F', 'limit': 10},
         headers={'Authorization': 'Bearer first_token'},
     )
 
