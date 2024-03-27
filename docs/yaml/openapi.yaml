@@ -541,7 +541,7 @@ paths:
             parameters:
               - in: header
                 name: Authorization
-                description: Token of session user, available for managers only
+                description: Token of session user
                 schema:
                     type: string
               - in: query
@@ -555,7 +555,64 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/DownloadDocumentResponse'            
+                                $ref: '#/components/schemas/DownloadDocumentResponse'
+
+    /v1/documents/list-all:
+        get:
+            description: Get list of all existing documents
+            parameters:
+              - in: header
+                name: Authorization
+                description: Token of session user, available for managers only
+                schema:
+                    type: string
+            responses:
+                '200':
+                    description: List of documents
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/DocumentsListAllResponse'
+
+    /v1/documents/get-signs:
+        get:
+            description: Get list of employees who signed the document
+            parameters:
+              - in: header
+                name: Authorization
+                description: Token of session user, available for managers only
+                schema:
+                    type: string
+              - in: query
+                name: document_id
+                description: Id of the document
+                schema:
+                    type: string
+            responses:
+                '200':
+                    description: List of employees
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/DocumentsGetSignsResponse'
+    
+    /v1/documents/sign:
+        post:
+            description: Sign the document
+            parameters:
+              - in: header
+                name: Authorization
+                description: Token of session user
+                schema:
+                    type: string
+              - in: query
+                name: document_id
+                description: Id of the document
+                schema:
+                    type: string
+            responses:
+                '200':
+                    description: Document was signed
 
 components:
     schemas:
@@ -1109,3 +1166,34 @@ components:
             properties:
                 url:
                     type: string
+
+        DocumentsListAllResponse:
+            type: object
+            additionalProperties: false
+            required:
+              - documents
+            properties:
+                documents:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/DocumentItem'
+
+        DocumentsGetSignsResponse:
+            type: object
+            additionalProperties: false
+            required:
+              - signs
+            properties:
+                signs:
+                    type: array
+                    items:
+                        type: object
+                        additionalProperties: false
+                        required:
+                          - employee
+                          - signed
+                        properties:
+                            employee:
+                                $ref: '#/components/schemas/ListEmployee'
+                            signed:
+                                type: boolean
