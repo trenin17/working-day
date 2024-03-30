@@ -462,7 +462,7 @@ async def test_documents_send(service_client):
     response = await service_client.post(
         '/v1/employee/add',
         headers={'Authorization': 'Bearer first_token'},
-        json={'name': 'Third', 'surname': 'C', 'role': 'manager'},
+        json={'name': 'Third', 'surname': 'C', 'role': 'admin'},
     )
     assert response.status == 200
     employee_id = json.loads(response.text)['login']
@@ -498,6 +498,13 @@ async def test_documents_send(service_client):
     assert response.status == 200
     assert response.text == (
         '{"documents":[{"description":"text1","id":"id1","name":"doc1","sign_required":false}]}')
+    
+    response = await service_client.post(
+        '/v1/documents/sign',
+        headers={'Authorization': 'Bearer first_token'},
+        params={'document_id': 'id1'}
+    )
+    assert response.status == 200
 
 
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])

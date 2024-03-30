@@ -277,6 +277,7 @@ components_manager:
                 types:
                   - bearer
                 scopes:
+                  - admin
                   - manager
 
         handler-v1-documents-upload:
@@ -287,7 +288,7 @@ components_manager:
                 types:
                   - bearer
                 scopes:
-                  - manager
+                  - admin
 
         handler-v1-documents-send:
             path: /v1/documents/send
@@ -297,7 +298,7 @@ components_manager:
                 types:
                   - bearer
                 scopes:
-                  - manager
+                  - admin
 
         handler-v1-documents-list:
             path: /v1/documents/list
@@ -312,6 +313,16 @@ components_manager:
         handler-v1-documents-download:
             path: /v1/documents/download
             method: GET
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - user
+
+        handler-v1-documents-sign:
+            path: /v1/documents/sign
+            method: POST
             task_processor: main-task-processor
             auth:
                 types:
