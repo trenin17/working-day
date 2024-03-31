@@ -69,8 +69,7 @@ std::vector<std::string> SplitBySpaces(std::string& str) {
   std::stringstream ss(str);
   std::vector<std::string> v;
   while (std::getline(ss, s, ' ')) {
-    // UNCOMMENT WHEN MERGED
-    // transform(s.begin(), s.end(), s.begin(), ::tolower);
+    transform(s.begin(), s.end(), s.begin(), ::tolower);
     v.push_back(s);
   }
   return v;
