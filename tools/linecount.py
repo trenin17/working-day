@@ -1,6 +1,6 @@
 import os
 
-exclude = ["third_party", ".github", ".pgdata", ".vscode", "aws", "build", "build_release", "build_debug", ".git", ".cores", "__pycache__", ".pytest_cache"]
+exclude = ["third_party", ".github", ".pgdata", ".vscode", "aws", "build", "build_release", "build_debug", ".git", ".cores", "__pycache__", ".pytest_cache", "templates"]
 
 lc = {}
 endings = {}

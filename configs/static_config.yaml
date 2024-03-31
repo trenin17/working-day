@@ -350,6 +350,26 @@ components_manager:
                 scopes:
                   - user
 
+        handler-v1-documents-list-all:
+            path: /v1/documents/list-all
+            method: GET
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - admin
+
+        handler-v1-documents-get-signs:
+            path: /v1/documents/get-signs
+            method: GET
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - admin
+
         handler-implicit-http-options:
             as_fallback: implicit-http-options
             method: OPTIONS

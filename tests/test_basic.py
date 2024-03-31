@@ -595,7 +595,7 @@ async def test_documents_send(service_client):
         '/v1/documents/send',
         headers={'Authorization': 'Bearer ' + token},
         json={'employee_ids': ['first_id', 'second_id'], 'document': {
-            'id': 'id1', 'name': 'doc1', 'description': 'text1'}}
+            'id': 'id1', 'name': 'doc1', 'description': 'text1', 'sign_required': True}}
     )
     assert response.status == 200
 
@@ -606,7 +606,7 @@ async def test_documents_send(service_client):
     assert response.status == 200
     assert response.text == (
         '{"documents":[{"description":"text1","id":"id1",'
-        '"name":"doc1","sign_required":false}]}')
+        '"name":"doc1","sign_required":true,"type":"admin_request"}]}')
 
     response = await service_client.get(
         '/v1/documents/list',
@@ -615,7 +615,7 @@ async def test_documents_send(service_client):
     assert response.status == 200
     assert response.text == (
         '{"documents":[{"description":"text1","id":"id1",'
-        '"name":"doc1","sign_required":false}]}')
+        '"name":"doc1","sign_required":true,"type":"admin_request"}]}')
     
     response = await service_client.post(
         '/v1/documents/sign',
@@ -623,6 +623,24 @@ async def test_documents_send(service_client):
         params={'document_id': 'id1'}
     )
     assert response.status == 200
+
+    response = await service_client.get(
+        '/v1/documents/list-all',
+        headers={'Authorization': 'Bearer ' + token},
+    )
+    assert response.status == 200
+    assert response.text == (
+        '{"documents":[{"description":"text1","id":"id1",'
+        '"name":"doc1","sign_required":true,"type":"admin_request"}]}')
+    
+    response = await service_client.get(
+        '/v1/documents/get-signs',
+        headers={'Authorization': 'Bearer ' + token},
+        params={'document_id': 'id1'}
+    )
+    assert response.status == 200
+    assert response.text == (
+        '{"signs":[{"employee":{"id":"first_id","name":"First","surname":"A"},"signed":true},{"employee":{"id":"second_id","name":"Second","surname":"B"},"signed":false}]}')
 
 
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])

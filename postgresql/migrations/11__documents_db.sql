@@ -17,3 +17,6 @@ CREATE TABLE IF NOT EXISTS working_day.employee_document (
   FOREIGN KEY (employee_id) REFERENCES working_day.employees (id),
   FOREIGN KEY (document_id) REFERENCES working_day.documents (id)
 );
+
+ALTER TABLE working_day.documents
+ADD COLUMN IF NOT EXISTS type TEXT NOT NULL DEFAULT 'admin_request';

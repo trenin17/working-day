@@ -82,6 +82,26 @@
 #define USE_DOWNLOAD_DOCUMENT_RESPONSE
 #endif
 
+#ifdef V1_DOCUMENTS_LIST_ALL
+#define USE_DOCUMENTS_LIST_ALL_RESPONSE
+#endif
+
+#ifdef USE_DOCUMENTS_LIST_ALL_RESPONSE
+#define USE_DOCUMENT_ITEM
+#endif
+
+#ifdef V1_DOCUMENTS_GET_SIGNS
+#define USE_DOCUMENTS_GET_SIGNS_RESPONSE
+#endif
+
+#ifdef USE_DOCUMENTS_GET_SIGNS_RESPONSE
+#define USE_SIGN_ITEM
+#endif
+
+#ifdef USE_SIGN_ITEM
+#define USE_LIST_EMPLOYEE
+#endif
+
 #ifdef USE_LIST_EMPLOYEE
 struct ListEmployee : public JsonCompatible {
   // For postgres initialization type needs to be default constructible
@@ -229,10 +249,11 @@ struct DocumentItem : public JsonCompatible {
 
   DocumentItem& operator=(DocumentItem&& other) = default;
 
-  auto Introspect() { return std::tie(id, name, sign_required, description); }
+  auto Introspect() { return std::tie(id, name, type, sign_required, description); }
 
   REGISTER_STRUCT_FIELD(id, std::string, "id");
   REGISTER_STRUCT_FIELD(name, std::string, "name");
+  REGISTER_STRUCT_FIELD_OPTIONAL(type, std::string, "type");
   REGISTER_STRUCT_FIELD(sign_required, bool, "sign_required", false);
   REGISTER_STRUCT_FIELD_OPTIONAL(description, std::string, "description");
 };
@@ -254,5 +275,32 @@ struct DocumentsListResponse : public JsonCompatible {
 #ifdef USE_DOWNLOAD_DOCUMENT_RESPONSE
 struct DownloadDocumentResponse : public JsonCompatible {
   REGISTER_STRUCT_FIELD(url, std::string, "url");
+};
+#endif
+
+#ifdef USE_DOCUMENTS_LIST_ALL_RESPONSE
+struct DocumentsListAllResponse : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(documents, std::vector<DocumentItem>, "documents");
+};
+#endif
+
+#ifdef USE_SIGN_ITEM
+struct SignItem : public JsonCompatible {
+  SignItem() = default;
+
+  SignItem(SignItem&& other) { *this = std::move(other); }
+
+  SignItem& operator=(SignItem&& other) = default;
+
+  auto Introspect() { return std::tie(employee, is_signed); }
+
+  REGISTER_STRUCT_FIELD(employee, ListEmployee, "employee");
+  REGISTER_STRUCT_FIELD(is_signed, bool, "signed");
+};
+#endif
+
+#ifdef USE_DOCUMENTS_GET_SIGNS_RESPONSE
+struct DocumentsGetSignsResponse : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(signs, std::vector<SignItem>, "signs");
 };
 #endif

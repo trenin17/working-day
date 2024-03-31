@@ -1,4 +1,4 @@
-#define V1_DOCUMENTS_LIST
+#define V1_DOCUMENTS_GET_SIGNS
 
 #include "view.hpp"
 
@@ -14,16 +14,16 @@
 
 #include <definitions/all.hpp>
 
-namespace views::v1::documents::list {
+namespace views::v1::documents::get_signs {
 
 namespace {
 
-class DocumentsListHandler final
+class DocumentsGetSignsHandler final
     : public userver::server::handlers::HttpHandlerBase {
  public:
-  static constexpr std::string_view kName = "handler-v1-documents-list";
+  static constexpr std::string_view kName = "handler-v1-documents-get-signs";
 
-  DocumentsListHandler(
+  DocumentsGetSignsHandler(
       const userver::components::ComponentConfig& config,
       const userver::components::ComponentContext& component_context)
       : HttpHandlerBase(config, component_context),
@@ -41,21 +41,24 @@ class DocumentsListHandler final
     request.GetHttpResponse().SetHeader(
         static_cast<std::string>("Access-Control-Allow-Headers"), "*");
 
-    const auto& user_id = ctx.GetData<std::string>("user_id");
+    // const auto& user_id = ctx.GetData<std::string>("user_id");
+    const auto& document_id = request.GetArg("document_id");
 
     auto result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kMaster,
-        "SELECT working_day.documents.id, working_day.documents.name, "
-        "working_day.documents.type, working_day.documents.sign_required, "
-        "working_day.documents.description "
-        "FROM working_day.documents "
-        "JOIN working_day.employee_document ON working_day.documents.id = "
-        "working_day.employee_document.document_id "
-        "WHERE working_day.employee_document.employee_id = $1",
-        user_id);
+        "SELECT ROW "
+        "(working_day.employees.id, working_day.employees.name, "
+        "working_day.employees.surname, working_day.employees.patronymic, "
+        "working_day.employees.photo_link), "
+        "working_day.employee_document.signed "
+        "FROM working_day.employees "
+        "JOIN working_day.employee_document ON working_day.employees.id = "
+        "working_day.employee_document.employee_id "
+        "WHERE working_day.employee_document.document_id = $1",
+        document_id);
 
-    DocumentsListResponse response;
-    response.documents = result.AsContainer<std::vector<DocumentItem>>(
+    DocumentsGetSignsResponse response;
+    response.signs = result.AsContainer<std::vector<SignItem>>(
         userver::storages::postgres::kRowTag);
 
     return response.ToJsonString();
@@ -67,8 +70,8 @@ class DocumentsListHandler final
 
 }  // namespace
 
-void AppendDocumentsList(userver::components::ComponentList& component_list) {
-  component_list.Append<DocumentsListHandler>();
+void AppendDocumentsGetSigns(userver::components::ComponentList& component_list) {
+  component_list.Append<DocumentsGetSignsHandler>();
 }
 
-}  // namespace views::v1::documents::list
+}  // namespace views::v1::documents::get_signs

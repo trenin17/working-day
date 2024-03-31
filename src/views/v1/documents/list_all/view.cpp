@@ -1,4 +1,4 @@
-#define V1_DOCUMENTS_LIST
+#define V1_DOCUMENTS_LIST_ALL
 
 #include "view.hpp"
 
@@ -14,16 +14,16 @@
 
 #include <definitions/all.hpp>
 
-namespace views::v1::documents::list {
+namespace views::v1::documents::list_all {
 
 namespace {
 
-class DocumentsListHandler final
+class DocumentsListAllHandler final
     : public userver::server::handlers::HttpHandlerBase {
  public:
-  static constexpr std::string_view kName = "handler-v1-documents-list";
+  static constexpr std::string_view kName = "handler-v1-documents-list-all";
 
-  DocumentsListHandler(
+  DocumentsListAllHandler(
       const userver::components::ComponentConfig& config,
       const userver::components::ComponentContext& component_context)
       : HttpHandlerBase(config, component_context),
@@ -41,20 +41,16 @@ class DocumentsListHandler final
     request.GetHttpResponse().SetHeader(
         static_cast<std::string>("Access-Control-Allow-Headers"), "*");
 
-    const auto& user_id = ctx.GetData<std::string>("user_id");
+    // const auto& user_id = ctx.GetData<std::string>("user_id");
 
     auto result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kMaster,
-        "SELECT working_day.documents.id, working_day.documents.name, "
-        "working_day.documents.type, working_day.documents.sign_required, "
-        "working_day.documents.description "
-        "FROM working_day.documents "
-        "JOIN working_day.employee_document ON working_day.documents.id = "
-        "working_day.employee_document.document_id "
-        "WHERE working_day.employee_document.employee_id = $1",
-        user_id);
+        "SELECT id, name, "
+        "type, sign_required, "
+        "description "
+        "FROM working_day.documents");
 
-    DocumentsListResponse response;
+    DocumentsListAllResponse response;
     response.documents = result.AsContainer<std::vector<DocumentItem>>(
         userver::storages::postgres::kRowTag);
 
@@ -67,8 +63,8 @@ class DocumentsListHandler final
 
 }  // namespace
 
-void AppendDocumentsList(userver::components::ComponentList& component_list) {
-  component_list.Append<DocumentsListHandler>();
+void AppendDocumentsListAll(userver::components::ComponentList& component_list) {
+  component_list.Append<DocumentsListAllHandler>();
 }
 
-}  // namespace views::v1::documents::list
+}  // namespace views::v1::documents::list_all

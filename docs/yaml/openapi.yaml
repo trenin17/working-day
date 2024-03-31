@@ -1223,6 +1223,11 @@ components:
                     type: string
                 name:
                     type: string
+                type:
+                    type: string
+                    enum:
+                      - employee_request
+                      - admin_request
                 sign_required:
                     type: boolean
                 description:
@@ -1248,6 +1253,18 @@ components:
                     items:
                         $ref: '#/components/schemas/DocumentItem'
 
+        SignItem:
+            type: object
+            additionalProperties: false
+            required:
+                - employee
+                - signed
+            properties:
+                employee:
+                    $ref: '#/components/schemas/ListEmployee'
+                signed:
+                    type: boolean
+
         DocumentsGetSignsResponse:
             type: object
             additionalProperties: false
@@ -1257,13 +1274,5 @@ components:
                 signs:
                     type: array
                     items:
-                        type: object
-                        additionalProperties: false
-                        required:
-                          - employee
-                          - signed
-                        properties:
-                            employee:
-                                $ref: '#/components/schemas/ListEmployee'
-                            signed:
-                                type: boolean
+                        $ref: '#/components/schemas/SignItem'
+                        

@@ -44,6 +44,8 @@
 #include "views/v1/documents/download/view.hpp"
 #include "views/v1/search/full/view.hpp"
 #include "views/v1/documents/sign/view.hpp"
+#include "views/v1/documents/list_all/view.hpp"
+#include "views/v1/documents/get_signs/view.hpp"
 
 
 int main(int argc, char* argv[]) {
@@ -95,6 +97,8 @@ int main(int argc, char* argv[]) {
   views::v1::documents::list::AppendDocumentsList(component_list);
   views::v1::documents::download::AppendDocumentsDownload(component_list);
   views::v1::documents::sign::AppendDocumentsSign(component_list);
+  views::v1::documents::list_all::AppendDocumentsListAll(component_list);
+  views::v1::documents::get_signs::AppendDocumentsGetSigns(component_list);
 
   int err_code = userver::utils::DaemonMain(argc, argv, component_list);
 
