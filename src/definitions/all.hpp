@@ -12,10 +12,15 @@
 
 #ifdef V1_SEARCH_BASIC
 #define USE_SEARCH_BASIC_REQUEST
-#define USE_SEARCH_BASIC_RESPONSE
+#define USE_SEARCH_RESPONSE
 #endif
 
-#ifdef USE_SEARCH_BASIC_RESPONSE
+#ifdef V1_SEARCH_SUGGEST
+#define USE_SEARCH_SUGGEST_REQUEST
+#define USE_SEARCH_RESPONSE
+#endif
+
+#ifdef USE_SEARCH_RESPONSE
 #define USE_LIST_EMPLOYEE
 #endif
 
@@ -85,8 +90,14 @@ struct SearchBasicRequest : public JsonCompatible {
 };
 #endif
 
-#ifdef USE_SEARCH_BASIC_RESPONSE
-struct SearchBasicResponse : public JsonCompatible {
+#ifdef USE_SEARCH_SUGGEST_REQUEST
+struct SearchSuggestRequest : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(search_key, std::string, "search_key");
+};
+#endif
+
+#ifdef USE_SEARCH_RESPONSE
+struct SearchResponse : public JsonCompatible {
   REGISTER_STRUCT_FIELD(employees, std::vector<ListEmployee>, "employees");
 };
 #endif

@@ -457,7 +457,31 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/SearchBasicResponse'
+                                $ref: '#/components/schemas/SearchResponse'
+
+    /v1/search/suggest:
+        post:
+            description: Get employees suggestion by key
+            parameters:
+              - in: header
+                name: Authorization
+                description: Token of session user
+                schema:
+                    type: string
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/SearchSuggestRequest'
+            responses:
+                '200':
+                    description: List of employees
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/SearchResponse'
+
 
     /v1/attendance/list-all:
         post:
@@ -1055,8 +1079,18 @@ components:
             properties:
                 search_key:
                     type: string
+
+
+        SearchSuggestRequest:
+            type: object
+            additionalProperties: false
+            required:
+              - search_key
+            properties:
+                search_key:
+                    type: string
             
-        SearchBasicResponse:
+        SearchResponse:
             type: object
             additionalProperties: false
             required:

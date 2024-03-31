@@ -40,8 +40,10 @@
 #include "views/v1/profile/edit/view.hpp"
 #include "views/v1/profile/upload_photo/view.hpp"
 #include "views/v1/search/basic/view.hpp"
+#include "views/v1/search/suggest/view.hpp"
 #include "views/v1/documents/download/view.hpp"
 #include "views/v1/documents/sign/view.hpp"
+
 
 int main(int argc, char* argv[]) {
   Aws::SDKOptions options;
@@ -84,6 +86,7 @@ int main(int argc, char* argv[]) {
   views::v1::payments::AppendPayments(component_list);
   views::v1::clear_tasks::AppendClearTasks(component_list);
   views::v1::search_basic::AppendSearchBasic(component_list);
+  views::v1::search_suggest::AppendSearchSuggest(component_list);
   views::v1::attendance::list_all::AppendAttendanceListAll(component_list);
   views::v1::documents::upload::AppendDocumentsUpload(component_list);
   views::v1::documents::send::AppendDocumentsSend(component_list);

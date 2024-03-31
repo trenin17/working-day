@@ -59,7 +59,7 @@ class SearchBasicHandler final
     auto IDs = result_ids.AsOptionalSingleRow<IDsRow>(
         userver::storages::postgres::kRowTag);
 
-    SearchBasicResponse response;
+    SearchResponse response;
 
     if (IDs.has_value()) {
       userver::storages::postgres::ParameterStore parameters;
