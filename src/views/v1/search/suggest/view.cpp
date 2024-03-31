@@ -27,7 +27,7 @@ namespace views::v1::search_suggest {
 namespace {
 
 std::set<std::string> GetSuggestIds(auto& id_sets, auto& suggest_ids,
-                                    size_t n_keys) {
+                                    size_t n_keys, const int limit) {
   if (id_sets.size() != n_keys - 1 || suggest_ids.size() == 0) {
     return {};
   }
@@ -50,8 +50,7 @@ std::set<std::string> GetSuggestIds(auto& id_sets, auto& suggest_ids,
   }
 
   std::set<std::string> final;
-  const int suggest_size = 5;
-  for (int i = 0; i < suggest_size; ++i) {
+  for (int i = 0; i < limit; ++i) {
     if (!res.empty())
       final.insert(res.extract(res.begin()).value());
     else
@@ -69,8 +68,7 @@ std::vector<std::string> SplitBySpaces(std::string& str) {
   std::stringstream ss(str);
   std::vector<std::string> v;
   while (std::getline(ss, s, ' ')) {
-    // UNCOMMENT WHEN MERGED
-    // transform(s.begin(), s.end(), s.begin(), ::tolower);
+    transform(s.begin(), s.end(), s.begin(), ::tolower);
     v.push_back(s);
   }
   return v;
@@ -154,7 +152,7 @@ class SearchSuggestHandler final
     // Intersecting sets
 
     std::set<std::string> final_ids =
-        GetSuggestIds(id_sets, suggest_id_sets, search_keys.size());
+        GetSuggestIds(id_sets, suggest_id_sets, search_keys.size(), request_body.limit);
 
     // fetching ids' values and returning them
 
