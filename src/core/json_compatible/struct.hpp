@@ -4,6 +4,7 @@
 #include <memory>
 #include <optional>
 #include <vector>
+#include <string>
 
 #include <userver/storages/postgres/io/chrono.hpp>
 #include <userver/utils/datetime.hpp>
@@ -148,6 +149,12 @@ inline void Dump(const bool& field, const std::string& parameter_name,
 template <>
 inline void Dump(const std::vector<std::string>& field,
                  const std::string& parameter_name, nlohmann::json& json) {
+  json[parameter_name] = field;
+}
+
+template <>
+inline void Dump(const int& field, const std::string& parameter_name,
+                 nlohmann::json& json) {
   json[parameter_name] = field;
 }
 

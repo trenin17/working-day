@@ -1,3 +1,5 @@
+#define V1_EDIT_EMPLOYEE
+
 #include "view.hpp"
 
 #include <aws/core/Aws.h>
@@ -18,57 +20,62 @@
 #include "core/json_compatible/struct.hpp"
 #include "core/reverse_index/view.hpp"
 
+#include "definitions/all.hpp"
+
 namespace views::v1::profile::edit {
 
 namespace {
-
-struct ProfileEditRequest : public JsonCompatible {
-  REGISTER_STRUCT_FIELD_OPTIONAL(phones, std::vector<std::string>, "phones");
-  REGISTER_STRUCT_FIELD_OPTIONAL(email, std::string, "email");
-  REGISTER_STRUCT_FIELD_OPTIONAL(birthday, std::string, "birthday");
-  REGISTER_STRUCT_FIELD_OPTIONAL(password, std::string, "password");
-  REGISTER_STRUCT_FIELD_OPTIONAL(telegram_id, std::string, "telegram_id");
-  REGISTER_STRUCT_FIELD_OPTIONAL(vk_id, std::string, "vk_id");
-  REGISTER_STRUCT_FIELD_OPTIONAL(team, std::string, "team");
-};
 
 struct EditValuesRow {
   std::optional<std::vector<std::string>> phones;
   std::optional<std::string> email, birthday, telegram_id, vk_id, team;
 };
 
-views::v1::reverse_index::ReverseIndexResponse EditReverseIndexFunc(
-    const views::v1::reverse_index::ReverseIndexRequest& request) {
-  auto grab_result = request.cluster->Execute(
-      userver::storages::postgres::ClusterHostType::kMaster,
-      "SELECT CASE WHEN $2 IS NULL THEN NULL ELSE phones END, "
-      "CASE WHEN $3 IS NULL THEN NULL ELSE email END, "
-      "CASE WHEN $4 IS NULL THEN NULL ELSE birthday END, "
-      "CASE WHEN $5 IS NULL THEN NULL ELSE telegram_id END, "
-      "CASE WHEN $6 IS NULL THEN NULL ELSE vk_id END, "
-      "CASE WHEN $7 IS NULL THEN NULL ELSE team END "
-      "FROM working_day.employees "
-      "WHERE id = $1; ",
-      request.employee_id, request.phones, request.email, request.birthday,
-      request.telegram_id, request.vk_id, request.team);
+core::reverse_index::EmployeeAllData FetchOldData(
+    userver::storages::postgres::ClusterPtr cluster,
+    core::reverse_index::EmployeeAllData data) {
+  auto grab_result =
+      cluster->Execute(userver::storages::postgres::ClusterHostType::kMaster,
+                       "SELECT CASE WHEN $2 IS NULL THEN NULL ELSE phones END, "
+                       "CASE WHEN $3 IS NULL THEN NULL ELSE email END, "
+                       "CASE WHEN $4 IS NULL THEN NULL ELSE birthday END, "
+                       "CASE WHEN $5 IS NULL THEN NULL ELSE telegram_id END, "
+                       "CASE WHEN $6 IS NULL THEN NULL ELSE vk_id END, "
+                       "CASE WHEN $7 IS NULL THEN NULL ELSE team END "
+                       "FROM working_day.employees "
+                       "WHERE id = $1; ",
+                       data.employee_id, data.phones, data.email, data.birthday,
+                       data.telegram_id, data.vk_id, data.team);
 
   auto old_values = grab_result.AsSingleRow<EditValuesRow>(
       userver::storages::postgres::kRowTag);
 
-  std::vector<std::optional<std::string>> old_values_vec = {
-      old_values.email, old_values.birthday, old_values.telegram_id,
-      old_values.vk_id, old_values.team};
+  core::reverse_index::EmployeeAllData data_old{
+      data.employee_id,    std::nullopt,           std::nullopt,
+      std::nullopt,        std::nullopt,           old_values.email,
+      old_values.birthday, old_values.telegram_id, old_values.vk_id,
+      old_values.team,     old_values.phones};
 
-  if (old_values.phones.has_value()) {
-    old_values_vec.insert(old_values_vec.end(),
-                          old_values.phones.value().begin(),
-                          old_values.phones.value().end());
+  return data_old;
+}
+
+core::reverse_index::ReverseIndexResponse EditReverseIndexFunc(
+    userver::storages::postgres::ClusterPtr cluster,
+    core::reverse_index::EmployeeAllData old_data,
+    core::reverse_index::EmployeeAllData new_data) {
+  std::vector<std::optional<std::string>> old_values_vec = {
+      old_data.email, old_data.birthday, old_data.telegram_id, old_data.vk_id,
+      old_data.team};
+
+  if (old_data.phones.has_value()) {
+    old_values_vec.insert(old_values_vec.end(), old_data.phones.value().begin(),
+                          old_data.phones.value().end());
   }
 
   userver::storages::postgres::ParameterStore parameters;
   std::string filter;
 
-  parameters.PushBack(request.employee_id);
+  parameters.PushBack(old_data.employee_id);
 
   for (const auto& field : old_values_vec) {
     if (field.has_value()) {
@@ -79,42 +86,45 @@ views::v1::reverse_index::ReverseIndexResponse EditReverseIndexFunc(
   }
 
   if (parameters.Size() > 1) {
-    auto result = request.cluster->Execute(
-        userver::storages::postgres::ClusterHostType::kMaster,
-        "UPDATE working_day.reverse_index "
-        "SET ids = array_remove(ids, $1) "
-        "WHERE key IN " +
-            filter + "); ",
-        parameters);
+    auto result =
+        cluster->Execute(userver::storages::postgres::ClusterHostType::kMaster,
+                         "UPDATE working_day.reverse_index "
+                         "SET ids = array_remove(ids, $1) "
+                         "WHERE key IN " +
+                             filter + "); ",
+                         parameters);
   }
-  std::vector<std::optional<std::string>> new_fields = {
-      request.name,        request.surname, request.patronymic,
-      request.role,        request.email,   request.birthday,
-      request.telegram_id, request.vk_id,   request.team};
 
-  if (request.phones.has_value()) {
-    new_fields.insert(new_fields.end(), request.phones.value().begin(),
-                      request.phones.value().end());
+  std::vector<std::optional<std::string>> new_fields = {
+      new_data.name,        new_data.surname, new_data.patronymic,
+      new_data.role,        new_data.email,   new_data.birthday,
+      new_data.telegram_id, new_data.vk_id,   new_data.team};
+
+  if (new_data.phones.has_value()) {
+    new_fields.insert(new_fields.end(), new_data.phones.value().begin(),
+                      new_data.phones.value().end());
   }
 
   userver::storages::postgres::ParameterStore parameters2;
   std::string filter2;
 
-  parameters2.PushBack(request.employee_id);
+  parameters2.PushBack(new_data.employee_id);
 
-  for (const auto& field : new_fields) {
+  for (auto& field : new_fields) {
     if (field.has_value()) {
       auto separator = (parameters2.Size() == 1 ? "[" : ", ");
+      transform(field.value().begin(), field.value().end(),
+                field.value().begin(), ::tolower);
       parameters2.PushBack(field.value());
       filter2 += fmt::format("{}${}", separator, parameters2.Size());
     }
   }
 
   if (parameters2.Size() > 1) {
-    auto result2 = request.cluster->Execute(
+    auto result2 = cluster->Execute(
         userver::storages::postgres::ClusterHostType::kMaster,
-        "WITH input_data AS ( "
-        "  SELECT ARRAY" +
+            "WITH input_data AS ( "
+            "  SELECT ARRAY" +
             filter2 +
             "] AS keys, $1 AS id "
             ") "
@@ -127,7 +137,7 @@ views::v1::reverse_index::ReverseIndexResponse EditReverseIndexFunc(
         parameters2);
   }
 
-  views::v1::reverse_index::ReverseIndexResponse response(request.employee_id);
+  core::reverse_index::ReverseIndexResponse response(new_data.employee_id);
   return response;
 }
 
@@ -159,25 +169,29 @@ class ProfileEditHandler final
     ProfileEditRequest request_body;
     request_body.ParseRegisteredFields(request.RequestBody());
 
-    views::v1::reverse_index::ReverseIndexRequest r_index_request{
-        [](const views::v1::reverse_index::ReverseIndexRequest& r)
-            -> views::v1::reverse_index::ReverseIndexResponse {
-          return EditReverseIndexFunc(std::move(r));
-        },
-        pg_cluster_,
-        user_id,
-        std::nullopt,
-        std::nullopt,
-        std::nullopt,
-        std::nullopt,
-        request_body.email,
-        request_body.birthday,
-        request_body.telegram_id,
-        request_body.vk_id,
-        request_body.team,
-        request_body.phones};
+    core::reverse_index::EmployeeAllData data_new{user_id,
+                                                  std::nullopt,
+                                                  std::nullopt,
+                                                  std::nullopt,
+                                                  std::nullopt,
+                                                  request_body.email,
+                                                  request_body.birthday,
+                                                  request_body.telegram_id,
+                                                  request_body.vk_id,
+                                                  request_body.team,
+                                                  request_body.phones};
 
-    views::v1::reverse_index::ReverseIndexHandler(r_index_request);
+    core::reverse_index::EmployeeAllData data_old =
+        FetchOldData(pg_cluster_, data_new);
+
+    userver::storages::postgres::ClusterPtr cluster = pg_cluster_;
+    core::reverse_index::ReverseIndexRequest r_index_request{
+        [cluster, data_old,
+         data_new]() -> core::reverse_index::ReverseIndexResponse {
+          return EditReverseIndexFunc(cluster, data_old, data_new);
+        }};
+
+    core::reverse_index::ReverseIndexHandler(r_index_request);
 
     auto result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kMaster,

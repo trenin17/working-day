@@ -438,7 +438,7 @@ paths:
 
     /v1/search/basic:
         post:
-            description: Get employee by key
+            description: Get employees by key
             parameters:
               - in: header
                 name: Authorization
@@ -458,6 +458,22 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/SearchResponse'
+                                
+    /v1/search/full:
+        post:
+            description: Get employees by multiple keys
+            parameters:
+              - in: header
+                name: Authorization
+                description: Token of session user
+                schema:
+                    type: string
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/SearchFullRequest'
 
     /v1/search/suggest:
         post:
@@ -481,7 +497,6 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/SearchResponse'
-
 
     /v1/attendance/list-all:
         post:
@@ -1080,6 +1095,17 @@ components:
                 search_key:
                     type: string
 
+        SearchFullRequest:
+            type: object
+            additionalProperties: false
+            required:
+              - search_key
+              - limit
+            properties:
+                search_key:
+                    type: string
+                limit:
+                    type: integer
 
         SearchSuggestRequest:
             type: object

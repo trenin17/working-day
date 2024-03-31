@@ -57,6 +57,7 @@ add_library(${PROJECT_NAME}_objs OBJECT
 	src/views/v1/documents/send/view.cpp
 	src/views/v1/documents/list/view.cpp
 	src/views/v1/documents/download/view.cpp
+	src/views/v1/search/full/view.cpp
 	src/views/v1/search/suggest/view.cpp
 	src/views/v1/documents/sign/view.cpp
 )

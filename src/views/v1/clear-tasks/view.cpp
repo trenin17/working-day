@@ -32,7 +32,7 @@ class ClearTasksHandler final
   std::string HandleRequestThrow(
       const userver::server::http::HttpRequest& request,
       userver::server::request::RequestContext&) const override {
-    views::v1::reverse_index::ClearTasks();
+    core::reverse_index::ClearTasks();
 
     return "";
   }

@@ -10,34 +10,34 @@
 #include <userver/storages/postgres/cluster.hpp>
 #include <userver/storages/postgres/component.hpp>
 
-namespace views::v1::reverse_index {
+#include <core/json_compatible/struct.hpp>
 
-class ReverseIndexResponse {
+namespace core::reverse_index {
+
+class EmployeeAllData {
  public:
-  ReverseIndexResponse(const std::string& employee_id)
-      : employee_id(employee_id) {}
-
-  std::string ToJSON() const {
-    nlohmann::json j;
-    j["employee_id"] = employee_id;
-    return j.dump();
-  }
-
-  std::string employee_id;
-};
-
-class ReverseIndexRequest {
- public:
-  std::function<ReverseIndexResponse(const ReverseIndexRequest&)> func;
-  userver::storages::postgres::ClusterPtr cluster;
   std::string employee_id;
   std::optional<std::string> name, surname, patronymic, role, email, birthday,
       telegram_id, vk_id, team;
   std::optional<std::vector<std::string>> phones;
 };
 
+class ReverseIndexResponse : public JsonCompatible {
+ public:
+  ReverseIndexResponse(const std::string& worker_id) {
+    employee_id = worker_id;
+  }
+
+  REGISTER_STRUCT_FIELD(employee_id, std::string, "employee_id");
+};
+
+class ReverseIndexRequest {
+ public:
+  std::function<ReverseIndexResponse()> func;
+};
+
 void ReverseIndexHandler(const ReverseIndexRequest& request);
 
 void ClearTasks();
 
-}  // namespace views::v1::reverse_index
+}  // namespace core::reverse_index

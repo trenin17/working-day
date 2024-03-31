@@ -1,3 +1,5 @@
+#define V1_ADD_EMPLOYEE
+
 #include "view.hpp"
 
 #include <userver/clients/dns/component.hpp>
@@ -11,6 +13,8 @@
 #include <userver/utils/boost_uuid4.hpp>
 #include <userver/utils/uuid4.hpp>
 
+#include "definitions/all.hpp"
+
 #include "core/json_compatible/struct.hpp"
 #include "core/reverse_index/view.hpp"
 
@@ -18,49 +22,34 @@ namespace views::v1::employee::add {
 
 namespace {
 
-struct AddEmployeeRequest : public JsonCompatible {
-  REGISTER_STRUCT_FIELD(name, std::string, "name");
-  REGISTER_STRUCT_FIELD(surname, std::string, "surname");
-  REGISTER_STRUCT_FIELD(role, std::string, "role");
-  REGISTER_STRUCT_FIELD_OPTIONAL(patronymic, std::string, "patronymic");
-};
-
-struct AddEmployeeResponse : public JsonCompatible {
-  AddEmployeeResponse(const std::string& l, const std::string& p) {
-    login = l;
-    password = p;
-  }
-
-  REGISTER_STRUCT_FIELD(login, std::string, "login");
-  REGISTER_STRUCT_FIELD(password, std::string, "password");
-};
-
-views::v1::reverse_index::ReverseIndexResponse AddReverseIndexFunc(
-    const views::v1::reverse_index::ReverseIndexRequest& request) {
+core::reverse_index::ReverseIndexResponse AddReverseIndexFunc(
+    userver::storages::postgres::ClusterPtr cluster,
+    core::reverse_index::EmployeeAllData data) {
   std::vector<std::optional<std::string>> fields = {
-      request.name,        request.surname, request.patronymic,
-      request.role,        request.email,   request.birthday,
-      request.telegram_id, request.vk_id,   request.team};
+      data.name,     data.surname,     data.patronymic, data.role, data.email,
+      data.birthday, data.telegram_id, data.vk_id,      data.team};
 
-  if (request.phones.has_value()) {
-    fields.insert(fields.end(), request.phones.value().begin(),
-                  request.phones.value().end());
+  if (data.phones.has_value()) {
+    fields.insert(fields.end(), data.phones.value().begin(),
+                  data.phones.value().end());
   }
 
   userver::storages::postgres::ParameterStore parameters;
   std::string filter;
 
-  parameters.PushBack(request.employee_id);
+  parameters.PushBack(data.employee_id);
 
-  for (const auto& field : fields) {
+  for (auto& field : fields) {
     if (field.has_value()) {
       auto separator = (parameters.Size() == 1 ? "[" : ", ");
+      transform(field.value().begin(), field.value().end(),
+                field.value().begin(), ::tolower);
       parameters.PushBack(field.value());
       filter += fmt::format("{}${}", separator, parameters.Size());
     }
   }
 
-  auto result = request.cluster->Execute(
+  auto result = cluster->Execute(
       userver::storages::postgres::ClusterHostType::kMaster,
       "WITH input_data AS ( "
       "  SELECT ARRAY" +
@@ -75,7 +64,7 @@ views::v1::reverse_index::ReverseIndexResponse AddReverseIndexFunc(
           "EXCLUDED.ids[1]); ",
       parameters);
 
-  views::v1::reverse_index::ReverseIndexResponse response(request.employee_id);
+  core::reverse_index::ReverseIndexResponse response(data.employee_id);
 
   return response;
 }
@@ -119,19 +108,17 @@ class AddEmployeeHandler final
         id, request_body.name, request_body.surname, request_body.patronymic,
         password, request_body.role, company_id);
 
-    views::v1::reverse_index::ReverseIndexRequest r_index_request{
-        [](const views::v1::reverse_index::ReverseIndexRequest& r)
-            -> views::v1::reverse_index::ReverseIndexResponse {
-          return AddReverseIndexFunc(std::move(r));
-        },
-        pg_cluster_,
-        id,
-        request_body.name,
-        request_body.surname,
-        request_body.patronymic,
+    core::reverse_index::EmployeeAllData data{
+        id, request_body.name, request_body.surname, request_body.patronymic,
         request_body.role};
 
-    views::v1::reverse_index::ReverseIndexHandler(r_index_request);
+    userver::storages::postgres::ClusterPtr cluster = pg_cluster_;
+    core::reverse_index::ReverseIndexRequest r_index_request{
+        [cluster, data]() -> core::reverse_index::ReverseIndexResponse {
+          return AddReverseIndexFunc(cluster, data);
+        }};
+
+    core::reverse_index::ReverseIndexHandler(r_index_request);
 
     AddEmployeeResponse response(id, password);
     return response.ToJsonString();

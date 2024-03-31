@@ -18,25 +18,18 @@
 
 using json = nlohmann::json;
 
-namespace views::v1::reverse_index {
+namespace core::reverse_index {
 
 class ReverseIndex {
  public:
   void ReverseIndexHandler(const ReverseIndexRequest& request) {
-    if (!request.cluster || request.employee_id.empty()) {
-      LOG_WARNING() << "Invalid arguments for indexation";
-      return;
-    }
-
     auto tasks = tasks_.Lock();
-
     while (!tasks->empty() && tasks->front().IsFinished()) {
       tasks->pop();
     }
 
     tasks->push(userver::utils::AsyncBackground(
-        "ReverseIndexFunc", userver::engine::current_task::GetTaskProcessor(),
-        request.func, std::move(request)));
+        "ReverseIndexFunc", userver::engine::current_task::GetTaskProcessor(), request.func));
   }
 
   void ClearTasks() {
@@ -70,4 +63,4 @@ void ReverseIndexHandler(const ReverseIndexRequest& request) {
 
 void ClearTasks() { return ReverseIndex::GetInstance().ClearTasks(); }
 
-}  // namespace views::v1::reverse_index
+}  // namespace core::reverse_index

@@ -10,8 +10,29 @@
 #define USE_LIST_EMPLOYEE
 #endif
 
+#ifdef V1_ADD_EMPLOYEE
+#define USE_ADD_EMPLOYEE_REQUEST
+#define USE_ADD_EMPLOYEE_RESPONSE
+#define USE_REVERSE_INDEX
+#endif
+
+#ifdef V1_REMOVE_EMPLOYEE
+#define USE_ERROR_MESSAGE
+#define USE_REVERSE_INDEX
+#endif
+
+#ifdef V1_EDIT_EMPLOYEE
+#define USE_PROFILE_EDIT_REQUEST
+#define USE_REVERSE_INDEX
+#endif
+
 #ifdef V1_SEARCH_BASIC
 #define USE_SEARCH_BASIC_REQUEST
+#define USE_SEARCH_RESPONSE
+#endif
+
+#ifdef V1_SEARCH_FULL
+#define USE_SEARCH_FULL_REQUEST
 #define USE_SEARCH_RESPONSE
 #endif
 
@@ -84,9 +105,57 @@ struct ListEmployee : public JsonCompatible {
 };
 #endif
 
+#ifdef USE_ADD_EMPLOYEE_REQUEST
+struct AddEmployeeRequest : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(name, std::string, "name");
+  REGISTER_STRUCT_FIELD(surname, std::string, "surname");
+  REGISTER_STRUCT_FIELD(role, std::string, "role");
+  REGISTER_STRUCT_FIELD_OPTIONAL(patronymic, std::string, "patronymic");
+};
+#endif
+
+#ifdef USE_ADD_EMPLOYEE_RESPONSE
+struct AddEmployeeResponse : public JsonCompatible {
+  AddEmployeeResponse(const std::string& l, const std::string& p) {
+    login = l;
+    password = p;
+  }
+
+  REGISTER_STRUCT_FIELD(login, std::string, "login");
+  REGISTER_STRUCT_FIELD(password, std::string, "password");
+};
+#endif
+
+#ifdef USE_ERROR_MESSAGE
+struct ErrorMessage : public JsonCompatible {
+  ErrorMessage(const std::string& msg) { message = msg; }
+
+  REGISTER_STRUCT_FIELD(message, std::string, "message");
+};
+#endif
+
+#ifdef USE_PROFILE_EDIT_REQUEST
+struct ProfileEditRequest : public JsonCompatible {
+  REGISTER_STRUCT_FIELD_OPTIONAL(phones, std::vector<std::string>, "phones");
+  REGISTER_STRUCT_FIELD_OPTIONAL(email, std::string, "email");
+  REGISTER_STRUCT_FIELD_OPTIONAL(birthday, std::string, "birthday");
+  REGISTER_STRUCT_FIELD_OPTIONAL(password, std::string, "password");
+  REGISTER_STRUCT_FIELD_OPTIONAL(telegram_id, std::string, "telegram_id");
+  REGISTER_STRUCT_FIELD_OPTIONAL(vk_id, std::string, "vk_id");
+  REGISTER_STRUCT_FIELD_OPTIONAL(team, std::string, "team");
+};
+#endif
+
 #ifdef USE_SEARCH_BASIC_REQUEST
 struct SearchBasicRequest : public JsonCompatible {
   REGISTER_STRUCT_FIELD(search_key, std::string, "search_key");
+};
+#endif
+
+#ifdef USE_SEARCH_FULL_REQUEST
+struct SearchFullRequest : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(search_key, std::string, "search_key");
+  REGISTER_STRUCT_FIELD(limit, int, "limit");
 };
 #endif
 
