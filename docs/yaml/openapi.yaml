@@ -458,19 +458,7 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/SearchResponse'
-                '401':
-                    description: Unauthorized
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/ErrorMessage'
-                '403':
-                    description: Wrong authorization token
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/ErrorMessage'
-
+                                
     /v1/search/full:
         post:
             description: Get employees by multiple keys
@@ -486,6 +474,22 @@ paths:
                     application/json:
                         schema:
                             $ref: '#/components/schemas/SearchFullRequest'
+
+    /v1/search/suggest:
+        post:
+            description: Get employees suggestion by key
+            parameters:
+              - in: header
+                name: Authorization
+                description: Token of session user
+                schema:
+                    type: string
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/SearchSuggestRequest'
             responses:
                 '200':
                     description: List of employees
@@ -576,7 +580,7 @@ paths:
             parameters:
               - in: header
                 name: Authorization
-                description: Token of session user, available for managers only
+                description: Token of session user
                 schema:
                     type: string
               - in: query
@@ -590,7 +594,64 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/DownloadDocumentResponse'            
+                                $ref: '#/components/schemas/DownloadDocumentResponse'
+
+    /v1/documents/list-all:
+        get:
+            description: Get list of all existing documents
+            parameters:
+              - in: header
+                name: Authorization
+                description: Token of session user, available for managers only
+                schema:
+                    type: string
+            responses:
+                '200':
+                    description: List of documents
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/DocumentsListAllResponse'
+
+    /v1/documents/get-signs:
+        get:
+            description: Get list of employees who signed the document
+            parameters:
+              - in: header
+                name: Authorization
+                description: Token of session user, available for managers only
+                schema:
+                    type: string
+              - in: query
+                name: document_id
+                description: Id of the document
+                schema:
+                    type: string
+            responses:
+                '200':
+                    description: List of employees
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/DocumentsGetSignsResponse'
+    
+    /v1/documents/sign:
+        post:
+            description: Sign the document
+            parameters:
+              - in: header
+                name: Authorization
+                description: Token of session user
+                schema:
+                    type: string
+              - in: query
+                name: document_id
+                description: Id of the document
+                schema:
+                    type: string
+            responses:
+                '200':
+                    description: Document was signed
 
 components:
     schemas:
@@ -796,6 +857,7 @@ components:
                       - vacation_approved # Head approved your vacation request
                       - vacation_denied   # Head denied your vacation request
                       - attendance_added  # Manager added your attendance
+                      - generic           # Notification that doesn't require any action
                 is_read:
                     type: boolean
                 sender:
@@ -1044,6 +1106,15 @@ components:
                     type: string
                 limit:
                     type: integer
+
+        SearchSuggestRequest:
+            type: object
+            additionalProperties: false
+            required:
+              - search_key
+            properties:
+                search_key:
+                    type: string
             
         SearchResponse:
             type: object
@@ -1156,3 +1227,34 @@ components:
             properties:
                 url:
                     type: string
+
+        DocumentsListAllResponse:
+            type: object
+            additionalProperties: false
+            required:
+              - documents
+            properties:
+                documents:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/DocumentItem'
+
+        DocumentsGetSignsResponse:
+            type: object
+            additionalProperties: false
+            required:
+              - signs
+            properties:
+                signs:
+                    type: array
+                    items:
+                        type: object
+                        additionalProperties: false
+                        required:
+                          - employee
+                          - signed
+                        properties:
+                            employee:
+                                $ref: '#/components/schemas/ListEmployee'
+                            signed:
+                                type: boolean

@@ -1,3 +1,4 @@
+import asyncio
 from wsgiref import headers
 import pytest
 import json
@@ -577,7 +578,7 @@ async def test_documents_send(service_client):
     response = await service_client.post(
         '/v1/employee/add',
         headers={'Authorization': 'Bearer first_token'},
-        json={'name': 'Third', 'surname': 'C', 'role': 'manager'},
+        json={'name': 'Third', 'surname': 'C', 'role': 'admin'},
     )
     assert response.status == 200
     employee_id = json.loads(response.text)['login']
@@ -615,6 +616,94 @@ async def test_documents_send(service_client):
     assert response.text == (
         '{"documents":[{"description":"text1","id":"id1",'
         '"name":"doc1","sign_required":false}]}')
+    
+    response = await service_client.post(
+        '/v1/documents/sign',
+        headers={'Authorization': 'Bearer first_token'},
+        params={'document_id': 'id1'}
+    )
+    assert response.status == 200
+
+
+@pytest.mark.pgsql('db_1', files=['initial_data.sql'])
+async def test_search_suggest(service_client):
+    response = await service_client.post(
+            '/v1/employee/add',
+            headers={'Authorization': 'Bearer first_token'},
+            json={'name': 'Test1', 'surname': 'T1', 'role': 'user'},
+        )
+
+    assert response.status == 200
+    new_id = json.loads(response.text)['login']
+    new_password = json.loads(response.text)['password']
+
+    response = await service_client.post(
+        '/v1/search/suggest',
+        json={'search_key': 'ZZZZZZZ'},
+        headers={'Authorization': 'Bearer first_token'},
+    )
+
+    assert response.status == 200
+    assert response.text == '{"employees":[]}'
+    
+    response = await service_client.post(
+        '/v1/search/suggest',
+        json={'search_key': 'T1 Test1 Bla'},
+        headers={'Authorization': 'Bearer first_token'},
+    )
+    
+    assert response.status == 200
+    assert response.text == '{"employees":[]}'
+    
+    response = await service_client.post(
+            '/v1/employee/add',
+            headers={'Authorization': 'Bearer first_token'},
+            json={'name': 'Test2', 'surname': 'T1', 'role': 'user'},
+        )
+    assert response.status == 200
+    new_id2 = json.loads(response.text)['login']
+    new_password2 = json.loads(response.text)['password']
+    
+    await asyncio.sleep(1)
+    
+    response = await service_client.post(
+        '/v1/search/suggest',
+        json={'search_key': 'T1 Test'},
+        headers={'Authorization': 'Bearer first_token'},
+    )
+    
+    assert response.status == 200
+    response_required = Template('{"employees":[{"id":"${id}",'
+                                 '"name":"Test1","surname":"T1"},'
+                                 '{"id":"${id2}",'
+                                 '"name":"Test2","surname":"T1"}]}')
+    assert response.text == (response_required.substitute(id=new_id, id2=new_id2))
+    
+    response = await service_client.post(
+        '/v1/search/suggest',
+        json={'search_key': 'Test'},
+        headers={'Authorization': 'Bearer first_token'},
+    )
+    
+    assert response.status == 200
+    response_required = Template('{"employees":[{"id":"${id}",'
+                                 '"name":"Test1","surname":"T1"},'
+                                 '{"id":"${id2}",'
+                                 '"name":"Test2","surname":"T1"}]}')
+    assert response.text == (response_required.substitute(id=new_id, id2=new_id2))
+    
+    response = await service_client.post(
+        '/v1/search/suggest',
+        json={'search_key': ''},
+        headers={'Authorization': 'Bearer first_token'},
+    )
+    
+    assert response.status == 200
+    response_required = Template('{"employees":[{"id":"${id}",'
+                                 '"name":"Test1","surname":"T1"},'
+                                 '{"id":"${id2}",'
+                                 '"name":"Test2","surname":"T1"}]}')
+    assert response.text == (response_required.substitute(id=new_id, id2=new_id2))
 
 
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])

@@ -269,6 +269,16 @@ components_manager:
                 scopes:
                   - user
 
+        handler-v1-search-suggest:
+          path: /v1/search/suggest
+          method: POST
+          task_processor: main-task-processor
+          auth:
+              types:
+                - bearer
+              scopes:
+                - user
+
         handler-v1-attendance-list-all:
             path: /v1/attendance/list-all
             method: POST
@@ -277,6 +287,7 @@ components_manager:
                 types:
                   - bearer
                 scopes:
+                  - admin
                   - manager
 
         handler-v1-documents-upload:
@@ -287,7 +298,7 @@ components_manager:
                 types:
                   - bearer
                 scopes:
-                  - manager
+                  - admin
 
         handler-v1-documents-send:
             path: /v1/documents/send
@@ -297,7 +308,7 @@ components_manager:
                 types:
                   - bearer
                 scopes:
-                  - manager
+                  - admin
 
         handler-v1-documents-list:
             path: /v1/documents/list
@@ -319,7 +330,6 @@ components_manager:
                 scopes:
                   - user
 
-
         handler-v1-search-full:
             path: /v1/search/full
             method: POST
@@ -329,7 +339,17 @@ components_manager:
                   - bearer
                 scopes:
                   - user
-        
+
+        handler-v1-documents-sign:
+            path: /v1/documents/sign
+            method: POST
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - user
+
         handler-implicit-http-options:
             as_fallback: implicit-http-options
             method: OPTIONS
