@@ -474,6 +474,13 @@ paths:
                     application/json:
                         schema:
                             $ref: '#/components/schemas/SearchFullRequest'
+            responses:
+                '200':
+                    description: List of employees
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/SearchResponse'
 
     /v1/search/suggest:
         post:
@@ -1115,6 +1122,8 @@ components:
             properties:
                 search_key:
                     type: string
+                limit:
+                    type: integer
             
         SearchResponse:
             type: object

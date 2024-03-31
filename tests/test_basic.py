@@ -639,7 +639,7 @@ async def test_search_suggest(service_client):
 
     response = await service_client.post(
         '/v1/search/suggest',
-        json={'search_key': 'ZZZZZZZ'},
+        json={'search_key': 'ZZZZZZZ', 'limit': 5},
         headers={'Authorization': 'Bearer first_token'},
     )
 
@@ -648,7 +648,7 @@ async def test_search_suggest(service_client):
     
     response = await service_client.post(
         '/v1/search/suggest',
-        json={'search_key': 'T1 Test1 Bla'},
+        json={'search_key': 'T1 Test1 Bla', 'limit': 5},
         headers={'Authorization': 'Bearer first_token'},
     )
     
@@ -668,7 +668,7 @@ async def test_search_suggest(service_client):
     
     response = await service_client.post(
         '/v1/search/suggest',
-        json={'search_key': 'T1 Test'},
+        json={'search_key': 'T1 Test', 'limit': 5},
         headers={'Authorization': 'Bearer first_token'},
     )
     
@@ -681,7 +681,7 @@ async def test_search_suggest(service_client):
     
     response = await service_client.post(
         '/v1/search/suggest',
-        json={'search_key': 'Test'},
+        json={'search_key': 'Test', 'limit': 5},
         headers={'Authorization': 'Bearer first_token'},
     )
     
@@ -694,7 +694,7 @@ async def test_search_suggest(service_client):
     
     response = await service_client.post(
         '/v1/search/suggest',
-        json={'search_key': ''},
+        json={'search_key': '', 'limit': 5},
         headers={'Authorization': 'Bearer first_token'},
     )
     
