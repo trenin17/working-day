@@ -20,6 +20,19 @@ using json = nlohmann::json;
 
 namespace core::reverse_index {
 
+std::string ConvertToLower(std::string s) {
+  std::setlocale(LC_ALL, "");
+  std::wstring wstr = std::wstring_convert<std::codecvt_utf8<wchar_t>>().from_bytes(s);;
+  for (size_t i = 0; i < wstr.size(); ++i) {
+      wchar_t lower = std::towlower(wstr[i]);
+      wstr[i] = lower;
+  }
+  using convert_type = std::codecvt_utf8<wchar_t>;
+  std::wstring_convert<convert_type, wchar_t> converter;
+  std::string converted_str = converter.to_bytes(wstr);
+  return converted_str;
+}
+
 class ReverseIndex {
  public:
   void ReverseIndexHandler(const ReverseIndexRequest& request) {

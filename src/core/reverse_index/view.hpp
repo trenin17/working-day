@@ -3,6 +3,8 @@
 #include <initializer_list>
 #include <string>
 #include <string_view>
+#include <locale>
+#include <codecvt>
 
 #include <nlohmann/json.hpp>
 
@@ -22,6 +24,8 @@ class EmployeeAllData {
   std::optional<std::vector<std::string>> phones;
 };
 
+std::string ConvertToLower(std::string s);
+
 class ReverseIndexResponse : public JsonCompatible {
  public:
   ReverseIndexResponse(const std::string& worker_id) {
@@ -35,6 +39,8 @@ class ReverseIndexRequest {
  public:
   std::function<ReverseIndexResponse()> func;
 };
+
+
 
 void ReverseIndexHandler(const ReverseIndexRequest& request);
 

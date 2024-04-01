@@ -17,6 +17,7 @@
 #include <userver/storages/postgres/parameter_store.hpp>
 #include <vector>
 
+#include "core/reverse_index/view.hpp"
 #include "core/json_compatible/struct.hpp"
 #include "definitions/all.hpp"
 
@@ -60,7 +61,7 @@ std::set<std::string> GetSuggestIds(auto& id_sets, auto& suggest_ids,
   return final;
 }
 
-std::vector<std::string> SplitBySpaces(std::string& str) {
+std::vector<std::string> SplitBySpaces(std::string str) {
   if (str.empty()) {
     return {""};
   }
@@ -68,8 +69,7 @@ std::vector<std::string> SplitBySpaces(std::string& str) {
   std::stringstream ss(str);
   std::vector<std::string> v;
   while (std::getline(ss, s, ' ')) {
-    transform(s.begin(), s.end(), s.begin(), ::tolower);
-    v.push_back(s);
+    v.push_back(core::reverse_index::ConvertToLower(s));
   }
   return v;
 }
