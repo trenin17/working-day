@@ -400,7 +400,7 @@ async def test_search_full(service_client):
 
     response = await service_client.post(
         '/v1/search/full',
-        json={'search_key': 'Seventh F user', 'limit': 1},
+        json={'search_key': 'SEVenth F user', 'limit': 1},
         headers={'Authorization': 'Bearer first_token'},
     )
 
@@ -422,7 +422,7 @@ async def test_search_full(service_client):
 
     response = await service_client.post(
         '/v1/search/full',
-        json={'search_key': 'Seventh F', 'limit': 5},
+        json={'search_key': 'SEVenth F', 'limit': 5},
         headers={'Authorization': 'Bearer first_token'},
     )
 

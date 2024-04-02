@@ -18,6 +18,7 @@
 #include <sstream>
 
 #include "core/json_compatible/struct.hpp"
+#include "core/reverse_index/view.hpp"
 #include "definitions/all.hpp"
 
 #include "utils/s3_presigned_links.hpp"
@@ -102,12 +103,12 @@ std::set<std::string> GetIds(const auto& id_sets, const int& limit) {
     return final_ids;
 }
 
-std::vector<std::string> SplitBySpaces(std::string& str) {
+std::vector<std::string> SplitBySpaces(std::string str) {
     std::string s;
     std::stringstream ss(str);
     std::vector<std::string> v;
     while (std::getline(ss, s, ' ')) {
-        v.push_back(s);
+        v.push_back(core::reverse_index::ConvertToLower(s));
     }
     return v;
 }
@@ -156,7 +157,6 @@ class SearchFullHandler final
     userver::storages::postgres::ParameterStore parameters;
     std::string filter;
     for (auto& key : search_keys) {
-        transform(key.begin(), key.end(), key.begin(), ::tolower);
         append(key, parameters, filter);
     }
 
@@ -181,8 +181,13 @@ class SearchFullHandler final
     userver::storages::postgres::ParameterStore parameters_fetch;
     std::string filter_fetch;
 
+    int cnt = 0;
     for (auto& val : final_ids) {
+        if (cnt >= request_body.limit) {
+            break;
+        }
         append(val, parameters_fetch, filter_fetch);
+        cnt++;
     }
 
     if (parameters_fetch.Size() != 0) {

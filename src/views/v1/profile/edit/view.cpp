@@ -113,8 +113,7 @@ core::reverse_index::ReverseIndexResponse EditReverseIndexFunc(
   for (auto& field : new_fields) {
     if (field.has_value()) {
       auto separator = (parameters2.Size() == 1 ? "[" : ", ");
-      transform(field.value().begin(), field.value().end(),
-                field.value().begin(), ::tolower);
+      field.value() = core::reverse_index::ConvertToLower(field.value());
       parameters2.PushBack(field.value());
       filter2 += fmt::format("{}${}", separator, parameters2.Size());
     }

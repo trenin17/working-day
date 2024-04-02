@@ -42,8 +42,7 @@ core::reverse_index::ReverseIndexResponse AddReverseIndexFunc(
   for (auto& field : fields) {
     if (field.has_value()) {
       auto separator = (parameters.Size() == 1 ? "[" : ", ");
-      transform(field.value().begin(), field.value().end(),
-                field.value().begin(), ::tolower);
+      field.value() = core::reverse_index::ConvertToLower(field.value());
       parameters.PushBack(field.value());
       filter += fmt::format("{}${}", separator, parameters.Size());
     }
