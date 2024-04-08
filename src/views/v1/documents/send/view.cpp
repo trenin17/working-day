@@ -52,19 +52,15 @@ class DocumentsSendHandler final
                          request_body.document.sign_required,
                          request_body.document.description);
 
-    LOG_INFO() << "BUILDING PARAMS";
     userver::storages::postgres::ParameterStore parameters;
     std::string filter;
     for (const auto& employee_id : request_body.employee_ids) {
       filter += "($" + std::to_string(parameters.Size() + 1) + ", $" +
                 std::to_string(parameters.Size() + 2) + "),";
       parameters.PushBack(employee_id);
-      LOG_INFO() << "PUSH BACK 1";
       parameters.PushBack(request_body.document.id);
-      LOG_INFO() << "PUSH BACK 2";
     }
     filter.pop_back();
-    LOG_INFO() << "QUERY " << filter;
 
     pg_cluster_->Execute(userver::storages::postgres::ClusterHostType::kMaster,
                          "INSERT INTO working_day.employee_document "
