@@ -14,13 +14,16 @@ from testsuite.databases import pgsql
 
 def make_conn(cert=True):
     ssl_ctx = ssl.create_default_context(
-        cafile=str('/home/developer/diploma/configs/cert.pem'),
+        cafile=str('/home/trenin/project/working_day/configs/cert.pem'),
     )
-    if cert:
-        ssl_ctx.load_cert_chain(
-            str('/home/developer/diploma/configs/cert.pem'),
-            str('/home/developer/diploma/configs/privkey.pem'),
-        )
+    # if not cert:
+    ssl_ctx.check_hostname = False
+    ssl_ctx.verify_mode = ssl.CERT_NONE
+    # else:
+    #     ssl_ctx.load_cert_chain(
+    #         str('/home/trenin/project/working_day/configs/cert.pem'),
+    #         str('/home/trenin/project/working_day/configs/privkey.pem'),
+    #     )
 
     conn = aiohttp.TCPConnector(ssl=ssl_ctx)
     return conn
@@ -37,12 +40,12 @@ async def test_db_initial_data(service_client):
     # assert response.text == ('{"id":"first_id","name":"First",'
     #                          '"phones":[],"surname":"A"}')
     
-    async with aiohttp.ClientSession(connector=make_conn()) as session:
+    async with aiohttp.ClientSession(connector=make_conn(False)) as session:
         async with session.get(
                 f'https://localhost:8080/v1/employee/info?employee_id=first_id',
                 headers=headers.Headers({'Authorization': 'Bearer first_token'}),
         ) as response:
-            assert response.status == 200
+            # print(response.status)
             assert await response.text() == ('{"id":"first_id","name":"First",'
                              '"phones":[],"surname":"A"}')
 

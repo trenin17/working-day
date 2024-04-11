@@ -259,7 +259,8 @@ class DocumentsVacationHandler final
     pg_cluster_->Execute(userver::storages::postgres::ClusterHostType::kMaster,
                          "INSERT INTO working_day.employee_document "
                          "(employee_id, document_id, signed) "
-                         "VALUES ($1, $2, $3), ($4, $2, $3)",
+                         "VALUES ($1, $2, $3), ($4, $2, $3) "
+                         "ON CONFLICT DO NOTHING",
                          action_info.employee_id, file_key, true,
                          employee_info.head_id.value_or(action_info.employee_id));
 
