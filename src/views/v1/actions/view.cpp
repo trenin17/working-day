@@ -1,3 +1,5 @@
+#define V1_ACTIONS
+
 #include "view.hpp"
 
 #include <nlohmann/json.hpp>
@@ -11,67 +13,13 @@
 #include <userver/storages/postgres/component.hpp>
 
 #include "utils/s3_presigned_links.hpp"
+#include <definitions/all.hpp>
 
 using json = nlohmann::json;
 
 namespace views::v1::actions {
 
 namespace {
-
-class ActionsRequest {
- public:
-  ActionsRequest(const std::string& body) {
-    auto j = json::parse(body);
-    from = userver::utils::datetime::Stringtime(j["from"], "UTC",
-                                                "%Y-%m-%dT%H:%M:%E6S");
-    to = userver::utils::datetime::Stringtime(j["to"], "UTC",
-                                              "%Y-%m-%dT%H:%M:%E6S");
-    if (j.contains("employee_id")) {
-      employee_id = j["employee_id"];
-    }
-  }
-
-  userver::storages::postgres::TimePoint from, to;
-  std::optional<std::string> employee_id;
-};
-
-class UserAction {
- public:
-  json ToJSONObject() const {
-    json j;
-    j["id"] = id;
-    j["type"] = type;
-    j["start_date"] = userver::utils::datetime::Timestring(
-        start_date, "UTC", "%Y-%m-%dT%H:%M:%E6S");
-    j["end_date"] = userver::utils::datetime::Timestring(end_date, "UTC",
-                                                         "%Y-%m-%dT%H:%M:%E6S");
-    if (status) {
-      j["status"] = status.value();
-    }
-    j["blocking_actions_ids"] = blocking_actions_ids;
-
-    return j;
-  }
-
-  std::string id, type;
-  userver::storages::postgres::TimePoint start_date, end_date;
-  std::optional<std::string> status;
-  std::vector<std::string> blocking_actions_ids;
-};
-
-class ActionsResponse {
- public:
-  std::string ToJSON() const {
-    json j;
-    j["actions"] = json::array();
-    for (const auto& action : actions) {
-      j["actions"].push_back(action.ToJSONObject());
-    }
-    return j.dump();
-  }
-
-  std::vector<UserAction> actions;
-};
 
 class ActionsHandler final : public userver::server::handlers::HttpHandlerBase {
  public:
@@ -95,7 +43,8 @@ class ActionsHandler final : public userver::server::handlers::HttpHandlerBase {
         static_cast<std::string>("Access-Control-Allow-Headers"), "*");
 
     const auto& user_id = ctx.GetData<std::string>("user_id");
-    ActionsRequest request_body(request.RequestBody());
+    ActionsRequest request_body;
+    request_body.ParseRegisteredFields(request.RequestBody());
 
     auto result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kSlave,
@@ -106,10 +55,11 @@ class ActionsHandler final : public userver::server::handlers::HttpHandlerBase {
         request_body.employee_id.value_or(user_id), request_body.from,
         request_body.to);
 
-    ActionsResponse response{result.AsContainer<std::vector<UserAction>>(
-        userver::storages::postgres::kRowTag)};
+    ActionsResponse response;
+    response.actions = result.AsContainer<std::vector<UserAction>>(
+        userver::storages::postgres::kRowTag);
 
-    return response.ToJSON();
+    return response.ToJsonString();
   }
 
  private:

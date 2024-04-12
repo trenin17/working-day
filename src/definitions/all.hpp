@@ -102,6 +102,15 @@
 #define USE_LIST_EMPLOYEE
 #endif
 
+#ifdef V1_ACTIONS
+#define USE_ACTIONS_REQUEST
+#define USE_ACTIONS_RESPONSE
+#endif
+
+#ifdef USE_ACTIONS_RESPONSE
+#define USE_USER_ACTION
+#endif
+
 #ifdef USE_LIST_EMPLOYEE
 struct ListEmployee : public JsonCompatible {
   // For postgres initialization type needs to be default constructible
@@ -302,5 +311,43 @@ struct SignItem : public JsonCompatible {
 #ifdef USE_DOCUMENTS_GET_SIGNS_RESPONSE
 struct DocumentsGetSignsResponse : public JsonCompatible {
   REGISTER_STRUCT_FIELD(signs, std::vector<SignItem>, "signs");
+};
+#endif
+
+#ifdef USE_USER_ACTION
+struct UserAction : public JsonCompatible {
+  UserAction() = default;
+
+  UserAction(UserAction&& other) { *this = std::move(other); }
+
+  UserAction& operator=(UserAction&& other) = default;
+
+  auto Introspect() {
+    return std::tie(id, type, start_date, end_date, status, blocking_actions_ids);
+  }
+
+  REGISTER_STRUCT_FIELD(id, std::string, "id");
+  REGISTER_STRUCT_FIELD(type, std::string, "type");
+  REGISTER_STRUCT_FIELD(start_date, userver::storages::postgres::TimePoint,
+                        "start_date");
+  REGISTER_STRUCT_FIELD(end_date, userver::storages::postgres::TimePoint,
+                        "end_date");
+  REGISTER_STRUCT_FIELD_OPTIONAL(status, std::string, "status");
+  REGISTER_STRUCT_FIELD(blocking_actions_ids, std::vector<std::string>,
+                        "blocking_actions_ids");
+};
+#endif
+
+#ifdef USE_ACTIONS_RESPONSE
+struct ActionsResponse : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(actions, std::vector<UserAction>, "actions");
+};
+#endif
+
+#ifdef USE_ACTIONS_REQUEST
+struct ActionsRequest : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(from, userver::storages::postgres::TimePoint, "from");
+  REGISTER_STRUCT_FIELD(to, userver::storages::postgres::TimePoint, "to");
+  REGISTER_STRUCT_FIELD_OPTIONAL(employee_id, std::string, "employee_id");
 };
 #endif
