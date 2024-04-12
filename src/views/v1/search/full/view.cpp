@@ -13,6 +13,7 @@
 #include <userver/storages/postgres/component.hpp>
 #include <userver/storages/postgres/parameter_store.hpp>
 #include <set>
+#include <unordered_set>
 #include <vector>
 #include <algorithm>
 #include <sstream>
@@ -73,9 +74,10 @@ bool NextPerm(std::vector<bool>& p) {
     return true;
 }
 
-std::set<std::string> GetIds(const auto& id_sets, const int& limit) {
-    std::set<std::string> final_ids;
-    std::vector<bool> perm(id_sets.size());
+std::vector<std::string> GetIds(const auto& id_sets, const int& limit) {
+    std::unordered_set<std::string> final_set;
+    std::vector<std::string> final_ids;
+    std::vector<bool> perm(id_sets.size(), false);
 
     do {
         std::set<std::string> res;
@@ -96,7 +98,12 @@ std::set<std::string> GetIds(const auto& id_sets, const int& limit) {
             }
         }
 
-        final_ids.insert(res.begin(), res.end());
+        for (const auto& el :  res) {
+            if (!final_set.contains(el)) {
+                final_ids.push_back(el);
+                final_set.insert(el);
+            }
+        }
 
     } while (NextPerm(perm) && final_ids.size() < limit);
 
@@ -143,7 +150,7 @@ class SearchFullHandler final
 
     // lambda to add parameters
     auto append = [](const auto& value, userver::storages::postgres::ParameterStore& parameters, std::string& filter) {
-        auto separator = (parameters.IsEmpty() ? "(" : ", ");
+        auto separator = (parameters.IsEmpty() ? "" : ", ");
         parameters.PushBack(value);
         filter += fmt::format("{}${}", separator, parameters.Size());        
     };    
@@ -164,7 +171,7 @@ class SearchFullHandler final
             userver::storages::postgres::ClusterHostType::kMaster,
             "SELECT ids "
             "FROM working_day.reverse_index "
-            "WHERE key IN " + filter + ");",
+            "WHERE key IN (" + filter + ");",
             parameters);
     
     auto id_sets = result.AsContainer<std::vector<IDsRow>>(
@@ -172,7 +179,7 @@ class SearchFullHandler final
 
     // Intersecting sets
 
-    std::set<std::string> final_ids = GetIds(id_sets, request_body.limit);
+    std::vector<std::string> final_ids = GetIds(id_sets, request_body.limit);
 
     // fetching ids' values and returning them
 
@@ -189,13 +196,14 @@ class SearchFullHandler final
         append(val, parameters_fetch, filter_fetch);
         cnt++;
     }
-
+    
     if (parameters_fetch.Size() != 0) {
         auto result = pg_cluster_->Execute(
             userver::storages::postgres::ClusterHostType::kMaster,
-            "SELECT id, name, surname, patronymic, photo_link "
-            "FROM working_day.employees "
-            "WHERE id IN " + filter_fetch + ");",
+            "SELECT c.id, c.name, c.surname, c.patronymic, c.photo_link "
+            "FROM working_day.employees AS c "
+            "JOIN unnest(ARRAY[" + filter_fetch + "]) WITH ORDINALITY t(id, ord) USING (id) "
+            "ORDER BY t.ord; ",
             parameters_fetch);
 
         response.employees = result.AsContainer<std::vector<ListEmployee>>(
