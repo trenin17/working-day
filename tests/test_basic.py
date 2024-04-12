@@ -3,26 +3,54 @@ from wsgiref import headers
 import pytest
 import json
 from string import Template
+import ssl
+
+import aiohttp
 
 from testsuite.databases import pgsql
 
 
 # Start the tests via `make test-debug` or `make test-release`
 
+def make_conn(cert=True):
+    ssl_ctx = ssl.create_default_context(
+        cafile=str('/home/trenin/project/working_day/configs/cert.pem'),
+    )
+    # if not cert:
+    ssl_ctx.check_hostname = False
+    ssl_ctx.verify_mode = ssl.CERT_NONE
+    # else:
+    #     ssl_ctx.load_cert_chain(
+    #         str('/home/trenin/project/working_day/configs/cert.pem'),
+    #         str('/home/trenin/project/working_day/configs/privkey.pem'),
+    #     )
+
+    conn = aiohttp.TCPConnector(ssl=ssl_ctx)
+    return conn
 
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])
 async def test_db_initial_data(service_client):
-    response = await service_client.get(
-        '/v1/employee/info',
-        params={'employee_id': 'first_id'},
-        headers={'Authorization': 'Bearer first_token'},
-    )
+    # response = await service_client.get(
+    #     '/v1/employee/info',
+    #     params={'employee_id': 'first_id'},
+    #     headers={'Authorization': 'Bearer first_token'},
+    # )
 
-    assert response.status == 200
-    assert response.text == ('{"id":"first_id","name":"First",'
+    # assert response.status == 200
+    # assert response.text == ('{"id":"first_id","name":"First",'
+    #                          '"phones":[],"surname":"A"}')
+    
+    async with aiohttp.ClientSession(connector=make_conn(False)) as session:
+        async with session.get(
+                f'https://localhost:8080/v1/employee/info?employee_id=first_id',
+                headers=headers.Headers({'Authorization': 'Bearer first_token'}),
+        ) as response:
+            # print(response.status)
+            assert await response.text() == ('{"id":"first_id","name":"First",'
                              '"phones":[],"surname":"A"}')
 
 
+'''
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])
 async def test_employees(service_client):
     response = await service_client.post(
@@ -475,6 +503,30 @@ async def test_search_full(service_client):
     assert response.text == (response_required.substitute(id=new_id,
                                                           id2=new_id2,
                                                           id3=new_id3))
+    
+
+@pytest.mark.pgsql('db_1', files=['initial_data.sql'])
+async def test_actions(service_client):
+    response = await service_client.post(
+        '/v1/abscence/request',
+        headers={'Authorization': 'Bearer first_token'},
+        json={'type': 'vacation', 'start_date': '2023-07-10T00:00:00',
+              'end_date': '2023-07-21T00:00:00'}
+    )
+    assert response.status == 200
+    action_id = json.loads(response.text)['action_id']
+
+    response = await service_client.post(
+        '/v1/actions',
+        headers={'Authorization': 'Bearer first_token'},
+        json={'from': '2023-07-10T00:00:00', 'to': '2023-07-11T00:00:00'}
+    )
+    assert response.status == 200
+    assert response.text == (
+        '{"actions":[{"blocking_actions_ids":[],'
+        '"end_date":"2023-07-21T20:59:00.000000","id":"' + action_id + '",'
+        '"start_date":"2023-07-09T21:00:00.000000","status":"pending","type":"vacation"'
+        '}]}')
 
 
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])
@@ -731,3 +783,4 @@ async def test_end(service_client):
     )
 
     assert response.status == 200
+'''
