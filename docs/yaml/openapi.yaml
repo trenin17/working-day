@@ -1232,6 +1232,9 @@ components:
                     type: boolean
                 description:
                     type: string
+                signed:
+                    description: This field only valid if requested by assignee of the document
+                    type: boolean
 
         DownloadDocumentResponse:
             type: object

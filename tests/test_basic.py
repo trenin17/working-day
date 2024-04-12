@@ -469,10 +469,12 @@ async def test_search_full(service_client):
     )
 
     assert response.status == 200
-    response_required = Template('{"employees":[{"id":"${id}",'
+    response_required = Template('{"employees":['
+                                 '{"id":"${id}",'
                                  '"name":"Seventh","surname":"F"},'
                                  '{"id":"${id2}",'
-                                 '"name":"Eight","surname":"F"}]}')
+                                 '"name":"Eight","surname":"F"}'
+                                 ']}')
     assert response.text == (response_required.substitute(id=new_id,
                                                           id2=new_id2))
 
@@ -583,6 +585,16 @@ async def test_attendance_list_all(service_client):
         '/v1/attendance/add',
         params={'employee_id': 'second_id'},
         headers={'Authorization': 'Bearer ' + token},
+        json={'start_date': '2023-07-22T9:00:00',
+              'end_date': '2023-07-22T17:00:00'}
+    )
+    assert response.status == 200
+
+    # Check overwrite the previous attendance
+    response = await service_client.post(
+        '/v1/attendance/add',
+        params={'employee_id': 'second_id'},
+        headers={'Authorization': 'Bearer ' + token},
         json={'start_date': '2023-07-22T10:00:00',
               'end_date': '2023-07-22T18:00:00'}
     )
@@ -658,7 +670,7 @@ async def test_documents_send(service_client):
     assert response.status == 200
     assert response.text == (
         '{"documents":[{"description":"text1","id":"id1",'
-        '"name":"doc1","sign_required":true,"type":"admin_request"}]}')
+        '"name":"doc1","sign_required":true,"signed":false,"type":"admin_request"}]}')
 
     response = await service_client.get(
         '/v1/documents/list',
@@ -667,7 +679,7 @@ async def test_documents_send(service_client):
     assert response.status == 200
     assert response.text == (
         '{"documents":[{"description":"text1","id":"id1",'
-        '"name":"doc1","sign_required":true,"type":"admin_request"}]}')
+        '"name":"doc1","sign_required":true,"signed":false,"type":"admin_request"}]}')
     
     response = await service_client.post(
         '/v1/documents/sign',
