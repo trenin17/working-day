@@ -101,6 +101,9 @@ CREATE TABLE IF NOT EXISTS working_day.reverse_index (
     ids TEXT[]
 );
 
+CREATE EXTENSION pg_trgm;
+CREATE INDEX trgm_idx ON working_day.reverse_index USING GIST (key gist_trgm_ops);
+
 DROP TABLE IF EXISTS working_day.documents;
 
 CREATE TABLE IF NOT EXISTS working_day.documents (

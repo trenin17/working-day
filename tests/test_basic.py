@@ -469,12 +469,12 @@ async def test_search_full(service_client):
     response_required = Template('{"employees":[{"id":"${id}",'
                                  '"name":"Seventh","surname":"F"},'
                                  '{"id":"${id2}",'
-                                 '"name":"Eight","surname":"F"},'
+                                 '"name":"Seventh","surname":"G"},'
                                  '{"id":"${id3}",'
-                                 '"name":"Seventh","surname":"G"}]}')
+                                 '"name":"Eight","surname":"F"}]}')
     assert response.text == (response_required.substitute(id=new_id,
-                                                          id2=new_id2,
-                                                          id3=new_id3))
+                                                          id2=new_id3,
+                                                          id3=new_id2))
 
 
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])
