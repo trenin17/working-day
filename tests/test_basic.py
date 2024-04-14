@@ -682,6 +682,30 @@ async def test_attendance_list_all(service_client):
 
 
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])
+async def test_actions(service_client):
+    response = await service_client.post(
+        '/v1/abscence/request',
+        headers={'Authorization': 'Bearer first_token'},
+        json={'type': 'vacation', 'start_date': '2023-07-10T00:00:00',
+              'end_date': '2023-07-21T00:00:00'}
+    )
+    assert response.status == 200
+    action_id = json.loads(response.text)['action_id']
+
+    response = await service_client.post(
+        '/v1/actions',
+        headers={'Authorization': 'Bearer first_token'},
+        json={'from': '2023-07-10T00:00:00', 'to': '2023-07-11T00:00:00'}
+    )
+    assert response.status == 200
+    assert response.text == (
+        '{"actions":[{"blocking_actions_ids":[],'
+        '"end_date":"2023-07-21T20:59:00.000000","id":"' + action_id + '",'
+        '"start_date":"2023-07-09T21:00:00.000000","status":"pending","type":"vacation"'
+        '}]}')
+
+
+@pytest.mark.pgsql('db_1', files=['initial_data.sql'])
 async def test_documents_send(service_client):
     response = await service_client.post(
         '/v1/employee/add',
