@@ -49,7 +49,8 @@ class DocumentsDownloadHandler final
 
 }  // namespace
 
-void AppendDocumentsDownload(userver::components::ComponentList& component_list) {
+void AppendDocumentsDownload(
+    userver::components::ComponentList& component_list) {
   component_list.Append<DocumentsDownloadHandler>();
 }
 

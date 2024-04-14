@@ -17,8 +17,8 @@
 #include <userver/storages/postgres/parameter_store.hpp>
 #include <vector>
 
-#include "core/reverse_index/view.hpp"
 #include "core/json_compatible/struct.hpp"
+#include "core/reverse_index/view.hpp"
 #include "definitions/all.hpp"
 
 #include "utils/s3_presigned_links.hpp"
@@ -151,8 +151,8 @@ class SearchSuggestHandler final
 
     // Intersecting sets
 
-    std::set<std::string> final_ids =
-        GetSuggestIds(id_sets, suggest_id_sets, search_keys.size(), request_body.limit);
+    std::set<std::string> final_ids = GetSuggestIds(
+        id_sets, suggest_id_sets, search_keys.size(), request_body.limit);
 
     // fetching ids' values and returning them
 

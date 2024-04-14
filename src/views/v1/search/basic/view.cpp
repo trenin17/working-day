@@ -11,8 +11,8 @@
 #include <userver/storages/postgres/component.hpp>
 #include <userver/storages/postgres/parameter_store.hpp>
 
-#include "definitions/all.hpp"
 #include "core/reverse_index/view.hpp"
+#include "definitions/all.hpp"
 #include "utils/s3_presigned_links.hpp"
 
 namespace views::v1::search_basic {
@@ -49,7 +49,8 @@ class SearchBasicHandler final
     SearchBasicRequest request_body;
     request_body.ParseRegisteredFields(request.RequestBody());
 
-    request_body.search_key = core::reverse_index::ConvertToLower(request_body.search_key);
+    request_body.search_key =
+        core::reverse_index::ConvertToLower(request_body.search_key);
 
     auto result_ids = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kSlave,

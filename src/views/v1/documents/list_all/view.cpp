@@ -63,7 +63,8 @@ class DocumentsListAllHandler final
 
 }  // namespace
 
-void AppendDocumentsListAll(userver::components::ComponentList& component_list) {
+void AppendDocumentsListAll(
+    userver::components::ComponentList& component_list) {
   component_list.Append<DocumentsListAllHandler>();
 }
 

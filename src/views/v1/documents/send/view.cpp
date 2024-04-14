@@ -41,6 +41,8 @@ class DocumentsSendHandler final
     request.GetHttpResponse().SetHeader(
         static_cast<std::string>("Access-Control-Allow-Headers"), "*");
 
+    auto user_id = ctx.GetData<std::string>("user_id");
+
     DocumentSendRequest request_body;
     request_body.ParseRegisteredFields(request.RequestBody());
 
@@ -52,15 +54,31 @@ class DocumentsSendHandler final
                          request_body.document.sign_required,
                          request_body.document.description);
 
-    userver::storages::postgres::ParameterStore parameters;
-    std::string filter;
+    auto notification_text = "Вам отправлен новый документ \"" +
+                             request_body.document.name +
+                             "\". Его можно просмотреть в разделе Документы.";
+    auto notification_id = userver::utils::generators::GenerateUuid();
+
+    userver::storages::postgres::ParameterStore parameters,
+        parameters_notifications;
+    std::string filter, filter_notifications;
+    parameters_notifications.PushBack(notification_id);
+    parameters_notifications.PushBack("generic");
+    parameters_notifications.PushBack(notification_text);
+    parameters_notifications.PushBack(user_id);
     for (const auto& employee_id : request_body.employee_ids) {
       filter += "($" + std::to_string(parameters.Size() + 1) + ", $" +
                 std::to_string(parameters.Size() + 2) + "),";
       parameters.PushBack(employee_id);
       parameters.PushBack(request_body.document.id);
+
+      filter_notifications +=
+          "($1, $2, $3, $4, $" +
+          std::to_string(parameters_notifications.Size() + 1) + "),";
+      parameters_notifications.PushBack(employee_id);
     }
     filter.pop_back();
+    filter_notifications.pop_back();
 
     pg_cluster_->Execute(userver::storages::postgres::ClusterHostType::kMaster,
                          "INSERT INTO working_day.employee_document "
@@ -68,6 +86,15 @@ class DocumentsSendHandler final
                          "VALUES " +
                              filter,
                          parameters);
+
+    pg_cluster_->Execute(userver::storages::postgres::ClusterHostType::kMaster,
+                         "INSERT INTO working_day.notifications(id, type, "
+                         "text, sender_id, user_id) "
+                         "VALUES " +
+                             filter_notifications +
+                             " ON CONFLICT (id) "
+                             "DO NOTHING",
+                         parameters_notifications);
 
     return "";
   }
