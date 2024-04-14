@@ -171,7 +171,11 @@ class SearchFullHandler final
             userver::storages::postgres::ClusterHostType::kMaster,
             "SELECT ids "
             "FROM working_day.reverse_index "
-            "WHERE key IN (" + filter + ");",
+            "WHERE EXISTS ( "
+            "    SELECT 1 "
+            "    FROM unnest(ARRAY[" + filter + "]) AS search_key "
+            "    WHERE similarity(search_key, key) > 0.4 "
+            ");",
             parameters);
     
     auto id_sets = result.AsContainer<std::vector<IDsRow>>(
