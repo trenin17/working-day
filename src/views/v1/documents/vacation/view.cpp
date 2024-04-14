@@ -227,16 +227,15 @@ class DocumentsVacationHandler final
     trx.Commit();
 
     auto file_key = userver::utils::generators::GenerateUuid();
-    auto response =
-        http_client_.CreateRequest()
-            .get(
-                "https://functions.yandexcloud.net/"
-                "d4emv61q8h6eu2rs2f67?file_key=" +
-                file_key)
-            .data(link_request.ToJSON())
-            .retry(2)  // retry once in case of error
-            .timeout(std::chrono::milliseconds{5000})
-            .perform();  // start performing the request
+    auto response = http_client_.CreateRequest()
+                        .get(
+                            "https://functions.yandexcloud.net/"
+                            "d4emv61q8h6eu2rs2f67?file_key=" +
+                            file_key)
+                        .data(link_request.ToJSON())
+                        .retry(2)  // retry once in case of error
+                        .timeout(std::chrono::milliseconds{5000})
+                        .perform();  // start performing the request
     response->raise_for_status();
 
     auto document_name = "Запрос на отпуск " + employee_info.surname + " " +
@@ -252,17 +251,16 @@ class DocumentsVacationHandler final
                          "INSERT INTO working_day.documents(id, name, "
                          "sign_required, type) "
                          "VALUES($1, $2, $3, $4)",
-                         file_key, document_name,
-                         true,
-                         "employee_request");
+                         file_key, document_name, true, "employee_request");
 
-    pg_cluster_->Execute(userver::storages::postgres::ClusterHostType::kMaster,
-                         "INSERT INTO working_day.employee_document "
-                         "(employee_id, document_id, signed) "
-                         "VALUES ($1, $2, $3), ($4, $2, $3) "
-                         "ON CONFLICT DO NOTHING",
-                         action_info.employee_id, file_key, true,
-                         employee_info.head_id.value_or(action_info.employee_id));
+    pg_cluster_->Execute(
+        userver::storages::postgres::ClusterHostType::kMaster,
+        "INSERT INTO working_day.employee_document "
+        "(employee_id, document_id, signed) "
+        "VALUES ($1, $2, $3), ($4, $2, $3) "
+        "ON CONFLICT DO NOTHING",
+        action_info.employee_id, file_key, true,
+        employee_info.head_id.value_or(action_info.employee_id));
 
     return response->body();
   }

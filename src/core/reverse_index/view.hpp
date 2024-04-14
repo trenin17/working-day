@@ -1,10 +1,10 @@
 #pragma once
 
+#include <codecvt>
 #include <initializer_list>
+#include <locale>
 #include <string>
 #include <string_view>
-#include <locale>
-#include <codecvt>
 
 #include <nlohmann/json.hpp>
 
@@ -39,8 +39,6 @@ class ReverseIndexRequest {
  public:
   std::function<ReverseIndexResponse()> func;
 };
-
-
 
 void ReverseIndexHandler(const ReverseIndexRequest& request);
 

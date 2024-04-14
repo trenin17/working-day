@@ -12,8 +12,8 @@
 #include <userver/storages/postgres/cluster.hpp>
 #include <userver/storages/postgres/component.hpp>
 
-#include "utils/s3_presigned_links.hpp"
 #include <definitions/all.hpp>
+#include "utils/s3_presigned_links.hpp"
 
 using json = nlohmann::json;
 

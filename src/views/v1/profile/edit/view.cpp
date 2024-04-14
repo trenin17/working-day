@@ -122,8 +122,8 @@ core::reverse_index::ReverseIndexResponse EditReverseIndexFunc(
   if (parameters2.Size() > 1) {
     auto result2 = cluster->Execute(
         userver::storages::postgres::ClusterHostType::kMaster,
-            "WITH input_data AS ( "
-            "  SELECT ARRAY" +
+        "WITH input_data AS ( "
+        "  SELECT ARRAY" +
             filter2 +
             "] AS keys, $1 AS id "
             ") "
