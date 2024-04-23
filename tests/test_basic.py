@@ -80,6 +80,7 @@ async def test_add(service_client):
     assert response.status == 200
     new_id = json.loads(response.text)['login']
     new_password = json.loads(response.text)['password']
+    assert new_id == 'tc'
 
     response = await service_client.get(
         '/v1/employee/info',
@@ -91,6 +92,36 @@ async def test_add(service_client):
     assert response.text == ('{"id":"' + new_id + '","name":"Third",'
                              '"password":"' + new_password + '",'
                              '"phones":[],"surname":"C"}')
+
+    response = await service_client.post(
+        '/v1/employee/add',
+        headers={'Authorization': 'Bearer first_token'},
+        json={'name': 'Александр', 'surname': 'Петров', 'role': 'user'},
+    )
+
+    assert response.status == 200
+    new_id = json.loads(response.text)['login']
+    assert new_id == 'apetrov'
+
+    response = await service_client.post(
+        '/v1/employee/add',
+        headers={'Authorization': 'Bearer first_token'},
+        json={'name': 'Алексей', 'surname': 'Петров', 'role': 'user'},
+    )
+
+    assert response.status == 200
+    new_id = json.loads(response.text)['login']
+    assert new_id == 'apetrov1'
+
+    response = await service_client.post(
+        '/v1/employee/add',
+        headers={'Authorization': 'Bearer first_token'},
+        json={'name': 'Антон', 'surname': 'Петров', 'role': 'user'},
+    )
+
+    assert response.status == 200
+    new_id = json.loads(response.text)['login']
+    assert new_id == 'apetrov2'
 
 
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])
@@ -253,7 +284,6 @@ async def test_search_add(service_client):
 
     assert response.status == 200
     new_id = json.loads(response.text)['login']
-    new_password = json.loads(response.text)['password']
 
     response = await service_client.post(
         '/v1/search/full',
@@ -454,7 +484,8 @@ async def test_search_full(service_client):
     )
 
     assert response.status == 200
-    response_required = Template('{"employees":[{"id":"${id}",'
+    response_required = Template('{"employees":['
+                                 '{"id":"${id}",'
                                  '"name":"Seventh","surname":"F"},'
                                  '{"id":"${id2}",'
                                  '"name":"Eight","surname":"F"}]}')
@@ -546,6 +577,16 @@ async def test_attendance_list_all(service_client):
         '/v1/attendance/add',
         params={'employee_id': 'second_id'},
         headers={'Authorization': 'Bearer ' + token},
+        json={'start_date': '2023-07-22T9:00:00',
+              'end_date': '2023-07-22T17:00:00'}
+    )
+    assert response.status == 200
+
+    # Check overwrite the previous attendance
+    response = await service_client.post(
+        '/v1/attendance/add',
+        params={'employee_id': 'second_id'},
+        headers={'Authorization': 'Bearer ' + token},
         json={'start_date': '2023-07-22T10:00:00',
               'end_date': '2023-07-22T18:00:00'}
     )
@@ -589,6 +630,30 @@ async def test_attendance_list_all(service_client):
 
 
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])
+async def test_actions(service_client):
+    response = await service_client.post(
+        '/v1/abscence/request',
+        headers={'Authorization': 'Bearer first_token'},
+        json={'type': 'vacation', 'start_date': '2023-07-10T00:00:00',
+              'end_date': '2023-07-21T00:00:00'}
+    )
+    assert response.status == 200
+    action_id = json.loads(response.text)['action_id']
+
+    response = await service_client.post(
+        '/v1/actions',
+        headers={'Authorization': 'Bearer first_token'},
+        json={'from': '2023-07-10T00:00:00', 'to': '2023-07-11T00:00:00'}
+    )
+    assert response.status == 200
+    assert response.text == (
+        '{"actions":[{"blocking_actions_ids":[],'
+        '"end_date":"2023-07-21T20:59:00.000000","id":"' + action_id + '",'
+        '"start_date":"2023-07-09T21:00:00.000000","status":"pending","type":"vacation"'
+        '}]}')
+
+
+@pytest.mark.pgsql('db_1', files=['initial_data.sql'])
 async def test_documents_send(service_client):
     response = await service_client.post(
         '/v1/employee/add',
@@ -622,7 +687,17 @@ async def test_documents_send(service_client):
     assert response.status == 200
     assert response.text == (
         '{"documents":[{"description":"text1","id":"id1",'
-        '"name":"doc1","sign_required":true,"type":"admin_request"}]}')
+        '"name":"doc1","sign_required":true,"signed":false,"type":"admin_request"}]}')
+
+    response = await service_client.post(
+        '/v1/notifications',
+        headers={'Authorization': 'Bearer first_token'}
+    )
+    assert response.status == 200
+    created_time = json.loads(response.text)['notifications'][0]['created']
+    id = json.loads(response.text)['notifications'][0]['id']
+    assert response.text == (
+        '{"notifications":[{"created":"' + created_time + '","id":"' + id + '","is_read":false,"sender":{"id":"tc","name":"Third","surname":"C"},"text":"Вам отправлен новый документ \\"doc1\\". Его можно просмотреть в разделе Документы.","type":"generic"}]}')
 
     response = await service_client.get(
         '/v1/documents/list',
@@ -631,7 +706,7 @@ async def test_documents_send(service_client):
     assert response.status == 200
     assert response.text == (
         '{"documents":[{"description":"text1","id":"id1",'
-        '"name":"doc1","sign_required":true,"type":"admin_request"}]}')
+        '"name":"doc1","sign_required":true,"signed":false,"type":"admin_request"}]}')
 
     response = await service_client.post(
         '/v1/documents/sign',

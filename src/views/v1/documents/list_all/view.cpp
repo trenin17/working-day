@@ -47,7 +47,7 @@ class DocumentsListAllHandler final
         userver::storages::postgres::ClusterHostType::kMaster,
         "SELECT id, name, "
         "type, sign_required, "
-        "description "
+        "description, NULL::BOOLEAN as signed "
         "FROM working_day.documents");
 
     DocumentsListAllResponse response;
@@ -63,7 +63,8 @@ class DocumentsListAllHandler final
 
 }  // namespace
 
-void AppendDocumentsListAll(userver::components::ComponentList& component_list) {
+void AppendDocumentsListAll(
+    userver::components::ComponentList& component_list) {
   component_list.Append<DocumentsListAllHandler>();
 }
 

@@ -70,7 +70,8 @@ class DocumentsGetSignsHandler final
 
 }  // namespace
 
-void AppendDocumentsGetSigns(userver::components::ComponentList& component_list) {
+void AppendDocumentsGetSigns(
+    userver::components::ComponentList& component_list) {
   component_list.Append<DocumentsGetSignsHandler>();
 }
 

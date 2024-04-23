@@ -74,8 +74,14 @@ class AttendanceAddHandler final
         "add_attendance", userver::storages::postgres::ClusterHostType::kMaster,
         {});
 
-    auto action_id = userver::utils::generators::GenerateUuid();
     auto result = trx.Execute(
+        "DELETE FROM working_day.actions "
+        "WHERE user_id = $1 AND type = $2 AND DATE(start_date) = DATE($3) AND "
+        "DATE(end_date) = DATE($3)",
+        employee_id, "attendance", request_body.start_date);
+
+    auto action_id = userver::utils::generators::GenerateUuid();
+    result = trx.Execute(
         "INSERT INTO working_day.actions(id, type, user_id, start_date, "
         "end_date) "
         "VALUES($1, $2, $3, $4, $5) "

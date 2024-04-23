@@ -258,13 +258,16 @@ struct DocumentItem : public JsonCompatible {
 
   DocumentItem& operator=(DocumentItem&& other) = default;
 
-  auto Introspect() { return std::tie(id, name, type, sign_required, description); }
+  auto Introspect() {
+    return std::tie(id, name, type, sign_required, description, is_signed);
+  }
 
   REGISTER_STRUCT_FIELD(id, std::string, "id");
   REGISTER_STRUCT_FIELD(name, std::string, "name");
   REGISTER_STRUCT_FIELD_OPTIONAL(type, std::string, "type");
   REGISTER_STRUCT_FIELD(sign_required, bool, "sign_required", false);
   REGISTER_STRUCT_FIELD_OPTIONAL(description, std::string, "description");
+  REGISTER_STRUCT_FIELD_OPTIONAL(is_signed, bool, "signed");
 };
 #endif
 
@@ -323,7 +326,8 @@ struct UserAction : public JsonCompatible {
   UserAction& operator=(UserAction&& other) = default;
 
   auto Introspect() {
-    return std::tie(id, type, start_date, end_date, status, blocking_actions_ids);
+    return std::tie(id, type, start_date, end_date, status,
+                    blocking_actions_ids);
   }
 
   REGISTER_STRUCT_FIELD(id, std::string, "id");

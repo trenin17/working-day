@@ -91,7 +91,7 @@ AuthCheckerBearer::AuthCheckResult AuthCheckerBearer::CheckAuth(
 
   std::set<std::string> user_scopes(info.scopes.begin(), info.scopes.end());
   std::set<std::string> required_scopes;
-  for (auto& scope: required_scopes_) {
+  for (auto& scope : required_scopes_) {
     required_scopes.insert(scope.GetValue());
   }
 
@@ -101,9 +101,8 @@ AuthCheckerBearer::AuthCheckResult AuthCheckerBearer::CheckAuth(
                         std::back_inserter(intersection));
 
   if (intersection.empty()) {
-    return AuthCheckResult{AuthCheckResult::Status::kForbidden,
-                            {},
-                            "Not enough permissions"};
+    return AuthCheckResult{
+        AuthCheckResult::Status::kForbidden, {}, "Not enough permissions"};
   }
   /// [auth checker definition 4]
 

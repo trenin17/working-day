@@ -4,6 +4,10 @@
 
 #include <nlohmann/json.hpp>
 
+#include <algorithm>
+#include <set>
+#include <sstream>
+#include <unordered_set>
 #include <userver/clients/dns/component.hpp>
 #include <userver/components/component_config.hpp>
 #include <userver/components/component_context.hpp>
@@ -48,9 +52,17 @@ std::vector<std::string> GetIds(const auto& id_sets, const int& limit) {
   }
 
   return final_ids;
+  return final_ids;
 }
 
 std::vector<std::string> SplitBySpaces(std::string str) {
+  std::string s;
+  std::stringstream ss(str);
+  std::vector<std::string> v;
+  while (std::getline(ss, s, ' ')) {
+    v.push_back(core::reverse_index::ConvertToLower(s));
+  }
+  return v;
   std::string s;
   std::stringstream ss(str);
   std::vector<std::string> v;
@@ -96,10 +108,19 @@ class SearchFullHandler final
       parameters.PushBack(value);
       filter += fmt::format("{}${}", separator, parameters.Size());
     };
+    auto append = [](const auto& value,
+                     userver::storages::postgres::ParameterStore& parameters,
+                     std::string& filter) {
+      auto separator = (parameters.IsEmpty() ? "" : ", ");
+      parameters.PushBack(value);
+      filter += fmt::format("{}${}", separator, parameters.Size());
+    };
 
     SearchFullRequest request_body;
     request_body.ParseRegisteredFields(request.RequestBody());
 
+    std::vector<std::string> search_keys =
+        SplitBySpaces(request_body.search_key);
     std::vector<std::string> search_keys =
         SplitBySpaces(request_body.search_key);
 
@@ -130,6 +151,7 @@ class SearchFullHandler final
     // fetching ids' values and returning them
 
     SearchResponse response;
+
 
     userver::storages::postgres::ParameterStore parameters_fetch;
     std::string filter_fetch;

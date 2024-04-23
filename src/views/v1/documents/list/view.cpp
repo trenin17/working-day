@@ -47,7 +47,8 @@ class DocumentsListHandler final
         userver::storages::postgres::ClusterHostType::kMaster,
         "SELECT working_day.documents.id, working_day.documents.name, "
         "working_day.documents.type, working_day.documents.sign_required, "
-        "working_day.documents.description "
+        "working_day.documents.description, "
+        "working_day.employee_document.signed "
         "FROM working_day.documents "
         "JOIN working_day.employee_document ON working_day.documents.id = "
         "working_day.employee_document.document_id "

@@ -22,10 +22,12 @@ namespace core::reverse_index {
 
 std::string ConvertToLower(std::string s) {
   std::setlocale(LC_ALL, "en_US.UTF-8");
-  std::wstring wstr = std::wstring_convert<std::codecvt_utf8<wchar_t>>().from_bytes(s);;
+  std::wstring wstr =
+      std::wstring_convert<std::codecvt_utf8<wchar_t>>().from_bytes(s);
+  ;
   for (size_t i = 0; i < wstr.size(); ++i) {
-      wchar_t lower = std::towlower(wstr[i]);
-      wstr[i] = lower;
+    wchar_t lower = std::towlower(wstr[i]);
+    wstr[i] = lower;
   }
   using convert_type = std::codecvt_utf8<wchar_t>;
   std::wstring_convert<convert_type, wchar_t> converter;
@@ -42,7 +44,8 @@ class ReverseIndex {
     }
 
     tasks->push(userver::utils::AsyncBackground(
-        "ReverseIndexFunc", userver::engine::current_task::GetTaskProcessor(), request.func));
+        "ReverseIndexFunc", userver::engine::current_task::GetTaskProcessor(),
+        request.func));
   }
 
   void ClearTasks() {
