@@ -4,6 +4,10 @@
 
 #include <nlohmann/json.hpp>
 
+#include <algorithm>
+#include <set>
+#include <sstream>
+#include <unordered_set>
 #include <userver/clients/dns/component.hpp>
 #include <userver/components/component_config.hpp>
 #include <userver/components/component_context.hpp>
@@ -12,10 +16,6 @@
 #include <userver/storages/postgres/cluster.hpp>
 #include <userver/storages/postgres/component.hpp>
 #include <userver/storages/postgres/parameter_store.hpp>
-#include <algorithm>
-#include <sstream>
-#include <unordered_map>
-#include <unordered_set>
 #include <vector>
 
 #include "core/json_compatible/struct.hpp"
@@ -28,24 +28,83 @@ namespace views::v1::search_full {
 
 namespace {
 
+bool NextPerm(std::vector<bool>& p) {
+  if (p.size() == 0) {
+    return false;
+  }
+  int i = p.size() - 1;
+  bool flag = false;
+  int ones = 0;
+  int zeros = 0;
+  while (i >= 1) {
+    if (p[i]) {
+      ones++;
+    } else {
+      zeros++;
+    }
+    if (!p[i] && p[i - 1]) {
+      flag = true;
+      break;
+    }
+    --i;
+  }
+  if (!flag && p[0]) {
+    return false;
+  }
+  if (flag) {
+    int end = p.size() - 1;
+    for (int i = 0; i <= zeros + ones; ++i) {
+      if (i < zeros - 1) {
+        p[end - i] = 0;
+      } else if (i < zeros + ones) {
+        p[end - i] = 1;
+      } else if (i == zeros + ones) {
+        p[end - i] = 0;
+      }
+    }
+  } else {
+    for (int i = 0; i < p.size(); ++i) {
+      if (i < ones + 1) {
+        p[i] = 1;
+      } else {
+        p[i] = 0;
+      }
+    }
+  }
+  return true;
+}
+
 std::vector<std::string> GetIds(const auto& id_sets, const int& limit) {
-  std::unordered_map<std::string, double> m;
-  for (const auto& el : id_sets) {
-    for (const std::string& id : el.ids) {
-      m[id] += el.similarity_score;
-    }
-  }
-
-  std::vector<std::pair<std::string, double>> ids(m.begin(), m.end());
-  std::sort(ids.begin(), ids.end(),
-            [](auto& left, auto& right) { return left.second > right.second; });
-
+  std::unordered_set<std::string> final_set;
   std::vector<std::string> final_ids;
-  for (size_t i = 0; i < limit; ++i) {
-    if (i < ids.size()) {
-      final_ids.push_back(ids[i].first);
+  std::vector<bool> perm(id_sets.size(), false);
+
+  do {
+    std::set<std::string> res;
+    bool flag = false;
+    for (size_t i = 0; i < perm.size(); ++i) {
+      if (perm[i]) {
+        continue;
+      }
+      if (!flag) {
+        res = id_sets[i].ids;
+        flag = true;
+      } else {
+        std::set<std::string> t;
+        set_intersection(res.begin(), res.end(), id_sets[i].ids.begin(),
+                         id_sets[i].ids.end(), std::inserter(t, t.begin()));
+        res = t;
+      }
     }
-  }
+
+    for (const auto& el : res) {
+      if (!final_set.contains(el)) {
+        final_ids.push_back(el);
+        final_set.insert(el);
+      }
+    }
+
+  } while (NextPerm(perm) && final_ids.size() < limit);
 
   return final_ids;
 }
@@ -75,8 +134,7 @@ class SearchFullHandler final
                 .GetCluster()) {}
 
   struct IDsRow {
-    std::unordered_set<std::string> ids;
-    double similarity_score;
+    std::set<std::string> ids;
   };
 
   std::string HandleRequestThrow(
@@ -112,12 +170,15 @@ class SearchFullHandler final
 
     auto result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kMaster,
-        "SELECT ids, similarity(search_key, key) AS similarity_score "
-        "FROM working_day.reverse_index, "
-        "LATERAL unnest(ARRAY[" +
+        "SELECT ids "
+        "FROM working_day.reverse_index "
+        "WHERE EXISTS ( "
+        "    SELECT 1 "
+        "    FROM unnest(ARRAY[" +
             filter +
             "]) AS search_key "
-        "WHERE similarity(search_key, key) > 0.4; ",
+            "    WHERE similarity(search_key, key) > 0.4 "
+            ");",
         parameters);
 
     auto id_sets = result.AsContainer<std::vector<IDsRow>>(
