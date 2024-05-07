@@ -386,7 +386,7 @@ components_manager:
             pgcomponent: key-value
             update-types: full-and-incremental
             full-update-interval: 1h
-            update-interval: 1m
+            update-interval: 10m
             update-correction: 0
 
         dns-client:
