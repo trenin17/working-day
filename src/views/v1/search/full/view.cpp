@@ -52,17 +52,9 @@ std::vector<std::string> GetIds(const auto& id_sets, const int& limit) {
   }
 
   return final_ids;
-  return final_ids;
 }
 
 std::vector<std::string> SplitBySpaces(std::string str) {
-  std::string s;
-  std::stringstream ss(str);
-  std::vector<std::string> v;
-  while (std::getline(ss, s, ' ')) {
-    v.push_back(core::reverse_index::ConvertToLower(s));
-  }
-  return v;
   std::string s;
   std::stringstream ss(str);
   std::vector<std::string> v;
@@ -108,19 +100,10 @@ class SearchFullHandler final
       parameters.PushBack(value);
       filter += fmt::format("{}${}", separator, parameters.Size());
     };
-    auto append = [](const auto& value,
-                     userver::storages::postgres::ParameterStore& parameters,
-                     std::string& filter) {
-      auto separator = (parameters.IsEmpty() ? "" : ", ");
-      parameters.PushBack(value);
-      filter += fmt::format("{}${}", separator, parameters.Size());
-    };
 
     SearchFullRequest request_body;
     request_body.ParseRegisteredFields(request.RequestBody());
 
-    std::vector<std::string> search_keys =
-        SplitBySpaces(request_body.search_key);
     std::vector<std::string> search_keys =
         SplitBySpaces(request_body.search_key);
 
