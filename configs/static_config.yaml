@@ -370,6 +370,16 @@ components_manager:
                 scopes:
                   - admin
 
+        handler-v1-superuser-company-add:
+            path: /v1/superuser/company/add
+            method: POST
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - superuser
+
         handler-implicit-http-options:
             as_fallback: implicit-http-options
             method: OPTIONS

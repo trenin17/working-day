@@ -660,6 +660,25 @@ paths:
                 '200':
                     description: Document was signed
 
+    /v1/superuser/company/add:
+        post:
+            description: Add new company
+            parameters:
+              - in: header
+                name: Authorization
+                description: Token of session user, available for superuser only
+                schema:
+                    type: string
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/SuperuserCompanyAddRequest'
+            responses:
+                '200':
+                    description: Company was added
+
 components:
     schemas:
         ErrorMessage:
@@ -1279,3 +1298,11 @@ components:
                     items:
                         $ref: '#/components/schemas/SignItem'
                         
+        SuperuserCompanyAddRequest:
+            type: object
+            additionalProperties: false
+            required:
+              - company_id
+            properties:
+                company_id:
+                    type: string

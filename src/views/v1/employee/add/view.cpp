@@ -18,7 +18,6 @@
 
 #include "definitions/all.hpp"
 
-#include "core/json_compatible/struct.hpp"
 #include "core/reverse_index/view.hpp"
 
 namespace views::v1::employee::add {

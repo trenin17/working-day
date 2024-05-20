@@ -111,6 +111,10 @@
 #define USE_USER_ACTION
 #endif
 
+#ifdef V1_SUPERUSER_COMPANY_ADD
+#define USE_SUPERUSER_COMPANY_ADD_REQUEST
+#endif
+
 #ifdef USE_LIST_EMPLOYEE
 struct ListEmployee : public JsonCompatible {
   // For postgres initialization type needs to be default constructible
@@ -353,5 +357,11 @@ struct ActionsRequest : public JsonCompatible {
   REGISTER_STRUCT_FIELD(from, userver::storages::postgres::TimePoint, "from");
   REGISTER_STRUCT_FIELD(to, userver::storages::postgres::TimePoint, "to");
   REGISTER_STRUCT_FIELD_OPTIONAL(employee_id, std::string, "employee_id");
+};
+#endif
+
+#ifdef USE_SUPERUSER_COMPANY_ADD_REQUEST
+struct SuperuserCompanyAddRequest : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(company_id, std::string, "company_id");
 };
 #endif
