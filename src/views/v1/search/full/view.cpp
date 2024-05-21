@@ -92,6 +92,8 @@ class SearchFullHandler final
     request.GetHttpResponse().SetHeader(
         static_cast<std::string>("Access-Control-Allow-Headers"), "*");
 
+    const auto& company_id = ctx.GetData<std::string>("company_id");
+
     // lambda to add parameters
     auto append = [](const auto& value,
                      userver::storages::postgres::ParameterStore& parameters,
@@ -117,7 +119,7 @@ class SearchFullHandler final
     auto result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kMaster,
         "SELECT ids, similarity(search_key, key) AS similarity_score "
-        "FROM working_day.reverse_index, "
+        "FROM working_day_" + company_id + ".reverse_index, "
         "LATERAL unnest(ARRAY[" +
             filter +
             "]) AS search_key "
@@ -152,7 +154,7 @@ class SearchFullHandler final
       auto result = pg_cluster_->Execute(
           userver::storages::postgres::ClusterHostType::kMaster,
           "SELECT c.id, c.name, c.surname, c.patronymic, c.photo_link "
-          "FROM working_day.employees AS c "
+          "FROM working_day_" + company_id + ".employees AS c "
           "JOIN unnest(ARRAY[" +
               filter_fetch +
               "]) WITH ORDINALITY t(id, ord) USING (id) "

@@ -55,13 +55,14 @@ class AddHeadEmployeeHandler final
 
   std::string HandleRequestThrow(
       const userver::server::http::HttpRequest& request,
-      userver::server::request::RequestContext&) const override {
+      userver::server::request::RequestContext& ctx) const override {
     // CORS
     request.GetHttpResponse().SetHeader(
         static_cast<std::string>("Access-Control-Allow-Origin"), "*");
     request.GetHttpResponse().SetHeader(
         static_cast<std::string>("Access-Control-Allow-Headers"), "*");
 
+    const auto& company_id = ctx.GetData<std::string>("company_id");
     const auto& employee_id = request.GetArg("employee_id");
 
     if (employee_id.empty()) {
@@ -74,7 +75,7 @@ class AddHeadEmployeeHandler final
 
     auto result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kMaster,
-        "UPDATE working_day.employees "
+        "UPDATE working_day_" + company_id + ".employees "
         "SET head_id = $2 "
         "WHERE id = $1",
         request_body.employee_id, request_body.head_id);

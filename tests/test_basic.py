@@ -24,6 +24,26 @@ async def test_db_initial_data(service_client):
 
 
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])
+async def test_add_company(service_client):
+    response = await service_client.post(
+        '/v1/superuser/company/add',
+        headers={'Authorization': 'Bearer zero_token'},
+        json={'company_id': 'second'},
+    )
+
+    assert response.status == 200
+
+    response = await service_client.post(
+        '/v1/employee/add',
+        headers={'Authorization': 'Bearer zero_token'},
+        json={'name': 'Second', 'surname': 'B', 'role': 'admin', 'company_id': 'second'},
+    )
+
+    assert response.status == 200
+    # new_id = json.loads(response.text)['login']
+    # new_password = json.loads(response.text)['password']
+
+@pytest.mark.pgsql('db_1', files=['initial_data.sql'])
 async def test_employees(service_client):
     response = await service_client.post(
         '/v1/employee/add-head',
@@ -201,7 +221,7 @@ async def test_authorize(service_client):
 
     response = await service_client.post(
         '/v1/authorize',
-        json={'login': 'first_id', 'password': 'first_password'},
+        json={'login': 'first_id', 'company_id': 'first', 'password': 'first_password'},
     )
 
     assert response.status == 200
@@ -209,7 +229,7 @@ async def test_authorize(service_client):
     # Wrong password
     response = await service_client.post(
         '/v1/authorize',
-        json={'login': 'first_id', 'password': 'wrong_password'},
+        json={'login': 'first_id', 'company_id': 'first', 'password': 'wrong_password'},
     )
 
     assert response.status == 404
@@ -284,6 +304,12 @@ async def test_search_add(service_client):
 
     assert response.status == 200
     new_id = json.loads(response.text)['login']
+
+    response = await service_client.post(
+        '/v1/clear-tasks',
+    )
+
+    assert response.status == 200
 
     response = await service_client.post(
         '/v1/search/full',
@@ -536,7 +562,7 @@ async def test_attendance_list_all(service_client):
 
     response = await service_client.post(
         '/v1/authorize',
-        json={'login': employee_id, 'password': password},
+        json={'login': employee_id, 'company_id': 'first', 'password': password},
     )
     assert response.status == 200
     token = json.loads(response.text)['token']
@@ -666,7 +692,7 @@ async def test_documents_send(service_client):
 
     response = await service_client.post(
         '/v1/authorize',
-        json={'login': employee_id, 'password': password},
+        json={'login': employee_id, 'company_id': 'first', 'password': password},
     )
     assert response.status == 200
     token = json.loads(response.text)['token']
@@ -820,7 +846,6 @@ async def test_search_suggest(service_client):
                                  '"name":"Test2","surname":"T1"}]}')
     assert compare_employees(
         response.text, response_required.substitute(id=new_id, id2=new_id2))
-
 
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])
 async def test_end(service_client):

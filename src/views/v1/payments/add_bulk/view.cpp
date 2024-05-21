@@ -80,14 +80,15 @@ class PaymentsAddBulkHandler final
 
     PaymentsAddBulkRequest request_body(request.RequestBody());
 
-    auto result = pg_cluster_->Execute(
+    /*auto result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kMaster,
         "INSERT INTO working_day.payments(id, user_id, amount, payroll_date) "
         "VALUES (UNNEST($1), UNNEST($2), UNNEST($3), UNNEST($4)) "
         "ON CONFLICT (id) "
         "DO NOTHING",
         request_body.ids, request_body.user_ids, request_body.amounts,
-        request_body.payroll_dates);
+        request_body.payroll_dates);*/
+    throw std::runtime_error("Not implemented");
 
     return "";
   }

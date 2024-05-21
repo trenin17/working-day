@@ -10,6 +10,7 @@
 #include <userver/storages/postgres/cluster.hpp>
 #include <userver/storages/postgres/component.hpp>
 #include <userver/storages/postgres/parameter_store.hpp>
+#include <userver/yaml_config/merge_schemas.hpp>
 
 #include "definitions/all.hpp"
 
@@ -29,7 +30,8 @@ class SuperuserCompanyAddHandler final
         pg_cluster_(
             component_context
                 .FindComponent<userver::components::Postgres>("key-value")
-                .GetCluster()) {}
+                .GetCluster()),
+        db_address_(config["db"].As<std::string>()) {}
 
   std::string HandleRequestThrow(
       const userver::server::http::HttpRequest& request,
@@ -43,7 +45,8 @@ class SuperuserCompanyAddHandler final
     SuperuserCompanyAddRequest request_body;
     request_body.ParseRegisteredFields(request.RequestBody());
 
-    auto shell_command = "../../../../../../scripts/setup_company_db.sh" + request_body.company_id;
+    LOG_WARNING() << "Current directory: " << std::filesystem::current_path().string();
+    auto shell_command = "/home/developer/diploma/scripts/setup_comapny_db.sh working_day_" + request_body.company_id + " " + db_address_;
     auto err_code = system(shell_command.c_str());
 
     if (err_code != 0) {
@@ -53,8 +56,21 @@ class SuperuserCompanyAddHandler final
     return "";
   }
 
+static userver::yaml_config::Schema GetStaticConfigSchema() {
+  return userver::yaml_config::MergeSchemas<HandlerBase>(R"(
+type: object
+description: Superuser add company handler schema
+additionalProperties: false
+properties:
+    db:
+        type: string
+        description: database address
+)");
+}
+
  private:
   userver::storages::postgres::ClusterPtr pg_cluster_;
+  std::string db_address_;
 };
 
 }  // namespace

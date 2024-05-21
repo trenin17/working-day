@@ -42,19 +42,20 @@ class DocumentsGetSignsHandler final
         static_cast<std::string>("Access-Control-Allow-Headers"), "*");
 
     // const auto& user_id = ctx.GetData<std::string>("user_id");
+    const auto& company_id = ctx.GetData<std::string>("company_id");
     const auto& document_id = request.GetArg("document_id");
 
     auto result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kMaster,
         "SELECT ROW "
-        "(working_day.employees.id, working_day.employees.name, "
-        "working_day.employees.surname, working_day.employees.patronymic, "
-        "working_day.employees.photo_link), "
-        "working_day.employee_document.signed "
-        "FROM working_day.employees "
-        "JOIN working_day.employee_document ON working_day.employees.id = "
-        "working_day.employee_document.employee_id "
-        "WHERE working_day.employee_document.document_id = $1",
+        "(working_day_" + company_id + ".employees.id, working_day_" + company_id + ".employees.name, "
+        "working_day_" + company_id + ".employees.surname, working_day_" + company_id + ".employees.patronymic, "
+        "working_day_" + company_id + ".employees.photo_link), "
+        "working_day_" + company_id + ".employee_document.signed "
+        "FROM working_day_" + company_id + ".employees "
+        "JOIN working_day_" + company_id + ".employee_document ON working_day_" + company_id + ".employees.id = "
+        "working_day_" + company_id + ".employee_document.employee_id "
+        "WHERE working_day_" + company_id + ".employee_document.document_id = $1",
         document_id);
 
     DocumentsGetSignsResponse response;

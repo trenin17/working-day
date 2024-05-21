@@ -105,17 +105,18 @@ class NotificationsHandler final
         static_cast<std::string>("Access-Control-Allow-Headers"), "*");
 
     const auto& user_id = ctx.GetData<std::string>("user_id");
+    const auto& company_id = ctx.GetData<std::string>("company_id");
 
     auto result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kSlave,
-        "SELECT working_day.notifications.id, type, text, is_read, ROW "
-        "(working_day.employees.id, working_day.employees.name, "
-        "working_day.employees.surname, working_day.employees.patronymic, "
-        "working_day.employees.photo_link), "
+        "SELECT working_day_" + company_id + ".notifications.id, type, text, is_read, ROW "
+        "(working_day_" + company_id + ".employees.id, working_day_" + company_id + ".employees.name, "
+        "working_day_" + company_id + ".employees.surname, working_day_" + company_id + ".employees.patronymic, "
+        "working_day_" + company_id + ".employees.photo_link), "
         "action_id, created "
-        "FROM working_day.notifications "
-        "LEFT JOIN working_day.employees "
-        "ON working_day.employees.id = working_day.notifications.sender_id "
+        "FROM working_day_" + company_id + ".notifications "
+        "LEFT JOIN working_day_" + company_id + ".employees "
+        "ON working_day_" + company_id + ".employees.id = working_day_" + company_id + ".notifications.sender_id "
         "WHERE user_id = $1 "
         "LIMIT 100",
         user_id);

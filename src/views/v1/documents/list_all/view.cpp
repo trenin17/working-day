@@ -42,13 +42,14 @@ class DocumentsListAllHandler final
         static_cast<std::string>("Access-Control-Allow-Headers"), "*");
 
     // const auto& user_id = ctx.GetData<std::string>("user_id");
+    const auto& company_id = ctx.GetData<std::string>("company_id");
 
     auto result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kMaster,
         "SELECT id, name, "
         "type, sign_required, "
         "description, NULL::BOOLEAN as signed "
-        "FROM working_day.documents");
+        "FROM working_day_" + company_id + ".documents");
 
     DocumentsListAllResponse response;
     response.documents = result.AsContainer<std::vector<DocumentItem>>(

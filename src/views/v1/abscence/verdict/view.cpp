@@ -64,6 +64,7 @@ class AbscenceVerdictHandler final
 
     AbscenceVerdictRequest request_body(request.RequestBody());
     auto user_id = ctx.GetData<std::string>("user_id");
+    auto company_id = ctx.GetData<std::string>("company_id");
 
     auto trx = pg_cluster_->Begin(
         "verdict_abscence",
@@ -72,7 +73,7 @@ class AbscenceVerdictHandler final
     auto action_info =
         trx.Execute(
                "SELECT user_id, type, start_date, end_date "
-               "FROM working_day.actions "
+               "FROM working_day_" + company_id + ".actions "
                "WHERE id = $1",
                request_body.action_id)
             .AsSingleRow<ActionInfo>(userver::storages::postgres::kRowTag);
@@ -94,27 +95,27 @@ class AbscenceVerdictHandler final
 
     if (action_status == "approved") {
       auto result = trx.Execute(
-          "UPDATE working_day.actions "
+          "UPDATE working_day_" + company_id + ".actions "
           "SET status = $2"
           "WHERE id = $1 ",
           request_body.action_id, action_status);
     } else {
       auto result = trx.Execute(
-          "DELETE FROM working_day.actions "
+          "DELETE FROM working_day_" + company_id + ".actions "
           "WHERE id = $1 ",
           request_body.action_id);
     }
 
     if (request_body.notification_id.has_value()) {
       auto result = trx.Execute(
-          "DELETE FROM working_day.notifications "
+          "DELETE FROM working_day_" + company_id + ".notifications "
           "WHERE id = $1 ",
           request_body.notification_id.value());
     }
 
     auto notification_id = userver::utils::generators::GenerateUuid();
     auto result = trx.Execute(
-        "INSERT INTO working_day.notifications(id, type, text, user_id, "
+        "INSERT INTO working_day_" + company_id + ".notifications(id, type, text, user_id, "
         "sender_id, action_id) "
         "VALUES($1, $2, $3, $4, $5, $6) "
         "ON CONFLICT (id) "

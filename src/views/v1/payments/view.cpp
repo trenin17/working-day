@@ -72,11 +72,12 @@ class PaymentsHandler final
         static_cast<std::string>("Access-Control-Allow-Headers"), "*");
 
     const auto& user_id = ctx.GetData<std::string>("user_id");
+    const auto& company_id = ctx.GetData<std::string>("company_id");
 
     auto result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kSlave,
         "SELECT id, user_id, amount, payroll_date "
-        "FROM working_day.payments "
+        "FROM working_day_" + company_id + ".payments "
         "WHERE user_id = $1 "
         "LIMIT 100",
         user_id);

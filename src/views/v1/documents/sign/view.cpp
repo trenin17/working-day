@@ -42,11 +42,12 @@ class DocumentsSignHandler final
         static_cast<std::string>("Access-Control-Allow-Headers"), "*");
 
     const auto& user_id = ctx.GetData<std::string>("user_id");
+    const auto& company_id = ctx.GetData<std::string>("company_id");
     const auto& document_id = request.GetArg("document_id");
 
     auto result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kMaster,
-        "UPDATE working_day.employee_document "
+        "UPDATE working_day_" + company_id + ".employee_document "
         "SET signed = TRUE "
         "WHERE employee_id = $1 AND document_id = $2",
         user_id, document_id);

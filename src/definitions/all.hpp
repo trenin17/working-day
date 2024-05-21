@@ -115,6 +115,12 @@
 #define USE_SUPERUSER_COMPANY_ADD_REQUEST
 #endif
 
+#ifdef V1_AUTHORIZE
+#define USE_AUTHORIZE_REQUEST
+#define USE_AUTHORIZE_RESPONSE
+#define USE_ERROR_MESSAGE
+#endif
+
 #ifdef USE_LIST_EMPLOYEE
 struct ListEmployee : public JsonCompatible {
   // For postgres initialization type needs to be default constructible
@@ -144,6 +150,7 @@ struct AddEmployeeRequest : public JsonCompatible {
   REGISTER_STRUCT_FIELD(surname, std::string, "surname");
   REGISTER_STRUCT_FIELD(role, std::string, "role");
   REGISTER_STRUCT_FIELD_OPTIONAL(patronymic, std::string, "patronymic");
+  REGISTER_STRUCT_FIELD_OPTIONAL(company_id, std::string, "company_id");
 };
 #endif
 
@@ -363,5 +370,25 @@ struct ActionsRequest : public JsonCompatible {
 #ifdef USE_SUPERUSER_COMPANY_ADD_REQUEST
 struct SuperuserCompanyAddRequest : public JsonCompatible {
   REGISTER_STRUCT_FIELD(company_id, std::string, "company_id");
+};
+#endif
+
+#ifdef USE_AUTHORIZE_REQUEST
+struct AuthorizeRequest : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(login, std::string, "login");
+  REGISTER_STRUCT_FIELD(password, std::string, "password");
+  REGISTER_STRUCT_FIELD(company_id, std::string, "company_id");
+};
+#endif
+
+#ifdef USE_AUTHORIZE_RESPONSE
+struct AuthorizeResponse : public JsonCompatible {
+  AuthorizeResponse(const std::string& token_, const std::string& role_) {
+    token = token_;
+    role = role_;
+  }
+
+  REGISTER_STRUCT_FIELD(token, std::string, "token");
+  REGISTER_STRUCT_FIELD(role, std::string, "role");
 };
 #endif

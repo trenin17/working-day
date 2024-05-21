@@ -119,6 +119,7 @@ class InfoEmployeeHandler final
         static_cast<std::string>("Access-Control-Allow-Headers"), "*");
 
     const auto& user_id = ctx.GetData<std::string>("user_id");
+    const auto& company_id = ctx.GetData<std::string>("company_id");
     auto employee_id = request.GetArg("employee_id");
 
     if (employee_id.empty()) {
@@ -134,8 +135,8 @@ class InfoEmployeeHandler final
         "employees.telegram_id, employees.vk_id, employees.team, "
         "case when employees.head_id is null then null else ROW (heads.name, "
         "heads.surname) end "
-        "FROM working_day.employees as employees "
-        "LEFT JOIN working_day.employees as heads "
+        "FROM working_day_" + company_id + ".employees as employees "
+        "LEFT JOIN working_day_" + company_id + ".employees as heads "
         "ON employees.head_id = heads.id "
         "WHERE employees.id = $1",
         employee_id);

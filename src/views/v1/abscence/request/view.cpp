@@ -82,6 +82,7 @@ class AbscenceRequestHandler final
 
     AbscenceRequestRequest request_body(request.RequestBody());
     auto user_id = ctx.GetData<std::string>("user_id");
+    auto company_id = ctx.GetData<std::string>("company_id");
 
     auto action_id = userver::utils::generators::GenerateUuid();
 
@@ -103,7 +104,7 @@ class AbscenceRequestHandler final
         userver::storages::postgres::ClusterHostType::kMaster, {});
 
     auto result = trx.Execute(
-        "INSERT INTO working_day.actions(id, type, user_id, start_date, "
+        "INSERT INTO working_day_" + company_id + ".actions(id, type, user_id, start_date, "
         "end_date, status) "
         "VALUES($1, $2, $3, $4, $5, $6) "
         "ON CONFLICT (id) "
@@ -114,7 +115,7 @@ class AbscenceRequestHandler final
     auto head_id =
         trx.Execute(
                "SELECT head_id "
-               "FROM working_day.employees "
+               "FROM working_day_" + company_id + ".employees "
                "WHERE id = $1",
                user_id)
             .AsSingleRow<HeadId>(userver::storages::postgres::kRowTag)
@@ -123,7 +124,7 @@ class AbscenceRequestHandler final
     if (request_body.type == "vacation") {
       auto notification_id = userver::utils::generators::GenerateUuid();
       result = trx.Execute(
-          "INSERT INTO working_day.notifications(id, type, text, user_id, "
+          "INSERT INTO working_day_" + company_id + ".notifications(id, type, text, user_id, "
           "sender_id, action_id) "
           "VALUES($1, $2, $3, $4, $5, $6) "
           "ON CONFLICT (id) "

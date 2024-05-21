@@ -88,6 +88,7 @@ components_manager:
                   - bearer
                 scopes:
                   - admin
+                  - superuser
 
         handler-v1-employee-add-head:
             path: /v1/employee/add-head           
@@ -379,6 +380,7 @@ components_manager:
                   - bearer
                 scopes:
                   - superuser
+            db: $dbconnection
 
         handler-implicit-http-options:
             as_fallback: implicit-http-options
@@ -398,6 +400,7 @@ components_manager:
             full-update-interval: 1h
             update-interval: 10m
             update-correction: 0
+            chunk-size: 0
 
         dns-client:
             fs-task-processor: fs-task-processor

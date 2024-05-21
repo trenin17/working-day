@@ -128,6 +128,7 @@ class DocumentsVacationHandler final
       request_type = "create";
     }
     auto user_id = ctx.GetData<std::string>("user_id");
+    const auto& company_id = ctx.GetData<std::string>("company_id");
 
     auto trx = pg_cluster_->Begin(
         "documents_vacation",
@@ -138,7 +139,7 @@ class DocumentsVacationHandler final
         trx.Execute(
                "SELECT user_id, type, start_date, end_date, "
                "blocking_actions_ids "
-               "FROM working_day.actions "
+               "FROM working_day_" + company_id + ".actions "
                "WHERE id = $1",
                action_id)
             .AsSingleRow<ActionInfo>(userver::storages::postgres::kRowTag);
@@ -164,7 +165,7 @@ class DocumentsVacationHandler final
     auto employee_info =
         trx.Execute(
                "SELECT name, surname, patronymic, head_id, position "
-               "FROM working_day.employees "
+               "FROM working_day_" + company_id + ".employees "
                "WHERE id = $1 ",
                action_info.employee_id)
             .AsSingleRow<EmployeeInfo>(userver::storages::postgres::kRowTag);
@@ -176,7 +177,7 @@ class DocumentsVacationHandler final
     auto head_info =
         trx.Execute(
                "SELECT name, surname, patronymic, position "
-               "FROM working_day.employees "
+               "FROM working_day_" + company_id + ".employees "
                "WHERE id = $1 ",
                employee_info.head_id.value_or(action_info.employee_id))
             .AsSingleRow<HeadInfo>(userver::storages::postgres::kRowTag);
@@ -200,7 +201,7 @@ class DocumentsVacationHandler final
           trx.Execute(
                  "SELECT user_id, type, start_date, end_date, "
                  "blocking_actions_ids "
-                 "FROM working_day.actions "
+                 "FROM working_day_" + company_id + ".actions "
                  "WHERE id = $1",
                  action_info.blocking_actions_ids[0])
               .AsSingleRow<ActionInfo>(userver::storages::postgres::kRowTag);
@@ -208,7 +209,7 @@ class DocumentsVacationHandler final
           trx.Execute(
                  "SELECT user_id, type, start_date, end_date, "
                  "blocking_actions_ids "
-                 "FROM working_day.actions "
+                 "FROM working_day_" + company_id + ".actions "
                  "WHERE id = $1",
                  action_info.blocking_actions_ids[1])
               .AsSingleRow<ActionInfo>(userver::storages::postgres::kRowTag);
@@ -248,14 +249,14 @@ class DocumentsVacationHandler final
     file_key += ".pdf";
 
     pg_cluster_->Execute(userver::storages::postgres::ClusterHostType::kMaster,
-                         "INSERT INTO working_day.documents(id, name, "
+                         "INSERT INTO working_day_" + company_id + ".documents(id, name, "
                          "sign_required, type) "
                          "VALUES($1, $2, $3, $4)",
                          file_key, document_name, true, "employee_request");
 
     pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kMaster,
-        "INSERT INTO working_day.employee_document "
+        "INSERT INTO working_day_" + company_id + ".employee_document "
         "(employee_id, document_id, signed) "
         "VALUES ($1, $2, $3), ($4, $2, $3) "
         "ON CONFLICT DO NOTHING",

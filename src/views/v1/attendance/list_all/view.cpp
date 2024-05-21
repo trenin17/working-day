@@ -40,22 +40,23 @@ class AttendanceListAllHandler final
         static_cast<std::string>("Access-Control-Allow-Headers"), "*");
 
     const auto& user_id = ctx.GetData<std::string>("user_id");
+    const auto& company_id = ctx.GetData<std::string>("company_id");
     AttendanceListAllRequest request_body;
     request_body.ParseRegisteredFields(request.RequestBody());
 
     auto result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kSlave,
-        "SELECT working_day.actions.start_date, working_day.actions.end_date, "
+        "SELECT working_day_" + company_id + ".actions.start_date, working_day_" + company_id + ".actions.end_date, "
         "ROW"
-        "(working_day.employees.id, working_day.employees.name, "
-        "working_day.employees.surname, working_day.employees.patronymic, "
+        "(working_day_" + company_id + ".employees.id, working_day_" + company_id + ".employees.name, "
+        "working_day_" + company_id + ".employees.surname, working_day_" + company_id + ".employees.patronymic, "
         "NULL::text) "
-        "FROM working_day.employees "
-        "LEFT JOIN working_day.actions "
-        "ON working_day.employees.id = working_day.actions.user_id AND "
-        "working_day.actions.start_date >= $2 AND working_day.actions.end_date "
-        "<= $3 AND working_day.actions.type = 'attendance' "
-        "WHERE working_day.employees.id <> $1",
+        "FROM working_day_" + company_id + ".employees "
+        "LEFT JOIN working_day_" + company_id + ".actions "
+        "ON working_day_" + company_id + ".employees.id = working_day_" + company_id + ".actions.user_id AND "
+        "working_day_" + company_id + ".actions.start_date >= $2 AND working_day_" + company_id + ".actions.end_date "
+        "<= $3 AND working_day_" + company_id + ".actions.type = 'attendance' "
+        "WHERE working_day_" + company_id + ".employees.id <> $1",
         user_id, request_body.from, request_body.to);
 
     AttendanceListAllResponse response;

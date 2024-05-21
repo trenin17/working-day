@@ -741,6 +741,9 @@ components:
                     type: string
                 role: 
                     $ref: '#/components/schemas/Role'
+                company_id:
+                    description: Company id of new employee. This field is available for superuser only
+                    type: string
                     
         LoginInfo:
             type: object
