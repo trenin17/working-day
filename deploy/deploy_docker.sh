@@ -5,7 +5,8 @@ USERNAME="trenin17"
 REPO="working_day"
 
 # Получаем текущую последнюю версию
-LAST_VERSION=$(sudo docker images --format "{{.Tag}}" $USERNAME/$REPO | grep -oP '\d+' | sort -nr | head -n1)
+#LAST_VERSION=$(docker images --format "{{.Tag}}" $USERNAME/$REPO | ggrep -oP '\d+' | sort -nr | head -n1)
+LAST_VERSION=34
 
 # Проверяем, что LAST_VERSION является числом
 if ! [[ "$LAST_VERSION" =~ ^[0-9]+$ ]]; then
@@ -16,10 +17,9 @@ fi
 # Инкрементируем версию
 NEW_VERSION=$((LAST_VERSION + 1))
 
-# Собираем новый образ
-sudo docker build -t $USERNAME/$REPO:v$NEW_VERSION .
+echo "Начинается сборка образа с версией v$NEW_VERSION"
 
-# Отправляем новый образ в Docker Hub
-sudo docker push $USERNAME/$REPO:v$NEW_VERSION
+# Собираем новый образ
+docker buildx build --platform linux/amd64  -t $USERNAME/$REPO:v$NEW_VERSION . --push
 
 echo "Образ с версией v$NEW_VERSION успешно отправлен в Docker Hub."
