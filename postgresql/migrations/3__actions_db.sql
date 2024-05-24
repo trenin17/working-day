@@ -8,7 +8,8 @@ CREATE TABLE IF NOT EXISTS ${SCHEMA}.actions (
     end_date TIMESTAMPTZ NOT NULL,
     status TEXT,
     underlying_action_id TEXT,
-    blocking_actions_ids TEXT[] NOT NULL DEFAULT ARRAY []::TEXT[]
+    blocking_actions_ids TEXT[] NOT NULL DEFAULT ARRAY []::TEXT[],
+    FOREIGN KEY (user_id) REFERENCES ${SCHEMA}.employees (id) ON DELETE CASCADE
 );
 
 CREATE INDEX idx_actions_by_user_id ON ${SCHEMA}.actions(user_id);

@@ -8,7 +8,8 @@ CREATE TABLE IF NOT EXISTS ${SCHEMA}.notifications (
     is_read BOOLEAN NOT NULL DEFAULT FALSE,
     sender_id TEXT,
     action_id TEXT,
-    created TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    created TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    FOREIGN KEY (user_id) REFERENCES ${SCHEMA}.employees (id) ON DELETE CASCADE
 );
 
 CREATE INDEX idx_notifications_by_user_id ON ${SCHEMA}.notifications(user_id);
