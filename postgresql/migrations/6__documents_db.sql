@@ -15,6 +15,6 @@ CREATE TABLE IF NOT EXISTS ${SCHEMA}.employee_document (
   document_id TEXT NOT NULL,
   signed BOOLEAN NOT NULL DEFAULT FALSE,
   PRIMARY KEY (employee_id, document_id),
-  FOREIGN KEY (employee_id) REFERENCES ${SCHEMA}.employees (id),
-  FOREIGN KEY (document_id) REFERENCES ${SCHEMA}.documents (id)
+  FOREIGN KEY (employee_id) REFERENCES ${SCHEMA}.employees (id) ON DELETE CASCADE,
+  FOREIGN KEY (document_id) REFERENCES ${SCHEMA}.documents (id) ON DELETE CASCADE
 );

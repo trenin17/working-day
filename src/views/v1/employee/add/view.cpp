@@ -29,7 +29,7 @@ core::reverse_index::ReverseIndexResponse AddReverseIndexFunc(
     userver::storages::postgres::ClusterPtr cluster,
     core::reverse_index::EmployeeAllData data) {
   std::vector<std::optional<std::string>> fields = {
-      data.name,     data.surname,     data.patronymic, data.role, data.email,
+      data.name,     data.surname,     data.patronymic, data.email,
       data.birthday, data.telegram_id, data.vk_id,      data.team};
 
   if (data.phones.has_value()) {

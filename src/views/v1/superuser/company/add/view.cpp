@@ -45,8 +45,12 @@ class SuperuserCompanyAddHandler final
     SuperuserCompanyAddRequest request_body;
     request_body.ParseRegisteredFields(request.RequestBody());
 
-    LOG_WARNING() << "Current directory: " << std::filesystem::current_path().string();
-    auto shell_command = "/home/developer/diploma/scripts/setup_comapny_db.sh working_day_" + request_body.company_id + " " + db_address_;
+    std::string script_path = std::filesystem::current_path().string() + "/scripts/setup_company_db.sh";
+    if (!std::filesystem::exists(script_path)) {
+      script_path = std::filesystem::current_path().parent_path().string() + "/scripts/setup_company_db.sh";
+    }
+    LOG_WARNING() << "Finding script in: " << script_path;
+    auto shell_command = script_path + " working_day_" + request_body.company_id + " " + db_address_;
     auto err_code = system(shell_command.c_str());
 
     if (err_code != 0) {

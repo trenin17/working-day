@@ -1,6 +1,6 @@
 FROM ghcr.io/userver-framework/ubuntu-22.04-userver-pg:latest
 
-RUN apt-get install -y wget git libcurl4-openssl-dev libssl-dev uuid-dev zlib1g-dev libpulse-dev
+RUN apt-get install -y wget git libcurl4-openssl-dev libssl-dev uuid-dev zlib1g-dev libpulse-dev vim
 
 RUN mkdir -p /app/src /app/configs /app/third_party /app/tests /app/scripts /app/postgresql/migrations
 
