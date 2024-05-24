@@ -5,8 +5,8 @@ USERNAME="trenin17"
 REPO="working_day"
 
 # Получаем текущую последнюю версию
-#LAST_VERSION=$(docker images --format "{{.Tag}}" $USERNAME/$REPO | ggrep -oP '\d+' | sort -nr | head -n1)
-LAST_VERSION=34
+TOKEN=$(curl -s "https://auth.docker.io/token?service=registry.docker.io&scope=repository:trenin17/working_day:pull" | jq -r .token)
+LAST_VERSION=$(curl -s -H "Authorization: Bearer $TOKEN" https://registry-1.docker.io/v2/trenin17/working_day/tags/list | jq -r '.tags[]' | sort -V | tail -n1 | sed 's/v//')
 
 # Проверяем, что LAST_VERSION является числом
 if ! [[ "$LAST_VERSION" =~ ^[0-9]+$ ]]; then

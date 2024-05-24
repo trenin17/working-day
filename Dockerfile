@@ -2,7 +2,7 @@ FROM ghcr.io/userver-framework/ubuntu-22.04-userver-pg:latest
 
 RUN apt-get install -y wget git libcurl4-openssl-dev libssl-dev uuid-dev zlib1g-dev libpulse-dev
 
-RUN mkdir -p /app/src /app/configs /app/third_party /app/tests
+RUN mkdir -p /app/src /app/configs /app/third_party /app/tests /app/scripts /app/postgresql/migrations
 
 RUN git clone --recurse-submodules https://github.com/aws/aws-sdk-cpp
 RUN mkdir sdk_build
@@ -24,6 +24,8 @@ COPY configs /app/configs/
 COPY src /app/src/
 COPY third_party /app/third_party/
 COPY tests /app/tests/
+COPY scripts /app/scripts
+COPY postresql/migrations /app/postgresql/migrations
 
 RUN make build-release
 
