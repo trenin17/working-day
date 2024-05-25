@@ -25,7 +25,7 @@ COPY src /app/src/
 COPY third_party /app/third_party/
 COPY tests /app/tests/
 COPY scripts /app/scripts
-COPY postresql/migrations /app/postgresql/migrations
+COPY postgresql/migrations /app/postgresql/migrations
 
 RUN make build-release
 
