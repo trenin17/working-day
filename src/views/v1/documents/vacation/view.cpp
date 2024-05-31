@@ -229,9 +229,9 @@ class DocumentsVacationHandler final
 
     auto file_key = userver::utils::generators::GenerateUuid();
     auto response = http_client_.CreateRequest()
-                        .get(
-                            "https://functions.yandexcloud.net/"
-                            "d4emv61q8h6eu2rs2f67?file_key=" +
+                        .post(
+                            "http://python-service:3000/"
+                            "document/generate?file_key=" +
                             file_key)
                         .data(link_request.ToJSON())
                         .retry(2)  // retry once in case of error

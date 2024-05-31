@@ -49,7 +49,7 @@ def plural_form(number, first, second, third):
 
     if two_digit >= 10 and two_digit <= 20:
         return third
-    
+
     if one_digit == 1:
         return first
 
@@ -57,7 +57,7 @@ def plural_form(number, first, second, third):
         return second
 
     return third
-    
+
 def get_duration(start_date, end_date):
     start_dd = datetime.strptime(start_date, '%d.%m.%Y')
     end_dd = datetime.strptime(end_date, '%d.%m.%Y')
@@ -100,6 +100,10 @@ def replace_macros_in_word(doc_path, replacements, output_path):
 
     doc.save(output_path)
 
+def delete_tmp_files(file_key):
+    subprocess.run(['rm', '-rf', '/tmp/' + file_key + '*'])
+
+
 async def generate_document(request):
     try:
         # Retrieve `file_key` from the query string
@@ -113,7 +117,7 @@ async def generate_document(request):
         employee_surname = data['employee_surname']
         employee_patronymic = data.get('employee_patronymic', "")
         employee_position = data.get('employee_position', "")
-        
+
         head_name = data['head_name']
         head_surname = data['head_surname']
         head_patronymic = data.get('head_patronymic', "")
@@ -168,13 +172,14 @@ async def generate_document(request):
 
         file_name = file_key + '.docx'
         output_path_word = '/tmp/' + file_name
-        replace_macros_in_word("templates/" + request_type + ".docx", replacements, output_path)
+        replace_macros_in_word("generate_document/templates/" + request_type + ".docx", replacements, output_path_word)
 
         output_path_pdf = '/tmp/' + file_key + '.pdf'
 
-        convert_docx_to_pdf(output_path_word, output_path_pdf)
+        convert_docx_to_pdf(output_path_word, '/tmp')
 
         url = upload_and_presign(output_path_pdf, file_key + '.pdf')
+        delete_tmp_files(file_key)
         return web.Response(status=200, content_type='text/plain', text=url)
 
     except Exception as e:
