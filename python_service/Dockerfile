@@ -9,6 +9,8 @@ COPY generate_document/requirements.txt .
 # install dependencies
 RUN pip install -r requirements.txt
 
+RUN apt-get update && apt-get install -y libreoffice
+
 RUN mkdir ./generate_document
 COPY generate_document ./generate_document/
 COPY main.py .

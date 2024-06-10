@@ -9,8 +9,6 @@ from datetime import datetime
 import subprocess
 from aiohttp import web
 
-from fpdf import FPDF
-
 storage_client = None
 
 def convert_docx_to_pdf(docx_path, output_pdf_path):
