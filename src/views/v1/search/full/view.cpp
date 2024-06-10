@@ -154,8 +154,10 @@ class SearchFullHandler final
       auto result = pg_cluster_->Execute(
           userver::storages::postgres::ClusterHostType::kMaster,
           "SELECT c.id, c.name, c.surname, c.patronymic, c.photo_link "
-          "FROM working_day_" + company_id + ".employees AS c "
-          "JOIN unnest(ARRAY[" +
+          "FROM working_day_" +
+              company_id +
+              ".employees AS c "
+              "JOIN unnest(ARRAY[" +
               filter_fetch +
               "]) WITH ORDINALITY t(id, ord) USING (id) "
               "ORDER BY t.ord; ",

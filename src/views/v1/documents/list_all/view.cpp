@@ -49,7 +49,8 @@ class DocumentsListAllHandler final
         "SELECT id, name, "
         "type, sign_required, "
         "description, NULL::BOOLEAN as signed "
-        "FROM working_day_" + company_id + ".documents");
+        "FROM working_day_" +
+            company_id + ".documents");
 
     DocumentsListAllResponse response;
     response.documents = result.AsContainer<std::vector<DocumentItem>>(

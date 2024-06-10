@@ -68,9 +68,10 @@ class ProfileUploadPhotoHandler final
 
     auto result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kMaster,
-        "UPDATE working_day_" + company_id + ".employees "
-        "SET photo_link = $2 "
-        "WHERE id = $1",
+        "UPDATE working_day_" + company_id +
+            ".employees "
+            "SET photo_link = $2 "
+            "WHERE id = $1",
         user_id, photo_id);
 
     UploadPhotoResponse response{upload_link};

@@ -135,10 +135,14 @@ class InfoEmployeeHandler final
         "employees.telegram_id, employees.vk_id, employees.team, "
         "case when employees.head_id is null then null else ROW (heads.name, "
         "heads.surname) end "
-        "FROM working_day_" + company_id + ".employees as employees "
-        "LEFT JOIN working_day_" + company_id + ".employees as heads "
-        "ON employees.head_id = heads.id "
-        "WHERE employees.id = $1",
+        "FROM working_day_" +
+            company_id +
+            ".employees as employees "
+            "LEFT JOIN working_day_" +
+            company_id +
+            ".employees as heads "
+            "ON employees.head_id = heads.id "
+            "WHERE employees.id = $1",
         employee_id);
 
     if (result.IsEmpty()) {

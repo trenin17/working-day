@@ -50,9 +50,11 @@ class ActionsHandler final : public userver::server::handlers::HttpHandlerBase {
     auto result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kSlave,
         "SELECT id, type, start_date, end_date, status, blocking_actions_ids "
-        "FROM working_day_" + company_id + ".actions "
-        "WHERE (user_id = $1 AND start_date >= $2 AND start_date <= $3) "
-        "OR (user_id = $1 AND end_date >= $2 AND end_date <= $3)",
+        "FROM working_day_" +
+            company_id +
+            ".actions "
+            "WHERE (user_id = $1 AND start_date >= $2 AND start_date <= $3) "
+            "OR (user_id = $1 AND end_date >= $2 AND end_date <= $3)",
         request_body.employee_id.value_or(user_id), request_body.from,
         request_body.to);
 

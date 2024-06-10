@@ -7,6 +7,7 @@
 
 namespace views::v1::superuser::company::add {
 
-void AppendSuperuserCompanyAdd(userver::components::ComponentList& component_list);
+void AppendSuperuserCompanyAdd(
+    userver::components::ComponentList& component_list);
 
 }  // namespace views::v1::superuser::company::add

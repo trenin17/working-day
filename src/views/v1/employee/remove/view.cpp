@@ -34,8 +34,10 @@ core::reverse_index::ReverseIndexResponse DeleteReverseIndexFunc(
       cluster->Execute(userver::storages::postgres::ClusterHostType::kMaster,
                        "SELECT name, surname, role, patronymic, phones, "
                        "email, birthday, telegram_id, vk_id, team "
-                       "FROM working_day_" + data.company_id.value() + ".employees "
-                       "WHERE id = $1;",
+                       "FROM working_day_" +
+                           data.company_id.value() +
+                           ".employees "
+                           "WHERE id = $1;",
                        data.employee_id);
 
   auto values_res =
@@ -64,14 +66,17 @@ core::reverse_index::ReverseIndexResponse DeleteReverseIndexFunc(
 
   auto result2 =
       cluster->Execute(userver::storages::postgres::ClusterHostType::kMaster,
-                       "UPDATE working_day_" + data.company_id.value() + ".reverse_index "
-                       "SET ids = array_remove(ids, $1) "
-                       "WHERE key IN " +
+                       "UPDATE working_day_" + data.company_id.value() +
+                           ".reverse_index "
+                           "SET ids = array_remove(ids, $1) "
+                           "WHERE key IN " +
                            filter +
                            "); "
-                           "DELETE FROM working_day_" + data.company_id.value() + ".reverse_index "
+                           "DELETE FROM working_day_" +
+                           data.company_id.value() +
+                           ".reverse_index "
                            "WHERE key IN " +
-                           filter + "); AND ids = '{}'; ",
+                           filter + ") AND ids = '{}'; ",
                        parameters);
 
   core::reverse_index::ReverseIndexResponse response(data.employee_id);
@@ -124,8 +129,9 @@ class RemoveEmployeeHandler final
 
     auto result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kMaster,
-        "DELETE FROM working_day_" + company_id + ".employees "
-        "WHERE id = $1",
+        "DELETE FROM working_day_" + company_id +
+            ".employees "
+            "WHERE id = $1",
         employee_id);
 
     return "";

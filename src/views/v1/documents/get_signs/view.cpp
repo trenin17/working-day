@@ -48,14 +48,29 @@ class DocumentsGetSignsHandler final
     auto result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kMaster,
         "SELECT ROW "
-        "(working_day_" + company_id + ".employees.id, working_day_" + company_id + ".employees.name, "
-        "working_day_" + company_id + ".employees.surname, working_day_" + company_id + ".employees.patronymic, "
-        "working_day_" + company_id + ".employees.photo_link), "
-        "working_day_" + company_id + ".employee_document.signed "
-        "FROM working_day_" + company_id + ".employees "
-        "JOIN working_day_" + company_id + ".employee_document ON working_day_" + company_id + ".employees.id = "
-        "working_day_" + company_id + ".employee_document.employee_id "
-        "WHERE working_day_" + company_id + ".employee_document.document_id = $1",
+        "(working_day_" +
+            company_id + ".employees.id, working_day_" + company_id +
+            ".employees.name, "
+            "working_day_" +
+            company_id + ".employees.surname, working_day_" + company_id +
+            ".employees.patronymic, "
+            "working_day_" +
+            company_id +
+            ".employees.photo_link), "
+            "working_day_" +
+            company_id +
+            ".employee_document.signed "
+            "FROM working_day_" +
+            company_id +
+            ".employees "
+            "JOIN working_day_" +
+            company_id + ".employee_document ON working_day_" + company_id +
+            ".employees.id = "
+            "working_day_" +
+            company_id +
+            ".employee_document.employee_id "
+            "WHERE working_day_" +
+            company_id + ".employee_document.document_id = $1",
         document_id);
 
     DocumentsGetSignsResponse response;

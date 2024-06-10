@@ -46,18 +46,33 @@ class AttendanceListAllHandler final
 
     auto result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kSlave,
-        "SELECT working_day_" + company_id + ".actions.start_date, working_day_" + company_id + ".actions.end_date, "
-        "ROW"
-        "(working_day_" + company_id + ".employees.id, working_day_" + company_id + ".employees.name, "
-        "working_day_" + company_id + ".employees.surname, working_day_" + company_id + ".employees.patronymic, "
-        "NULL::text) "
-        "FROM working_day_" + company_id + ".employees "
-        "LEFT JOIN working_day_" + company_id + ".actions "
-        "ON working_day_" + company_id + ".employees.id = working_day_" + company_id + ".actions.user_id AND "
-        "working_day_" + company_id + ".actions.start_date >= $2 AND working_day_" + company_id + ".actions.end_date "
-        "<= $3 AND working_day_" + company_id + ".actions.type = 'attendance' "
-        "WHERE working_day_" + company_id + ".employees.id <> $1",
-        user_id, request_body.from, request_body.to);
+        "SELECT working_day_" + company_id +
+            ".actions.start_date, working_day_" + company_id +
+            ".actions.end_date, "
+            "ROW"
+            "(working_day_" +
+            company_id + ".employees.id, working_day_" + company_id +
+            ".employees.name, "
+            "working_day_" +
+            company_id + ".employees.surname, working_day_" + company_id +
+            ".employees.patronymic, "
+            "NULL::text) "
+            "FROM working_day_" +
+            company_id +
+            ".employees "
+            "LEFT JOIN working_day_" +
+            company_id +
+            ".actions "
+            "ON working_day_" +
+            company_id + ".employees.id = working_day_" + company_id +
+            ".actions.user_id AND "
+            "working_day_" +
+            company_id + ".actions.start_date >= $1 AND working_day_" +
+            company_id +
+            ".actions.end_date "
+            "<= $2 AND working_day_" +
+            company_id + ".actions.type = 'attendance' ",
+        request_body.from, request_body.to);
 
     AttendanceListAllResponse response;
     response.attendances = result.AsContainer<std::vector<AttendanceListItem>>(

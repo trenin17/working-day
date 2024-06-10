@@ -77,9 +77,11 @@ class PaymentsHandler final
     auto result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kSlave,
         "SELECT id, user_id, amount, payroll_date "
-        "FROM working_day_" + company_id + ".payments "
-        "WHERE user_id = $1 "
-        "LIMIT 100",
+        "FROM working_day_" +
+            company_id +
+            ".payments "
+            "WHERE user_id = $1 "
+            "LIMIT 100",
         user_id);
 
     PaymentsResponse response{result.AsContainer<std::vector<Payment>>(

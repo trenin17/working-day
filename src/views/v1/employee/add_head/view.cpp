@@ -75,9 +75,10 @@ class AddHeadEmployeeHandler final
 
     auto result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kMaster,
-        "UPDATE working_day_" + company_id + ".employees "
-        "SET head_id = $2 "
-        "WHERE id = $1",
+        "UPDATE working_day_" + company_id +
+            ".employees "
+            "SET head_id = $2 "
+            "WHERE id = $1",
         request_body.employee_id, request_body.head_id);
 
     return "";

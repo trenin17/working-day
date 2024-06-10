@@ -109,16 +109,29 @@ class NotificationsHandler final
 
     auto result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kSlave,
-        "SELECT working_day_" + company_id + ".notifications.id, type, text, is_read, ROW "
-        "(working_day_" + company_id + ".employees.id, working_day_" + company_id + ".employees.name, "
-        "working_day_" + company_id + ".employees.surname, working_day_" + company_id + ".employees.patronymic, "
-        "working_day_" + company_id + ".employees.photo_link), "
-        "action_id, created "
-        "FROM working_day_" + company_id + ".notifications "
-        "LEFT JOIN working_day_" + company_id + ".employees "
-        "ON working_day_" + company_id + ".employees.id = working_day_" + company_id + ".notifications.sender_id "
-        "WHERE user_id = $1 "
-        "LIMIT 100",
+        "SELECT working_day_" + company_id +
+            ".notifications.id, type, text, is_read, ROW "
+            "(working_day_" +
+            company_id + ".employees.id, working_day_" + company_id +
+            ".employees.name, "
+            "working_day_" +
+            company_id + ".employees.surname, working_day_" + company_id +
+            ".employees.patronymic, "
+            "working_day_" +
+            company_id +
+            ".employees.photo_link), "
+            "action_id, created "
+            "FROM working_day_" +
+            company_id +
+            ".notifications "
+            "LEFT JOIN working_day_" +
+            company_id +
+            ".employees "
+            "ON working_day_" +
+            company_id + ".employees.id = working_day_" + company_id +
+            ".notifications.sender_id "
+            "WHERE user_id = $1 "
+            "LIMIT 100",
         user_id);
 
     NotificationsResponse response{

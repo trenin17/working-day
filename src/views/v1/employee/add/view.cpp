@@ -2,9 +2,9 @@
 
 #include "view.hpp"
 
+#include <fmt/format.h>
 #include <codecvt>
 #include <locale>
-#include <fmt/format.h>
 
 #include <userver/clients/dns/component.hpp>
 #include <userver/components/component_config.hpp>
@@ -51,20 +51,24 @@ core::reverse_index::ReverseIndexResponse AddReverseIndexFunc(
     }
   }
 
-  auto result = cluster->Execute(
-      userver::storages::postgres::ClusterHostType::kMaster,
-      "WITH input_data AS ( "
-      "  SELECT ARRAY" +
-          filter +
-          "] AS keys, $1 AS id "
-          ") "
-          "INSERT INTO working_day_" + data.company_id.value() + ".reverse_index (key, ids) "
-          "SELECT key, ARRAY[id] AS ids "
-          "FROM input_data, LATERAL unnest(keys) AS key "
-          "ON CONFLICT (key) DO UPDATE "
-          "SET ids = array_append(working_day_" + data.company_id.value() + ".reverse_index.ids, "
-          "EXCLUDED.ids[1]); ",
-      parameters);
+  auto result =
+      cluster->Execute(userver::storages::postgres::ClusterHostType::kMaster,
+                       "WITH input_data AS ( "
+                       "  SELECT ARRAY" +
+                           filter +
+                           "] AS keys, $1 AS id "
+                           ") "
+                           "INSERT INTO working_day_" +
+                           data.company_id.value() +
+                           ".reverse_index (key, ids) "
+                           "SELECT key, ARRAY[id] AS ids "
+                           "FROM input_data, LATERAL unnest(keys) AS key "
+                           "ON CONFLICT (key) DO UPDATE "
+                           "SET ids = array_append(working_day_" +
+                           data.company_id.value() +
+                           ".reverse_index.ids, "
+                           "EXCLUDED.ids[1]); ",
+                       parameters);
 
   core::reverse_index::ReverseIndexResponse response(data.employee_id);
 
@@ -109,7 +113,8 @@ std::string Transliterate(const std::string& cyrillic) {
 }
 
 std::string generateLogin(
-    const std::string& firstName, const std::string& lastName, const std::string& company_id,
+    const std::string& firstName, const std::string& lastName,
+    const std::string& company_id,
     const userver::storages::postgres::ClusterPtr& cluster) {
   std::string transliteratedFirst = Transliterate(firstName);
   std::string transliteratedLast = Transliterate(lastName);
@@ -119,10 +124,11 @@ std::string generateLogin(
   int counter = 0;
 
   while (true) {
-    auto query = fmt::format("SELECT id FROM working_day_{0}.employees WHERE id = $1", company_id);
-    auto result = cluster->Execute(
-        userver::storages::postgres::ClusterHostType::kMaster,
-        std::move(query), newLogin);
+    auto query = fmt::format(
+        "SELECT id FROM working_day_{0}.employees WHERE id = $1", company_id);
+    auto result =
+        cluster->Execute(userver::storages::postgres::ClusterHostType::kMaster,
+                         std::move(query), newLogin);
     if (result.Size() == 0) {
       break;
     }
@@ -170,8 +176,8 @@ class AddEmployeeHandler final
     }
     LOG_INFO() << "EMPLOYEE ADD " << number++;
 
-    auto id =
-        generateLogin(request_body.name, request_body.surname, company_id, pg_cluster_);
+    auto id = generateLogin(request_body.name, request_body.surname, company_id,
+                            pg_cluster_);
     LOG_INFO() << "EMPLOYEE ADD " << number++;
     auto password = userver::utils::generators::GenerateUuid().substr(0, 16);
     LOG_INFO() << "EMPLOYEE ADD " << number++;
@@ -180,11 +186,11 @@ class AddEmployeeHandler final
         "INSERT INTO working_day_{0}.employees(id, name, surname, patronymic, "
         "password, role) VALUES($1, $2, $3, $4, $5, $6) "
         "ON CONFLICT (id) "
-        "DO NOTHING", company_id);
+        "DO NOTHING",
+        company_id);
     LOG_INFO() << "EMPLOYEE ADD " << number++;
     auto result = pg_cluster_->Execute(
-        userver::storages::postgres::ClusterHostType::kMaster,
-        std::move(query),
+        userver::storages::postgres::ClusterHostType::kMaster, std::move(query),
         id, request_body.name, request_body.surname, request_body.patronymic,
         password, request_body.role);
 

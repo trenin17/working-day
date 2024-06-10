@@ -46,14 +46,29 @@ class DocumentsListHandler final
 
     auto result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kMaster,
-        "SELECT working_day_" + company_id + ".documents.id, working_day_" + company_id + ".documents.name, "
-        "working_day_" + company_id + ".documents.type, working_day_" + company_id + ".documents.sign_required, "
-        "working_day_" + company_id + ".documents.description, "
-        "working_day_" + company_id + ".employee_document.signed "
-        "FROM working_day_" + company_id + ".documents "
-        "JOIN working_day_" + company_id + ".employee_document ON working_day_" + company_id + ".documents.id = "
-        "working_day_" + company_id + ".employee_document.document_id "
-        "WHERE working_day_" + company_id + ".employee_document.employee_id = $1",
+        "SELECT working_day_" + company_id + ".documents.id, working_day_" +
+            company_id +
+            ".documents.name, "
+            "working_day_" +
+            company_id + ".documents.type, working_day_" + company_id +
+            ".documents.sign_required, "
+            "working_day_" +
+            company_id +
+            ".documents.description, "
+            "working_day_" +
+            company_id +
+            ".employee_document.signed "
+            "FROM working_day_" +
+            company_id +
+            ".documents "
+            "JOIN working_day_" +
+            company_id + ".employee_document ON working_day_" + company_id +
+            ".documents.id = "
+            "working_day_" +
+            company_id +
+            ".employee_document.document_id "
+            "WHERE working_day_" +
+            company_id + ".employee_document.employee_id = $1",
         user_id);
 
     DocumentsListResponse response;

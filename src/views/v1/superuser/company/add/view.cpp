@@ -45,12 +45,15 @@ class SuperuserCompanyAddHandler final
     SuperuserCompanyAddRequest request_body;
     request_body.ParseRegisteredFields(request.RequestBody());
 
-    std::string script_path = std::filesystem::current_path().string() + "/scripts/setup_company_db.sh";
+    std::string script_path = std::filesystem::current_path().string() +
+                              "/scripts/setup_company_db.sh";
     if (!std::filesystem::exists(script_path)) {
-      script_path = std::filesystem::current_path().parent_path().string() + "/scripts/setup_company_db.sh";
+      script_path = std::filesystem::current_path().parent_path().string() +
+                    "/scripts/setup_company_db.sh";
     }
     LOG_WARNING() << "Finding script in: " << script_path;
-    auto shell_command = script_path + " working_day_" + request_body.company_id + " " + db_address_;
+    auto shell_command = script_path + " working_day_" +
+                         request_body.company_id + " " + db_address_;
     auto err_code = system(shell_command.c_str());
 
     if (err_code != 0) {
@@ -60,8 +63,8 @@ class SuperuserCompanyAddHandler final
     return "";
   }
 
-static userver::yaml_config::Schema GetStaticConfigSchema() {
-  return userver::yaml_config::MergeSchemas<HandlerBase>(R"(
+  static userver::yaml_config::Schema GetStaticConfigSchema() {
+    return userver::yaml_config::MergeSchemas<HandlerBase>(R"(
 type: object
 description: Superuser add company handler schema
 additionalProperties: false
@@ -70,7 +73,7 @@ properties:
         type: string
         description: database address
 )");
-}
+  }
 
  private:
   userver::storages::postgres::ClusterPtr pg_cluster_;
@@ -79,7 +82,8 @@ properties:
 
 }  // namespace
 
-void AppendSuperuserCompanyAdd(userver::components::ComponentList& component_list) {
+void AppendSuperuserCompanyAdd(
+    userver::components::ComponentList& component_list) {
   component_list.Append<SuperuserCompanyAddHandler>();
 }
 

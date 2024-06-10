@@ -47,9 +47,10 @@ class DocumentsSignHandler final
 
     auto result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kMaster,
-        "UPDATE working_day_" + company_id + ".employee_document "
-        "SET signed = TRUE "
-        "WHERE employee_id = $1 AND document_id = $2",
+        "UPDATE working_day_" + company_id +
+            ".employee_document "
+            "SET signed = TRUE "
+            "WHERE employee_id = $1 AND document_id = $2",
         user_id, document_id);
 
     return "";

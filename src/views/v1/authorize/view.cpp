@@ -54,8 +54,10 @@ class AuthorizeHandler final
 
     auto result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kSlave,
-        "SELECT id, password, role FROM working_day_" + request_body.company_id + ".employees "
-        "WHERE id = $1",
+        "SELECT id, password, role FROM working_day_" +
+            request_body.company_id +
+            ".employees "
+            "WHERE id = $1",
         request_body.login);
 
     if (result.IsEmpty()) {
@@ -80,7 +82,8 @@ class AuthorizeHandler final
     auto token = userver::utils::generators::GenerateUuid();
     auto auth_result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kMaster,
-        "INSERT INTO wd_general.auth_tokens (token, user_id, company_id, scopes) "
+        "INSERT INTO wd_general.auth_tokens (token, user_id, company_id, "
+        "scopes) "
         "VALUES ($1, $2, $3, $4)",
         token, user_info.id, request_body.company_id, scopes);
 

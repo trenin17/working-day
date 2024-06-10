@@ -46,8 +46,10 @@ class EmployeesHandler final
     auto result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kSlave,
         "SELECT id, name, surname, patronymic, photo_link "
-        "FROM working_day_" + company_id + ".employees "
-        "WHERE head_id = $1",
+        "FROM working_day_" +
+            company_id +
+            ".employees "
+            "WHERE head_id = $1",
         user_id);
 
     EmployeesResponse response;

@@ -8,6 +8,7 @@ import base64
 from datetime import datetime
 import subprocess
 from aiohttp import web
+from sign_document.stamp import create_stamp, StampData
 
 storage_client = None
 
@@ -178,7 +179,11 @@ async def generate_document(request):
 
         convert_docx_to_pdf(output_path_word, '/tmp')
 
-        url = upload_and_presign(output_path_pdf, file_key + '.pdf')
+        output_path_pdf_signed = '/tmp/' + file_key + '_signed.pdf'
+        stamp_data = StampData(now_date, employee_name + ' ' + employee_surname, 'organization', 'employee_id', file_key)
+        create_stamp(output_path_pdf, output_path_pdf_signed, stamp_data)
+
+        url = upload_and_presign(output_path_pdf_signed, file_key + '.pdf')
         delete_tmp_files(file_key)
         return web.Response(status=200, content_type='text/plain', text=url)
 

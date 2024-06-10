@@ -36,12 +36,14 @@ async def test_add_company(service_client):
     response = await service_client.post(
         '/v1/employee/add',
         headers={'Authorization': 'Bearer zero_token'},
-        json={'name': 'Second', 'surname': 'B', 'role': 'admin', 'company_id': 'second'},
+        json={'name': 'Second', 'surname': 'B',
+              'role': 'admin', 'company_id': 'second'},
     )
 
     assert response.status == 200
     # new_id = json.loads(response.text)['login']
     # new_password = json.loads(response.text)['password']
+
 
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])
 async def test_employees(service_client):
@@ -221,7 +223,8 @@ async def test_authorize(service_client):
 
     response = await service_client.post(
         '/v1/authorize',
-        json={'login': 'first_id', 'company_id': 'first', 'password': 'first_password'},
+        json={'login': 'first_id', 'company_id': 'first',
+              'password': 'first_password'},
     )
 
     assert response.status == 200
@@ -229,7 +232,8 @@ async def test_authorize(service_client):
     # Wrong password
     response = await service_client.post(
         '/v1/authorize',
-        json={'login': 'first_id', 'company_id': 'first', 'password': 'wrong_password'},
+        json={'login': 'first_id', 'company_id': 'first',
+              'password': 'wrong_password'},
     )
 
     assert response.status == 404
@@ -588,7 +592,8 @@ async def test_attendance_list_all(service_client):
         '{"employee":{"id":"first_id","name":"First","surname":"A"},'
         '"end_date":"2023-07-21T15:00:00.000000",'
         '"start_date":"2023-07-21T07:00:00.000000"},'
-        '{"employee":{"id":"second_id","name":"Second","surname":"B"}}'
+        '{"employee":{"id":"second_id","name":"Second","surname":"B"}},'
+        '{"employee":{"id":"tc","name":"Third","surname":"C"}}'
         ']}')
     response = await service_client.post(
         '/v1/attendance/add',
@@ -635,7 +640,8 @@ async def test_attendance_list_all(service_client):
         '"start_date":"2023-07-21T07:00:00.000000"},'
         '{"employee":{"id":"second_id","name":"Second","surname":"B"},'
         '"end_date":"2023-07-22T15:00:00.000000",'
-        '"start_date":"2023-07-22T07:00:00.000000"}'
+        '"start_date":"2023-07-22T07:00:00.000000"},'
+        '{"employee":{"id":"tc","name":"Third","surname":"C"}}'
         ']}')
     response = await service_client.post(
         '/v1/attendance/list-all',
@@ -651,7 +657,8 @@ async def test_attendance_list_all(service_client):
         '"start_date":"2023-07-22T07:00:00.000000"},'
         '{"employee":{"id":"second_id","name":"Second","surname":"B"},'
         '"end_date":"2023-07-22T15:00:00.000000",'
-        '"start_date":"2023-07-22T07:00:00.000000"}'
+        '"start_date":"2023-07-22T07:00:00.000000"},'
+        '{"employee":{"id":"tc","name":"Third","surname":"C"}}'
         ']}')
 
 
@@ -846,6 +853,37 @@ async def test_search_suggest(service_client):
                                  '"name":"Test2","surname":"T1"}]}')
     assert compare_employees(
         response.text, response_required.substitute(id=new_id, id2=new_id2))
+
+
+@pytest.mark.pgsql('db_1', files=['initial_data.sql'])
+async def test_abscence_verdict(service_client):
+    response = await service_client.post(
+        '/v1/abscence/request',
+        headers={'Authorization': 'Bearer first_token'},
+        json={'type': 'vacation', 'start_date': '2023-07-10T00:00:00',
+              'end_date': '2023-07-21T00:00:00'}
+    )
+    assert response.status == 200
+    action_id = json.loads(response.text)['action_id']
+
+    response = await service_client.post(
+        '/v1/abscence/verdict',
+        headers={'Authorization': 'Bearer first_token'},
+        json={'action_id': action_id, 'approve': True}
+    )
+
+    assert response.status == 200
+
+    await asyncio.sleep(1)
+
+    response = await service_client.get(
+        '/v1/documents/list',
+        headers={'Authorization': 'Bearer first_token'}
+    )
+    assert response.status == 200
+    assert json.loads(response.text)[
+        'documents'][0]['type'] == 'employee_request'
+
 
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])
 async def test_end(service_client):

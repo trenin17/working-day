@@ -109,13 +109,14 @@ AuthCheckerBearer::AuthCheckResult AuthCheckerBearer::CheckAuth(
   /// [auth checker definition 5]
   request_context.SetData("user_id", info.user_id);
   std::string user_role = "user";
-  if (std::find(info.scopes.begin(), info.scopes.end(), "superuser") != info.scopes.end()) {
+  if (std::find(info.scopes.begin(), info.scopes.end(), "superuser") !=
+      info.scopes.end()) {
     user_role = "superuser";
   } else if (std::find(info.scopes.begin(), info.scopes.end(), "admin") !=
-      info.scopes.end()) {
+             info.scopes.end()) {
     user_role = "admin";
   } else if (std::find(info.scopes.begin(), info.scopes.end(), "manager") !=
-      info.scopes.end()) {
+             info.scopes.end()) {
     user_role = "manager";
   }
   request_context.SetData("user_role", user_role);
