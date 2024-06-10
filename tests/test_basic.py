@@ -379,6 +379,12 @@ async def test_search_edit(service_client):
     assert response.status == 200
 
     response = await service_client.post(
+        '/v1/clear-tasks',
+    )
+
+    assert response.status == 200
+
+    response = await service_client.post(
         '/v1/search/full',
         json={'search_key': '+1111', 'limit': 1},
         headers={'Authorization': 'Bearer second_token'},
@@ -393,6 +399,12 @@ async def test_search_edit(service_client):
         '/v1/profile/edit',
         headers={'Authorization': 'Bearer second_token'},
         json={'email': '2@mail.com'},
+    )
+
+    assert response.status == 200
+
+    response = await service_client.post(
+        '/v1/clear-tasks',
     )
 
     assert response.status == 200
@@ -415,6 +427,13 @@ async def test_search_edit(service_client):
     )
 
     assert response.status == 200
+
+    response = await service_client.post(
+        '/v1/clear-tasks',
+    )
+
+    assert response.status == 200
+    
     response = await service_client.post(
         '/v1/search/full',
         json={'search_key': '+1111', 'limit': 1},
