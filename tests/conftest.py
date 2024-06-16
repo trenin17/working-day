@@ -41,9 +41,14 @@ def pgsql_local(service_source_dir, pgsql_local_create):
 def userver_config_pyservice(mockserver_info):
     def do_patch(config_yaml, config_vars):
         components = config_yaml['components_manager']['components']
+
         components['handler-v1-abscence-verdict'][
             'pyservice-url'
         ] = mockserver_info.url('document/generate')
+
+        components['handler-v1-documents-sign'][
+            'pyservice-url'
+        ] = mockserver_info.url('document/sign')
 
     return do_patch
     # /// [patch configs]
@@ -51,12 +56,16 @@ def userver_config_pyservice(mockserver_info):
 
 # /// [mockserver]
 @pytest.fixture(autouse=True)
-def mock_pyservice(mockserver):
+def mock_pyservice(mockserver) -> None:
     @mockserver.json_handler('/document/generate')
     def mock(request):
         return {
             'response': 'OK'
         }
 
-    return mock
+    @mockserver.json_handler('/document/sign')
+    def mock(request):
+        return {
+            'response': 'OK'
+        }
     # /// [mockserver]

@@ -351,6 +351,7 @@ components_manager:
                   - bearer
                 scopes:
                   - user
+            pyservice-url: 'http://python-service:3000/document/sign'
 
         handler-v1-documents-list-all:
             path: /v1/documents/list-all

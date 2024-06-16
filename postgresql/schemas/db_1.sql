@@ -18,8 +18,6 @@ CREATE TABLE IF NOT EXISTS wd_general.auth_tokens (
 
 CREATE EXTENSION pg_trgm;
 
-DROP SCHEMA IF EXISTS working_day_first CASCADE;
-
 CREATE SCHEMA IF NOT EXISTS working_day_first;
 
 CREATE TABLE IF NOT EXISTS working_day_first.employees (
@@ -29,18 +27,18 @@ CREATE TABLE IF NOT EXISTS working_day_first.employees (
     patronymic TEXT,
     password TEXT,
     head_id TEXT,
-    photo_link TEXT
+    photo_link TEXT,
+    phones TEXT[] NOT NULL DEFAULT ARRAY []::TEXT[],
+    email TEXT,
+    birthday TEXT,
+    role TEXT DEFAULT 'user',
+    position TEXT,
+    telegram_id TEXT,
+    vk_id TEXT,
+    team TEXT
 );
 
 CREATE INDEX idx_employee_by_head ON working_day_first.employees(head_id);
-
-ALTER TABLE working_day_first.employees
-ADD COLUMN IF NOT EXISTS phone TEXT,
-ADD COLUMN IF NOT EXISTS email TEXT,
-ADD COLUMN IF NOT EXISTS birthday TEXT,
-ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'user',
-ADD COLUMN IF NOT EXISTS position TEXT;
-
 DROP TABLE IF EXISTS working_day_first.notifications;
 
 CREATE TABLE IF NOT EXISTS working_day_first.notifications (
@@ -51,11 +49,11 @@ CREATE TABLE IF NOT EXISTS working_day_first.notifications (
     is_read BOOLEAN NOT NULL DEFAULT FALSE,
     sender_id TEXT,
     action_id TEXT,
-    created TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    created TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    FOREIGN KEY (user_id) REFERENCES working_day_first.employees (id) ON DELETE CASCADE
 );
 
 CREATE INDEX idx_notifications_by_user_id ON working_day_first.notifications(user_id);
-
 DROP TABLE IF EXISTS working_day_first.actions;
 
 CREATE TABLE IF NOT EXISTS working_day_first.actions (
@@ -64,7 +62,10 @@ CREATE TABLE IF NOT EXISTS working_day_first.actions (
     user_id TEXT NOT NULL,
     start_date TIMESTAMPTZ NOT NULL,
     end_date TIMESTAMPTZ NOT NULL,
-    status TEXT
+    status TEXT,
+    underlying_action_id TEXT,
+    blocking_actions_ids TEXT[] NOT NULL DEFAULT ARRAY []::TEXT[],
+    FOREIGN KEY (user_id) REFERENCES working_day_first.employees (id) ON DELETE CASCADE
 );
 
 CREATE INDEX idx_actions_by_user_id ON working_day_first.actions(user_id);
@@ -72,50 +73,51 @@ CREATE INDEX idx_actions_by_user_id ON working_day_first.actions(user_id);
 CREATE INDEX idx_actions_by_user_id_start_date ON working_day_first.actions(user_id ASC, start_date ASC);
 
 CREATE INDEX idx_actions_by_user_id_end_date ON working_day_first.actions(user_id ASC, end_date ASC);
-
-CREATE TABLE IF NOT EXISTS working_day_first.companies (
-    id TEXT PRIMARY KEY,
-    name TEXT NOT NULL,
-    ceo_id TEXT
-);
-
-ALTER TABLE working_day_first.actions
-ADD COLUMN IF NOT EXISTS underlying_action_id TEXT,
-ADD COLUMN IF NOT EXISTS blocking_actions_ids TEXT[] NOT NULL DEFAULT ARRAY []::TEXT[];
-
 DROP TABLE IF EXISTS working_day_first.payments;
 
 CREATE TABLE IF NOT EXISTS working_day_first.payments (
     id TEXT PRIMARY KEY NOT NULL,
     user_id TEXT NOT NULL,
     amount DOUBLE PRECISION NOT NULL,
-    payroll_date TIMESTAMPTZ NOT NULL
+    payroll_date TIMESTAMPTZ NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES working_day_first.employees (id) ON DELETE CASCADE
 );
 
 CREATE INDEX idx_payments_by_user_id ON working_day_first.payments(user_id);
-
-ALTER TABLE working_day_first.employees
-DROP COLUMN IF EXISTS phone,
-ADD COLUMN IF NOT EXISTS phones TEXT[] NOT NULL DEFAULT ARRAY []::TEXT[],
-ADD COLUMN IF NOT EXISTS telegram_id TEXT,
-ADD COLUMN IF NOT EXISTS vk_id TEXT,
-ADD COLUMN IF NOT EXISTS team TEXT;
-
 CREATE TABLE IF NOT EXISTS working_day_first.reverse_index (
     key TEXT PRIMARY KEY,
     ids TEXT[]
 );
 
 CREATE INDEX trgm_idx ON working_day_first.reverse_index USING GIST (key gist_trgm_ops);
-
 DROP TABLE IF EXISTS working_day_first.documents;
 
 CREATE TABLE IF NOT EXISTS working_day_first.documents (
     id TEXT PRIMARY KEY NOT NULL,
     name TEXT NOT NULL,
     sign_required BOOLEAN NOT NULL,
-    description TEXT
+    description TEXT,
+    type TEXT NOT NULL DEFAULT 'admin_request',
+    parent_id TEXT NOT NULL DEFAULT '',
+    FOREIGN KEY (parent_id) REFERENCES working_day_first.documents (id) ON DELETE CASCADE
 );
+
+CREATE INDEX idx_documents_by_parent_id ON working_day_first.documents(parent_id);
+
+CREATE OR REPLACE FUNCTION set_parent_id()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF NEW.parent_id = '' THEN
+        NEW.parent_id := NEW.id;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER before_insert_documents
+BEFORE INSERT ON working_day_first.documents
+FOR EACH ROW
+EXECUTE FUNCTION set_parent_id();
 
 DROP TABLE IF EXISTS working_day_first.employee_document;
 
@@ -123,10 +125,8 @@ CREATE TABLE IF NOT EXISTS working_day_first.employee_document (
   employee_id TEXT NOT NULL,
   document_id TEXT NOT NULL,
   signed BOOLEAN NOT NULL DEFAULT FALSE,
+  updated_ts TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   PRIMARY KEY (employee_id, document_id),
-  FOREIGN KEY (employee_id) REFERENCES working_day_first.employees (id),
-  FOREIGN KEY (document_id) REFERENCES working_day_first.documents (id)
+  FOREIGN KEY (employee_id) REFERENCES working_day_first.employees (id) ON DELETE CASCADE,
+  FOREIGN KEY (document_id) REFERENCES working_day_first.documents (id) ON DELETE CASCADE
 );
-
-ALTER TABLE working_day_first.documents
-ADD COLUMN IF NOT EXISTS type TEXT NOT NULL DEFAULT 'admin_request';

@@ -784,10 +784,11 @@ async def test_documents_send(service_client):
     assert response.status == 200
     assert response.text == (
         '{"signs":['
-        '{"employee":{"id":"first_id","name":"First","surname":"A"},'
-        '"signed":true},'
         '{"employee":{"id":"second_id","name":"Second","surname":"B"},'
-        '"signed":false}]}')
+        '"signed":false},'
+        '{"employee":{"id":"first_id","name":"First","surname":"A"},'
+        '"signed":true}'
+        ']}')
 
 
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])

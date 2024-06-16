@@ -2,47 +2,23 @@ import xml.etree.ElementTree as ET
 from docx import Document
 from docx.oxml.ns import nsdecls
 from docx.oxml import parse_xml
-import boto3
-import json
-import base64
 from datetime import datetime
 import subprocess
 from aiohttp import web
 from sign_document.stamp import create_stamp, StampData
+from python_service.s3_client.aws_utils import upload_and_presign
+from threading import Lock
 
-storage_client = None
+mutex = Lock()
 
 def convert_docx_to_pdf(docx_path, output_pdf_path):
-    cmd = [
-        'libreoffice', '--headless', '--convert-to', 'pdf', '--outdir',
-        output_pdf_path, docx_path
-    ]
-    subprocess.run(cmd, check=True)
+    with mutex:
+        cmd = [
+            'libreoffice', '--headless', '--convert-to', 'pdf', '--outdir',
+            output_pdf_path, docx_path
+        ]
+        subprocess.run(cmd, check=True)
 
-def get_boto_session():
-    boto_session = boto3.session.Session(
-        aws_access_key_id='YCAJESGfHPZvOGYgqBjDkrLCZ',
-        aws_secret_access_key='YCOFwp-4AxDaEEKeDBPx6YVuvU8Bqx-Z3hcQdIR8'
-    )
-    return boto_session
-
-def get_storage_client():
-    global storage_client
-    if storage_client is not None:
-        return storage_client
-
-    storage_client = get_boto_session().client(
-        service_name='s3',
-        endpoint_url='https://storage.yandexcloud.net',
-        region_name='ru-central1'
-    )
-    return storage_client
-
-def upload_and_presign(file_path, object_name):
-    client = get_storage_client()
-    bucket = 'trenin17-results'
-    client.upload_file(file_path, bucket, object_name)
-    return client.generate_presigned_url('get_object', Params={'Bucket': bucket, 'Key': object_name}, ExpiresIn=3600)
 
 def plural_form(number, first, second, third):
     one_digit = number % 10
@@ -114,6 +90,7 @@ async def generate_document(request):
         data = await request.json()
         request_type = data['request_type']
 
+        employee_id = data['employee_id']
         employee_name = data['employee_name']
         employee_surname = data['employee_surname']
         employee_patronymic = data.get('employee_patronymic', "")
@@ -180,7 +157,8 @@ async def generate_document(request):
         convert_docx_to_pdf(output_path_word, '/tmp')
 
         output_path_pdf_signed = '/tmp/' + file_key + '_signed.pdf'
-        stamp_data = StampData(now_date, employee_name + ' ' + employee_surname, 'organization', 'employee_id', file_key)
+        # TODO: change company name
+        stamp_data = StampData(now_date, employee_initials, 'ЕСВ.ТЕХНОЛОДЖИ-ПЛЮС', employee_id, file_key)
         create_stamp(output_path_pdf, output_path_pdf_signed, stamp_data)
 
         url = upload_and_presign(output_path_pdf_signed, file_key + '.pdf')

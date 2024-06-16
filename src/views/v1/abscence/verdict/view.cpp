@@ -98,8 +98,9 @@ void GenerateVacationDocument(
 
   trx.Commit();
 
-  LinkRequest link_request;
+  PyserviceDocumentGenerateRequest link_request;
   link_request.request_type = request_type;
+  link_request.employee_id = action_info.employee_id;
   link_request.employee_name = employee_info.name;
   link_request.employee_surname = employee_info.surname;
   link_request.head_name = head_info.name;

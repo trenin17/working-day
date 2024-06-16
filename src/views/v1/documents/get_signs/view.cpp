@@ -48,29 +48,17 @@ class DocumentsGetSignsHandler final
     auto result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kMaster,
         "SELECT ROW "
-        "(working_day_" +
-            company_id + ".employees.id, working_day_" + company_id +
-            ".employees.name, "
-            "working_day_" +
-            company_id + ".employees.surname, working_day_" + company_id +
-            ".employees.patronymic, "
-            "working_day_" +
-            company_id +
-            ".employees.photo_link), "
-            "working_day_" +
-            company_id +
-            ".employee_document.signed "
+        "(e.id, e.name, e.surname, e.patronymic, "
+            "e.photo_link), ed.signed "
             "FROM working_day_" +
             company_id +
-            ".employees "
+            ".employees e "
             "JOIN working_day_" +
-            company_id + ".employee_document ON working_day_" + company_id +
-            ".employees.id = "
-            "working_day_" +
-            company_id +
-            ".employee_document.employee_id "
-            "WHERE working_day_" +
-            company_id + ".employee_document.document_id = $1",
+            company_id + ".employee_document ed ON e.id = "
+            "ed.employee_id "
+            "JOIN working_day_" +
+            company_id + ".documents d ON ed.document_id = d.id "
+            "WHERE d.parent_id = $1",
         document_id);
 
     DocumentsGetSignsResponse response;

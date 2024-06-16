@@ -7,8 +7,8 @@
 
 namespace utils::s3_presigned_links {
 
-std::string GeneratePhotoPresignedLink(const std::string& key,
-                                       const LinkType type) {
+std::string GeneratePresignedLink(const std::string& key,
+                                       const LinkType type, const std::string& bucket) {
   std::string result;
 
   {
@@ -16,7 +16,7 @@ std::string GeneratePhotoPresignedLink(const std::string& key,
     config.region = Aws::String("ru-central1");
     config.endpointOverride = Aws::String("https://storage.yandexcloud.net");
 
-    Aws::String bucket_name = "trenin17-results";
+    Aws::String bucket_name = bucket;
     Aws::S3::S3Client s3_client(config);
 
     switch (type) {
@@ -36,6 +36,16 @@ std::string GeneratePhotoPresignedLink(const std::string& key,
   }
 
   return result;
+}
+
+std::string GeneratePhotoPresignedLink(const std::string& key,
+                                       const LinkType type) {
+  return GeneratePresignedLink(key, type, "working-day-photos");
+}
+
+std::string GenerateDocumentPresignedLink(const std::string& key,
+                                          const LinkType type) {
+  return GeneratePresignedLink(key, type, "working-day-documents");
 }
 
 }  // namespace utils::s3_presigned_links

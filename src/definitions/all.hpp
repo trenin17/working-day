@@ -122,13 +122,19 @@
 #endif
 
 #ifdef V1_DOCUMENTS_VACATION
-#define USE_LINK_REQUEST
+#define USE_PYSERVICE_DOCUMENT_GENERATE_REQUEST
 #define USE_ERROR_MESSAGE
 #endif
 
 #ifdef V1_ABSCENCE_VERDICT
-#define USE_LINK_REQUEST
+#define USE_PYSERVICE_DOCUMENT_GENERATE_REQUEST
 #define USE_ABSCENCE_VERDICT_REQUEST
+#endif
+
+#ifdef V1_DOCUMENTS_SIGN
+#define USE_LIST_EMPLOYEE
+#define USE_PYSERVICE_DOCUMENT_SIGN_REQUEST
+#define USE_ERROR_MESSAGE
 #endif
 
 #ifdef USE_LIST_EMPLOYEE
@@ -403,9 +409,10 @@ struct AuthorizeResponse : public JsonCompatible {
 };
 #endif
 
-#ifdef USE_LINK_REQUEST
-struct LinkRequest : public JsonCompatible {
+#ifdef USE_PYSERVICE_DOCUMENT_GENERATE_REQUEST
+struct PyserviceDocumentGenerateRequest : public JsonCompatible {
   REGISTER_STRUCT_FIELD(request_type, std::string, "request_type");
+  REGISTER_STRUCT_FIELD(employee_id, std::string, "employee_id");
   REGISTER_STRUCT_FIELD(employee_name, std::string, "employee_name");
   REGISTER_STRUCT_FIELD(employee_surname, std::string, "employee_surname");
   REGISTER_STRUCT_FIELD(head_name, std::string, "head_name");
@@ -435,5 +442,17 @@ struct AbscenceVerdictRequest : public JsonCompatible {
   REGISTER_STRUCT_FIELD_OPTIONAL(notification_id, std::string,
                                  "notification_id");
   REGISTER_STRUCT_FIELD(approve, bool, "approve");
+};
+#endif
+
+#ifdef USE_PYSERVICE_DOCUMENT_SIGN_REQUEST
+struct PyserviceDocumentSignRequest : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(employee_id, std::string, "employee_id");
+  REGISTER_STRUCT_FIELD(employee_name, std::string, "employee_name");
+  REGISTER_STRUCT_FIELD(employee_surname, std::string, "employee_surname");
+  REGISTER_STRUCT_FIELD_OPTIONAL(employee_patronymic, std::string,
+                                 "employee_patronymic");
+  REGISTER_STRUCT_FIELD(file_key, std::string, "file_key");
+  REGISTER_STRUCT_FIELD(signed_file_key, std::string, "signed_file_key");
 };
 #endif
