@@ -42,8 +42,10 @@ core::reverse_index::EmployeeAllData FetchOldData(
                        "CASE WHEN $5 IS NULL THEN NULL ELSE telegram_id END, "
                        "CASE WHEN $6 IS NULL THEN NULL ELSE vk_id END, "
                        "CASE WHEN $7 IS NULL THEN NULL ELSE team END "
-                       "FROM working_day.employees "
-                       "WHERE id = $1; ",
+                       "FROM working_day_" +
+                           data.company_id.value() +
+                           ".employees "
+                           "WHERE id = $1; ",
                        data.employee_id, data.phones, data.email, data.birthday,
                        data.telegram_id, data.vk_id, data.team);
 
@@ -54,7 +56,7 @@ core::reverse_index::EmployeeAllData FetchOldData(
       data.employee_id,    std::nullopt,           std::nullopt,
       std::nullopt,        std::nullopt,           old_values.email,
       old_values.birthday, old_values.telegram_id, old_values.vk_id,
-      old_values.team,     old_values.phones};
+      old_values.team,     data.company_id,        old_values.phones};
 
   return data_old;
 }
@@ -88,9 +90,10 @@ core::reverse_index::ReverseIndexResponse EditReverseIndexFunc(
   if (parameters.Size() > 1) {
     auto result =
         cluster->Execute(userver::storages::postgres::ClusterHostType::kMaster,
-                         "UPDATE working_day.reverse_index "
-                         "SET ids = array_remove(ids, $1) "
-                         "WHERE key IN " +
+                         "UPDATE working_day_" + old_data.company_id.value() +
+                             ".reverse_index "
+                             "SET ids = array_remove(ids, $1) "
+                             "WHERE key IN " +
                              filter + "); ",
                          parameters);
   }
@@ -120,20 +123,24 @@ core::reverse_index::ReverseIndexResponse EditReverseIndexFunc(
   }
 
   if (parameters2.Size() > 1) {
-    auto result2 = cluster->Execute(
-        userver::storages::postgres::ClusterHostType::kMaster,
-        "WITH input_data AS ( "
-        "  SELECT ARRAY" +
-            filter2 +
-            "] AS keys, $1 AS id "
-            ") "
-            "INSERT INTO working_day.reverse_index (key, ids) "
-            "SELECT key, ARRAY[id] AS ids "
-            "FROM input_data, LATERAL unnest(keys) AS key "
-            "ON CONFLICT (key) DO UPDATE "
-            "SET ids = array_append(working_day.reverse_index.ids, "
-            "EXCLUDED.ids[1]); ",
-        parameters2);
+    auto result2 =
+        cluster->Execute(userver::storages::postgres::ClusterHostType::kMaster,
+                         "WITH input_data AS ( "
+                         "  SELECT ARRAY" +
+                             filter2 +
+                             "] AS keys, $1 AS id "
+                             ") "
+                             "INSERT INTO working_day_" +
+                             old_data.company_id.value() +
+                             ".reverse_index (key, ids) "
+                             "SELECT key, ARRAY[id] AS ids "
+                             "FROM input_data, LATERAL unnest(keys) AS key "
+                             "ON CONFLICT (key) DO UPDATE "
+                             "SET ids = array_append(working_day_" +
+                             old_data.company_id.value() +
+                             ".reverse_index.ids, "
+                             "EXCLUDED.ids[1]); ",
+                         parameters2);
   }
 
   core::reverse_index::ReverseIndexResponse response(new_data.employee_id);
@@ -164,6 +171,7 @@ class ProfileEditHandler final
         static_cast<std::string>("Access-Control-Allow-Headers"), "*");
 
     const auto& user_id = ctx.GetData<std::string>("user_id");
+    const auto& company_id = ctx.GetData<std::string>("company_id");
 
     ProfileEditRequest request_body;
     request_body.ParseRegisteredFields(request.RequestBody());
@@ -178,6 +186,7 @@ class ProfileEditHandler final
                                                   request_body.telegram_id,
                                                   request_body.vk_id,
                                                   request_body.team,
+                                                  company_id,
                                                   request_body.phones};
 
     core::reverse_index::EmployeeAllData data_old =
@@ -194,15 +203,16 @@ class ProfileEditHandler final
 
     auto result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kMaster,
-        "UPDATE working_day.employees "
-        "SET phones = case when $2 is null then phones else $2 end, "
-        "email = case when $3 is null then email else $3 end, "
-        "birthday = case when $4 is null then birthday else $4 end, "
-        "password = case when $5 is null then password else $5 end, "
-        "telegram_id = case when $6 is null then telegram_id else $6 end, "
-        "vk_id = case when $7 is null then vk_id else $7 end, "
-        "team = case when $8 is null then team else $8 end "
-        "WHERE id = $1",
+        "UPDATE working_day_" + company_id +
+            ".employees "
+            "SET phones = case when $2 is null then phones else $2 end, "
+            "email = case when $3 is null then email else $3 end, "
+            "birthday = case when $4 is null then birthday else $4 end, "
+            "password = case when $5 is null then password else $5 end, "
+            "telegram_id = case when $6 is null then telegram_id else $6 end, "
+            "vk_id = case when $7 is null then vk_id else $7 end, "
+            "team = case when $8 is null then team else $8 end "
+            "WHERE id = $1",
         user_id, request_body.phones, request_body.email, request_body.birthday,
         request_body.password, request_body.telegram_id, request_body.vk_id,
         request_body.team);

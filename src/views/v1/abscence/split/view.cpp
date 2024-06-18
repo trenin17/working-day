@@ -96,6 +96,7 @@ class AbscenceSplitHandler final
 
     AbscenceSplitRequest request_body(request.RequestBody());
     auto user_id = ctx.GetData<std::string>("user_id");
+    auto company_id = ctx.GetData<std::string>("company_id");
 
     std::string notification_text = "Unknown notification";
 
@@ -107,8 +108,10 @@ class AbscenceSplitHandler final
     auto action_to_split =
         trx.Execute(
                "SELECT id, type, start_date, end_date, status "
-               "FROM working_day.actions "
-               "WHERE id = $1",
+               "FROM working_day_" +
+                   company_id +
+                   ".actions "
+                   "WHERE id = $1",
                request_body.action_id)
             .AsSingleRow<UserAction>(userver::storages::postgres::kRowTag);
     auto action_status = action_to_split.status;
@@ -125,43 +128,46 @@ class AbscenceSplitHandler final
     auto second_action_id = userver::utils::generators::GenerateUuid();
 
     auto result = trx.Execute(
-        "INSERT INTO working_day.actions(id, type, user_id, start_date, "
-        "end_date, status, underlying_action_id) "
-        "VALUES($1, $2, $3, $4, $5, $6, $7), "
-        "($8, $9, $10, $11, $12, $13, $14) "
-        "ON CONFLICT (id) "
-        "DO NOTHING",
+        "INSERT INTO working_day_" + company_id +
+            ".actions(id, type, user_id, start_date, "
+            "end_date, status, underlying_action_id) "
+            "VALUES($1, $2, $3, $4, $5, $6, $7), "
+            "($8, $9, $10, $11, $12, $13, $14) "
+            "ON CONFLICT (id) "
+            "DO NOTHING",
         first_action_id, action_to_split.type, user_id,
         action_to_split.start_date, request_body.split_date + 1439min,
         action_status, request_body.action_id, second_action_id,
         action_to_split.type, user_id, request_body.split_date + 1440min,
         action_to_split.end_date, action_status, request_body.action_id);
 
-    result = trx.Execute(
-        "UPDATE working_day.actions "
-        "SET blocking_actions_ids = $2 "
-        "WHERE id = $1",
-        request_body.action_id, std::vector{first_action_id, second_action_id});
+    result = trx.Execute("UPDATE working_day_" + company_id +
+                             ".actions "
+                             "SET blocking_actions_ids = $2 "
+                             "WHERE id = $1",
+                         request_body.action_id,
+                         std::vector{first_action_id, second_action_id});
 
     auto notification_id = userver::utils::generators::GenerateUuid();
-    result = trx.Execute(
-        "INSERT INTO working_day.notifications(id, type, text, user_id, "
-        "sender_id, action_id) "
-        "VALUES($1, $2, $3, $4, $5, $6) "
-        "ON CONFLICT (id) "
-        "DO NOTHING",
-        notification_id, action_to_split.type + "_split",
-        "Ваш отпуск с " +
-            userver::utils::datetime::Timestring(action_to_split.start_date,
-                                                 "UTC", "%d.%m.%Y") +
-            " был разделен на две части.",
-        user_id, user_id, request_body.action_id);
+    result =
+        trx.Execute("INSERT INTO working_day_" + company_id +
+                        ".notifications(id, type, text, user_id, "
+                        "sender_id, action_id) "
+                        "VALUES($1, $2, $3, $4, $5, $6) "
+                        "ON CONFLICT (id) "
+                        "DO NOTHING",
+                    notification_id, action_to_split.type + "_split",
+                    "Ваш отпуск с " +
+                        userver::utils::datetime::Timestring(
+                            action_to_split.start_date, "UTC", "%d.%m.%Y") +
+                        " был разделен на две части.",
+                    user_id, user_id, request_body.action_id);
 
     /* TODO
     auto head_id =
         trx.Execute(
                "SELECT head_id "
-               "FROM working_day.employees "
+               "FROM working_day_" + company_id + ".employees "
                "WHERE id = $1",
                user_id)
             .AsSingleRow<HeadId>(userver::storages::postgres::kRowTag)
@@ -180,9 +186,8 @@ class AbscenceSplitHandler final
     if (request_body.type == "vacation") {
       auto notification_id = userver::utils::generators::GenerateUuid();
       result = trx.Execute(
-          "INSERT INTO working_day.notifications(id, type, text, user_id, "
-          "sender_id, action_id) "
-          "VALUES($1, $2, $3, $4, $5, $6) "
+          "INSERT INTO working_day_" + company_id + ".notifications(id, type,
+    text, user_id, " "sender_id, action_id) " "VALUES($1, $2, $3, $4, $5, $6) "
           "ON CONFLICT (id) "
           "DO NOTHING",
           notification_id, request_body.type + "_request", notification_text,

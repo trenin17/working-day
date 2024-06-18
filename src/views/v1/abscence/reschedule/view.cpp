@@ -96,6 +96,7 @@ class AbscenceRescheduleHandler final
 
     AbscenceRescheduleRequest request_body(request.RequestBody());
     auto user_id = ctx.GetData<std::string>("user_id");
+    auto company_id = ctx.GetData<std::string>("company_id");
 
     std::string notification_text = "Unknown notification";
 
@@ -107,8 +108,10 @@ class AbscenceRescheduleHandler final
     auto action_to_reschedule =
         trx.Execute(
                "SELECT id, type, start_date, end_date, status, user_id "
-               "FROM working_day.actions "
-               "WHERE id = $1",
+               "FROM working_day_" +
+                   company_id +
+                   ".actions "
+                   "WHERE id = $1",
                request_body.action_id)
             .AsSingleRow<UserAction>(userver::storages::postgres::kRowTag);
     auto action_status = action_to_reschedule.status;
@@ -116,22 +119,23 @@ class AbscenceRescheduleHandler final
     auto new_action_id = userver::utils::generators::GenerateUuid();
 
     auto result = trx.Execute(
-        "INSERT INTO working_day.actions(id, type, user_id, start_date, "
-        "end_date, status, underlying_action_id) "
-        "VALUES($1, $2, $3, $4, $5, $6, $7) "
-        "ON CONFLICT (id) "
-        "DO NOTHING",
+        "INSERT INTO working_day_" + company_id +
+            ".actions(id, type, user_id, start_date, "
+            "end_date, status, underlying_action_id) "
+            "VALUES($1, $2, $3, $4, $5, $6, $7) "
+            "ON CONFLICT (id) "
+            "DO NOTHING",
         new_action_id, action_to_reschedule.type, user_id,
         request_body.reschedule_date,
         request_body.reschedule_date +
             (action_to_reschedule.end_date - action_to_reschedule.start_date),
         action_status, request_body.action_id);
 
-    result = trx.Execute(
-        "UPDATE working_day.actions "
-        "SET blocking_actions_ids = $2 "
-        "WHERE id = $1",
-        request_body.action_id, std::vector{new_action_id});
+    result = trx.Execute("UPDATE working_day_" + company_id +
+                             ".actions "
+                             "SET blocking_actions_ids = $2 "
+                             "WHERE id = $1",
+                         request_body.action_id, std::vector{new_action_id});
 
     std::string sender_id = user_id;
     if (user_id == action_to_reschedule.user_id) {
@@ -148,7 +152,7 @@ class AbscenceRescheduleHandler final
       auto head_id =
           trx.Execute(
                 "SELECT head_id "
-                "FROM working_day.employees "
+                "FROM working_day_" + company_id + ".employees "
                 "WHERE id = $1",
                 user_id)
               .AsSingleRow<HeadId>(userver::storages::postgres::kRowTag)
@@ -167,20 +171,20 @@ class AbscenceRescheduleHandler final
       if (request_body.type == "vacation") {
         auto notification_id = userver::utils::generators::GenerateUuid();
         result = trx.Execute(
-            "INSERT INTO working_day.notifications(id, type, text, user_id, "
-            "sender_id, action_id) "
-            "VALUES($1, $2, $3, $4, $5, $6) "
-            "ON CONFLICT (id) "
-            "DO NOTHING",
-            notification_id, request_body.type + "_request", notification_text,
-            head_id.value_or(user_id), user_id, action_id);
+            "INSERT INTO working_day_" + company_id + ".notifications(id, type,
+      text, user_id, " "sender_id, action_id) " "VALUES($1, $2, $3, $4, $5, $6)
+      " "ON CONFLICT (id) " "DO NOTHING", notification_id, request_body.type +
+      "_request", notification_text, head_id.value_or(user_id), user_id,
+      action_id);
       } */
     } else {
       auto head_id =
           trx.Execute(
                  "SELECT head_id "
-                 "FROM working_day.employees "
-                 "WHERE id = $1",
+                 "FROM working_day_" +
+                     company_id +
+                     ".employees "
+                     "WHERE id = $1",
                  user_id)
               .AsSingleRow<HeadId>(userver::storages::postgres::kRowTag)
               .head_id;
@@ -198,11 +202,12 @@ class AbscenceRescheduleHandler final
     }
     auto notification_id = userver::utils::generators::GenerateUuid();
     result = trx.Execute(
-        "INSERT INTO working_day.notifications(id, type, text, user_id, "
-        "sender_id, action_id) "
-        "VALUES($1, $2, $3, $4, $5, $6) "
-        "ON CONFLICT (id) "
-        "DO NOTHING",
+        "INSERT INTO working_day_" + company_id +
+            ".notifications(id, type, text, user_id, "
+            "sender_id, action_id) "
+            "VALUES($1, $2, $3, $4, $5, $6) "
+            "ON CONFLICT (id) "
+            "DO NOTHING",
         notification_id, action_to_reschedule.type + "_reschedule",
         notification_text, user_id, sender_id, request_body.action_id);
 

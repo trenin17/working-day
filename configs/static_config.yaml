@@ -88,6 +88,7 @@ components_manager:
                   - bearer
                 scopes:
                   - admin
+                  - superuser
 
         handler-v1-employee-add-head:
             path: /v1/employee/add-head           
@@ -173,6 +174,7 @@ components_manager:
                   - bearer
                 scopes:
                   - user
+            pyservice-url: 'http://python-service:3000/document/generate'
 
         handler-v1-notifications:
             path: /v1/notifications
@@ -349,6 +351,7 @@ components_manager:
                   - bearer
                 scopes:
                   - user
+            pyservice-url: 'http://python-service:3000/document/sign'
 
         handler-v1-documents-list-all:
             path: /v1/documents/list-all
@@ -370,6 +373,17 @@ components_manager:
                 scopes:
                   - admin
 
+        handler-v1-superuser-company-add:
+            path: /v1/superuser/company/add
+            method: POST
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - superuser
+            db: $dbconnection
+
         handler-implicit-http-options:
             as_fallback: implicit-http-options
             method: OPTIONS
@@ -386,8 +400,9 @@ components_manager:
             pgcomponent: key-value
             update-types: full-and-incremental
             full-update-interval: 1h
-            update-interval: 1m
+            update-interval: 10m
             update-correction: 0
+            chunk-size: 0
 
         dns-client:
             fs-task-processor: fs-task-processor

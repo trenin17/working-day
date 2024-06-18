@@ -46,6 +46,7 @@
 #include "views/v1/search/basic/view.hpp"
 #include "views/v1/search/full/view.hpp"
 #include "views/v1/search/suggest/view.hpp"
+#include "views/v1/superuser/company/add/view.hpp"
 
 int main(int argc, char* argv[]) {
   Aws::SDKOptions options;
@@ -98,6 +99,7 @@ int main(int argc, char* argv[]) {
   views::v1::documents::sign::AppendDocumentsSign(component_list);
   views::v1::documents::list_all::AppendDocumentsListAll(component_list);
   views::v1::documents::get_signs::AppendDocumentsGetSigns(component_list);
+  views::v1::superuser::company::add::AppendSuperuserCompanyAdd(component_list);
 
   int err_code = userver::utils::DaemonMain(argc, argv, component_list);
 

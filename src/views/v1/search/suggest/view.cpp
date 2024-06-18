@@ -101,6 +101,8 @@ class SearchSuggestHandler final
     request.GetHttpResponse().SetHeader(
         static_cast<std::string>("Access-Control-Allow-Headers"), "*");
 
+    const auto& company_id = ctx.GetData<std::string>("company_id");
+
     // lambda to add parameters
     auto append = [](const auto& value,
                      userver::storages::postgres::ParameterStore& parameters,
@@ -128,8 +130,10 @@ class SearchSuggestHandler final
       auto result1 = pg_cluster_->Execute(
           userver::storages::postgres::ClusterHostType::kMaster,
           "SELECT ids "
-          "FROM working_day.reverse_index "
-          "WHERE key IN " +
+          "FROM working_day_" +
+              company_id +
+              ".reverse_index "
+              "WHERE key IN " +
               filter + ");",
           parameters);
 
@@ -140,8 +144,10 @@ class SearchSuggestHandler final
     auto result2 = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kMaster,
         "SELECT ids "
-        "FROM working_day.reverse_index "
-        "WHERE key LIKE '" +
+        "FROM working_day_" +
+            company_id +
+            ".reverse_index "
+            "WHERE key LIKE '" +
             search_keys[search_keys.size() - 1] +
             "%' "
             "ORDER BY key;");
@@ -169,8 +175,10 @@ class SearchSuggestHandler final
       auto result = pg_cluster_->Execute(
           userver::storages::postgres::ClusterHostType::kMaster,
           "SELECT id, name, surname, patronymic, photo_link "
-          "FROM working_day.employees "
-          "WHERE id IN " +
+          "FROM working_day_" +
+              company_id +
+              ".employees "
+              "WHERE id IN " +
               filter_fetch + ");",
           parameters_fetch);
 

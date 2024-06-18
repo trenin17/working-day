@@ -20,7 +20,7 @@ class EmployeeAllData {
  public:
   std::string employee_id;
   std::optional<std::string> name, surname, patronymic, role, email, birthday,
-      telegram_id, vk_id, team;
+      telegram_id, vk_id, team, company_id;
   std::optional<std::vector<std::string>> phones;
 };
 

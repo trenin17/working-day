@@ -67,6 +67,7 @@ class AttendanceAddHandler final
     AttendanceAddRequest request_body(request.RequestBody());
     auto employee_id = request.GetArg("employee_id");
     auto user_id = ctx.GetData<std::string>("user_id");
+    auto company_id = ctx.GetData<std::string>("company_id");
 
     std::string notification_text = "Вам добавлено новое посещение";
 
@@ -74,31 +75,33 @@ class AttendanceAddHandler final
         "add_attendance", userver::storages::postgres::ClusterHostType::kMaster,
         {});
 
-    auto result = trx.Execute(
-        "DELETE FROM working_day.actions "
-        "WHERE user_id = $1 AND type = $2 AND DATE(start_date) = DATE($3) AND "
-        "DATE(end_date) = DATE($3)",
-        employee_id, "attendance", request_body.start_date);
+    auto result =
+        trx.Execute("DELETE FROM working_day_" + company_id +
+                        ".actions "
+                        "WHERE user_id = $1 AND type = $2 AND DATE(start_date) "
+                        "= DATE($3) AND "
+                        "DATE(end_date) = DATE($3)",
+                    employee_id, "attendance", request_body.start_date);
 
     auto action_id = userver::utils::generators::GenerateUuid();
-    result = trx.Execute(
-        "INSERT INTO working_day.actions(id, type, user_id, start_date, "
-        "end_date) "
-        "VALUES($1, $2, $3, $4, $5) "
-        "ON CONFLICT (id) "
-        "DO NOTHING",
-        action_id, "attendance", employee_id, request_body.start_date,
-        request_body.end_date);
+    result = trx.Execute("INSERT INTO working_day_" + company_id +
+                             ".actions(id, type, user_id, start_date, "
+                             "end_date) "
+                             "VALUES($1, $2, $3, $4, $5) "
+                             "ON CONFLICT (id) "
+                             "DO NOTHING",
+                         action_id, "attendance", employee_id,
+                         request_body.start_date, request_body.end_date);
 
     auto notification_id = userver::utils::generators::GenerateUuid();
-    result = trx.Execute(
-        "INSERT INTO working_day.notifications(id, type, text, user_id, "
-        "sender_id) "
-        "VALUES($1, $2, $3, $4, $5) "
-        "ON CONFLICT (id) "
-        "DO NOTHING",
-        notification_id, "attendance_added", notification_text, employee_id,
-        user_id);
+    result = trx.Execute("INSERT INTO working_day_" + company_id +
+                             ".notifications(id, type, text, user_id, "
+                             "sender_id) "
+                             "VALUES($1, $2, $3, $4, $5) "
+                             "ON CONFLICT (id) "
+                             "DO NOTHING",
+                         notification_id, "attendance_added", notification_text,
+                         employee_id, user_id);
 
     trx.Commit();
 

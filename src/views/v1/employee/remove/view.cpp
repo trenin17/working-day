@@ -34,8 +34,10 @@ core::reverse_index::ReverseIndexResponse DeleteReverseIndexFunc(
       cluster->Execute(userver::storages::postgres::ClusterHostType::kMaster,
                        "SELECT name, surname, role, patronymic, phones, "
                        "email, birthday, telegram_id, vk_id, team "
-                       "FROM working_day.employees "
-                       "WHERE id = $1;",
+                       "FROM working_day_" +
+                           data.company_id.value() +
+                           ".employees "
+                           "WHERE id = $1;",
                        data.employee_id);
 
   auto values_res =
@@ -64,14 +66,17 @@ core::reverse_index::ReverseIndexResponse DeleteReverseIndexFunc(
 
   auto result2 =
       cluster->Execute(userver::storages::postgres::ClusterHostType::kMaster,
-                       "UPDATE working_day.reverse_index "
-                       "SET ids = array_remove(ids, $1) "
-                       "WHERE key IN " +
+                       "UPDATE working_day_" + data.company_id.value() +
+                           ".reverse_index "
+                           "SET ids = array_remove(ids, $1) "
+                           "WHERE key IN " +
                            filter +
                            "); "
-                           "DELETE FROM working_day.reverse_index "
+                           "DELETE FROM working_day_" +
+                           data.company_id.value() +
+                           ".reverse_index "
                            "WHERE key IN " +
-                           filter + "); AND ids = '{}'; ",
+                           filter + ") AND ids = '{}'; ",
                        parameters);
 
   core::reverse_index::ReverseIndexResponse response(data.employee_id);
@@ -94,7 +99,7 @@ class RemoveEmployeeHandler final
 
   std::string HandleRequestThrow(
       const userver::server::http::HttpRequest& request,
-      userver::server::request::RequestContext&) const override {
+      userver::server::request::RequestContext& ctx) const override {
     // CORS
     request.GetHttpResponse().SetHeader(
         static_cast<std::string>("Access-Control-Allow-Origin"), "*");
@@ -102,6 +107,7 @@ class RemoveEmployeeHandler final
         static_cast<std::string>("Access-Control-Allow-Headers"), "*");
 
     const auto& employee_id = request.GetArg("employee_id");
+    const auto company_id = ctx.GetData<std::string>("company_id");
 
     if (employee_id.empty()) {
       request.GetHttpResponse().SetStatus(
@@ -111,6 +117,7 @@ class RemoveEmployeeHandler final
     }
 
     core::reverse_index::EmployeeAllData data{employee_id};
+    data.company_id = company_id;
 
     userver::storages::postgres::ClusterPtr cluster = pg_cluster_;
     core::reverse_index::ReverseIndexRequest r_index_request{
@@ -122,8 +129,9 @@ class RemoveEmployeeHandler final
 
     auto result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kMaster,
-        "DELETE FROM working_day.employees "
-        "WHERE id = $1",
+        "DELETE FROM working_day_" + company_id +
+            ".employees "
+            "WHERE id = $1",
         employee_id);
 
     return "";

@@ -38,7 +38,7 @@ class DocumentsDownloadHandler final
     // const auto& user_id = ctx.GetData<std::string>("user_id");
     const auto& document_id = request.GetArg("id");
 
-    auto download_link = utils::s3_presigned_links::GeneratePhotoPresignedLink(
+    auto download_link = utils::s3_presigned_links::GenerateDocumentPresignedLink(
         document_id, utils::s3_presigned_links::Download);
 
     DownloadDocumentResponse response;

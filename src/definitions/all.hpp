@@ -111,6 +111,32 @@
 #define USE_USER_ACTION
 #endif
 
+#ifdef V1_SUPERUSER_COMPANY_ADD
+#define USE_SUPERUSER_COMPANY_ADD_REQUEST
+#endif
+
+#ifdef V1_AUTHORIZE
+#define USE_AUTHORIZE_REQUEST
+#define USE_AUTHORIZE_RESPONSE
+#define USE_ERROR_MESSAGE
+#endif
+
+#ifdef V1_DOCUMENTS_VACATION
+#define USE_PYSERVICE_DOCUMENT_GENERATE_REQUEST
+#define USE_ERROR_MESSAGE
+#endif
+
+#ifdef V1_ABSCENCE_VERDICT
+#define USE_PYSERVICE_DOCUMENT_GENERATE_REQUEST
+#define USE_ABSCENCE_VERDICT_REQUEST
+#endif
+
+#ifdef V1_DOCUMENTS_SIGN
+#define USE_LIST_EMPLOYEE
+#define USE_PYSERVICE_DOCUMENT_SIGN_REQUEST
+#define USE_ERROR_MESSAGE
+#endif
+
 #ifdef USE_LIST_EMPLOYEE
 struct ListEmployee : public JsonCompatible {
   // For postgres initialization type needs to be default constructible
@@ -140,6 +166,7 @@ struct AddEmployeeRequest : public JsonCompatible {
   REGISTER_STRUCT_FIELD(surname, std::string, "surname");
   REGISTER_STRUCT_FIELD(role, std::string, "role");
   REGISTER_STRUCT_FIELD_OPTIONAL(patronymic, std::string, "patronymic");
+  REGISTER_STRUCT_FIELD_OPTIONAL(company_id, std::string, "company_id");
 };
 #endif
 
@@ -353,5 +380,79 @@ struct ActionsRequest : public JsonCompatible {
   REGISTER_STRUCT_FIELD(from, userver::storages::postgres::TimePoint, "from");
   REGISTER_STRUCT_FIELD(to, userver::storages::postgres::TimePoint, "to");
   REGISTER_STRUCT_FIELD_OPTIONAL(employee_id, std::string, "employee_id");
+};
+#endif
+
+#ifdef USE_SUPERUSER_COMPANY_ADD_REQUEST
+struct SuperuserCompanyAddRequest : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(company_id, std::string, "company_id");
+};
+#endif
+
+#ifdef USE_AUTHORIZE_REQUEST
+struct AuthorizeRequest : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(login, std::string, "login");
+  REGISTER_STRUCT_FIELD(password, std::string, "password");
+  REGISTER_STRUCT_FIELD(company_id, std::string, "company_id");
+};
+#endif
+
+#ifdef USE_AUTHORIZE_RESPONSE
+struct AuthorizeResponse : public JsonCompatible {
+  AuthorizeResponse(const std::string& token_, const std::string& role_) {
+    token = token_;
+    role = role_;
+  }
+
+  REGISTER_STRUCT_FIELD(token, std::string, "token");
+  REGISTER_STRUCT_FIELD(role, std::string, "role");
+};
+#endif
+
+#ifdef USE_PYSERVICE_DOCUMENT_GENERATE_REQUEST
+struct PyserviceDocumentGenerateRequest : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(request_type, std::string, "request_type");
+  REGISTER_STRUCT_FIELD(employee_id, std::string, "employee_id");
+  REGISTER_STRUCT_FIELD(employee_name, std::string, "employee_name");
+  REGISTER_STRUCT_FIELD(employee_surname, std::string, "employee_surname");
+  REGISTER_STRUCT_FIELD(head_name, std::string, "head_name");
+  REGISTER_STRUCT_FIELD(head_surname, std::string, "head_surname");
+  REGISTER_STRUCT_FIELD(start_date, std::string, "start_date");
+  REGISTER_STRUCT_FIELD(end_date, std::string, "end_date");
+  REGISTER_STRUCT_FIELD_OPTIONAL(employee_patronymic, std::string,
+                                 "employee_patronymic");
+  REGISTER_STRUCT_FIELD_OPTIONAL(head_patronymic, std::string,
+                                 "head_patronymic");
+  REGISTER_STRUCT_FIELD_OPTIONAL(employee_position, std::string,
+                                 "employee_position");
+  REGISTER_STRUCT_FIELD_OPTIONAL(head_position, std::string, "head_position");
+  REGISTER_STRUCT_FIELD_OPTIONAL(first_start_date, std::string,
+                                 "first_start_date");
+  REGISTER_STRUCT_FIELD_OPTIONAL(first_end_date, std::string, "first_end_date");
+  REGISTER_STRUCT_FIELD_OPTIONAL(second_start_date, std::string,
+                                 "second_start_date");
+  REGISTER_STRUCT_FIELD_OPTIONAL(second_end_date, std::string,
+                                 "second_end_date");
+};
+#endif
+
+#ifdef USE_ABSCENCE_VERDICT_REQUEST
+struct AbscenceVerdictRequest : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(action_id, std::string, "action_id");
+  REGISTER_STRUCT_FIELD_OPTIONAL(notification_id, std::string,
+                                 "notification_id");
+  REGISTER_STRUCT_FIELD(approve, bool, "approve");
+};
+#endif
+
+#ifdef USE_PYSERVICE_DOCUMENT_SIGN_REQUEST
+struct PyserviceDocumentSignRequest : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(employee_id, std::string, "employee_id");
+  REGISTER_STRUCT_FIELD(employee_name, std::string, "employee_name");
+  REGISTER_STRUCT_FIELD(employee_surname, std::string, "employee_surname");
+  REGISTER_STRUCT_FIELD_OPTIONAL(employee_patronymic, std::string,
+                                 "employee_patronymic");
+  REGISTER_STRUCT_FIELD(file_key, std::string, "file_key");
+  REGISTER_STRUCT_FIELD(signed_file_key, std::string, "signed_file_key");
 };
 #endif

@@ -42,17 +42,33 @@ class DocumentsListHandler final
         static_cast<std::string>("Access-Control-Allow-Headers"), "*");
 
     const auto& user_id = ctx.GetData<std::string>("user_id");
+    const auto& company_id = ctx.GetData<std::string>("company_id");
 
     auto result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kMaster,
-        "SELECT working_day.documents.id, working_day.documents.name, "
-        "working_day.documents.type, working_day.documents.sign_required, "
-        "working_day.documents.description, "
-        "working_day.employee_document.signed "
-        "FROM working_day.documents "
-        "JOIN working_day.employee_document ON working_day.documents.id = "
-        "working_day.employee_document.document_id "
-        "WHERE working_day.employee_document.employee_id = $1",
+        "SELECT working_day_" + company_id + ".documents.id, working_day_" +
+            company_id +
+            ".documents.name, "
+            "working_day_" +
+            company_id + ".documents.type, working_day_" + company_id +
+            ".documents.sign_required, "
+            "working_day_" +
+            company_id +
+            ".documents.description, "
+            "working_day_" +
+            company_id +
+            ".employee_document.signed "
+            "FROM working_day_" +
+            company_id +
+            ".documents "
+            "JOIN working_day_" +
+            company_id + ".employee_document ON working_day_" + company_id +
+            ".documents.id = "
+            "working_day_" +
+            company_id +
+            ".employee_document.document_id "
+            "WHERE working_day_" +
+            company_id + ".employee_document.employee_id = $1",
         user_id);
 
     DocumentsListResponse response;

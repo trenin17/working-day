@@ -1,3 +1,5 @@
+#define V1_AUTHORIZE
+
 #include "view.hpp"
 
 #include <nlohmann/json.hpp>
@@ -11,7 +13,7 @@
 #include <userver/storages/postgres/component.hpp>
 #include <userver/utils/uuid4.hpp>
 
-#include "core/json_compatible/struct.hpp"
+#include "definitions/all.hpp"
 
 using json = nlohmann::json;
 
@@ -19,36 +21,9 @@ namespace views::v1::authorize {
 
 namespace {
 
-struct AuthorizeRequest : public JsonCompatible {
-  REGISTER_STRUCT_FIELD(login, std::string, "login");
-  REGISTER_STRUCT_FIELD(password, std::string, "password");
-};
-
-struct AuthorizeResponse : public JsonCompatible {
-  AuthorizeResponse(const std::string& token_, const std::string& role_) {
-    token = token_;
-    role = role_;
-  }
-
-  REGISTER_STRUCT_FIELD(token, std::string, "token");
-  REGISTER_STRUCT_FIELD(role, std::string, "role");
-};
-
 class UserInfo {
  public:
   std::string id, password, role;
-};
-
-class ErrorMessage {
- public:
-  std::string ToJSON() const {
-    json j;
-    j["message"] = message;
-
-    return j.dump();
-  }
-
-  std::string message;
 };
 
 class AuthorizeHandler final
@@ -79,14 +54,16 @@ class AuthorizeHandler final
 
     auto result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kSlave,
-        "SELECT id, password, role FROM working_day.employees "
-        "WHERE id = $1",
+        "SELECT id, password, role FROM working_day_" +
+            request_body.company_id +
+            ".employees "
+            "WHERE id = $1",
         request_body.login);
 
     if (result.IsEmpty()) {
       request.GetHttpResponse().SetStatus(
           userver::server::http::HttpStatus::kNotFound);
-      return ErrorMessage{"No such user"}.ToJSON();
+      return ErrorMessage{"No such user"}.ToJsonString();
     }
 
     auto user_info =
@@ -94,7 +71,7 @@ class AuthorizeHandler final
     if (user_info.password != request_body.password) {
       request.GetHttpResponse().SetStatus(
           userver::server::http::HttpStatus::kNotFound);
-      return ErrorMessage{"Wrong password"}.ToJSON();
+      return ErrorMessage{"Wrong password"}.ToJsonString();
     }
 
     std::vector<std::string> scopes = {"user"};
@@ -105,9 +82,10 @@ class AuthorizeHandler final
     auto token = userver::utils::generators::GenerateUuid();
     auto auth_result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kMaster,
-        "INSERT INTO working_day.auth_tokens (token, user_id, scopes) "
-        "VALUES ($1, $2, $3)",
-        token, user_info.id, scopes);
+        "INSERT INTO wd_general.auth_tokens (token, user_id, company_id, "
+        "scopes) "
+        "VALUES ($1, $2, $3, $4)",
+        token, user_info.id, request_body.company_id, scopes);
 
     AuthorizeResponse response(token, user_info.role);
 

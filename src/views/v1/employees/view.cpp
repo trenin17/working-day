@@ -41,12 +41,15 @@ class EmployeesHandler final
         static_cast<std::string>("Access-Control-Allow-Headers"), "*");
 
     const auto& user_id = ctx.GetData<std::string>("user_id");
+    const auto& company_id = ctx.GetData<std::string>("company_id");
 
     auto result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kSlave,
         "SELECT id, name, surname, patronymic, photo_link "
-        "FROM working_day.employees "
-        "WHERE head_id = $1",
+        "FROM working_day_" +
+            company_id +
+            ".employees "
+            "WHERE head_id = $1",
         user_id);
 
     EmployeesResponse response;

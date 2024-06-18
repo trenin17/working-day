@@ -82,6 +82,7 @@ class AbscenceRequestHandler final
 
     AbscenceRequestRequest request_body(request.RequestBody());
     auto user_id = ctx.GetData<std::string>("user_id");
+    auto company_id = ctx.GetData<std::string>("company_id");
 
     auto action_id = userver::utils::generators::GenerateUuid();
 
@@ -102,34 +103,38 @@ class AbscenceRequestHandler final
         "request_abscence",
         userver::storages::postgres::ClusterHostType::kMaster, {});
 
-    auto result = trx.Execute(
-        "INSERT INTO working_day.actions(id, type, user_id, start_date, "
-        "end_date, status) "
-        "VALUES($1, $2, $3, $4, $5, $6) "
-        "ON CONFLICT (id) "
-        "DO NOTHING",
-        action_id, request_body.type, user_id, request_body.start_date,
-        request_body.end_date, action_status);
+    auto result = trx.Execute("INSERT INTO working_day_" + company_id +
+                                  ".actions(id, type, user_id, start_date, "
+                                  "end_date, status) "
+                                  "VALUES($1, $2, $3, $4, $5, $6) "
+                                  "ON CONFLICT (id) "
+                                  "DO NOTHING",
+                              action_id, request_body.type, user_id,
+                              request_body.start_date, request_body.end_date,
+                              action_status);
 
     auto head_id =
         trx.Execute(
                "SELECT head_id "
-               "FROM working_day.employees "
-               "WHERE id = $1",
+               "FROM working_day_" +
+                   company_id +
+                   ".employees "
+                   "WHERE id = $1",
                user_id)
             .AsSingleRow<HeadId>(userver::storages::postgres::kRowTag)
             .head_id;
 
     if (request_body.type == "vacation") {
       auto notification_id = userver::utils::generators::GenerateUuid();
-      result = trx.Execute(
-          "INSERT INTO working_day.notifications(id, type, text, user_id, "
-          "sender_id, action_id) "
-          "VALUES($1, $2, $3, $4, $5, $6) "
-          "ON CONFLICT (id) "
-          "DO NOTHING",
-          notification_id, request_body.type + "_request", notification_text,
-          head_id.value_or(user_id), user_id, action_id);
+      result = trx.Execute("INSERT INTO working_day_" + company_id +
+                               ".notifications(id, type, text, user_id, "
+                               "sender_id, action_id) "
+                               "VALUES($1, $2, $3, $4, $5, $6) "
+                               "ON CONFLICT (id) "
+                               "DO NOTHING",
+                           notification_id, request_body.type + "_request",
+                           notification_text, head_id.value_or(user_id),
+                           user_id, action_id);
     }
 
     trx.Commit();

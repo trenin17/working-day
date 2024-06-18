@@ -41,15 +41,17 @@ class DocumentsSendHandler final
     request.GetHttpResponse().SetHeader(
         static_cast<std::string>("Access-Control-Allow-Headers"), "*");
 
+    const auto& company_id = ctx.GetData<std::string>("company_id");
     auto user_id = ctx.GetData<std::string>("user_id");
 
     DocumentSendRequest request_body;
     request_body.ParseRegisteredFields(request.RequestBody());
 
     pg_cluster_->Execute(userver::storages::postgres::ClusterHostType::kMaster,
-                         "INSERT INTO working_day.documents(id, name, "
-                         "sign_required, description) "
-                         "VALUES($1, $2, $3, $4)",
+                         "INSERT INTO working_day_" + company_id +
+                             ".documents(id, name, "
+                             "sign_required, description) "
+                             "VALUES($1, $2, $3, $4)",
                          request_body.document.id, request_body.document.name,
                          request_body.document.sign_required,
                          request_body.document.description);
@@ -81,16 +83,18 @@ class DocumentsSendHandler final
     filter_notifications.pop_back();
 
     pg_cluster_->Execute(userver::storages::postgres::ClusterHostType::kMaster,
-                         "INSERT INTO working_day.employee_document "
-                         "(employee_id, document_id) "
-                         "VALUES " +
+                         "INSERT INTO working_day_" + company_id +
+                             ".employee_document "
+                             "(employee_id, document_id) "
+                             "VALUES " +
                              filter,
                          parameters);
 
     pg_cluster_->Execute(userver::storages::postgres::ClusterHostType::kMaster,
-                         "INSERT INTO working_day.notifications(id, type, "
-                         "text, sender_id, user_id) "
-                         "VALUES " +
+                         "INSERT INTO working_day_" + company_id +
+                             ".notifications(id, type, "
+                             "text, sender_id, user_id) "
+                             "VALUES " +
                              filter_notifications +
                              " ON CONFLICT (id) "
                              "DO NOTHING",

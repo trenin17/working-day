@@ -4,8 +4,11 @@ import json
 
 import pytest
 
+from testsuite import utils
 from testsuite.databases.pgsql import discover
 
+
+USERVER_CONFIG_HOOKS = ['userver_config_pyservice']
 
 pytest_plugins = ['pytest_userver.plugins.postgresql']
 
@@ -32,3 +35,37 @@ def pgsql_local(service_source_dir, pgsql_local_create):
         [service_source_dir.joinpath('postgresql/schemas')],
     )
     return pgsql_local_create(list(databases.values()))
+
+
+@pytest.fixture(scope='session')
+def userver_config_pyservice(mockserver_info):
+    def do_patch(config_yaml, config_vars):
+        components = config_yaml['components_manager']['components']
+
+        components['handler-v1-abscence-verdict'][
+            'pyservice-url'
+        ] = mockserver_info.url('document/generate')
+
+        components['handler-v1-documents-sign'][
+            'pyservice-url'
+        ] = mockserver_info.url('document/sign')
+
+    return do_patch
+    # /// [patch configs]
+
+
+# /// [mockserver]
+@pytest.fixture(autouse=True)
+def mock_pyservice(mockserver) -> None:
+    @mockserver.json_handler('/document/generate')
+    def mock(request):
+        return {
+            'response': 'OK'
+        }
+
+    @mockserver.json_handler('/document/sign')
+    def mock(request):
+        return {
+            'response': 'OK'
+        }
+    # /// [mockserver]

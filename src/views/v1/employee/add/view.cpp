@@ -2,6 +2,7 @@
 
 #include "view.hpp"
 
+#include <fmt/format.h>
 #include <codecvt>
 #include <locale>
 
@@ -18,7 +19,6 @@
 
 #include "definitions/all.hpp"
 
-#include "core/json_compatible/struct.hpp"
 #include "core/reverse_index/view.hpp"
 
 namespace views::v1::employee::add {
@@ -29,7 +29,7 @@ core::reverse_index::ReverseIndexResponse AddReverseIndexFunc(
     userver::storages::postgres::ClusterPtr cluster,
     core::reverse_index::EmployeeAllData data) {
   std::vector<std::optional<std::string>> fields = {
-      data.name,     data.surname,     data.patronymic, data.role, data.email,
+      data.name,     data.surname,     data.patronymic, data.email,
       data.birthday, data.telegram_id, data.vk_id,      data.team};
 
   if (data.phones.has_value()) {
@@ -51,20 +51,24 @@ core::reverse_index::ReverseIndexResponse AddReverseIndexFunc(
     }
   }
 
-  auto result = cluster->Execute(
-      userver::storages::postgres::ClusterHostType::kMaster,
-      "WITH input_data AS ( "
-      "  SELECT ARRAY" +
-          filter +
-          "] AS keys, $1 AS id "
-          ") "
-          "INSERT INTO working_day.reverse_index (key, ids) "
-          "SELECT key, ARRAY[id] AS ids "
-          "FROM input_data, LATERAL unnest(keys) AS key "
-          "ON CONFLICT (key) DO UPDATE "
-          "SET ids = array_append(working_day.reverse_index.ids, "
-          "EXCLUDED.ids[1]); ",
-      parameters);
+  auto result =
+      cluster->Execute(userver::storages::postgres::ClusterHostType::kMaster,
+                       "WITH input_data AS ( "
+                       "  SELECT ARRAY" +
+                           filter +
+                           "] AS keys, $1 AS id "
+                           ") "
+                           "INSERT INTO working_day_" +
+                           data.company_id.value() +
+                           ".reverse_index (key, ids) "
+                           "SELECT key, ARRAY[id] AS ids "
+                           "FROM input_data, LATERAL unnest(keys) AS key "
+                           "ON CONFLICT (key) DO UPDATE "
+                           "SET ids = array_append(working_day_" +
+                           data.company_id.value() +
+                           ".reverse_index.ids, "
+                           "EXCLUDED.ids[1]); ",
+                       parameters);
 
   core::reverse_index::ReverseIndexResponse response(data.employee_id);
 
@@ -110,6 +114,7 @@ std::string Transliterate(const std::string& cyrillic) {
 
 std::string generateLogin(
     const std::string& firstName, const std::string& lastName,
+    const std::string& company_id,
     const userver::storages::postgres::ClusterPtr& cluster) {
   std::string transliteratedFirst = Transliterate(firstName);
   std::string transliteratedLast = Transliterate(lastName);
@@ -119,9 +124,11 @@ std::string generateLogin(
   int counter = 0;
 
   while (true) {
-    auto result = cluster->Execute(
-        userver::storages::postgres::ClusterHostType::kMaster,
-        "SELECT id FROM working_day.employees WHERE id = $1", newLogin);
+    auto query = fmt::format(
+        "SELECT id FROM working_day_{0}.employees WHERE id = $1", company_id);
+    auto result =
+        cluster->Execute(userver::storages::postgres::ClusterHostType::kMaster,
+                         std::move(query), newLogin);
     if (result.Size() == 0) {
       break;
     }
@@ -154,36 +161,59 @@ class AddEmployeeHandler final
     request.GetHttpResponse().SetHeader(
         static_cast<std::string>("Access-Control-Allow-Headers"), "*");
 
+    int number = 0;
+    LOG_INFO() << "EMPLOYEE ADD " << number++;
     AddEmployeeRequest request_body;
+    LOG_INFO() << "EMPLOYEE ADD " << number++;
     request_body.ParseRegisteredFields(request.RequestBody());
+    LOG_INFO() << "EMPLOYEE ADD " << number++;
     auto company_id = ctx.GetData<std::string>("company_id");
+    LOG_INFO() << "EMPLOYEE ADD " << number++;
+    auto user_role = ctx.GetData<std::string>("user_role");
+    LOG_INFO() << "EMPLOYEE ROLE " << user_role;
+    if (user_role == "superuser" && request_body.company_id.has_value()) {
+      company_id = request_body.company_id.value();
+    }
+    LOG_INFO() << "EMPLOYEE ADD " << number++;
 
-    auto id =
-        generateLogin(request_body.name, request_body.surname, pg_cluster_);
+    auto id = generateLogin(request_body.name, request_body.surname, company_id,
+                            pg_cluster_);
+    LOG_INFO() << "EMPLOYEE ADD " << number++;
     auto password = userver::utils::generators::GenerateUuid().substr(0, 16);
+    LOG_INFO() << "EMPLOYEE ADD " << number++;
 
-    auto result = pg_cluster_->Execute(
-        userver::storages::postgres::ClusterHostType::kMaster,
-        "INSERT INTO working_day.employees(id, name, surname, patronymic, "
-        "password, role, company_id) VALUES($1, $2, $3, $4, $5, $6, $7) "
+    auto query = fmt::format(
+        "INSERT INTO working_day_{0}.employees(id, name, surname, patronymic, "
+        "password, role) VALUES($1, $2, $3, $4, $5, $6) "
         "ON CONFLICT (id) "
         "DO NOTHING",
+        company_id);
+    LOG_INFO() << "EMPLOYEE ADD " << number++;
+    auto result = pg_cluster_->Execute(
+        userver::storages::postgres::ClusterHostType::kMaster, std::move(query),
         id, request_body.name, request_body.surname, request_body.patronymic,
-        password, request_body.role, company_id);
+        password, request_body.role);
 
+    LOG_INFO() << "EMPLOYEE ADD " << number++;
     core::reverse_index::EmployeeAllData data{
         id, request_body.name, request_body.surname, request_body.patronymic,
         request_body.role};
+    data.company_id = company_id;
 
+    LOG_INFO() << "EMPLOYEE ADD " << number++;
     userver::storages::postgres::ClusterPtr cluster = pg_cluster_;
+    LOG_INFO() << "EMPLOYEE ADD " << number++;
     core::reverse_index::ReverseIndexRequest r_index_request{
         [cluster, data]() -> core::reverse_index::ReverseIndexResponse {
           return AddReverseIndexFunc(cluster, data);
         }};
 
+    LOG_INFO() << "EMPLOYEE ADD " << number++;
     core::reverse_index::ReverseIndexHandler(r_index_request);
 
+    LOG_INFO() << "EMPLOYEE ADD " << number++;
     AddEmployeeResponse response(id, password);
+    LOG_INFO() << "EMPLOYEE ADD " << number++;
     return response.ToJsonString();
   }
 
