@@ -11,8 +11,11 @@ RUN pip install -r requirements.txt
 
 RUN apt-get update && apt-get install -y libreoffice
 
-RUN mkdir ./generate_document
+RUN mkdir ./generate_document ./sign_document
 COPY generate_document ./generate_document/
 COPY main.py .
+COPY sign_document ./sign_document
+COPY s3_client ./s3_client
+COPY start_service.sh .
 
-CMD [ "python", "./main.py" ]
+CMD [ "./start_service.sh" ]

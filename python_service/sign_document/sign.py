@@ -3,7 +3,7 @@ import uuid
 import subprocess
 from datetime import datetime
 from .stamp import create_stamp, StampData
-from python_service.s3_client.aws_utils import download_file, upload_file
+from s3_client.aws_utils import download_file, upload_file
 
 async def sign_document(request):
     try:

@@ -6,7 +6,7 @@ from datetime import datetime
 import subprocess
 from aiohttp import web
 from sign_document.stamp import create_stamp, StampData
-from python_service.s3_client.aws_utils import upload_and_presign
+from s3_client.aws_utils import upload_and_presign
 from threading import Lock
 
 mutex = Lock()
