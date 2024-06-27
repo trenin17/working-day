@@ -286,7 +286,7 @@ struct DocumentItem : public JsonCompatible {
   DocumentItem& operator=(DocumentItem&& other) = default;
 
   auto Introspect() {
-    return std::tie(id, name, type, sign_required, description, is_signed);
+    return std::tie(id, name, type, sign_required, description, is_signed, parent_id);
   }
 
   REGISTER_STRUCT_FIELD(id, std::string, "id");
@@ -295,6 +295,7 @@ struct DocumentItem : public JsonCompatible {
   REGISTER_STRUCT_FIELD(sign_required, bool, "sign_required", false);
   REGISTER_STRUCT_FIELD_OPTIONAL(description, std::string, "description");
   REGISTER_STRUCT_FIELD_OPTIONAL(is_signed, bool, "signed");
+  REGISTER_STRUCT_FIELD_OPTIONAL(parent_id, std::string, "parent_id");
 };
 #endif
 

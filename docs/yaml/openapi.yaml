@@ -1257,6 +1257,9 @@ components:
                 signed:
                     description: This field only valid if requested by assignee of the document
                     type: boolean
+                parent_id:
+                    description: Parent document Id
+                    type: string
 
         DownloadDocumentResponse:
             type: object

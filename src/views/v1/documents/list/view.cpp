@@ -57,7 +57,8 @@ class DocumentsListHandler final
             ".documents.description, "
             "working_day_" +
             company_id +
-            ".employee_document.signed "
+            ".employee_document.signed, "
+            "NULL::TEXT as parent_id "
             "FROM working_day_" +
             company_id +
             ".documents "

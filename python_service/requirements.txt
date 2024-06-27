@@ -2,3 +2,4 @@ boto3
 python-docx
 aiohttp
 PyMuPDF
+openpyxl
