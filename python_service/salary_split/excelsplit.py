@@ -13,12 +13,14 @@ import requests
 import os
 
 def upload_and_send_document(file_path, send_to_employee_id, document_parent_id = None):
+    # ca_bundle_path = "/etc/ssl/cert.pem"
+
     # Step 1: Send POST request to get upload URL and document ID
     auth_token_1 = "4a015c8780bd41e4bb621213ac032058"
     url_1 = "https://working-day.online:8080/v1/documents/upload"
-    headers_1 = {"Authorization: Bearer": auth_token_1}
+    headers_1 = {"Authorization": "Bearer " + auth_token_1}
     
-    response_1 = requests.post(url_1, headers=headers_1)
+    response_1 = requests.post(url_1, headers=headers_1, verify=False)
     response_1.raise_for_status()  # Raise an exception for HTTP errors
     response_json_1 = response_1.json()
     
@@ -27,14 +29,14 @@ def upload_and_send_document(file_path, send_to_employee_id, document_parent_id 
     
     # Step 2: Upload the file
     with open(file_path, 'rb') as file_data:
-        response_2 = requests.put(upload_url, data=file_data)
+        response_2 = requests.put(upload_url, data=file_data, verify=False)
         response_2.raise_for_status()  # Raise an exception for HTTP errors
     
     # Step 3: Send POST request to send the document
     auth_token_2 = "4a015c8780bd41e4bb621213ac032058"
     url_3 = "https://working-day.online:8080/v1/documents/send"
     headers_3 = {
-        "Authorization: Bearer": auth_token_2,
+        "Authorization": "Bearer " + auth_token_2,
         "Content-Type": "application/json"
     }
     payload_3 = {
@@ -44,7 +46,7 @@ def upload_and_send_document(file_path, send_to_employee_id, document_parent_id 
     if document_parent_id:
         payload_3["document"]["parent_id"] = document_parent_id
     
-    response_3 = requests.post(url_3, json=payload_3, headers=headers_3)
+    response_3 = requests.post(url_3, json=payload_3, headers=headers_3, verify=False)
     response_3.raise_for_status()  # Raise an exception for HTTP errors
     
     # Step 4: Return the document ID
@@ -179,11 +181,14 @@ def split_xlsx(file_path, output_path):
 
 file_path = os.path.join(os.path.dirname(__file__), 'Расчетный лист.xlsx')
 
-# upload_and_send_document(file_path, 'ipetrov')
+parent_id = upload_and_send_document(file_path, 'ipetrov')
 
 output_path = os.path.join(os.path.dirname(__file__), 'result')
 
 output_files = split_xlsx(file_path, output_path)
+
+upload_and_send_document(output_files[0], 'izubov', parent_id)
+
 print(output_files)
 
 
