@@ -1228,6 +1228,10 @@ components:
                     type: array
                     items:
                         type: string
+                is_salary_list:
+                    type: boolean
+                    description: True if document is salary list
+                    default: false
 
         DocumentsListResponse:
             type: object
