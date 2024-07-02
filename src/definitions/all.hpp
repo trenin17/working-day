@@ -59,6 +59,7 @@
 #endif
 
 #ifdef V1_DOCUMENTS_UPLOAD
+#define USE_UPLOAD_DOCUMENT_REQUEST
 #define USE_UPLOAD_DOCUMENT_RESPONSE
 #endif
 
@@ -267,6 +268,12 @@ struct AttendanceListItem : public JsonCompatible {
 struct AttendanceListAllResponse : public JsonCompatible {
   REGISTER_STRUCT_FIELD(attendances, std::vector<AttendanceListItem>,
                         "attendances");
+};
+#endif
+
+#ifdef USE_UPLOAD_DOCUMENT_REQUEST
+struct UploadDocumentRequest : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(extension, std::string, "extension", ".pdf");
 };
 #endif
 

@@ -906,9 +906,22 @@ async def test_abscence_verdict(service_client):
 
 
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])
+async def test_upload_document(service_client):
+    response = await service_client.post(
+        '/v1/documents/upload',
+        headers={'Authorization': 'Bearer first_token'},
+        # json={'extension': '.xlsx'}
+    )
+
+    assert response.status == 200
+    assert response.text == '{"document_id":"1"}'
+
+
+@pytest.mark.pgsql('db_1', files=['initial_data.sql'])
 async def test_end(service_client):
     response = await service_client.post(
         '/v1/clear-tasks',
     )
 
     assert response.status == 200
+    

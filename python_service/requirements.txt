@@ -3,3 +3,4 @@ python-docx
 aiohttp
 PyMuPDF
 openpyxl
+requests

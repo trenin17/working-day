@@ -537,6 +537,12 @@ paths:
                 description: Token of session user, available for managers only
                 schema:
                     type: string
+            requestBody:
+                required: false
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/DocumentsUploadRequest'
             responses:
                 '200':
                     description: Upload link
@@ -1312,3 +1318,12 @@ components:
             properties:
                 company_id:
                     type: string
+
+        DocumentsUploadRequest:
+            type: object
+            additionalProperties: false
+            properties:
+                extension:
+                    type: string
+                    description: File extension, i.e. ".pdf", ".xlsx"
+                    default: ".pdf"

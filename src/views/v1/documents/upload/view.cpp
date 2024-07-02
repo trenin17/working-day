@@ -36,9 +36,12 @@ class DocumentsUploadHandler final
     request.GetHttpResponse().SetHeader(
         static_cast<std::string>("Access-Control-Allow-Headers"), "*");
 
+    UploadDocumentRequest request_body;
+    request_body.ParseRegisteredFields(request.RequestBody());
+
     const auto& user_id = ctx.GetData<std::string>("user_id");
 
-    auto document_id = userver::utils::generators::GenerateUuid() + ".pdf";
+    auto document_id = userver::utils::generators::GenerateUuid() + request_body.extension;
     auto upload_link = utils::s3_presigned_links::GenerateDocumentPresignedLink(
         document_id, utils::s3_presigned_links::Upload);
 
