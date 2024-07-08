@@ -28,7 +28,7 @@ async def test_add_company(service_client):
     response = await service_client.post(
         '/v1/superuser/company/add',
         headers={'Authorization': 'Bearer zero_token'},
-        json={'company_id': 'second'},
+        json={'company_id': 'second', 'company_name': 'Second'},
     )
 
     assert response.status == 200
@@ -608,11 +608,11 @@ async def test_attendance_list_all(service_client):
     assert response.status == 200
     assert response.text == (
         '{"attendances":['
-        '{"employee":{"id":"first_id","name":"First","surname":"A"},'
+        '{"employee":{"id":"first_id","name":"First","subcompany":"first","surname":"A"},'
         '"end_date":"2023-07-21T15:00:00.000000",'
         '"start_date":"2023-07-21T07:00:00.000000"},'
-        '{"employee":{"id":"second_id","name":"Second","surname":"B"}},'
-        '{"employee":{"id":"tc","name":"Third","surname":"C"}}'
+        '{"employee":{"id":"second_id","name":"Second","subcompany":"first","surname":"B"}},'
+        '{"employee":{"id":"tc","name":"Third","subcompany":"first","surname":"C"}}'
         ']}')
     response = await service_client.post(
         '/v1/attendance/add',
@@ -651,16 +651,16 @@ async def test_attendance_list_all(service_client):
     assert response.status == 200
     assert response.text == (
         '{"attendances":['
-        '{"employee":{"id":"first_id","name":"First","surname":"A"},'
+        '{"employee":{"id":"first_id","name":"First","subcompany":"first","surname":"A"},'
         '"end_date":"2023-07-22T15:00:00.000000",'
         '"start_date":"2023-07-22T07:00:00.000000"},'
-        '{"employee":{"id":"first_id","name":"First","surname":"A"},'
+        '{"employee":{"id":"first_id","name":"First","subcompany":"first","surname":"A"},'
         '"end_date":"2023-07-21T15:00:00.000000",'
         '"start_date":"2023-07-21T07:00:00.000000"},'
-        '{"employee":{"id":"second_id","name":"Second","surname":"B"},'
+        '{"employee":{"id":"second_id","name":"Second","subcompany":"first","surname":"B"},'
         '"end_date":"2023-07-22T15:00:00.000000",'
         '"start_date":"2023-07-22T07:00:00.000000"},'
-        '{"employee":{"id":"tc","name":"Third","surname":"C"}}'
+        '{"employee":{"id":"tc","name":"Third","subcompany":"first","surname":"C"}}'
         ']}')
     response = await service_client.post(
         '/v1/attendance/list-all',
@@ -671,13 +671,13 @@ async def test_attendance_list_all(service_client):
     assert response.status == 200
     assert response.text == (
         '{"attendances":['
-        '{"employee":{"id":"first_id","name":"First","surname":"A"},'
+        '{"employee":{"id":"first_id","name":"First","subcompany":"first","surname":"A"},'
         '"end_date":"2023-07-22T15:00:00.000000",'
         '"start_date":"2023-07-22T07:00:00.000000"},'
-        '{"employee":{"id":"second_id","name":"Second","surname":"B"},'
+        '{"employee":{"id":"second_id","name":"Second","subcompany":"first","surname":"B"},'
         '"end_date":"2023-07-22T15:00:00.000000",'
         '"start_date":"2023-07-22T07:00:00.000000"},'
-        '{"employee":{"id":"tc","name":"Third","surname":"C"}}'
+        '{"employee":{"id":"tc","name":"Third","subcompany":"first","surname":"C"}}'
         ']}')
 
 
@@ -910,11 +910,13 @@ async def test_upload_document(service_client):
     response = await service_client.post(
         '/v1/documents/upload',
         headers={'Authorization': 'Bearer first_token'},
-        # json={'extension': '.xlsx'}
+        json={'extension': '.xlsx'}
     )
 
     assert response.status == 200
-    assert response.text == '{"document_id":"1"}'
+    response_json = json.loads(response.text)
+    assert response_json["id"].endswith(".xlsx")
+    assert response_json["url"].startswith("https://working-day-documents.storage.yandexcloud.net")
 
 
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])

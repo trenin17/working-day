@@ -32,7 +32,7 @@ struct ActionInfo {
 };
 
 struct EmployeeInfo {
-  std::string name, surname;
+  std::string name, surname, subcompany;
   std::optional<std::string> patronymic, head_id, position;
 };
 
@@ -78,7 +78,7 @@ void GenerateVacationDocument(
 
   auto employee_info =
       trx.Execute(
-             "SELECT name, surname, patronymic, head_id, position "
+             "SELECT name, surname, subcompany, patronymic, head_id, position "
              "FROM working_day_" +
                  company_id +
                  ".employees "
@@ -103,6 +103,8 @@ void GenerateVacationDocument(
   link_request.employee_id = action_info.employee_id;
   link_request.employee_name = employee_info.name;
   link_request.employee_surname = employee_info.surname;
+  link_request.subcompany = employee_info.subcompany;
+  link_request.company_id = company_id;
   link_request.head_name = head_info.name;
   link_request.head_surname = head_info.surname;
   link_request.start_date = userver::utils::datetime::Timestring(

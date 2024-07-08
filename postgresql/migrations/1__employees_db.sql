@@ -15,7 +15,8 @@ CREATE TABLE IF NOT EXISTS ${SCHEMA}.employees (
     position TEXT,
     telegram_id TEXT,
     vk_id TEXT,
-    team TEXT
+    team TEXT,
+    subcompany TEXT NOT NULL DEFAULT '${COMPANY_NAME}'
 );
 
 CREATE INDEX idx_employee_by_head ON ${SCHEMA}.employees(head_id);

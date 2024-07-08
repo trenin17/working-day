@@ -23,7 +23,7 @@ async def sign_document(request):
         employee_initials = f"{employee_surname} {employee_name[0]}."
         if employee_patronymic:
             employee_initials += f"{employee_patronymic[0]}."
-        organization = 'ЕСВ.ТЕХНОЛОДЖИ-ПЛЮС' # TODO: change company name
+        organization = data.get('subcompany', "")
         sign_type = 'Простая ЭП'
         signed_file_key = data['signed_file_key']
 

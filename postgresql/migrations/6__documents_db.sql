@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS ${SCHEMA}.documents (
     description TEXT,
     type TEXT NOT NULL DEFAULT 'admin_request',
     parent_id TEXT NOT NULL DEFAULT '',
+    created_ts TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     FOREIGN KEY (parent_id) REFERENCES ${SCHEMA}.documents (id) ON DELETE CASCADE
 );
 

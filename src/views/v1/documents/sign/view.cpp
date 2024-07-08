@@ -89,14 +89,14 @@ properties:
 
     result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kSlave,
-        "SELECT id, name, surname, patronymic, photo_link "
+        "SELECT id, name, surname, patronymic, photo_link, subcompany "
         "FROM working_day_" +
             company_id +
             ".employees "
             "WHERE id = $1",
         user_id);
 
-    auto employee_info = result.AsSingleRow<ListEmployee>(
+    auto employee_info = result.AsSingleRow<ListEmployeeWithSubcompany>(
         userver::storages::postgres::kRowTag);
 
     PyserviceDocumentSignRequest py_request;
@@ -104,6 +104,7 @@ properties:
     py_request.employee_name = employee_info.name;
     py_request.employee_surname = employee_info.surname;
     py_request.employee_patronymic = employee_info.patronymic;
+    py_request.subcompany = employee_info.subcompany;
     py_request.file_key = document_id;
     py_request.signed_file_key = userver::utils::generators::GenerateUuid() + ".pdf";
 

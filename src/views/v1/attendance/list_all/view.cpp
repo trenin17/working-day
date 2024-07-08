@@ -46,32 +46,15 @@ class AttendanceListAllHandler final
 
     auto result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kSlave,
-        "SELECT working_day_" + company_id +
-            ".actions.start_date, working_day_" + company_id +
-            ".actions.end_date, "
+        "SELECT a.start_date, a.end_date, "
             "ROW"
-            "(working_day_" +
-            company_id + ".employees.id, working_day_" + company_id +
-            ".employees.name, "
-            "working_day_" +
-            company_id + ".employees.surname, working_day_" + company_id +
-            ".employees.patronymic, "
-            "NULL::text) "
-            "FROM working_day_" +
-            company_id +
-            ".employees "
-            "LEFT JOIN working_day_" +
-            company_id +
-            ".actions "
-            "ON working_day_" +
-            company_id + ".employees.id = working_day_" + company_id +
-            ".actions.user_id AND "
-            "working_day_" +
-            company_id + ".actions.start_date >= $1 AND working_day_" +
-            company_id +
-            ".actions.end_date "
-            "<= $2 AND working_day_" +
-            company_id + ".actions.type = 'attendance' ",
+            "(e.id, e.name, "
+            "e.surname, e.patronymic, "
+            "NULL::text, e.subcompany) "
+            "FROM working_day_" + company_id + ".employees e "
+            "LEFT JOIN working_day_" + company_id + ".actions a "
+            "ON e.id = a.user_id AND a.start_date >= $1 AND a.end_date "
+            "<= $2 AND a.type = 'attendance' ",
         request_body.from, request_body.to);
 
     AttendanceListAllResponse response;

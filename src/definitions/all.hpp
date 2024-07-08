@@ -55,7 +55,7 @@
 #endif
 
 #ifdef USE_ATTENDANCE_LIST_ITEM
-#define USE_LIST_EMPLOYEE
+#define USE_LIST_EMPLOYEE_WITH_SUBCOMPANY
 #endif
 
 #ifdef V1_DOCUMENTS_UPLOAD
@@ -133,9 +133,13 @@
 #endif
 
 #ifdef V1_DOCUMENTS_SIGN
-#define USE_LIST_EMPLOYEE
+#define USE_LIST_EMPLOYEE_WITH_SUBCOMPANY
 #define USE_PYSERVICE_DOCUMENT_SIGN_REQUEST
 #define USE_ERROR_MESSAGE
+#endif
+
+#ifdef USE_LIST_EMPLOYEE_WITH_SUBCOMPANY
+#define USE_LIST_EMPLOYEE
 #endif
 
 #ifdef USE_LIST_EMPLOYEE
@@ -242,6 +246,16 @@ struct AttendanceListAllRequest : public JsonCompatible {
 };
 #endif
 
+#ifdef USE_LIST_EMPLOYEE_WITH_SUBCOMPANY
+struct ListEmployeeWithSubcompany : public ListEmployee {
+  auto Introspect() {
+    return std::tuple_cat(ListEmployee::Introspect(), std::tie(subcompany));
+  }
+
+  REGISTER_STRUCT_FIELD(subcompany, std::string, "subcompany");
+};
+#endif
+
 #ifdef USE_ATTENDANCE_LIST_ITEM
 struct AttendanceListItem : public JsonCompatible {
   AttendanceListItem() = default;
@@ -258,7 +272,7 @@ struct AttendanceListItem : public JsonCompatible {
   REGISTER_STRUCT_FIELD_OPTIONAL(end_date,
                                  userver::storages::postgres::TimePoint,
                                  "end_date");
-  REGISTER_STRUCT_FIELD(employee, ListEmployee, "employee");
+  REGISTER_STRUCT_FIELD(employee, ListEmployeeWithSubcompany, "employee");
   // REGISTER_STRUCT_FIELD_OPTIONAL(abscence_date,
   // userver::storages::postgres::TimePoint, "abscence_date");
 };
@@ -394,6 +408,7 @@ struct ActionsRequest : public JsonCompatible {
 #ifdef USE_SUPERUSER_COMPANY_ADD_REQUEST
 struct SuperuserCompanyAddRequest : public JsonCompatible {
   REGISTER_STRUCT_FIELD(company_id, std::string, "company_id");
+  REGISTER_STRUCT_FIELD(company_name, std::string, "company_name");
 };
 #endif
 
@@ -423,6 +438,8 @@ struct PyserviceDocumentGenerateRequest : public JsonCompatible {
   REGISTER_STRUCT_FIELD(employee_id, std::string, "employee_id");
   REGISTER_STRUCT_FIELD(employee_name, std::string, "employee_name");
   REGISTER_STRUCT_FIELD(employee_surname, std::string, "employee_surname");
+  REGISTER_STRUCT_FIELD(subcompany, std::string, "subcompany");
+  REGISTER_STRUCT_FIELD(company_id, std::string, "company_id");
   REGISTER_STRUCT_FIELD(head_name, std::string, "head_name");
   REGISTER_STRUCT_FIELD(head_surname, std::string, "head_surname");
   REGISTER_STRUCT_FIELD(start_date, std::string, "start_date");
@@ -460,6 +477,7 @@ struct PyserviceDocumentSignRequest : public JsonCompatible {
   REGISTER_STRUCT_FIELD(employee_surname, std::string, "employee_surname");
   REGISTER_STRUCT_FIELD_OPTIONAL(employee_patronymic, std::string,
                                  "employee_patronymic");
+  REGISTER_STRUCT_FIELD(subcompany, std::string, "subcompany");
   REGISTER_STRUCT_FIELD(file_key, std::string, "file_key");
   REGISTER_STRUCT_FIELD(signed_file_key, std::string, "signed_file_key");
 };

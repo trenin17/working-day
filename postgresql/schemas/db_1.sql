@@ -35,7 +35,8 @@ CREATE TABLE IF NOT EXISTS working_day_first.employees (
     position TEXT,
     telegram_id TEXT,
     vk_id TEXT,
-    team TEXT
+    team TEXT,
+    subcompany TEXT NOT NULL DEFAULT 'first'
 );
 
 CREATE INDEX idx_employee_by_head ON working_day_first.employees(head_id);
@@ -99,6 +100,7 @@ CREATE TABLE IF NOT EXISTS working_day_first.documents (
     description TEXT,
     type TEXT NOT NULL DEFAULT 'admin_request',
     parent_id TEXT NOT NULL DEFAULT '',
+    created_ts TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     FOREIGN KEY (parent_id) REFERENCES working_day_first.documents (id) ON DELETE CASCADE
 );
 

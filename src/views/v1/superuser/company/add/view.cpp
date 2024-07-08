@@ -53,12 +53,16 @@ class SuperuserCompanyAddHandler final
     }
     LOG_WARNING() << "Finding script in: " << script_path;
     auto shell_command = script_path + " working_day_" +
-                         request_body.company_id + " " + db_address_;
+                         request_body.company_id + " " + request_body.company_name + " " + db_address_;
     auto err_code = system(shell_command.c_str());
 
     if (err_code != 0) {
       LOG_ERROR() << "Failed to setup company database";
     }
+
+    pg_cluster_->Execute(userver::storages::postgres::ClusterHostType::kMaster,
+                         "INSERT INTO wd_general.companies(id, name) VALUES($1, $2)",
+                         request_body.company_id, request_body.company_name);
 
     return "";
   }

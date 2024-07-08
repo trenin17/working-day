@@ -161,26 +161,17 @@ class AddEmployeeHandler final
     request.GetHttpResponse().SetHeader(
         static_cast<std::string>("Access-Control-Allow-Headers"), "*");
 
-    int number = 0;
-    LOG_INFO() << "EMPLOYEE ADD " << number++;
     AddEmployeeRequest request_body;
-    LOG_INFO() << "EMPLOYEE ADD " << number++;
     request_body.ParseRegisteredFields(request.RequestBody());
-    LOG_INFO() << "EMPLOYEE ADD " << number++;
     auto company_id = ctx.GetData<std::string>("company_id");
-    LOG_INFO() << "EMPLOYEE ADD " << number++;
     auto user_role = ctx.GetData<std::string>("user_role");
-    LOG_INFO() << "EMPLOYEE ROLE " << user_role;
     if (user_role == "superuser" && request_body.company_id.has_value()) {
       company_id = request_body.company_id.value();
     }
-    LOG_INFO() << "EMPLOYEE ADD " << number++;
 
     auto id = generateLogin(request_body.name, request_body.surname, company_id,
                             pg_cluster_);
-    LOG_INFO() << "EMPLOYEE ADD " << number++;
     auto password = userver::utils::generators::GenerateUuid().substr(0, 16);
-    LOG_INFO() << "EMPLOYEE ADD " << number++;
 
     auto query = fmt::format(
         "INSERT INTO working_day_{0}.employees(id, name, surname, patronymic, "
@@ -188,32 +179,25 @@ class AddEmployeeHandler final
         "ON CONFLICT (id) "
         "DO NOTHING",
         company_id);
-    LOG_INFO() << "EMPLOYEE ADD " << number++;
     auto result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kMaster, std::move(query),
         id, request_body.name, request_body.surname, request_body.patronymic,
         password, request_body.role);
 
-    LOG_INFO() << "EMPLOYEE ADD " << number++;
     core::reverse_index::EmployeeAllData data{
         id, request_body.name, request_body.surname, request_body.patronymic,
         request_body.role};
     data.company_id = company_id;
 
-    LOG_INFO() << "EMPLOYEE ADD " << number++;
     userver::storages::postgres::ClusterPtr cluster = pg_cluster_;
-    LOG_INFO() << "EMPLOYEE ADD " << number++;
     core::reverse_index::ReverseIndexRequest r_index_request{
         [cluster, data]() -> core::reverse_index::ReverseIndexResponse {
           return AddReverseIndexFunc(cluster, data);
         }};
 
-    LOG_INFO() << "EMPLOYEE ADD " << number++;
     core::reverse_index::ReverseIndexHandler(r_index_request);
 
-    LOG_INFO() << "EMPLOYEE ADD " << number++;
     AddEmployeeResponse response(id, password);
-    LOG_INFO() << "EMPLOYEE ADD " << number++;
     return response.ToJsonString();
   }
 

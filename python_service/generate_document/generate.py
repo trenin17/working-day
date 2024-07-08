@@ -96,6 +96,9 @@ async def generate_document(request):
         employee_patronymic = data.get('employee_patronymic', "")
         employee_position = data.get('employee_position', "")
 
+        company_name = data.get('subcompany', "")
+        company_id = data.get('company_id', "")
+
         head_name = data['head_name']
         head_surname = data['head_surname']
         head_patronymic = data.get('head_patronymic', "")
@@ -131,6 +134,7 @@ async def generate_document(request):
             '%employee_patronymic%': employee_patronymic,
             '%employee_position%': employee_position,
             '%employee_initials%': employee_initials,
+            '%company_name%': company_name,
             '%head_name%': head_name,
             '%head_surname%': head_surname,
             '%head_patronymic%': head_patronymic,
@@ -150,7 +154,8 @@ async def generate_document(request):
 
         file_name = file_key + '.docx'
         output_path_word = '/tmp/' + file_name
-        replace_macros_in_word("generate_document/templates/" + request_type + ".docx", replacements, output_path_word)
+        replace_macros_in_word("generate_document/templates/" + company_id + "_" + request_type + ".docx",
+                                replacements, output_path_word)
 
         output_path_pdf = '/tmp/' + file_key + '.pdf'
 
@@ -158,7 +163,7 @@ async def generate_document(request):
 
         output_path_pdf_signed = '/tmp/' + file_key + '_signed.pdf'
         # TODO: change company name
-        stamp_data = StampData(now_date, employee_initials, 'ЕСВ.ТЕХНОЛОДЖИ-ПЛЮС', employee_id, file_key)
+        stamp_data = StampData(now_date, employee_initials, company_name, employee_id, file_key)
         create_stamp(output_path_pdf, output_path_pdf_signed, stamp_data)
 
         url = upload_and_presign(output_path_pdf_signed, file_key + '.pdf')

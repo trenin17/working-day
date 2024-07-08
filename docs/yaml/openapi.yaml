@@ -719,6 +719,8 @@ components:
                     type: string
                 photo_link:
                     type: string
+                subcompany:
+                    type: string
 
         EmployeesResponse:
             type: object
@@ -1319,8 +1321,11 @@ components:
             additionalProperties: false
             required:
               - company_id
+              - company_name
             properties:
                 company_id:
+                    type: string
+                company_name:
                     type: string
 
         DocumentsUploadRequest:
