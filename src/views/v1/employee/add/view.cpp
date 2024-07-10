@@ -197,6 +197,13 @@ class AddEmployeeHandler final
 
     core::reverse_index::ReverseIndexHandler(r_index_request);
 
+    result = pg_cluster_->Execute(
+        userver::storages::postgres::ClusterHostType::kMaster,
+        "INSERT INTO working_day_" + company_id +
+            ".employee_team (employee_id, team_id) "
+            "VALUES ($1, $2)",
+        id, "default_team");
+
     AddEmployeeResponse response(id, password);
     return response.ToJsonString();
   }

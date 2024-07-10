@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS ${SCHEMA}.employees (
     position TEXT,
     telegram_id TEXT,
     vk_id TEXT,
-    team TEXT,
+    team TEXT, -- deprecated TODO: remove
     subcompany TEXT NOT NULL DEFAULT '${COMPANY_NAME}'
 );
 

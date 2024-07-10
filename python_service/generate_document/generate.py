@@ -127,7 +127,9 @@ async def generate_document(request):
             head_initials += f"{head_patronymic[0]}."
 
         now_date = datetime.today().strftime('%d.%m.%Y')
-
+        if company_name == "Евсикова С. В. ИП":
+            company_id = 'evsikovaip'
+        
         replacements = {
             '%employee_name%': employee_name,
             '%employee_surname%': employee_surname,
@@ -162,7 +164,6 @@ async def generate_document(request):
         convert_docx_to_pdf(output_path_word, '/tmp')
 
         output_path_pdf_signed = '/tmp/' + file_key + '_signed.pdf'
-        # TODO: change company name
         stamp_data = StampData(now_date, employee_initials, company_name, employee_id, file_key)
         create_stamp(output_path_pdf, output_path_pdf_signed, stamp_data)
 

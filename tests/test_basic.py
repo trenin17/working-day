@@ -9,6 +9,21 @@ from testsuite.databases import pgsql
 
 # Start the tests via `make test-debug` or `make test-release`
 
+def normalize_json(obj):
+    """Recursively normalize the JSON object so that order does not matter."""
+    if isinstance(obj, dict):
+        return {k: normalize_json(v) for k, v in sorted(obj.items())}
+    elif isinstance(obj, list):
+        return sorted((normalize_json(i) for i in obj), key=lambda x: json.dumps(x, sort_keys=True))
+    else:
+        return obj
+
+def are_json_equal(json_str1, json_str2):
+    """Compare two JSON strings to see if they are equal regardless of order."""
+    obj1 = json.loads(json_str1)
+    obj2 = json.loads(json_str2)
+    return normalize_json(obj1) == normalize_json(obj2)
+
 
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])
 async def test_db_initial_data(service_client):
@@ -28,7 +43,7 @@ async def test_add_company(service_client):
     response = await service_client.post(
         '/v1/superuser/company/add',
         headers={'Authorization': 'Bearer zero_token'},
-        json={'company_id': 'second', 'company_name': 'Second'},
+        json={'company_id': 'second', 'company_name': 'Second company'},
     )
 
     assert response.status == 200
@@ -285,6 +300,12 @@ async def test_search_basic(service_client):
     assert response.status == 200
     new_id = json.loads(response.text)['login']
     new_password = json.loads(response.text)['password']
+
+    response = await service_client.post(
+        '/v1/clear-tasks',
+    )
+
+    assert response.status == 200
 
     response = await service_client.post(
         '/v1/search/basic',
@@ -606,14 +627,14 @@ async def test_attendance_list_all(service_client):
     )
 
     assert response.status == 200
-    assert response.text == (
+    assert are_json_equal(response.text, (
         '{"attendances":['
         '{"employee":{"id":"first_id","name":"First","subcompany":"first","surname":"A"},'
         '"end_date":"2023-07-21T15:00:00.000000",'
         '"start_date":"2023-07-21T07:00:00.000000"},'
         '{"employee":{"id":"second_id","name":"Second","subcompany":"first","surname":"B"}},'
         '{"employee":{"id":"tc","name":"Third","subcompany":"first","surname":"C"}}'
-        ']}')
+        ']}')) == True
     response = await service_client.post(
         '/v1/attendance/add',
         params={'employee_id': 'first_id'},
@@ -649,7 +670,7 @@ async def test_attendance_list_all(service_client):
     )
 
     assert response.status == 200
-    assert response.text == (
+    assert are_json_equal(response.text, (
         '{"attendances":['
         '{"employee":{"id":"first_id","name":"First","subcompany":"first","surname":"A"},'
         '"end_date":"2023-07-22T15:00:00.000000",'
@@ -661,7 +682,7 @@ async def test_attendance_list_all(service_client):
         '"end_date":"2023-07-22T15:00:00.000000",'
         '"start_date":"2023-07-22T07:00:00.000000"},'
         '{"employee":{"id":"tc","name":"Third","subcompany":"first","surname":"C"}}'
-        ']}')
+        ']}')) == True
     response = await service_client.post(
         '/v1/attendance/list-all',
         headers={'Authorization': 'Bearer ' + token},
@@ -669,7 +690,7 @@ async def test_attendance_list_all(service_client):
     )
 
     assert response.status == 200
-    assert response.text == (
+    assert are_json_equal(response.text, (
         '{"attendances":['
         '{"employee":{"id":"first_id","name":"First","subcompany":"first","surname":"A"},'
         '"end_date":"2023-07-22T15:00:00.000000",'
@@ -678,7 +699,7 @@ async def test_attendance_list_all(service_client):
         '"end_date":"2023-07-22T15:00:00.000000",'
         '"start_date":"2023-07-22T07:00:00.000000"},'
         '{"employee":{"id":"tc","name":"Third","subcompany":"first","surname":"C"}}'
-        ']}')
+        ']}')) == True
 
 
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])

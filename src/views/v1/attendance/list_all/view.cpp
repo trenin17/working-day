@@ -16,6 +16,10 @@ namespace views::v1::attendance::list_all {
 
 namespace {
 
+struct Team {
+    std::string id;
+};
+
 class AttendanceListAllHandler final
     : public userver::server::handlers::HttpHandlerBase {
  public:
@@ -46,6 +50,27 @@ class AttendanceListAllHandler final
 
     auto result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kSlave,
+        "SELECT et.team_id "
+        "FROM working_day_" + company_id + ".employee_team et "
+        "WHERE et.employee_id = $1",
+        user_id);
+
+    auto teams = result.AsContainer<std::vector<Team>>(
+        userver::storages::postgres::kRowTag);
+
+    userver::storages::postgres::ParameterStore parameters;
+    std::string filter;
+
+    parameters.PushBack(request_body.from);
+    parameters.PushBack(request_body.to);
+    for (const auto& team : teams) {
+      parameters.PushBack(team.id);
+      filter += "$" + std::to_string(parameters.Size()) + ",";
+    }
+    filter.pop_back();
+
+    result = pg_cluster_->Execute(
+        userver::storages::postgres::ClusterHostType::kSlave,
         "SELECT a.start_date, a.end_date, "
             "ROW"
             "(e.id, e.name, "
@@ -54,8 +79,11 @@ class AttendanceListAllHandler final
             "FROM working_day_" + company_id + ".employees e "
             "LEFT JOIN working_day_" + company_id + ".actions a "
             "ON e.id = a.user_id AND a.start_date >= $1 AND a.end_date "
-            "<= $2 AND a.type = 'attendance' ",
-        request_body.from, request_body.to);
+            "<= $2 AND a.type = 'attendance' "
+            "JOIN working_day_" + company_id + ".employee_team et "
+            "ON e.id = et.employee_id "
+            "WHERE et.team_id IN (" + filter + ")",
+        parameters);
 
     AttendanceListAllResponse response;
     response.attendances = result.AsContainer<std::vector<AttendanceListItem>>(
