@@ -35,7 +35,8 @@ CREATE TABLE IF NOT EXISTS working_day_first.employees (
     position TEXT,
     telegram_id TEXT,
     vk_id TEXT,
-    team TEXT
+    team TEXT, -- deprecated TODO: remove
+    subcompany TEXT NOT NULL DEFAULT 'first'
 );
 
 CREATE INDEX idx_employee_by_head ON working_day_first.employees(head_id);
@@ -99,6 +100,7 @@ CREATE TABLE IF NOT EXISTS working_day_first.documents (
     description TEXT,
     type TEXT NOT NULL DEFAULT 'admin_request',
     parent_id TEXT NOT NULL DEFAULT '',
+    created_ts TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     FOREIGN KEY (parent_id) REFERENCES working_day_first.documents (id) ON DELETE CASCADE
 );
 
@@ -129,4 +131,21 @@ CREATE TABLE IF NOT EXISTS working_day_first.employee_document (
   PRIMARY KEY (employee_id, document_id),
   FOREIGN KEY (employee_id) REFERENCES working_day_first.employees (id) ON DELETE CASCADE,
   FOREIGN KEY (document_id) REFERENCES working_day_first.documents (id) ON DELETE CASCADE
+);
+
+DROP TABLE IF EXISTS working_day_first.teams;
+
+CREATE TABLE IF NOT EXISTS working_day_first.teams (
+    id TEXT PRIMARY KEY NOT NULL,
+    name TEXT NOT NULL
+);
+
+DROP TABLE IF EXISTS working_day_first.employee_team;
+
+CREATE TABLE IF NOT EXISTS working_day_first.employee_team (
+  employee_id TEXT NOT NULL,
+  team_id TEXT NOT NULL,
+  PRIMARY KEY (employee_id, team_id),
+  FOREIGN KEY (employee_id) REFERENCES working_day_first.employees (id) ON DELETE CASCADE,
+  FOREIGN KEY (team_id) REFERENCES working_day_first.teams (id) ON DELETE CASCADE
 );

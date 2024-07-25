@@ -52,6 +52,7 @@ class ReverseIndex {
     auto tasks = tasks_.Lock();
 
     while (!tasks->empty()) {
+      tasks->front().Wait();
       tasks->pop();
     }
   }

@@ -57,7 +57,8 @@ class DocumentsListHandler final
             ".documents.description, "
             "working_day_" +
             company_id +
-            ".employee_document.signed "
+            ".employee_document.signed, "
+            "NULL::TEXT as parent_id "
             "FROM working_day_" +
             company_id +
             ".documents "
@@ -68,7 +69,8 @@ class DocumentsListHandler final
             company_id +
             ".employee_document.document_id "
             "WHERE working_day_" +
-            company_id + ".employee_document.employee_id = $1",
+            company_id + ".employee_document.employee_id = $1 "
+            "ORDER BY working_day_" + company_id + ".documents.created_ts DESC",
         user_id);
 
     DocumentsListResponse response;

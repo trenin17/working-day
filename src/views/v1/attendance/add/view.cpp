@@ -79,8 +79,7 @@ class AttendanceAddHandler final
         trx.Execute("DELETE FROM working_day_" + company_id +
                         ".actions "
                         "WHERE user_id = $1 AND type = $2 AND DATE(start_date) "
-                        "= DATE($3) AND "
-                        "DATE(end_date) = DATE($3)",
+                        "= DATE($3)",
                     employee_id, "attendance", request_body.start_date);
 
     auto action_id = userver::utils::generators::GenerateUuid();

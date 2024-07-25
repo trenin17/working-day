@@ -9,7 +9,9 @@ CREATE TABLE IF NOT EXISTS ${SCHEMA}.notifications (
     sender_id TEXT,
     action_id TEXT,
     created TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    FOREIGN KEY (user_id) REFERENCES ${SCHEMA}.employees (id) ON DELETE CASCADE
+    FOREIGN KEY (user_id) REFERENCES ${SCHEMA}.employees (id) ON DELETE CASCADE,
+    FOREIGN KEY (action_id) REFERENCES ${SCHEMA}.actions (id) ON DELETE SET NULL,
+    FOREIGN KEY (sender_id) REFERENCES ${SCHEMA}.employees (id) ON DELETE SET NULL
 );
 
 CREATE INDEX idx_notifications_by_user_id ON ${SCHEMA}.notifications(user_id);

@@ -537,6 +537,12 @@ paths:
                 description: Token of session user, available for managers only
                 schema:
                     type: string
+            requestBody:
+                required: false
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/DocumentsUploadRequest'
             responses:
                 '200':
                     description: Upload link
@@ -712,6 +718,8 @@ components:
                 patronymic:
                     type: string
                 photo_link:
+                    type: string
+                subcompany:
                     type: string
 
         EmployeesResponse:
@@ -1222,6 +1230,10 @@ components:
                     type: array
                     items:
                         type: string
+                is_salary_list:
+                    type: boolean
+                    description: True if document is salary list
+                    default: false
 
         DocumentsListResponse:
             type: object
@@ -1257,6 +1269,9 @@ components:
                 signed:
                     description: This field only valid if requested by assignee of the document
                     type: boolean
+                parent_id:
+                    description: Parent document Id
+                    type: string
 
         DownloadDocumentResponse:
             type: object
@@ -1306,6 +1321,21 @@ components:
             additionalProperties: false
             required:
               - company_id
+              - company_name
             properties:
                 company_id:
                     type: string
+                company_name:
+                    type: string
+
+        DocumentsUploadRequest:
+            type: object
+            additionalProperties: false
+            properties:
+                extension:
+                    type: string
+                    description: File extension
+                    enum:
+                        - .pdf
+                        - .xlsx
+                    default: ".pdf"
