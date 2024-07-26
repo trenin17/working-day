@@ -972,11 +972,18 @@ components:
                     $ref: '#/components/schemas/Timestamp'
                 end_date:
                     $ref: '#/components/schemas/Timestamp'
-                type: 
-                    type: string
-                    enum:
-                      - vacation
+                type:
+                    $ref: '#/components/schemas/AbscenceType'       
         
+        AbscenceType:
+            type: string
+            enum:
+                - vacation
+                - sick_leave
+                - unpaid_vacation
+                - business_trip
+                - overtime
+
         AbscenceRequestResponse:
             type: object
             additionalProperties: false
@@ -1202,6 +1209,9 @@ components:
                 end_date:
                     $ref: '#/components/schemas/Timestamp'
                     description: start_date and end_date should be in the same day
+                abscence_type:
+                    $ref: '#/components/schemas/AbscenceType'
+                    description: If employee has an approved abscence for a given period
 
         UploadDocumentResponse:
             type: object

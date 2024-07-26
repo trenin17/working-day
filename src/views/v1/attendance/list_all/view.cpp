@@ -78,7 +78,7 @@ class AttendanceListAllHandler final
             "NULL::text, e.subcompany) "
             "FROM working_day_" + company_id + ".employees e "
             "LEFT JOIN working_day_" + company_id + ".actions a "
-            "ON e.id = a.user_id AND a.start_date >= $1 AND a.end_date "
+            "ON e.id = a.user_id AND a.start_date >= $1 AND a.start_date "
             "<= $2 AND a.type = 'attendance' "
             "JOIN working_day_" + company_id + ".employee_team et "
             "ON e.id = et.employee_id "
