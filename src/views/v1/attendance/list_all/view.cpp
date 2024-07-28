@@ -100,7 +100,7 @@ class AttendanceListAllHandler final
             "FROM working_day_" + company_id + ".employees e "
             "JOIN working_day_" + company_id + ".actions a "
             "ON e.id = a.user_id AND a.start_date >= $1 AND a.start_date "
-            "<= $2 AND a.type <> 'attendance' AND a.type <> 'overtime'"
+            "<= $2 AND a.type <> 'attendance' AND a.type <> 'overtime' AND a.status = 'approved'"
             "JOIN working_day_" + company_id + ".employee_team et "
             "ON e.id = et.employee_id "
             "WHERE et.team_id IN (" + filter + ")",
@@ -163,7 +163,7 @@ class AttendanceListAllHandler final
             "FROM working_day_" + company_id + ".employees e "
             "JOIN working_day_" + company_id + ".actions a "
             "ON e.id = a.user_id AND a.start_date >= $1 AND a.start_date "
-            "<= $2 AND a.type = 'overtime'"
+            "<= $2 AND a.type = 'overtime' AND a.status = 'approved'"
             "JOIN working_day_" + company_id + ".employee_team et "
             "ON e.id = et.employee_id "
             "WHERE et.team_id IN (" + filter + ")",
