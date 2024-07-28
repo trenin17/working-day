@@ -143,6 +143,12 @@
 #define USE_LIST_EMPLOYEE
 #endif
 
+#ifdef V1_ABSCENCE_REQUEST
+#define USE_ABSCENCE_REQUEST_REQUEST
+#define USE_ABSCENCE_REQUEST_RESPONSE
+#define USE_ERROR_MESSAGE
+#endif
+
 #ifdef USE_LIST_EMPLOYEE
 struct ListEmployee : public JsonCompatible {
   // For postgres initialization type needs to be default constructible
@@ -151,7 +157,11 @@ struct ListEmployee : public JsonCompatible {
   // Make sure to initialize parsing first for new structure
   ListEmployee(ListEmployee&& other) { *this = std::move(other); }
 
+  ListEmployee(const ListEmployee& other) { *this = other; }
+
   ListEmployee& operator=(ListEmployee&& other) = default;
+
+  ListEmployee& operator=(const ListEmployee& other) = default;
 
   // Method for postgres initialization of non-trivial types
   auto Introspect() {
@@ -253,6 +263,8 @@ struct ListEmployeeWithSubcompany : public ListEmployee {
     return std::tuple_cat(ListEmployee::Introspect(), std::tie(subcompany));
   }
 
+  ListEmployeeWithSubcompany& operator=(const ListEmployeeWithSubcompany& other) = default;
+
   REGISTER_STRUCT_FIELD(subcompany, std::string, "subcompany");
 };
 #endif
@@ -265,7 +277,7 @@ struct AttendanceListItem : public JsonCompatible {
 
   AttendanceListItem& operator=(AttendanceListItem&& other) = default;
 
-  auto Introspect() { return std::tie(start_date, end_date, employee); }
+  auto Introspect() { return std::tie(start_date, end_date, abscence_type, employee); }
 
   REGISTER_STRUCT_FIELD_OPTIONAL(start_date,
                                  userver::storages::postgres::TimePoint,
@@ -274,6 +286,7 @@ struct AttendanceListItem : public JsonCompatible {
                                  userver::storages::postgres::TimePoint,
                                  "end_date");
   REGISTER_STRUCT_FIELD(employee, ListEmployeeWithSubcompany, "employee");
+  REGISTER_STRUCT_FIELD_OPTIONAL(abscence_type, std::string, "abscence_type");
   // REGISTER_STRUCT_FIELD_OPTIONAL(abscence_date,
   // userver::storages::postgres::TimePoint, "abscence_date");
 };
@@ -435,6 +448,7 @@ struct AuthorizeResponse : public JsonCompatible {
 
 #ifdef USE_PYSERVICE_DOCUMENT_GENERATE_REQUEST
 struct PyserviceDocumentGenerateRequest : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(action_type, std::string, "action_type");
   REGISTER_STRUCT_FIELD(request_type, std::string, "request_type");
   REGISTER_STRUCT_FIELD(employee_id, std::string, "employee_id");
   REGISTER_STRUCT_FIELD(employee_name, std::string, "employee_name");
@@ -481,5 +495,21 @@ struct PyserviceDocumentSignRequest : public JsonCompatible {
   REGISTER_STRUCT_FIELD(subcompany, std::string, "subcompany");
   REGISTER_STRUCT_FIELD(file_key, std::string, "file_key");
   REGISTER_STRUCT_FIELD(signed_file_key, std::string, "signed_file_key");
+};
+#endif
+
+#ifdef USE_ABSCENCE_REQUEST_REQUEST
+struct AbscenceRequestRequest : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(start_date, userver::storages::postgres::TimePoint,
+                        "start_date");
+  REGISTER_STRUCT_FIELD(end_date, userver::storages::postgres::TimePoint,
+                        "end_date");
+  REGISTER_STRUCT_FIELD(type, std::string, "type");
+};
+#endif
+
+#ifdef USE_ABSCENCE_REQUEST_RESPONSE
+struct AbscenceRequestResponse : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(action_id, std::string, "action_id");
 };
 #endif

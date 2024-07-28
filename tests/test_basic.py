@@ -630,8 +630,8 @@ async def test_attendance_list_all(service_client):
     assert are_json_equal(response.text, (
         '{"attendances":['
         '{"employee":{"id":"first_id","name":"First","subcompany":"first","surname":"A"},'
-        '"end_date":"2023-07-21T15:00:00.000000",'
-        '"start_date":"2023-07-21T07:00:00.000000"},'
+        '"end_date":"2023-07-21T18:00:00.000000",'
+        '"start_date":"2023-07-21T10:00:00.000000"},'
         '{"employee":{"id":"second_id","name":"Second","subcompany":"first","surname":"B"}},'
         '{"employee":{"id":"tc","name":"Third","subcompany":"first","surname":"C"}}'
         ']}')) == True
@@ -673,14 +673,14 @@ async def test_attendance_list_all(service_client):
     assert are_json_equal(response.text, (
         '{"attendances":['
         '{"employee":{"id":"first_id","name":"First","subcompany":"first","surname":"A"},'
-        '"end_date":"2023-07-22T15:00:00.000000",'
-        '"start_date":"2023-07-22T07:00:00.000000"},'
+        '"end_date":"2023-07-22T18:00:00.000000",'
+        '"start_date":"2023-07-22T10:00:00.000000"},'
         '{"employee":{"id":"first_id","name":"First","subcompany":"first","surname":"A"},'
-        '"end_date":"2023-07-21T15:00:00.000000",'
-        '"start_date":"2023-07-21T07:00:00.000000"},'
+        '"end_date":"2023-07-21T18:00:00.000000",'
+        '"start_date":"2023-07-21T10:00:00.000000"},'
         '{"employee":{"id":"second_id","name":"Second","subcompany":"first","surname":"B"},'
-        '"end_date":"2023-07-22T15:00:00.000000",'
-        '"start_date":"2023-07-22T07:00:00.000000"},'
+        '"end_date":"2023-07-22T18:00:00.000000",'
+        '"start_date":"2023-07-22T10:00:00.000000"},'
         '{"employee":{"id":"tc","name":"Third","subcompany":"first","surname":"C"}}'
         ']}')) == True
     response = await service_client.post(
@@ -693,13 +693,49 @@ async def test_attendance_list_all(service_client):
     assert are_json_equal(response.text, (
         '{"attendances":['
         '{"employee":{"id":"first_id","name":"First","subcompany":"first","surname":"A"},'
-        '"end_date":"2023-07-22T15:00:00.000000",'
-        '"start_date":"2023-07-22T07:00:00.000000"},'
+        '"end_date":"2023-07-22T18:00:00.000000",'
+        '"start_date":"2023-07-22T10:00:00.000000"},'
         '{"employee":{"id":"second_id","name":"Second","subcompany":"first","surname":"B"},'
-        '"end_date":"2023-07-22T15:00:00.000000",'
-        '"start_date":"2023-07-22T07:00:00.000000"},'
+        '"end_date":"2023-07-22T18:00:00.000000",'
+        '"start_date":"2023-07-22T10:00:00.000000"},'
         '{"employee":{"id":"tc","name":"Third","subcompany":"first","surname":"C"}}'
         ']}')) == True
+
+    response = await service_client.post(
+        '/v1/abscence/request',
+        headers={'Authorization': 'Bearer first_token'},
+        json={'type': 'sick_leave', 'start_date': '2023-07-22T00:00:00',
+              'end_date': '2023-07-23T00:00:00'}
+    )
+    assert response.status == 200
+    action_id = json.loads(response.text)['action_id']
+
+    response = await service_client.post(
+        '/v1/abscence/verdict',
+        headers={'Authorization': 'Bearer first_token'},
+        json={'action_id': action_id, 'approve': True}
+    )
+    assert response.status == 200
+
+    response = await service_client.post(
+        '/v1/attendance/list-all',
+        headers={'Authorization': 'Bearer ' + token},
+        json={'from': '2023-07-21T00:00:00', 'to': '2023-07-23T00:00:00'}
+    )
+
+    assert response.status == 200
+    assert are_json_equal(response.text, (
+        '{"attendances":'
+        '[{"employee":{"id":"first_id","name":"First","subcompany":"first","surname":"A"},'
+        '"end_date":"2023-07-21T18:00:00.000000","start_date":"2023-07-21T10:00:00.000000"},'
+        '{"employee":{"id":"tc","name":"Third","subcompany":"first","surname":"C"}},'
+        '{"abscence_type":"sick_leave",'
+        '"employee":{"id":"first_id","name":"First","subcompany":"first","surname":"A"},'
+        '"end_date":"2023-07-22T23:59:00.000000","start_date":"2023-07-22T00:00:00.000000"},'
+        '{"abscence_type":"sick_leave",'
+        '"employee":{"id":"first_id","name":"First","subcompany":"first","surname":"A"},'
+        '"end_date":"2023-07-23T23:59:00.000000","start_date":"2023-07-23T00:00:00.000000"}'
+        ']}'))  == True
 
 
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])
@@ -721,8 +757,8 @@ async def test_actions(service_client):
     assert response.status == 200
     assert response.text == (
         '{"actions":[{"blocking_actions_ids":[],'
-        '"end_date":"2023-07-21T20:59:00.000000","id":"' + action_id + '",'
-        '"start_date":"2023-07-09T21:00:00.000000","status":"pending","type":"vacation"'
+        '"end_date":"2023-07-21T23:59:00.000000","id":"' + action_id + '",'
+        '"start_date":"2023-07-10T00:00:00.000000","status":"pending","type":"vacation"'
         '}]}')
 
 
