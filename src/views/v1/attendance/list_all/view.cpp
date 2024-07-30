@@ -99,8 +99,9 @@ class AttendanceListAllHandler final
             "NULL::text, e.subcompany) "
             "FROM working_day_" + company_id + ".employees e "
             "JOIN working_day_" + company_id + ".actions a "
-            "ON e.id = a.user_id AND a.start_date >= $1 AND a.start_date "
-            "<= $2 AND a.type <> 'attendance' AND a.type <> 'overtime' AND a.status = 'approved'"
+            "ON e.id = a.user_id AND ((a.start_date >= $1 AND a.start_date "
+            "<= $2) OR (a.end_date >= $1 AND a.end_date <= $2) OR (a.start_date < $1 AND a.end_date > $2))"
+            " AND a.type <> 'attendance' AND a.type <> 'overtime' AND a.status = 'approved'"
             "JOIN working_day_" + company_id + ".employee_team et "
             "ON e.id = et.employee_id "
             "WHERE et.team_id IN (" + filter + ")",
@@ -109,7 +110,7 @@ class AttendanceListAllHandler final
     auto other_actions = result.AsContainer<std::vector<AttendanceListItem>>(
         userver::storages::postgres::kRowTag);
 
-    std::set<std::string> other_actions_days;
+    std::set<std::pair<std::string, std::string>> other_actions_days;
     for (const auto& action : other_actions) {
         if (!action.start_date.has_value()) {
             continue;
@@ -119,7 +120,7 @@ class AttendanceListAllHandler final
         using namespace userver::utils::datetime;
         using namespace std::literals::chrono_literals;
         for (; cur_date < action.end_date.value(); cur_date += 1440min) {
-            other_actions_days.insert(Timestring(cur_date, tz, "%Y-%m-%d"));
+            other_actions_days.insert({Timestring(cur_date, tz, "%Y-%m-%d"), action.employee.id});
         }
     }
 
@@ -128,7 +129,7 @@ class AttendanceListAllHandler final
     for (auto& attendance : attendances) {
         if (attendance.start_date.has_value()) { 
             auto date = userver::utils::datetime::Timestring(attendance.start_date.value(), tz, "%Y-%m-%d");
-            if (other_actions_days.find(date) != other_actions_days.end()) {
+            if (other_actions_days.find({date, attendance.employee.id}) != other_actions_days.end()) {
                 continue;
             }
         }
@@ -144,6 +145,9 @@ class AttendanceListAllHandler final
 
         using namespace std::literals::chrono_literals;
         for (; cur_date < action.end_date.value(); cur_date += 1440min) {
+            if(!(cur_date >= request_body.from && cur_date <= request_body.to)) {
+                continue;
+            }
             AttendanceListItem item;
             item.start_date = cur_date;
             item.end_date = cur_date + 1439min;

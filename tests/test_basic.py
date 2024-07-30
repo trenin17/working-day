@@ -718,6 +718,22 @@ async def test_attendance_list_all(service_client):
     assert response.status == 200
 
     response = await service_client.post(
+        '/v1/abscence/request',
+        headers={'Authorization': 'Bearer ' + token},
+        json={'type': 'unpaid_vacation', 'start_date': '2023-07-01T00:00:00',
+              'end_date': '2023-07-30T00:00:00'}
+    )
+    assert response.status == 200
+    action_id = json.loads(response.text)['action_id']
+
+    response = await service_client.post(
+        '/v1/abscence/verdict',
+        headers={'Authorization': 'Bearer ' + token},
+        json={'action_id': action_id, 'approve': True}
+    )
+    assert response.status == 200
+
+    response = await service_client.post(
         '/v1/attendance/list-all',
         headers={'Authorization': 'Bearer ' + token},
         json={'from': '2023-07-21T00:00:00', 'to': '2023-07-23T00:00:00'}
@@ -729,12 +745,23 @@ async def test_attendance_list_all(service_client):
         '[{"employee":{"id":"first_id","name":"First","subcompany":"first","surname":"A"},'
         '"end_date":"2023-07-21T18:00:00.000000","start_date":"2023-07-21T10:00:00.000000"},'
         '{"employee":{"id":"tc","name":"Third","subcompany":"first","surname":"C"}},'
+        '{"employee":{"id":"second_id","name":"Second","subcompany":"first","surname":"B"},'
+        '"end_date":"2023-07-22T18:00:00.000000","start_date":"2023-07-22T10:00:00.000000"},'
         '{"abscence_type":"sick_leave",'
         '"employee":{"id":"first_id","name":"First","subcompany":"first","surname":"A"},'
         '"end_date":"2023-07-22T23:59:00.000000","start_date":"2023-07-22T00:00:00.000000"},'
         '{"abscence_type":"sick_leave",'
         '"employee":{"id":"first_id","name":"First","subcompany":"first","surname":"A"},'
-        '"end_date":"2023-07-23T23:59:00.000000","start_date":"2023-07-23T00:00:00.000000"}'
+        '"end_date":"2023-07-23T23:59:00.000000","start_date":"2023-07-23T00:00:00.000000"},'
+        '{"abscence_type":"unpaid_vacation",'
+        '"employee":{"id":"tc","name":"Third","subcompany":"first","surname":"C"},'
+        '"end_date":"2023-07-23T23:59:00.000000","start_date":"2023-07-23T00:00:00.000000"},'
+        '{"abscence_type":"unpaid_vacation",'
+        '"employee":{"id":"tc","name":"Third","subcompany":"first","surname":"C"},'
+        '"end_date":"2023-07-22T23:59:00.000000","start_date":"2023-07-22T00:00:00.000000"},'
+        '{"abscence_type":"unpaid_vacation",'
+        '"employee":{"id":"tc","name":"Third","subcompany":"first","surname":"C"},'
+        '"end_date":"2023-07-21T23:59:00.000000","start_date":"2023-07-21T00:00:00.000000"}'
         ']}'))  == True
 
 
