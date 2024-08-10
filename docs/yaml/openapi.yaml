@@ -685,6 +685,25 @@ paths:
                 '200':
                     description: Company was added
 
+    /v1/inventory/add:
+        post:
+            description: Add new inventory item
+            parameters:
+              - in: header
+                name: Authorization
+                description: Token of session user, available for superuser only
+                schema:
+                    type: string
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/InventoryAddRequest'
+            responses:
+                '200':
+                    description: Inventory item was added
+
 components:
     schemas:
         ErrorMessage:
@@ -810,6 +829,10 @@ components:
                     type: string
                 team:
                     type: string
+                inventory:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/InventoryItem'
 
         ProfileEditRequest:
             type: object
@@ -838,10 +861,13 @@ components:
             required:
               - login
               - password
+              - company_id
             properties:
                 login:
                     type: string
                 password:
+                    type: string
+                company_id:
                     type: string
 
         AuthorizeResponse:
@@ -1349,3 +1375,24 @@ components:
                         - .pdf
                         - .xlsx
                     default: ".pdf"
+
+        InventoryItem:
+            type: object
+            additionalProperties: false
+            required:
+              - name
+            properties:
+                name:
+                    type: string
+                status:
+                    type: string
+                    enum:
+                      - pending
+                      - approved
+
+        InventoryAddRequest:
+            type: object
+            additionalProperties: false
+            properties:
+                item:
+                    $ref: '#/components/schemas/InventoryItem'
