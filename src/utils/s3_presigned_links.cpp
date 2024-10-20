@@ -7,8 +7,8 @@
 
 namespace utils::s3_presigned_links {
 
-std::string GeneratePresignedLink(const std::string& key,
-                                       const LinkType type, const std::string& bucket) {
+std::string GeneratePresignedLink(const std::string& key, const LinkType type,
+                                  const std::string& bucket) {
   std::string result;
 
   {

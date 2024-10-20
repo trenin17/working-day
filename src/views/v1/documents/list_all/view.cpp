@@ -50,8 +50,9 @@ class DocumentsListAllHandler final
         "type, sign_required, "
         "description, NULL::BOOLEAN as signed, NULL::TEXT as parent_id "
         "FROM working_day_" +
-            company_id + ".documents "
-        "WHERE parent_id = id");
+            company_id +
+            ".documents "
+            "WHERE parent_id = id");
 
     DocumentsListAllResponse response;
     response.documents = result.AsContainer<std::vector<DocumentItem>>(

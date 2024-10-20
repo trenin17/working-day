@@ -18,6 +18,7 @@ def normalize_json(obj):
     else:
         return obj
 
+
 def are_json_equal(json_str1, json_str2):
     """Compare two JSON strings to see if they are equal regardless of order."""
     obj1 = json.loads(json_str1)
@@ -34,7 +35,7 @@ async def test_db_initial_data(service_client):
     )
 
     assert response.status == 200
-    assert response.text == ('{"id":"first_id","name":"First",'
+    assert response.text == ('{"id":"first_id","inventory":[],"name":"First",'
                              '"phones":[],"surname":"A"}')
 
 
@@ -126,7 +127,7 @@ async def test_add(service_client):
     )
 
     assert response.status == 200
-    assert response.text == ('{"id":"' + new_id + '","name":"Third",'
+    assert response.text == ('{"id":"' + new_id + '","inventory":[],"name":"Third",'
                              '"password":"' + new_password + '",'
                              '"phones":[],"surname":"C"}')
 
@@ -454,7 +455,7 @@ async def test_search_edit(service_client):
     )
 
     assert response.status == 200
-    
+
     response = await service_client.post(
         '/v1/search/full',
         json={'search_key': '+1111', 'limit': 1},
@@ -762,7 +763,7 @@ async def test_attendance_list_all(service_client):
         '{"abscence_type":"unpaid_vacation",'
         '"employee":{"id":"tc","name":"Third","subcompany":"first","surname":"C"},'
         '"end_date":"2023-07-21T23:59:00.000000","start_date":"2023-07-21T00:00:00.000000"}'
-        ']}'))  == True
+        ']}')) == True
 
 
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])
@@ -1000,7 +1001,30 @@ async def test_upload_document(service_client):
     assert response.status == 200
     response_json = json.loads(response.text)
     assert response_json["id"].endswith(".xlsx")
-    assert response_json["url"].startswith("https://working-day-documents.storage.yandexcloud.net")
+    assert response_json["url"].startswith(
+        "https://working-day-documents.storage.yandexcloud.net")
+
+
+@pytest.mark.pgsql('db_1', files=['initial_data.sql'])
+async def test_inventory(service_client):
+    response = await service_client.post(
+        '/v1/inventory/add',
+        headers={'Authorization': 'Bearer first_token'},
+        json={'employee_id': 'first_id', 'item': {
+            'name': 'item1', 'description': 'desc1', 'id': 'id1'}}
+    )
+
+    assert response.status == 200
+
+    response = await service_client.get(
+        '/v1/employee/info',
+        params={'employee_id': 'first_id'},
+        headers={'Authorization': 'Bearer first_token'},
+    )
+    assert response.status == 200
+    assert are_json_equal(response.text, (
+        '{"id":"first_id","inventory":[{"description":"desc1","id":"id1","name":"item1"}],"name":"First","phones":[],"surname":"A"}'
+    )) == True
 
 
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])
@@ -1010,4 +1034,3 @@ async def test_end(service_client):
     )
 
     assert response.status == 200
-    

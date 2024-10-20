@@ -61,28 +61,30 @@ class AbscenceRequestHandler final
     std::optional<std::string> action_status;
     action_status = "pending";
     std::string notification_text;
-    constexpr auto notification_fmt = "Ваш сотрудник запросил {} c {} по {}. Подтвердите или отклоните запрос.";
+    constexpr auto notification_fmt =
+        "Ваш сотрудник запросил {} c {} по {}. Подтвердите или отклоните "
+        "запрос.";
     auto start_date = userver::utils::datetime::Timestring(
         request_body.start_date, tz, "%Y-%m-%d");
-    auto end_date = userver::utils::datetime::Timestring(
-        request_body.end_date, tz, "%Y-%m-%d");
+    auto end_date = userver::utils::datetime::Timestring(request_body.end_date,
+                                                         tz, "%Y-%m-%d");
     auto start_date_time = userver::utils::datetime::Timestring(
         request_body.start_date, tz, "%Y-%m-%d %H:%M:%S");
     auto end_date_time = userver::utils::datetime::Timestring(
         request_body.end_date, tz, "%Y-%m-%d %H:%M:%S");
 
     if (request_body.type == "vacation") {
-      notification_text = fmt::format(notification_fmt, "отпуск", start_date,
-                                      end_date);
+      notification_text =
+          fmt::format(notification_fmt, "отпуск", start_date, end_date);
     } else if (request_body.type == "sick_leave") {
-      notification_text = fmt::format(notification_fmt, "больничный", start_date,
-                                      end_date);
+      notification_text =
+          fmt::format(notification_fmt, "больничный", start_date, end_date);
     } else if (request_body.type == "unpaid_vacation") {
       notification_text = fmt::format(notification_fmt, "неоплачиваемый отпуск",
                                       start_date, end_date);
     } else if (request_body.type == "business_trip") {
-      notification_text = fmt::format(notification_fmt, "командировку",
-                                      start_date, end_date);
+      notification_text =
+          fmt::format(notification_fmt, "командировку", start_date, end_date);
     } else if (request_body.type == "overtime") {
       notification_text = fmt::format(notification_fmt, "сверхурочные",
                                       start_date_time, end_date_time);
@@ -96,11 +98,11 @@ class AbscenceRequestHandler final
       using namespace userver::utils::datetime;
       using namespace std::literals::chrono_literals;
       request_body.start_date = Stringtime(
-          Timestring(request_body.start_date, tz, "%Y-%m-%d"),
-          tz, "%Y-%m-%d");
-      request_body.end_date = Stringtime(
-          Timestring(request_body.end_date, tz, "%Y-%m-%d"),
-          tz, "%Y-%m-%d") + 1439min;  // + 23:59
+          Timestring(request_body.start_date, tz, "%Y-%m-%d"), tz, "%Y-%m-%d");
+      request_body.end_date =
+          Stringtime(Timestring(request_body.end_date, tz, "%Y-%m-%d"), tz,
+                     "%Y-%m-%d") +
+          1439min;  // + 23:59
     }
 
     auto trx = pg_cluster_->Begin(
@@ -130,14 +132,13 @@ class AbscenceRequestHandler final
 
     auto notification_id = userver::utils::generators::GenerateUuid();
     result = trx.Execute("INSERT INTO working_day_" + company_id +
-                              ".notifications(id, type, text, user_id, "
-                              "sender_id, action_id) "
-                              "VALUES($1, $2, $3, $4, $5, $6) "
-                              "ON CONFLICT (id) "
-                              "DO NOTHING",
-                          notification_id, "vacation_request",
-                          notification_text, head_id.value_or(user_id),
-                          user_id, action_id);
+                             ".notifications(id, type, text, user_id, "
+                             "sender_id, action_id) "
+                             "VALUES($1, $2, $3, $4, $5, $6) "
+                             "ON CONFLICT (id) "
+                             "DO NOTHING",
+                         notification_id, "vacation_request", notification_text,
+                         head_id.value_or(user_id), user_id, action_id);
 
     trx.Commit();
 

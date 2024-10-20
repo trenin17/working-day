@@ -1384,11 +1384,10 @@ components:
             properties:
                 name:
                     type: string
-                status:
+                description:
                     type: string
-                    enum:
-                      - pending
-                      - approved
+                id:
+                    type: string
 
         InventoryAddRequest:
             type: object
@@ -1396,3 +1395,5 @@ components:
             properties:
                 item:
                     $ref: '#/components/schemas/InventoryItem'
+                employee_id:
+                    type: string

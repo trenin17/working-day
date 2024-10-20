@@ -78,11 +78,11 @@ properties:
             ".documents "
             "WHERE id = $1",
         document_id);
-    auto document_info = result.AsSingleRow<DocumentInfo>(
-        userver::storages::postgres::kRowTag);
+    auto document_info =
+        result.AsSingleRow<DocumentInfo>(userver::storages::postgres::kRowTag);
 
     if (!document_info.sign_required) {
-        request.GetHttpResponse().SetStatus(
+      request.GetHttpResponse().SetStatus(
           userver::server::http::HttpStatus::kBadRequest);
       return ErrorMessage{"Document doesn't require sign"}.ToJsonString();
     }
@@ -106,14 +106,15 @@ properties:
     py_request.employee_patronymic = employee_info.patronymic;
     py_request.subcompany = employee_info.subcompany;
     py_request.file_key = document_id;
-    py_request.signed_file_key = userver::utils::generators::GenerateUuid() + ".pdf";
+    py_request.signed_file_key =
+        userver::utils::generators::GenerateUuid() + ".pdf";
 
     auto response = http_client_.CreateRequest()
-                      .post(pyservice_url_)
-                      .data(py_request.ToJsonString())
-                      .retry(2)  // retry once in case of error
-                      .timeout(std::chrono::milliseconds{5000})
-                      .perform();  // start performing the request
+                        .post(pyservice_url_)
+                        .data(py_request.ToJsonString())
+                        .retry(2)  // retry once in case of error
+                        .timeout(std::chrono::milliseconds{5000})
+                        .perform();  // start performing the request
     response->raise_for_status();
 
     result = pg_cluster_->Execute(
@@ -129,8 +130,9 @@ properties:
             ".documents(id, name, type, "
             "sign_required, description, parent_id) "
             "VALUES($1, $2, $3, $4, $5, $6)",
-        py_request.signed_file_key, document_info.name, document_info.type, true, document_info.description, document_id);
-    
+        py_request.signed_file_key, document_info.name, document_info.type,
+        true, document_info.description, document_id);
+
     LOG_INFO() << "NEW ID " << py_request.signed_file_key;
 
     result = pg_cluster_->Execute(
@@ -142,10 +144,12 @@ properties:
             "WHERE id = $1",
         py_request.signed_file_key);
 
-    auto inserted_docs = result.AsSingleRow<DocumentInfo>(
-        userver::storages::postgres::kRowTag);
-    LOG_INFO() << "ROWS AFFECTED " << inserted_docs.id << " " << inserted_docs.name << " " << inserted_docs.type << " " << inserted_docs.sign_required << " " << inserted_docs.description.value_or("") << " " << document_id;
-
+    auto inserted_docs =
+        result.AsSingleRow<DocumentInfo>(userver::storages::postgres::kRowTag);
+    LOG_INFO() << "ROWS AFFECTED " << inserted_docs.id << " "
+               << inserted_docs.name << " " << inserted_docs.type << " "
+               << inserted_docs.sign_required << " "
+               << inserted_docs.description.value_or("") << " " << document_id;
 
     result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kMaster,

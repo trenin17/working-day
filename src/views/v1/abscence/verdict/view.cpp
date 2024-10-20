@@ -137,8 +137,8 @@ void GenerateVacationDocument(
 
   auto action_name = ActionTypeToName(action_info.type);
 
-  auto document_name = "Запрос на " + action_name.value() + " " + employee_info.surname + " " +
-                       employee_info.name + " " +
+  auto document_name = "Запрос на " + action_name.value() + " " +
+                       employee_info.surname + " " + employee_info.name + " " +
                        userver::utils::datetime::Timestring(
                            action_info.start_date, "UTC", "%d.%m.%Y") +
                        " - " +

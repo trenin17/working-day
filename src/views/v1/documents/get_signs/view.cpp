@@ -49,15 +49,17 @@ class DocumentsGetSignsHandler final
         userver::storages::postgres::ClusterHostType::kMaster,
         "SELECT ROW "
         "(e.id, e.name, e.surname, e.patronymic, "
-            "e.photo_link), ed.signed "
-            "FROM working_day_" +
+        "e.photo_link), ed.signed "
+        "FROM working_day_" +
             company_id +
             ".employees e "
             "JOIN working_day_" +
-            company_id + ".employee_document ed ON e.id = "
+            company_id +
+            ".employee_document ed ON e.id = "
             "ed.employee_id "
             "JOIN working_day_" +
-            company_id + ".documents d ON ed.document_id = d.id "
+            company_id +
+            ".documents d ON ed.document_id = d.id "
             "WHERE d.parent_id = $1",
         document_id);
 

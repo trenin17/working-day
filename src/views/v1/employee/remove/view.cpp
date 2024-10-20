@@ -72,7 +72,7 @@ core::reverse_index::ReverseIndexResponse DeleteReverseIndexFunc(
                            "WHERE key IN " +
                            filter +
                            "); "
-                        "DELETE FROM working_day_" +
+                           "DELETE FROM working_day_" +
                            data.company_id.value() +
                            ".reverse_index "
                            "WHERE key IN " +

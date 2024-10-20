@@ -69,8 +69,10 @@ class DocumentsListHandler final
             company_id +
             ".employee_document.document_id "
             "WHERE working_day_" +
-            company_id + ".employee_document.employee_id = $1 "
-            "ORDER BY working_day_" + company_id + ".documents.created_ts DESC",
+            company_id +
+            ".employee_document.employee_id = $1 "
+            "ORDER BY working_day_" +
+            company_id + ".documents.created_ts DESC",
         user_id);
 
     DocumentsListResponse response;
