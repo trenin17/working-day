@@ -26,6 +26,21 @@ namespace views::v1::abscence::verdict {
 
 namespace {
 
+std::optional<std::string> ActionTypeToName(const std::string& type) {
+  if (type == "vacation") {
+    return "отпуск";
+  } else if (type == "sick_leave") {
+    return "больничный";
+  } else if (type == "business_trip") {
+    return "командировку";
+  } else if (type == "unpaid_vacation") {
+    return "неоплачиваемый отпуск";
+  } else if (type == "overtime") {
+    return "сверхурочное время";
+  }
+  return std::nullopt;
+}
+
 struct ActionInfo {
   std::string employee_id, type;
   userver::storages::postgres::TimePoint start_date, end_date;
@@ -70,12 +85,6 @@ void GenerateVacationDocument(
              action_id)
           .AsSingleRow<ActionInfo>(userver::storages::postgres::kRowTag);
 
-  if (action_info.type != "vacation") {
-    trx.Rollback();
-    LOG_ERROR() << "Action is not a vacation";
-    return;
-  }
-
   auto employee_info =
       trx.Execute(
              "SELECT name, surname, subcompany, patronymic, head_id, position "
@@ -99,6 +108,7 @@ void GenerateVacationDocument(
   trx.Commit();
 
   PyserviceDocumentGenerateRequest link_request;
+  link_request.action_type = action_info.type;
   link_request.request_type = request_type;
   link_request.employee_id = action_info.employee_id;
   link_request.employee_name = employee_info.name;
@@ -125,8 +135,10 @@ void GenerateVacationDocument(
                       .perform();  // start performing the request
   response->raise_for_status();
 
-  auto document_name = "Запрос на отпуск " + employee_info.surname + " " +
-                       employee_info.name + " " +
+  auto action_name = ActionTypeToName(action_info.type);
+
+  auto document_name = "Запрос на " + action_name.value() + " " +
+                       employee_info.surname + " " + employee_info.name + " " +
                        userver::utils::datetime::Timestring(
                            action_info.start_date, "UTC", "%d.%m.%Y") +
                        " - " +
@@ -197,8 +209,9 @@ class AbscenceVerdictHandler final
                request_body.action_id)
             .AsSingleRow<ActionInfo>(userver::storages::postgres::kRowTag);
 
+    auto action_name = ActionTypeToName(action_info.type);
     std::string notification_text =
-        "Ваш запрос на отпуск с " +
+        "Ваш запрос на " + action_name.value() + " с " +
         userver::utils::datetime::Timestring(action_info.start_date, "UTC",
                                              "%d.%m.%Y") +
         " по " +

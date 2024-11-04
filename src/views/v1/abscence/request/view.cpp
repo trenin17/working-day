@@ -1,6 +1,6 @@
-#include "view.hpp"
+#define V1_ABSCENCE_REQUEST
 
-#include <nlohmann/json.hpp>
+#include "view.hpp"
 
 #include <userver/clients/dns/component.hpp>
 #include <userver/components/component_config.hpp>
@@ -11,6 +11,10 @@
 #include <userver/storages/postgres/component.hpp>
 #include <userver/utils/uuid4.hpp>
 
+#include "definitions/all.hpp"
+
+#include <fmt/core.h>
+
 using json = nlohmann::json;
 
 namespace views::v1::abscence::request {
@@ -18,39 +22,6 @@ namespace views::v1::abscence::request {
 const std::string tz = "UTC";
 
 namespace {
-
-class AbscenceRequestRequest {
- public:
-  AbscenceRequestRequest(const std::string& body) {
-    using namespace userver::utils::datetime;
-    using namespace std::literals::chrono_literals;
-    auto j = json::parse(body);
-    start_date = Stringtime(
-        Timestring(Stringtime(j["start_date"], tz, "%Y-%m-%dT%H:%M:%E6S"), tz,
-                   "%Y-%m-%d"),
-        tz, "%Y-%m-%d");
-    end_date = Stringtime(
-        Timestring(Stringtime(j["end_date"], tz, "%Y-%m-%dT%H:%M:%E6S"), tz,
-                   "%Y-%m-%d"),
-        tz, "%Y-%m-%d");
-    end_date += 1439min;  // + 23:59
-    type = j["type"];
-  }
-
-  userver::storages::postgres::TimePoint start_date, end_date;
-  std::string type;
-};
-
-class AbscenceRequestResponse {
- public:
-  std::string ToJSON() const {
-    nlohmann::json j;
-    j["action_id"] = action_id;
-    return j.dump();
-  }
-
-  std::string action_id;
-};
 
 class HeadId {
  public:
@@ -80,23 +51,58 @@ class AbscenceRequestHandler final
     request.GetHttpResponse().SetHeader(
         static_cast<std::string>("Access-Control-Allow-Headers"), "*");
 
-    AbscenceRequestRequest request_body(request.RequestBody());
+    AbscenceRequestRequest request_body;
+    request_body.ParseRegisteredFields(request.RequestBody());
     auto user_id = ctx.GetData<std::string>("user_id");
     auto company_id = ctx.GetData<std::string>("company_id");
 
     auto action_id = userver::utils::generators::GenerateUuid();
 
     std::optional<std::string> action_status;
-    std::string notification_text = "Unknown notification";
+    action_status = "pending";
+    std::string notification_text;
+    constexpr auto notification_fmt =
+        "Ваш сотрудник запросил {} c {} по {}. Подтвердите или отклоните "
+        "запрос.";
+    auto start_date = userver::utils::datetime::Timestring(
+        request_body.start_date, tz, "%Y-%m-%d");
+    auto end_date = userver::utils::datetime::Timestring(request_body.end_date,
+                                                         tz, "%Y-%m-%d");
+    auto start_date_time = userver::utils::datetime::Timestring(
+        request_body.start_date, tz, "%Y-%m-%d %H:%M:%S");
+    auto end_date_time = userver::utils::datetime::Timestring(
+        request_body.end_date, tz, "%Y-%m-%d %H:%M:%S");
+
     if (request_body.type == "vacation") {
-      action_status = "pending";
-      notification_text = "Ваш сотрудник запросил отпуск c " +
-                          userver::utils::datetime::Timestring(
-                              request_body.start_date, tz, "%d.%m.%Y") +
-                          " по " +
-                          userver::utils::datetime::Timestring(
-                              request_body.end_date, tz, "%d.%m.%Y") +
-                          ". Подтвердите или отклоните его.";
+      notification_text =
+          fmt::format(notification_fmt, "отпуск", start_date, end_date);
+    } else if (request_body.type == "sick_leave") {
+      notification_text =
+          fmt::format(notification_fmt, "больничный", start_date, end_date);
+    } else if (request_body.type == "unpaid_vacation") {
+      notification_text = fmt::format(notification_fmt, "неоплачиваемый отпуск",
+                                      start_date, end_date);
+    } else if (request_body.type == "business_trip") {
+      notification_text =
+          fmt::format(notification_fmt, "командировку", start_date, end_date);
+    } else if (request_body.type == "overtime") {
+      notification_text = fmt::format(notification_fmt, "сверхурочные",
+                                      start_date_time, end_date_time);
+    } else {
+      request.GetHttpResponse().SetStatus(
+          userver::server::http::HttpStatus::kBadRequest);
+      return ErrorMessage{"Unknown abscence type"}.ToJsonString();
+    }
+
+    if (request_body.type != "overtime") {
+      using namespace userver::utils::datetime;
+      using namespace std::literals::chrono_literals;
+      request_body.start_date = Stringtime(
+          Timestring(request_body.start_date, tz, "%Y-%m-%d"), tz, "%Y-%m-%d");
+      request_body.end_date =
+          Stringtime(Timestring(request_body.end_date, tz, "%Y-%m-%d"), tz,
+                     "%Y-%m-%d") +
+          1439min;  // + 23:59
     }
 
     auto trx = pg_cluster_->Begin(
@@ -124,23 +130,21 @@ class AbscenceRequestHandler final
             .AsSingleRow<HeadId>(userver::storages::postgres::kRowTag)
             .head_id;
 
-    if (request_body.type == "vacation") {
-      auto notification_id = userver::utils::generators::GenerateUuid();
-      result = trx.Execute("INSERT INTO working_day_" + company_id +
-                               ".notifications(id, type, text, user_id, "
-                               "sender_id, action_id) "
-                               "VALUES($1, $2, $3, $4, $5, $6) "
-                               "ON CONFLICT (id) "
-                               "DO NOTHING",
-                           notification_id, request_body.type + "_request",
-                           notification_text, head_id.value_or(user_id),
-                           user_id, action_id);
-    }
+    auto notification_id = userver::utils::generators::GenerateUuid();
+    result = trx.Execute("INSERT INTO working_day_" + company_id +
+                             ".notifications(id, type, text, user_id, "
+                             "sender_id, action_id) "
+                             "VALUES($1, $2, $3, $4, $5, $6) "
+                             "ON CONFLICT (id) "
+                             "DO NOTHING",
+                         notification_id, "vacation_request", notification_text,
+                         head_id.value_or(user_id), user_id, action_id);
 
     trx.Commit();
 
-    AbscenceRequestResponse response{action_id};
-    return response.ToJSON();
+    AbscenceRequestResponse response;
+    response.action_id = action_id;
+    return response.ToJsonString();
   }
 
  private:

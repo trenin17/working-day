@@ -38,6 +38,7 @@
 #include "views/v1/employee/info/view.hpp"
 #include "views/v1/employee/remove/view.hpp"
 #include "views/v1/employees/view.hpp"
+#include "views/v1/inventory/add/view.hpp"
 #include "views/v1/notifications/view.hpp"
 #include "views/v1/payments/add_bulk/view.hpp"
 #include "views/v1/payments/view.hpp"
@@ -100,6 +101,7 @@ int main(int argc, char* argv[]) {
   views::v1::documents::list_all::AppendDocumentsListAll(component_list);
   views::v1::documents::get_signs::AppendDocumentsGetSigns(component_list);
   views::v1::superuser::company::add::AppendSuperuserCompanyAdd(component_list);
+  views::v1::inventory::add::AppendInventoryAdd(component_list);
 
   int err_code = userver::utils::DaemonMain(argc, argv, component_list);
 

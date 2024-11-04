@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <set>
 #include <sstream>
+#include <unordered_map>
 #include <unordered_set>
 #include <userver/clients/dns/component.hpp>
 #include <userver/components/component_config.hpp>
@@ -16,10 +17,6 @@
 #include <userver/storages/postgres/cluster.hpp>
 #include <userver/storages/postgres/component.hpp>
 #include <userver/storages/postgres/parameter_store.hpp>
-#include <algorithm>
-#include <sstream>
-#include <unordered_map>
-#include <unordered_set>
 #include <vector>
 
 #include "core/json_compatible/struct.hpp"
@@ -119,11 +116,13 @@ class SearchFullHandler final
     auto result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kMaster,
         "SELECT ids, similarity(search_key, key) AS similarity_score "
-        "FROM working_day_" + company_id + ".reverse_index, "
-        "LATERAL unnest(ARRAY[" +
+        "FROM working_day_" +
+            company_id +
+            ".reverse_index, "
+            "LATERAL unnest(ARRAY[" +
             filter +
             "]) AS search_key "
-        "WHERE similarity(search_key, key) > 0.4; ",
+            "WHERE similarity(search_key, key) > 0.4; ",
         parameters);
 
     auto id_sets = result.AsContainer<std::vector<IDsRow>>(
@@ -136,7 +135,6 @@ class SearchFullHandler final
     // fetching ids' values and returning them
 
     SearchResponse response;
-
 
     userver::storages::postgres::ParameterStore parameters_fetch;
     std::string filter_fetch;

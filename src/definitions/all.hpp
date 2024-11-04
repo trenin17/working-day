@@ -1,6 +1,7 @@
 #pragma once
 
 #include <core/json_compatible/struct.hpp>
+#include <userver/storages/postgres/io/io_fwd.hpp>
 
 #ifdef V1_EMPLOYEES
 #define USE_EMPLOYEES_RESPONSE
@@ -143,6 +144,30 @@
 #define USE_LIST_EMPLOYEE
 #endif
 
+#ifdef V1_ABSCENCE_REQUEST
+#define USE_ABSCENCE_REQUEST_REQUEST
+#define USE_ABSCENCE_REQUEST_RESPONSE
+#define USE_ERROR_MESSAGE
+#endif
+
+#ifdef V1_INVENTORY_ADD
+#define USE_INVENTORY_ADD_REQUEST
+#endif
+
+#ifdef USE_INVENTORY_ADD_REQUEST
+#define USE_INVENTORY_ITEM
+#endif
+
+#ifdef V1_EMPLOYEE_INFO
+#define USE_EMPLOYEE
+#define USE_ERROR_MESSAGE
+#endif
+
+#ifdef USE_EMPLOYEE
+#define USE_LIST_EMPLOYEE
+#define USE_INVENTORY_ITEM
+#endif
+
 #ifdef USE_LIST_EMPLOYEE
 struct ListEmployee : public JsonCompatible {
   // For postgres initialization type needs to be default constructible
@@ -151,7 +176,11 @@ struct ListEmployee : public JsonCompatible {
   // Make sure to initialize parsing first for new structure
   ListEmployee(ListEmployee&& other) { *this = std::move(other); }
 
+  ListEmployee(const ListEmployee& other) { *this = other; }
+
   ListEmployee& operator=(ListEmployee&& other) = default;
+
+  ListEmployee& operator=(const ListEmployee& other) = default;
 
   // Method for postgres initialization of non-trivial types
   auto Introspect() {
@@ -253,6 +282,9 @@ struct ListEmployeeWithSubcompany : public ListEmployee {
     return std::tuple_cat(ListEmployee::Introspect(), std::tie(subcompany));
   }
 
+  ListEmployeeWithSubcompany& operator=(
+      const ListEmployeeWithSubcompany& other) = default;
+
   REGISTER_STRUCT_FIELD(subcompany, std::string, "subcompany");
 };
 #endif
@@ -265,7 +297,9 @@ struct AttendanceListItem : public JsonCompatible {
 
   AttendanceListItem& operator=(AttendanceListItem&& other) = default;
 
-  auto Introspect() { return std::tie(start_date, end_date, employee); }
+  auto Introspect() {
+    return std::tie(start_date, end_date, abscence_type, employee);
+  }
 
   REGISTER_STRUCT_FIELD_OPTIONAL(start_date,
                                  userver::storages::postgres::TimePoint,
@@ -274,6 +308,7 @@ struct AttendanceListItem : public JsonCompatible {
                                  userver::storages::postgres::TimePoint,
                                  "end_date");
   REGISTER_STRUCT_FIELD(employee, ListEmployeeWithSubcompany, "employee");
+  REGISTER_STRUCT_FIELD_OPTIONAL(abscence_type, std::string, "abscence_type");
   // REGISTER_STRUCT_FIELD_OPTIONAL(abscence_date,
   // userver::storages::postgres::TimePoint, "abscence_date");
 };
@@ -308,7 +343,8 @@ struct DocumentItem : public JsonCompatible {
   DocumentItem& operator=(DocumentItem&& other) = default;
 
   auto Introspect() {
-    return std::tie(id, name, type, sign_required, description, is_signed, parent_id);
+    return std::tie(id, name, type, sign_required, description, is_signed,
+                    parent_id);
   }
 
   REGISTER_STRUCT_FIELD(id, std::string, "id");
@@ -435,6 +471,7 @@ struct AuthorizeResponse : public JsonCompatible {
 
 #ifdef USE_PYSERVICE_DOCUMENT_GENERATE_REQUEST
 struct PyserviceDocumentGenerateRequest : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(action_type, std::string, "action_type");
   REGISTER_STRUCT_FIELD(request_type, std::string, "request_type");
   REGISTER_STRUCT_FIELD(employee_id, std::string, "employee_id");
   REGISTER_STRUCT_FIELD(employee_name, std::string, "employee_name");
@@ -481,5 +518,93 @@ struct PyserviceDocumentSignRequest : public JsonCompatible {
   REGISTER_STRUCT_FIELD(subcompany, std::string, "subcompany");
   REGISTER_STRUCT_FIELD(file_key, std::string, "file_key");
   REGISTER_STRUCT_FIELD(signed_file_key, std::string, "signed_file_key");
+};
+#endif
+
+#ifdef USE_ABSCENCE_REQUEST_REQUEST
+struct AbscenceRequestRequest : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(start_date, userver::storages::postgres::TimePoint,
+                        "start_date");
+  REGISTER_STRUCT_FIELD(end_date, userver::storages::postgres::TimePoint,
+                        "end_date");
+  REGISTER_STRUCT_FIELD(type, std::string, "type");
+};
+#endif
+
+#ifdef USE_ABSCENCE_REQUEST_RESPONSE
+struct AbscenceRequestResponse : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(action_id, std::string, "action_id");
+};
+#endif
+
+#ifdef USE_INVENTORY_ITEM
+struct InventoryItemPg {
+  std::string name;
+  std::string description;
+  std::string id;
+};
+
+struct InventoryItem : public JsonCompatible {
+  InventoryItem() = default;
+  InventoryItem(const InventoryItemPg& pg) {
+    name = pg.name;
+    description = pg.description;
+    id = pg.id;
+  }
+
+  InventoryItem(InventoryItem&& other) { *this = std::move(other); }
+
+  InventoryItem& operator=(InventoryItem&& other) = default;
+
+  auto Introspect() { return std::tie(name, description, id); }
+
+  REGISTER_STRUCT_FIELD(name, std::string, "name");
+  REGISTER_STRUCT_FIELD_OPTIONAL(description, std::string, "description");
+  REGISTER_STRUCT_FIELD_OPTIONAL(id, std::string, "id");
+};
+
+template <>
+struct userver::storages::postgres::io::CppToUserPg<InventoryItemPg> {
+  static constexpr DBTypeName postgres_name = "wd_general.inventory_item";
+};
+#endif
+
+#ifdef USE_INVENTORY_ADD_REQUEST
+struct InventoryAddRequest : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(item, InventoryItem, "item");
+  REGISTER_STRUCT_FIELD(employee_id, std::string, "employee_id");
+};
+#endif
+
+#ifdef USE_EMPLOYEE
+struct Employee : public JsonCompatible {
+  Employee() = default;
+
+  Employee(Employee&& other) { *this = std::move(other); }
+
+  Employee& operator=(Employee&& other) = default;
+
+  auto Introspect() {
+    return std::tie(id, name, surname, patronymic, photo_link, phones, email,
+                    birthday, password, head_id, telegram_id, vk_id, team,
+                    head_info, inventory);
+  }
+
+  REGISTER_STRUCT_FIELD(id, std::string, "id");
+  REGISTER_STRUCT_FIELD(name, std::string, "name");
+  REGISTER_STRUCT_FIELD(surname, std::string, "surname");
+  REGISTER_STRUCT_FIELD_OPTIONAL(patronymic, std::string, "patronymic");
+  REGISTER_STRUCT_FIELD_OPTIONAL(photo_link, std::string, "photo_link");
+  REGISTER_STRUCT_FIELD_OPTIONAL(phones, std::vector<std::string>, "phones");
+  REGISTER_STRUCT_FIELD_OPTIONAL(email, std::string, "email");
+  REGISTER_STRUCT_FIELD_OPTIONAL(birthday, std::string, "birthday");
+  REGISTER_STRUCT_FIELD_OPTIONAL(password, std::string, "password");
+  REGISTER_STRUCT_FIELD_OPTIONAL(head_id, std::string, "head_id");
+  REGISTER_STRUCT_FIELD_OPTIONAL(telegram_id, std::string, "telegram_id");
+  REGISTER_STRUCT_FIELD_OPTIONAL(vk_id, std::string, "vk_id");
+  REGISTER_STRUCT_FIELD_OPTIONAL(team, std::string, "team");
+  REGISTER_STRUCT_FIELD_OPTIONAL(head_info, ListEmployee, "head_info");
+  REGISTER_STRUCT_FIELD_OPTIONAL(inventory, std::vector<InventoryItem>,
+                                 "inventory");
 };
 #endif

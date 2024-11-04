@@ -1,9 +1,5 @@
 #include "view.hpp"
 
-#include <aws/core/Aws.h>
-#include <aws/core/auth/AWSCredentialsProvider.h>
-#include <aws/http/http.h>
-#include <aws/s3/S3Client.h>
 #include <nlohmann/json.hpp>
 
 #include <userver/clients/dns/component.hpp>

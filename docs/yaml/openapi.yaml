@@ -685,6 +685,25 @@ paths:
                 '200':
                     description: Company was added
 
+    /v1/inventory/add:
+        post:
+            description: Add new inventory item
+            parameters:
+              - in: header
+                name: Authorization
+                description: Token of session user, available for superuser only
+                schema:
+                    type: string
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/InventoryAddRequest'
+            responses:
+                '200':
+                    description: Inventory item was added
+
 components:
     schemas:
         ErrorMessage:
@@ -810,6 +829,10 @@ components:
                     type: string
                 team:
                     type: string
+                inventory:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/InventoryItem'
 
         ProfileEditRequest:
             type: object
@@ -838,10 +861,13 @@ components:
             required:
               - login
               - password
+              - company_id
             properties:
                 login:
                     type: string
                 password:
+                    type: string
+                company_id:
                     type: string
 
         AuthorizeResponse:
@@ -972,11 +998,18 @@ components:
                     $ref: '#/components/schemas/Timestamp'
                 end_date:
                     $ref: '#/components/schemas/Timestamp'
-                type: 
-                    type: string
-                    enum:
-                      - vacation
+                type:
+                    $ref: '#/components/schemas/AbscenceType'       
         
+        AbscenceType:
+            type: string
+            enum:
+                - vacation
+                - sick_leave
+                - unpaid_vacation
+                - business_trip
+                - overtime
+
         AbscenceRequestResponse:
             type: object
             additionalProperties: false
@@ -1202,6 +1235,9 @@ components:
                 end_date:
                     $ref: '#/components/schemas/Timestamp'
                     description: start_date and end_date should be in the same day
+                abscence_type:
+                    $ref: '#/components/schemas/AbscenceType'
+                    description: If employee has an approved abscence for a given period
 
         UploadDocumentResponse:
             type: object
@@ -1339,3 +1375,25 @@ components:
                         - .pdf
                         - .xlsx
                     default: ".pdf"
+
+        InventoryItem:
+            type: object
+            additionalProperties: false
+            required:
+              - name
+            properties:
+                name:
+                    type: string
+                description:
+                    type: string
+                id:
+                    type: string
+
+        InventoryAddRequest:
+            type: object
+            additionalProperties: false
+            properties:
+                item:
+                    $ref: '#/components/schemas/InventoryItem'
+                employee_id:
+                    type: string

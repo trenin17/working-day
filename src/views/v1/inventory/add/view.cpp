@@ -1,4 +1,4 @@
-#define V1_DOCUMENTS_GET_SIGNS
+#define V1_INVENTORY_ADD
 
 #include "view.hpp"
 
@@ -9,21 +9,19 @@
 #include <userver/server/handlers/http_handler_base.hpp>
 #include <userver/storages/postgres/cluster.hpp>
 #include <userver/storages/postgres/component.hpp>
-#include <userver/utils/boost_uuid4.hpp>
-#include <userver/utils/uuid4.hpp>
 
-#include <definitions/all.hpp>
+#include "definitions/all.hpp"
 
-namespace views::v1::documents::get_signs {
+namespace views::v1::inventory::add {
 
 namespace {
 
-class DocumentsGetSignsHandler final
+class InventoryAddHandler final
     : public userver::server::handlers::HttpHandlerBase {
  public:
-  static constexpr std::string_view kName = "handler-v1-documents-get-signs";
+  static constexpr std::string_view kName = "handler-v1-inventory-add";
 
-  DocumentsGetSignsHandler(
+  InventoryAddHandler(
       const userver::components::ComponentConfig& config,
       const userver::components::ComponentContext& component_context)
       : HttpHandlerBase(config, component_context),
@@ -41,33 +39,24 @@ class DocumentsGetSignsHandler final
     request.GetHttpResponse().SetHeader(
         static_cast<std::string>("Access-Control-Allow-Headers"), "*");
 
-    // const auto& user_id = ctx.GetData<std::string>("user_id");
+    const auto& user_id = ctx.GetData<std::string>("user_id");
     const auto& company_id = ctx.GetData<std::string>("company_id");
-    const auto& document_id = request.GetArg("document_id");
+
+    InventoryAddRequest request_body;
+    request_body.ParseRegisteredFields(request.RequestBody());
 
     auto result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kMaster,
-        "SELECT ROW "
-        "(e.id, e.name, e.surname, e.patronymic, "
-        "e.photo_link), ed.signed "
-        "FROM working_day_" +
-            company_id +
-            ".employees e "
-            "JOIN working_day_" +
-            company_id +
-            ".employee_document ed ON e.id = "
-            "ed.employee_id "
-            "JOIN working_day_" +
-            company_id +
-            ".documents d ON ed.document_id = d.id "
-            "WHERE d.parent_id = $1",
-        document_id);
+        "UPDATE working_day_" + company_id +
+            ".employees "
+            "SET inventory = inventory || $1 "
+            "WHERE id = $2",
+        InventoryItemPg{request_body.item.name,
+                        request_body.item.description.value_or(""),
+                        request_body.item.id.value_or("")},
+        request_body.employee_id);
 
-    DocumentsGetSignsResponse response;
-    response.signs = result.AsContainer<std::vector<SignItem>>(
-        userver::storages::postgres::kRowTag);
-
-    return response.ToJsonString();
+    return "";
   }
 
  private:
@@ -76,9 +65,8 @@ class DocumentsGetSignsHandler final
 
 }  // namespace
 
-void AppendDocumentsGetSigns(
-    userver::components::ComponentList& component_list) {
-  component_list.Append<DocumentsGetSignsHandler>();
+void AppendInventoryAdd(userver::components::ComponentList& component_list) {
+  component_list.Append<InventoryAddHandler>();
 }
 
-}  // namespace views::v1::documents::get_signs
+}  // namespace views::v1::inventory::add

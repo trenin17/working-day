@@ -15,9 +15,9 @@ class JsonCompatible {
  public:
   JsonCompatible() = default;
 
-  JsonCompatible(const JsonCompatible&) = delete;
+  JsonCompatible(const JsonCompatible&) { JsonCompatible(); }
 
-  JsonCompatible& operator=(const JsonCompatible&) = delete;
+  JsonCompatible& operator=(const JsonCompatible&) { return *this; }
 
   JsonCompatible(JsonCompatible&&) { JsonCompatible(); }
 

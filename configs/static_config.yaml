@@ -373,6 +373,16 @@ components_manager:
                 scopes:
                   - admin
 
+        handler-v1-inventory-add:
+            path: /v1/inventory/add
+            method: POST
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - admin
+
         handler-v1-superuser-company-add:
             path: /v1/superuser/company/add
             method: POST

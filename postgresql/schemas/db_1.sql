@@ -149,3 +149,12 @@ CREATE TABLE IF NOT EXISTS working_day_first.employee_team (
   FOREIGN KEY (employee_id) REFERENCES working_day_first.employees (id) ON DELETE CASCADE,
   FOREIGN KEY (team_id) REFERENCES working_day_first.teams (id) ON DELETE CASCADE
 );
+
+CREATE TYPE wd_general.inventory_item AS (
+    name TEXT,
+    description TEXT,
+    id TEXT
+);
+
+ALTER TABLE working_day_first.employees
+ADD COLUMN inventory wd_general.inventory_item[] NOT NULL DEFAULT ARRAY[]::wd_general.inventory_item[];
