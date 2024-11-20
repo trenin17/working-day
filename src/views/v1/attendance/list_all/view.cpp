@@ -1,4 +1,5 @@
 #define V1_ATTENDANCE_LIST_ALL
+#define USERVER_POSTGRES_ENABLE_LEGACY_TIMESTAMP 1
 
 #include "view.hpp"
 

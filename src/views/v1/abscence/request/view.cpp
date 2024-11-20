@@ -1,4 +1,5 @@
 #define V1_ABSCENCE_REQUEST
+#define USERVER_POSTGRES_ENABLE_LEGACY_TIMESTAMP 1
 
 #include "view.hpp"
 

@@ -1,3 +1,5 @@
+#define USERVER_POSTGRES_ENABLE_LEGACY_TIMESTAMP 1
+
 #include "view.hpp"
 
 #include <nlohmann/json.hpp>
