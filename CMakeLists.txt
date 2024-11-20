@@ -93,7 +93,7 @@ add_google_tests(${PROJECT_NAME}_unittest)
 # add_google_benchmark_tests(${PROJECT_NAME}_benchmark)
 
 # Functional Tests
-include(UserverTestsuite)
+#include(UserverTestsuite)
 
 userver_testsuite_add_simple()
 

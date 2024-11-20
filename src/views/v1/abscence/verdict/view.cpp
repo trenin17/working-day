@@ -228,7 +228,7 @@ class AbscenceVerdictHandler final
     if (request_body.approve) {
       auto result = trx.Execute("UPDATE working_day_" + company_id +
                                     ".actions "
-                                    "SET status = $2"
+                                    "SET status = $2 "
                                     "WHERE id = $1 ",
                                 request_body.action_id, action_status);
     } else {
