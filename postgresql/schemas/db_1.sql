@@ -158,3 +158,15 @@ CREATE TYPE wd_general.inventory_item AS (
 
 ALTER TABLE working_day_first.employees
 ADD COLUMN inventory wd_general.inventory_item[] NOT NULL DEFAULT ARRAY[]::wd_general.inventory_item[];
+
+CREATE TABLE IF NOT EXISTS working_day_first.tracker_projects (
+    project_name TEXT PRIMARY KEY,
+    tasks_count INT NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS working_day_first.tracker_tasks (
+    id TEXT NOT NULL,
+    title TEXT NOT NULL,
+    description TEXT,
+    project_name TEXT NOT NULL
+)

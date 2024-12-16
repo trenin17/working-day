@@ -168,6 +168,28 @@
 #define USE_INVENTORY_ITEM
 #endif
 
+#ifdef V1_TRACKER_PROJECTS_ADD
+#define USE_TRACKER_PROJECTS_ADD_REQUEST
+#endif
+
+#ifdef V1_TRACKER_PROJECTS_LIST
+#define USE_TRACKER_PROJECTS_LIST_ITEM
+#define USE_TRACKER_PROJECTS_LIST_RESPONSE
+#endif
+
+#ifdef V1_TRACKER_TASKS_ADD
+#define USE_TRACKER_TASKS_ADD_REQUEST
+#endif
+
+#ifdef USE_TRACKER_TASKS_ADD_REQUEST
+#define USE_ERROR_MESSAGE
+#endif
+
+#ifdef V1_TRACKER_TASKS_LIST
+#define USE_TRACKER_TASKS_LIST_ITEM
+#define USE_TRACKER_TASKS_LIST_RESPONSE
+#endif
+
 #ifdef USE_LIST_EMPLOYEE
 struct ListEmployee : public JsonCompatible {
   // For postgres initialization type needs to be default constructible
@@ -606,5 +628,81 @@ struct Employee : public JsonCompatible {
   REGISTER_STRUCT_FIELD_OPTIONAL(head_info, ListEmployee, "head_info");
   REGISTER_STRUCT_FIELD_OPTIONAL(inventory, std::vector<InventoryItem>,
                                  "inventory");
+};
+#endif
+
+#ifdef USE_TRACKER_PROJECTS_ADD_REQUEST
+struct TrackerProjectsAddRequest : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(project_name, std::string, "project_name");
+};
+#endif
+
+#ifdef USE_TRACKER_PROJECTS_LIST_ITEM
+struct TrackerProjectsListItem : public JsonCompatible {
+  // For postgres initialization type needs to be default constructible
+  TrackerProjectsListItem() = default;
+
+  // Make sure to initialize parsing first for new structure
+  TrackerProjectsListItem(TrackerProjectsListItem&& other) { *this = std::move(other); }
+
+  TrackerProjectsListItem(const TrackerProjectsListItem& other) { *this = other; }
+
+  TrackerProjectsListItem& operator=(TrackerProjectsListItem&& other) = default;
+
+  TrackerProjectsListItem& operator=(const TrackerProjectsListItem& other) = default;
+
+  // Method for postgres initialization of non-trivial types
+  auto Introspect() {
+    return std::tie(project_name, tasks_count);
+  }
+
+  REGISTER_STRUCT_FIELD(project_name, std::string, "project_name");
+  REGISTER_STRUCT_FIELD(tasks_count, int, "tasks_count");
+};
+#endif
+
+#ifdef USE_TRACKER_PROJECTS_LIST_RESPONSE
+struct TrackerProjectsListResponse : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(projects, std::vector<TrackerProjectsListItem>, "projects");
+};
+#endif
+
+#ifdef USE_TRACKER_TASKS_ADD_REQUEST
+struct TrackerTasksAddRequest : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(title, std::string, "title");
+  REGISTER_STRUCT_FIELD(project_name, std::string, "project_name");
+  REGISTER_STRUCT_FIELD_OPTIONAL(description, std::string, "description");
+};
+#endif
+
+#ifdef USE_TRACKER_TASKS_LIST_ITEM
+struct TrackerTasksListItem : public JsonCompatible {
+  // For postgres initialization type needs to be default constructible
+  TrackerTasksListItem() = default;
+
+  // Make sure to initialize parsing first for new structure
+  TrackerTasksListItem(TrackerTasksListItem&& other) { *this = std::move(other); }
+
+  TrackerTasksListItem(const TrackerTasksListItem& other) { *this = other; }
+
+  TrackerTasksListItem& operator=(TrackerTasksListItem&& other) = default;
+
+  TrackerTasksListItem& operator=(const TrackerTasksListItem& other) = default;
+
+  // Method for postgres initialization of non-trivial types
+  auto Introspect() {
+    return std::tie(title, project_name, description, id);
+  }
+
+  REGISTER_STRUCT_FIELD(title, std::string, "title");
+  REGISTER_STRUCT_FIELD(project_name, std::string, "project_name");
+  REGISTER_STRUCT_FIELD_OPTIONAL(description, std::string, "description");
+  REGISTER_STRUCT_FIELD_OPTIONAL(id, std::string, "id");
+};
+#endif
+
+#ifdef USE_TRACKER_TASKS_LIST_RESPONSE
+struct TrackerTasksListResponse : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(tasks, std::vector<TrackerTasksListItem>, "tasks");
 };
 #endif
