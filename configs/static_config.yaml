@@ -394,6 +394,46 @@ components_manager:
                   - superuser
             db: $dbconnection
 
+        handler-v1-tracker-projects-add:
+            path: /v1/tracker/projects/add
+            method: POST
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - admin
+
+        handler-v1-tracker-projects-list:
+            path: /v1/tracker/projects/list
+            method: GET
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - admin
+
+        handler-v1-tracker-tasks-add:
+            path: /v1/tracker/tasks/add
+            method: POST
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - admin
+
+        handler-v1-tracker-tasks-list:
+            path: /v1/tracker/tasks/list
+            method: GET
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - admin
+
         handler-implicit-http-options:
             as_fallback: implicit-http-options
             method: OPTIONS

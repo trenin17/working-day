@@ -703,6 +703,85 @@ paths:
             responses:
                 '200':
                     description: Inventory item was added
+    /v1/tracker/projects/add:
+        post:
+            description: Add new project
+            parameters:
+              - in: header
+                name: Authorization
+                description: Token of session user
+                schema:
+                    type: string
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/TrackerProjectsAddRequest'
+            responses:
+                '200':
+                    description: Project item was added
+
+    /v1/tracker/projects/list:
+        get:
+            description: Get list of all existing projects
+            parameters:
+              - in: header
+                name: Authorization
+                description: Token of session user
+                schema:
+                    type: string
+            responses:
+                '200':
+                    description: List of projects
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/TrackerProjectsListResponse'
+
+    /v1/tracker/tasks/add:
+        post:
+            description: Add new task
+            parameters:
+              - in: header
+                name: Authorization
+                description: Token of session user
+                schema:
+                    type: string
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/TrackerTasksAddRequest'
+            responses:
+                '200':
+                    description: Task was added
+                '404':
+                    description: Project not found
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+
+    /v1/tracker/tasks/list:
+        get:
+            description: Get list of all existing tasks
+            parameters:
+                - in: header
+                name: Authorization
+                description: Token of session user
+                schema:
+                    type: string
+            responses:
+                '200':
+                    description: List of tasks
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/TrackerTasksListResponse'
+
+
 
 components:
     schemas:
@@ -1397,3 +1476,78 @@ components:
                     $ref: '#/components/schemas/InventoryItem'
                 employee_id:
                     type: string
+
+        TrackerProjectsAddRequest:
+            type: object
+            additionalProperties: false
+            required:
+              - project_name
+            properties:
+                project_name:
+                    type: string
+
+        TrackerProjectsListItem:
+            type: object
+            additionalProperties: false
+            required:
+              -  project_name
+            properties:
+                project_name:
+                    type: string
+                tasks_count:
+                    type: integer
+
+        TrackerProjectsListResponse:
+            type: object
+            additionalProperties: false
+            properties:
+                projects:
+                    type: array
+                    description: List of project items
+                    items:
+                        $ref: '#/components/schemas/TrackerProjectsListItem'
+
+        TrackerTasksAddRequest:
+            type: object
+            additionalProperties: false
+            required:
+              - title
+              - project_name
+            properties:
+                title:
+                    type: string 
+                    description: Name of the task
+                project_name:
+                    type: string
+                    description: Name of the parent project
+                description:
+                    type: string
+                    description: Description of the task
+
+        TrackerTasksListItem:
+            type: object
+            additionalProperties: false
+            required:
+              -  title
+              -  project_name
+            properties:
+                title:
+                    type: string
+                id:
+                    type: integer
+                project_name:
+                    type: string
+                description:
+                    type: string
+
+        TrackerTasksListResponse:
+            type: object
+            additionalProperties: false
+            properties:
+                tasks:
+                    type: array
+                    description: List of tasks items
+                    items:
+                        $ref: '#/components/schemas/TrackerTasksListItem'
+
+ 
