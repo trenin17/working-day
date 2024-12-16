@@ -51,6 +51,10 @@
 #include "views/v1/search/full/view.hpp"
 #include "views/v1/search/suggest/view.hpp"
 #include "views/v1/superuser/company/add/view.hpp"
+#include "views/v1/tracker/projects/add/view.hpp"
+#include "views/v1/tracker/projects/list/view.hpp"
+#include "views/v1/tracker/tasks/add/view.hpp"
+#include "views/v1/tracker/tasks/list/view.hpp"
 
 int main(int argc, char* argv[]) {
   Aws::SDKOptions options;
@@ -108,6 +112,10 @@ int main(int argc, char* argv[]) {
   views::v1::messenger::create::AppendCreateChat(component_list);
   views::v1::messenger::list_chats::AppendListChats(component_list);
   views::v1::messenger::recent_messages::AppendRecentMessages(component_list);
+  views::v1::tracker::projects::add::AppendTrackerProjectsAdd(component_list);
+  views::v1::tracker::projects::list::AppendTrackerProjectsList(component_list);
+  views::v1::tracker::tasks::add::AppendTrackerTasksAdd(component_list);
+  views::v1::tracker::tasks::list::AppendTrackerTasksList(component_list);
 
   int err_code = userver::utils::DaemonMain(argc, argv, component_list);
 
