@@ -211,11 +211,12 @@ class ProfileEditHandler final
             "password = case when $5 is null then password else $5 end, "
             "telegram_id = case when $6 is null then telegram_id else $6 end, "
             "vk_id = case when $7 is null then vk_id else $7 end, "
-            "team = case when $8 is null then team else $8 end "
+            "team = case when $8 is null then team else $8 end, "
+            "job_position = case when $9 is null then job_position else $9 end "
             "WHERE id = $1",
         user_id, request_body.phones, request_body.email, request_body.birthday,
         request_body.password, request_body.telegram_id, request_body.vk_id,
-        request_body.team);
+        request_body.team, request_body.job_position);
 
     return "";
   }

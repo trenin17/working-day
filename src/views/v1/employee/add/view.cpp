@@ -173,16 +173,21 @@ class AddEmployeeHandler final
                             pg_cluster_);
     auto password = userver::utils::generators::GenerateUuid().substr(0, 16);
 
+    LOG_INFO() << "JOB POSITION HAS VALUE " << request_body.job_position.has_value();
+    if (request_body.job_position.has_value()) {
+      LOG_INFO() << "JOB POSITION " << request_body.job_position.value();
+    }
+
     auto query = fmt::format(
         "INSERT INTO working_day_{0}.employees(id, name, surname, patronymic, "
-        "password, role) VALUES($1, $2, $3, $4, $5, $6) "
+        "password, role, job_position) VALUES($1, $2, $3, $4, $5, $6, $7) "
         "ON CONFLICT (id) "
         "DO NOTHING",
         company_id);
     auto result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kMaster, std::move(query),
         id, request_body.name, request_body.surname, request_body.patronymic,
-        password, request_body.role);
+        password, request_body.role, request_body.job_position.value_or(""));
 
     core::reverse_index::EmployeeAllData data{
         id, request_body.name, request_body.surname, request_body.patronymic,
