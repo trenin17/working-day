@@ -41,6 +41,7 @@ class TrackerTasksAddHandler final
     request.GetHttpResponse().SetHeader(
         static_cast<std::string>("Access-Control-Allow-Headers"), "*");
 
+    const auto& user_id = ctx.GetData<std::string>("user_id");
     const auto& company_id = ctx.GetData<std::string>("company_id");
 
     TrackerTasksAddRequest request_body;
@@ -72,12 +73,15 @@ class TrackerTasksAddHandler final
     auto result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kMaster,
         "INSERT INTO working_day_" + company_id +
-            ".tracker_tasks (title, description, project_name, id) "
-            "VALUES ($1, $2, $3, $4)",
+            ".tracker_tasks (title, description, project_name, id, creator, assignee, status) "
+            "VALUES ($1, $2, $3, $4, $5, $6, $7)",
         request_body.title,
         request_body.description,
         request_body.project_name,
-        id);
+        id,
+        user_id,
+        request_body.assignee,
+        "Open");
     
     auto update_project = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kMaster,
