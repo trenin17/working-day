@@ -1125,19 +1125,20 @@ async def test_tracker_tasks_add_and_list(service_client):
         {
             "title": "task1",
             "project_name": "first",
-            "description": "in first project",
             "id": "first-1",
+            "creator": "first_id",
         },
         {
             "title": "task2",
             "project_name": "first",
             "id": "first-2",
+            "creator": "first_id",
         },
         {
             "title": "task1",
             "project_name": "second",
-            "description": "in second project",
             "id": "second-1",
+            "creator": "first_id",
         },
     ]
     assert data["tasks"] == expected_tasks
@@ -1159,6 +1160,247 @@ async def test_tracker_tasks_add_and_list(service_client):
         },
     ]
     assert data["projects"] == expected_projects
+
+@pytest.mark.pgsql('db_1', files=['initial_data.sql'])
+async def test_tracker_assigned_tasks_to_user_empl_id (service_client):
+    response = await service_client.post(
+        '/v1/tracker/tasks/assigned-tasks-to-user',
+        headers={'Authorization': 'Bearer first_token'},
+        json={'employee_id': 'first_user_id'},
+    )
+    # not found
+    assert response.status == 404
+
+    create_project_response = await service_client.post(
+        '/v1/tracker/projects/add',
+        headers={'Authorization': 'Bearer first_token'},
+        json={'project_name': 'project1'},
+    )
+    assert create_project_response.status == 200
+
+    response = await service_client.post(
+        '/v1/employee/add',
+        headers={'Authorization': 'Bearer first_token'},
+        json={'name': 'Second', 'surname': 'B',
+              'role': 'admin', 'company_id': 'second'},
+    )
+    assert response.status == 200
+
+    new_id = json.loads(response.text)['login']
+
+    for i in range(1, 6):
+        add_task_response = await service_client.post(
+            '/v1/tracker/tasks/add',
+            headers={'Authorization': 'Bearer first_token'},
+            json={
+                'title': f'Task{i}',
+                'description': f'Description for task {i}',
+                'project_name': 'project1',
+                'assignee': new_id,
+            },
+        )
+        assert add_task_response.status == 200
+        response = await service_client.get(
+            '/v1/tracker/tasks/list',
+            headers={'Authorization': 'Bearer first_token'},
+        )
+        assert response.status == 200
+
+        data = response.json()
+        for task in data["tasks"]:
+            assert task["assignee"] == new_id
+
+
+    response = await service_client.post(
+        '/v1/tracker/tasks/assigned-to-user',
+        headers={'Authorization': 'Bearer first_token'},
+        params={'employee_id': new_id},
+    )
+    assert response.status == 200
+
+    data = response.json()
+
+    tasks = data["tasks"]
+    assert len(tasks) == 5
+
+    add_task_response = await service_client.post(
+        '/v1/tracker/tasks/add',
+        headers={'Authorization': 'Bearer first_token'},
+        json={
+            'title': 'Task',
+            'description': 'Description',
+            'project_name': 'project1',
+            'assignee': 'first_id',
+        },
+    )
+    assert add_task_response.status == 200
+    
+    response = await service_client.post(
+        '/v1/tracker/tasks/assigned-to-user',
+        headers={'Authorization': 'Bearer first_token'},
+    )
+    assert response.status == 200
+    data = response.json()
+
+    tasks = data["tasks"]
+    assert len(tasks) == 1
+    assert tasks[0]["project_name"] == 'Task'
+
+
+@pytest.mark.pgsql('db_1', files=['initial_data.sql'])
+async def test_tracker_tasks_add_and_list(service_client):
+
+    response = await service_client.post(
+        '/v1/tracker/projects/add',
+        headers={'Authorization': 'Bearer first_token'},
+        json={'project_name': 'first'},
+    )
+    assert response.status == 200
+
+    response = await service_client.post(
+        '/v1/tracker/projects/add',
+        headers={'Authorization': 'Bearer first_token'},
+        json={'project_name': 'second'},
+    )
+    assert response.status == 200
+
+    response = await service_client.get(
+        '/v1/tracker/projects/list',
+        headers={'Authorization': 'Bearer first_token'},
+    )
+    assert response.status == 200
+
+    data = response.json()
+    expected_projects = [
+        {
+            "project_name": "first",
+            "tasks_count": 0,
+        },
+        {
+            "project_name": "second",
+            "tasks_count": 0,
+        },
+    ]
+    assert data["projects"] == expected_projects
+
+@pytest.mark.pgsql('db_1', files=['initial_data.sql'])
+async def test_tracker_tasks_bad_add(service_client):
+    response = await service_client.post(
+        '/v1/tracker/tasks/add',
+        headers={'Authorization': 'Bearer first_token'},
+        json={'title': 'second task',
+              'project_name': 'unknown',
+              'description': 'description of the first task'},
+    )
+    assert response.status == 404
+
+@pytest.mark.pgsql('db_1', files=['initial_data.sql'])
+async def test_tracker_tasks_info_and_edit(service_client):
+
+    response = await service_client.post(
+        '/v1/tracker/projects/add',
+        headers={'Authorization': 'Bearer first_token'},
+        json={'project_name': 'first'},
+    )
+    assert response.status == 200
+
+    response = await service_client.post(
+        '/v1/tracker/tasks/add',
+        headers={'Authorization': 'Bearer first_token'},
+        json={'title': 'task1',
+              'project_name': 'first',
+              'description': 'in first project'},
+    )
+    assert response.status == 200
+
+    response = await service_client.get(
+        '/v1/tracker/tasks/info',
+        params={'task_id': 'first-1'},
+        headers={'Authorization': 'Bearer first_token'},
+    )
+    assert response.status == 200
+    assert response.text == (
+        '{"creator":"first_id",'
+        '"description":"in first project",'
+        '"id":"first-1",'
+        '"project_name":"first",'
+        '"status":"Open",'
+        '"title":"task1"}')
+
+    response = await service_client.post(
+        '/v1/tracker/tasks/edit',
+        headers={'Authorization': 'Bearer second_token'},
+        params={'task_id': 'first-1'},
+        json={'description': 'new description'},
+    )
+    assert response.status == 200
+
+    response = await service_client.get(
+        '/v1/tracker/tasks/info',
+        params={'task_id': 'first-1'},
+        headers={'Authorization': 'Bearer first_token'},
+    )
+    assert response.status == 200
+
+    response_body = response.text
+    phones = json.loads(response_body)['description']
+
+    assert phones == 'new description'
+    assert response.text == (
+        '{"creator":"first_id",'
+        '"description":"new description",'
+        '"id":"first-1",'
+        '"project_name":"first",'
+        '"status":"Open",'
+        '"title":"task1"}')
+
+@pytest.mark.pgsql('db_1', files=['initial_data.sql'])
+async def test_tracker_tasks_bad_params_info_edit(service_client):
+    response = await service_client.post(
+        '/v1/tracker/projects/add',
+        headers={'Authorization': 'Bearer first_token'},
+        json={'project_name': 'first'},
+    )
+    assert response.status == 200
+
+    response = await service_client.post(
+        '/v1/tracker/tasks/add',
+        headers={'Authorization': 'Bearer first_token'},
+        json={'title': 'task1',
+              'project_name': 'first',
+              'description': 'in first project'},
+    )
+    assert response.status == 200
+
+    response = await service_client.get(
+        '/v1/tracker/tasks/info',
+        headers={'Authorization': 'Bearer first_token'},
+    )
+    assert response.status == 400
+
+    response = await service_client.get(
+        '/v1/tracker/tasks/info',
+        params={'task_id': 'first-2'},
+        headers={'Authorization': 'Bearer first_token'},
+    )
+    assert response.status == 404
+    
+    response = await service_client.post(
+        '/v1/tracker/tasks/edit',
+        headers={'Authorization': 'Bearer second_token'},
+        params={'task_id': 'first-2'},
+        json={'description': 'new description'},
+    )
+    assert response.status == 404
+
+    response = await service_client.post(
+        '/v1/tracker/tasks/edit',
+        headers={'Authorization': 'Bearer second_token'},
+        json={'description': 'new description'},
+    )
+    assert response.status == 400
+
+
 
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])
 async def test_end(service_client):

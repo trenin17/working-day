@@ -433,6 +433,36 @@ components_manager:
                   - bearer
                 scopes:
                   - admin
+        
+        handler-v1-tracker-tasks-info:
+            path: /v1/tracker/tasks/info          
+            method: GET
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - user
+
+        handler-v1-tracker-tasks-assigned-to-user:
+            path: /v1/tracker/tasks/assigned-to-user           
+            method: POST
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - admin
+
+        handler-v1-tracker-tasks-edit:
+            path: /v1/tracker/tasks/edit
+            method: POST
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - user      
 
         handler-implicit-http-options:
             as_fallback: implicit-http-options

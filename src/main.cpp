@@ -52,6 +52,9 @@
 #include "views/v1/tracker/projects/list/view.hpp"
 #include "views/v1/tracker/tasks/add/view.hpp"
 #include "views/v1/tracker/tasks/list/view.hpp"
+#include "views/v1/tracker/tasks/info/view.hpp"
+#include "views/v1/tracker/tasks/assigned_to_user/view.hpp"
+#include "views/v1/tracker/tasks/edit/view.hpp"
 
 int main(int argc, char* argv[]) {
   Aws::SDKOptions options;
@@ -110,6 +113,9 @@ int main(int argc, char* argv[]) {
   views::v1::tracker::projects::list::AppendTrackerProjectsList(component_list);
   views::v1::tracker::tasks::add::AppendTrackerTasksAdd(component_list);
   views::v1::tracker::tasks::list::AppendTrackerTasksList(component_list);
+  views::v1::tracker::tasks::info::AppendTrackerTasksInfo(component_list);
+  views::v1::tracker::tasks::assigned_to_user::AppendTrackerTasksAssignedToUser(component_list);
+  views::v1::tracker::tasks::edit::AppendTrackerTasksEdit(component_list);
 
   int err_code = userver::utils::DaemonMain(argc, argv, component_list);
 

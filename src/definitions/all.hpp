@@ -190,6 +190,22 @@
 #define USE_TRACKER_TASKS_LIST_RESPONSE
 #endif
 
+#ifdef V1_TRACKER_TASKS_INFO
+#define USE_TRACKER_TASKS_INFO_ITEM
+#define USE_ERROR_MESSAGE
+#endif
+
+#ifdef V1_TRACKER_TASKS_ASSIGNED_TO_USER
+#define USE_TRACKER_TASKS_LIST_ITEM
+#define USE_TRACKER_TASKS_LIST_RESPONSE
+#define USE_ERROR_MESSAGE
+#endif
+
+#ifdef V1_TRACKER_TASKS_EDIT
+#define USE_TRACKER_TASKS_EDIT_REQUEST
+#define USE_ERROR_MESSAGE
+#endif
+
 #ifdef USE_LIST_EMPLOYEE
 struct ListEmployee : public JsonCompatible {
   // For postgres initialization type needs to be default constructible
@@ -672,10 +688,12 @@ struct TrackerTasksAddRequest : public JsonCompatible {
   REGISTER_STRUCT_FIELD(title, std::string, "title");
   REGISTER_STRUCT_FIELD(project_name, std::string, "project_name");
   REGISTER_STRUCT_FIELD_OPTIONAL(description, std::string, "description");
+  REGISTER_STRUCT_FIELD_OPTIONAL(assignee, std::string, "assignee");
 };
 #endif
 
 #ifdef USE_TRACKER_TASKS_LIST_ITEM
+
 struct TrackerTasksListItem : public JsonCompatible {
   // For postgres initialization type needs to be default constructible
   TrackerTasksListItem() = default;
@@ -691,18 +709,58 @@ struct TrackerTasksListItem : public JsonCompatible {
 
   // Method for postgres initialization of non-trivial types
   auto Introspect() {
-    return std::tie(title, project_name, description, id);
+    return std::tie(title, project_name, id, creator, assignee);
+  }
+
+  REGISTER_STRUCT_FIELD(title, std::string, "title");
+  REGISTER_STRUCT_FIELD(project_name, std::string, "project_name");
+  REGISTER_STRUCT_FIELD_OPTIONAL(id, std::string, "id");
+  REGISTER_STRUCT_FIELD(creator, std::string, "creator");
+  REGISTER_STRUCT_FIELD_OPTIONAL(assignee, std::string, "assignee");
+};
+#endif
+
+#ifdef USE_TRACKER_TASKS_INFO_ITEM
+struct TrackerTasksInfoItem : public JsonCompatible {
+  // For postgres initialization type needs to be default constructible
+  TrackerTasksInfoItem() = default;
+
+  // Make sure to initialize parsing first for new structure
+  TrackerTasksInfoItem(TrackerTasksInfoItem&& other) { *this = std::move(other); }
+
+  TrackerTasksInfoItem(const TrackerTasksInfoItem& other) { *this = other; }
+
+  TrackerTasksInfoItem& operator=(TrackerTasksInfoItem&& other) = default;
+
+  TrackerTasksInfoItem& operator=(const TrackerTasksInfoItem& other) = default;
+
+  // Method for postgres initialization of non-trivial types
+  auto Introspect() {
+    return std::tie(title, project_name, description, id, creator, assignee, status);
   }
 
   REGISTER_STRUCT_FIELD(title, std::string, "title");
   REGISTER_STRUCT_FIELD(project_name, std::string, "project_name");
   REGISTER_STRUCT_FIELD_OPTIONAL(description, std::string, "description");
   REGISTER_STRUCT_FIELD_OPTIONAL(id, std::string, "id");
+  REGISTER_STRUCT_FIELD(creator, std::string, "creator");
+  REGISTER_STRUCT_FIELD_OPTIONAL(assignee, std::string, "assignee");
+  // 
+  REGISTER_STRUCT_ENUM_FIELD(status, std::string, "status", {"Open", "InProgress", "Review", "Done"});
 };
 #endif
 
 #ifdef USE_TRACKER_TASKS_LIST_RESPONSE
 struct TrackerTasksListResponse : public JsonCompatible {
   REGISTER_STRUCT_FIELD(tasks, std::vector<TrackerTasksListItem>, "tasks");
+};
+#endif
+
+#ifdef USE_TRACKER_TASKS_EDIT_REQUEST
+struct TrackerTasksEditRequest : public JsonCompatible {
+  REGISTER_STRUCT_FIELD_OPTIONAL(title, std::string, "title");
+  REGISTER_STRUCT_FIELD_OPTIONAL(description, std::string, "description");
+  REGISTER_STRUCT_FIELD_OPTIONAL(project_name, std::string, "project_name");
+  REGISTER_STRUCT_FIELD_OPTIONAL(assignee, std::string, "assignee");
 };
 #endif
