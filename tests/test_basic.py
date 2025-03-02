@@ -1029,6 +1029,37 @@ async def test_inventory(service_client):
 
 
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])
+async def test_chat_create_and_list(service_client):
+    response = await service_client.post(
+        '/v1/messenger/create-chat',
+        headers={'Authorization': 'Bearer first_token'},
+        json={'chat_name': 'test_name', 'id_list': ['first_id']}
+    )
+
+    assert response.status == 200
+
+    response = await service_client.post(
+        '/v1/messenger/list-chats',
+        params={'employee_id': 'first_id'},
+        headers={'Authorization': 'Bearer first_token'}
+    )
+
+    assert response.status == 200
+    assert response.text.find('test_name') > -1
+
+@pytest.mark.pgsql('db_1', files=['initial_data.sql'])
+async def test_load_recent_messages(service_client):
+    response = await service_client.post(
+        '/v1/messenger/recent-messages',
+        headers={'Authorization': 'Bearer first_token'},
+        json={'chat_id': 'chat1'}
+    )
+
+    assert response.status == 200
+    assert response.text == '{"chat_id":"chat1","content":{"content":"Hello world!"},"sender_id":"user1","timestamp":"2025-02-25T10:00:00.000000"}, '
+
+
+@pytest.mark.pgsql('db_1', files=['initial_data.sql'])
 async def test_end(service_client):
     response = await service_client.post(
         '/v1/clear-tasks',
