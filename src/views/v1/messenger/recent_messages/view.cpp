@@ -71,17 +71,16 @@ class LoadRecentMessagesHandler final
     auto messages = result.AsContainer<std::vector<MessageRow>>(
             userver::storages::postgres::kRowTag);
 
-    std::string jsonArray;
-    for (auto& message: messages) {
+    nlohmann::json jsonArray;
+    for (size_t i = 0; i < messages.size(); ++i) {
       MessengerMessage msg;
-      msg.chat_id = message.chat_id;
-      msg.timestamp = message.timestamp;
-      msg.sender_id = message.sender_id;
-      msg.content = MessengerMessageContent(message.content);
-      jsonArray += msg.ToJsonString();
-      jsonArray += ", ";
+      msg.chat_id = messages[i].chat_id;
+      msg.timestamp = messages[i].timestamp;
+      msg.sender_id = messages[i].sender_id;
+      msg.content = MessengerMessageContent(messages[i].content);
+      jsonArray[i] = msg.ToJsonString();
     }
-    return jsonArray;
+    return to_string(jsonArray);
   }
 
  private:

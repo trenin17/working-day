@@ -1056,7 +1056,8 @@ async def test_load_recent_messages(service_client):
     )
 
     assert response.status == 200
-    assert response.text == '{"chat_id":"chat1","content":{"content":"Hello world!"},"sender_id":"user1","timestamp":"2025-02-25T10:00:00.000000"}, '
+    assert response.text == ('[\"{\\\"chat_id\\\":\\\"chat1\\\",\\\"content\\\":{\\\"content\\\":\\\"Hello world!\\\"},'
+                             '\\\"sender_id\\\":\\\"user1\\\",\\\"timestamp\\\":\\\"2025-02-25T10:00:00.000000\\\"}\"]')
 
 
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])

@@ -21,9 +21,13 @@ namespace views::v1::messenger::list_chats {
 
 namespace {
 
-struct StringRow {
-    std::vector<std::string> values;
-  };
+struct ListedChatInfo {
+  std::string chat_id;
+  std::string chat_name;
+  std::optional<userver::storages::postgres::TimePoint> timestamp;
+  std::optional<std::string> sender_id;
+  std::optional<std::string> content;
+};
 
 class ListChatsHandler final
     : public userver::server::handlers::HttpHandlerBase {
@@ -52,51 +56,44 @@ class ListChatsHandler final
     const auto& company_id = ctx.GetData<std::string>("company_id");
 
     auto query = fmt::format(
-        "SELECT chats "
-        "FROM working_day_{0}.employee_chats "
-        "WHERE employee_id = $1;",
+        "SELECT DISTINCT ON (mc.chat_id) "
+        "mc.chat_id, mc.chat_name, m.timestamp, "
+        "m.sender_id, m.content "
+        "FROM working_day_{0}.employee_chats ec "
+        "JOIN working_day_{0}.messenger_chats mc ON ec.chat_id = mc.chat_id "
+        "LEFT JOIN working_day_{0}.messages m ON m.chat_id = mc.chat_id "
+        "WHERE ec.employee_id = $1 "
+        "ORDER BY mc.chat_id, m.timestamp DESC;",
         company_id);
 
     auto result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kMaster, std::move(query),
         employee_id);
 
-    auto chat_ids = result.AsOptionalSingleRow<StringRow>(
+    auto chats_info = result.AsContainer<std::vector<ListedChatInfo>>(
           userver::storages::postgres::kRowTag);
 
-    if (chat_ids.has_value()) {
-      userver::storages::postgres::ParameterStore parameters;
-      std::string filter;
+    MessengerListAllChats listed_chats;
+    listed_chats.chats.reserve(chats_info.size());
+    for (auto& info : chats_info) {
+      MessengerListedChatInfo chat_info;
 
-      for (auto& field : (*chat_ids).values) {
-          auto separator = (parameters.Size() == 0 ? "[" : ", ");
-          parameters.PushBack(field);
-          filter += fmt::format("{}${}", separator, parameters.Size());
+      chat_info.chat_id = info.chat_id;
+      chat_info.chat_name = std::move(info.chat_name);
+
+      MessengerMessage message;
+      if (info.sender_id.has_value() && info.content.has_value() && info.timestamp.has_value()) {
+        message.chat_id = std::move(info.chat_id);
+        message.sender_id = std::move(*info.sender_id);
+        message.content = MessengerMessageContent(std::move(*info.content));
+        message.timestamp = std::move(*info.timestamp);
       }
+      chat_info.last_message = std::move(message);
 
-      result =
-        pg_cluster_->Execute(userver::storages::postgres::ClusterHostType::kMaster,
-                          "SELECT array_agg(m.chat_name ORDER BY u.ordinality) AS chat_names "
-                          "FROM unnest(ARRAY" + filter + "]) WITH ORDINALITY AS u(chat_id, ordinality) "
-                          "LEFT JOIN working_day_" + company_id + ".messenger_chats m "
-                          "ON m.chat_id = u.chat_id;",
-                          parameters);
-
-      auto chat_names = result.AsSingleRow<StringRow>(userver::storages::postgres::kRowTag);
-
-      MessengerListAllChats listed_chats;
-      listed_chats.chats.reserve(chat_names.values.size());
-      for (size_t i = 0; i < chat_names.values.size(); ++i) {
-        MessengerListedChatInfo chat_info;
-        chat_info.chat_id = std::move((*chat_ids).values[i]);
-        chat_info.chat_name = std::move(chat_names.values[i]);
-        listed_chats.chats.emplace_back(chat_info);
-      }
-
-      return listed_chats.ToJsonString();
+      listed_chats.chats.push_back(std::move(chat_info));
     }
 
-    return "{}";
+    return listed_chats.ToJsonString();
   }
 
  private:
