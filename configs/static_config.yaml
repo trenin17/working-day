@@ -417,13 +417,6 @@ components_manager:
         dns-client:
             fs-task-processor: fs-task-processor
 
-        websocket-handler:
-            path: /chat_ws
-            method: GET
-            task_processor: main-task-processor
-            max-remote-payload: 100000
-            fragment-size: 100000
-
         handler-v1-messenger-create-chat:
             path: /v1/messenger/create-chat
             method: POST
