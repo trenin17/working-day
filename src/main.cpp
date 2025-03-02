@@ -51,7 +51,6 @@
 #include "views/v1/search/full/view.hpp"
 #include "views/v1/search/suggest/view.hpp"
 #include "views/v1/superuser/company/add/view.hpp"
-#include "web_socket.hpp"
 
 int main(int argc, char* argv[]) {
   Aws::SDKOptions options;
@@ -106,7 +105,6 @@ int main(int argc, char* argv[]) {
   views::v1::documents::get_signs::AppendDocumentsGetSigns(component_list);
   views::v1::superuser::company::add::AppendSuperuserCompanyAdd(component_list);
   views::v1::inventory::add::AppendInventoryAdd(component_list);
-  mynamespace::websocket::AppendWebSocket(component_list);
   views::v1::messenger::create::AppendCreateChat(component_list);
   views::v1::messenger::list_chats::AppendListChats(component_list);
   views::v1::messenger::recent_messages::AppendRecentMessages(component_list);

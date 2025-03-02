@@ -659,10 +659,6 @@ struct MessengerListedChatInfo : public JsonCompatible {
 
   MessengerListedChatInfo& operator=(const MessengerListedChatInfo& other) = default;
 
-  // Method for postgres initialization of non-trivial types
-  auto Introspect() {
-    return std::tie(chat_id, chat_name, last_message);
-  }
   REGISTER_STRUCT_FIELD(chat_id, std::string, "chat_id");
   REGISTER_STRUCT_FIELD(chat_name, std::string, "chat_name");
   REGISTER_STRUCT_FIELD(last_message, MessengerMessage, "last_message");

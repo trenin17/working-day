@@ -71,21 +71,10 @@ class CreateChatHandler final
 
     result =
         pg_cluster_->Execute(userver::storages::postgres::ClusterHostType::kMaster,
-                            "WITH input_data AS ( "
-                            "  SELECT ARRAY" +
-                                filter +
-                                "] AS employee_ids, $1 AS chat_id "
-                                ") "
-                                "INSERT INTO working_day_" +
-                                company_id +
-                                ".employee_chats (employee_id, chats) "
-                                "SELECT employee_id, ARRAY[chat_id] AS chats "
-                                "FROM input_data, LATERAL unnest(employee_ids) AS employee_id "
-                                "ON CONFLICT (employee_id) DO UPDATE "
-                                "SET chats = array_append(working_day_" +
-                                company_id +
-                                ".employee_chats.chats, "
-                                "EXCLUDED.chats[1]); ",
+                            "INSERT INTO working_day_" + company_id + ".employee_chats (employee_id, chat_id) "
+                            "SELECT employee_id, $1 "
+                            "FROM unnest(ARRAY" + filter + "]) AS employee_id "
+                            "ON CONFLICT (employee_id, chat_id) DO NOTHING;",
                             parameters);
 
     return "";
