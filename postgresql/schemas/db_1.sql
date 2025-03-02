@@ -158,3 +158,34 @@ CREATE TYPE wd_general.inventory_item AS (
 
 ALTER TABLE working_day_first.employees
 ADD COLUMN inventory wd_general.inventory_item[] NOT NULL DEFAULT ARRAY[]::wd_general.inventory_item[];
+
+DROP TABLE IF EXISTS working_day_first.messenger_chats;
+
+CREATE TABLE IF NOT EXISTS working_day_first.messenger_chats (
+    chat_id TEXT PRIMARY KEY,
+    chat_name TEXT
+);
+
+DROP TABLE IF EXISTS working_day_first.messages;
+
+CREATE TABLE IF NOT EXISTS working_day_first.messages (
+    chat_id TEXT,
+    timestamp TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    sender_id TEXT,
+    content TEXT,
+    PRIMARY KEY (chat_id, timestamp),
+    FOREIGN KEY (chat_id) REFERENCES working_day_first.messenger_chats (chat_id) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_messages_chat_timestamp
+  ON working_day_first.messages (chat_id ASC, timestamp DESC);
+
+DROP TABLE IF EXISTS working_day_first.employee_chats;
+
+CREATE TABLE IF NOT EXISTS working_day_first.employee_chats (
+  employee_id TEXT NOT NULL,
+  chat_id TEXT,
+  PRIMARY KEY (employee_id, chat_id),
+  FOREIGN KEY (employee_id) REFERENCES working_day_first.employees (id) ON DELETE CASCADE
+  FOREIGN KEY (chat_id) REFERENCES working_day_first.messenger_chats (chat_id) ON DELETE CASCADE
+);

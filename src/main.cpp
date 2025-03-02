@@ -39,6 +39,9 @@
 #include "views/v1/employee/remove/view.hpp"
 #include "views/v1/employees/view.hpp"
 #include "views/v1/inventory/add/view.hpp"
+#include "views/v1/messenger/create_chat/view.hpp"
+#include "views/v1/messenger/list_chats/view.hpp"
+#include "views/v1/messenger/recent_messages/view.hpp"
 #include "views/v1/notifications/view.hpp"
 #include "views/v1/payments/add_bulk/view.hpp"
 #include "views/v1/payments/view.hpp"
@@ -48,6 +51,7 @@
 #include "views/v1/search/full/view.hpp"
 #include "views/v1/search/suggest/view.hpp"
 #include "views/v1/superuser/company/add/view.hpp"
+#include "web_socket.hpp"
 
 int main(int argc, char* argv[]) {
   Aws::SDKOptions options;
@@ -102,6 +106,10 @@ int main(int argc, char* argv[]) {
   views::v1::documents::get_signs::AppendDocumentsGetSigns(component_list);
   views::v1::superuser::company::add::AppendSuperuserCompanyAdd(component_list);
   views::v1::inventory::add::AppendInventoryAdd(component_list);
+  mynamespace::websocket::AppendWebSocket(component_list);
+  views::v1::messenger::create::AppendCreateChat(component_list);
+  views::v1::messenger::list_chats::AppendListChats(component_list);
+  views::v1::messenger::recent_messages::AppendRecentMessages(component_list);
 
   int err_code = userver::utils::DaemonMain(argc, argv, component_list);
 
