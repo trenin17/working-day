@@ -402,7 +402,7 @@ components_manager:
                 types:
                   - bearer
                 scopes:
-                  - admin
+                  - user
 
         handler-v1-tracker-projects-list:
             path: /v1/tracker/projects/list
@@ -412,7 +412,7 @@ components_manager:
                 types:
                   - bearer
                 scopes:
-                  - admin
+                  - user
 
         handler-v1-tracker-tasks-add:
             path: /v1/tracker/tasks/add
@@ -422,7 +422,7 @@ components_manager:
                 types:
                   - bearer
                 scopes:
-                  - admin
+                  - user
 
         handler-v1-tracker-tasks-list:
             path: /v1/tracker/tasks/list
@@ -432,7 +432,7 @@ components_manager:
                 types:
                   - bearer
                 scopes:
-                  - admin
+                  - user
         
         handler-v1-tracker-tasks-info:
             path: /v1/tracker/tasks/info          
@@ -452,7 +452,7 @@ components_manager:
                 types:
                   - bearer
                 scopes:
-                  - admin
+                  - user
 
         handler-v1-tracker-tasks-edit:
             path: /v1/tracker/tasks/edit
@@ -462,7 +462,17 @@ components_manager:
                 types:
                   - bearer
                 scopes:
-                  - user      
+                  - user
+
+        handler-v1-tracker-tasks-media-upload:
+            path: /v1/tracker/tasks/media/upload
+            method: POST
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - user
 
         handler-implicit-http-options:
             as_fallback: implicit-http-options

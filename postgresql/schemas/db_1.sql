@@ -165,13 +165,14 @@ CREATE TABLE IF NOT EXISTS working_day_first.tracker_projects (
 );
 
 CREATE TABLE IF NOT EXISTS working_day_first.tracker_tasks (
-    id TEXT NOT NULL,
+    id TEXT PRIMARY KEY NOT NULL,
     title TEXT NOT NULL,
     description TEXT,
     project_name TEXT NOT NULL,
     creator TEXT NOT NULL,
     assignee TEXT,
     status TEXT CHECK (status IN ('Open', 'InProgress', 'Review', 'Done')),
+    media_links TEXT[] DEFAULT ARRAY[]::TEXT[],
     FOREIGN KEY (creator) REFERENCES working_day_first.employees (id) ON DELETE CASCADE,
     FOREIGN KEY (assignee) REFERENCES working_day_first.employees (id) ON DELETE CASCADE
-)
+);

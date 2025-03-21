@@ -55,8 +55,8 @@ class TrackerTasksAssignedToUserHandler final
 
     auto result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kSlave,
-        "SELECT tasks.id,  tasks.title, tasks.description, tasks.project_name, "
-        "tasks.creator, tasks.assignee, tasks.status "
+        "SELECT tasks.title, tasks.project_name, tasks.id, "
+        "tasks.creator, tasks.assignee "
         "FROM working_day_" +
             company_id +
             ".tracker_tasks as tasks "
