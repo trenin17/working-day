@@ -48,4 +48,10 @@ std::string GenerateDocumentPresignedLink(const std::string& key,
   return GeneratePresignedLink(key, type, "working-day-documents");
 }
 
+std::string GenerateTrackerTasksMediaPresignedLink(const std::string& key,
+                                                   const LinkType type) {
+  // return GeneratePresignedLink(key, type, "working-day-tracker-tasks-media");
+  return GeneratePresignedLink(key, type, "working-day-photos");
+}
+
 }  // namespace utils::s3_presigned_links

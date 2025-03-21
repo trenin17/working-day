@@ -80,14 +80,15 @@ class TrackerTasksEditHandler : public userver::server::handlers::HttpHandlerBas
             "SET title = case when $2 is null then title else $2 end, "
             "description = case when $3 is null then description else $3 end, "
             "project_name = case when $4 is null then project_name else $4 end, "
-            "assignee = case when $5 is null then assignee else $5 end "
+            "assignee = case when $5 is null then assignee else $5 end, "
+            "status = case when $6 is null then status else $6 end "
             "WHERE id = $1",
         task_id, request_body.title, request_body.description, request_body.project_name,
-        request_body.assignee);
+        request_body.assignee, request_body.status);
 
     return "";
   }
-// сюда статус optional
+// сюда статус optional 
  private:
   userver::storages::postgres::ClusterPtr pg_cluster_;
 };

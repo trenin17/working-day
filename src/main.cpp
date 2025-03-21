@@ -58,6 +58,7 @@
 #include "views/v1/tracker/tasks/info/view.hpp"
 #include "views/v1/tracker/tasks/assigned_to_user/view.hpp"
 #include "views/v1/tracker/tasks/edit/view.hpp"
+#include "views/v1/tracker/tasks/media/upload/view.hpp"
 
 int main(int argc, char* argv[]) {
   Aws::SDKOptions options;
@@ -122,7 +123,8 @@ int main(int argc, char* argv[]) {
   views::v1::tracker::tasks::info::AppendTrackerTasksInfo(component_list);
   views::v1::tracker::tasks::assigned_to_user::AppendTrackerTasksAssignedToUser(component_list);
   views::v1::tracker::tasks::edit::AppendTrackerTasksEdit(component_list);
-
+  views::v1::tracker::tasks::media::upload::AppendTrackerTasksMediaUpload(component_list);
+  
   int err_code = userver::utils::DaemonMain(argc, argv, component_list);
 
   Aws::ShutdownAPI(options);

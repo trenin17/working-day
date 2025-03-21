@@ -244,7 +244,7 @@ void JsonCompatible::RegisterParsingEnum(T* ptr, std::string parameter_name,
 
 template <class T, class V>
 void JsonCompatible::RegisterDumpingEnum(T* ptr, std::string parameter_name,
-                                     bool mandatory, const std::vector<V>& enum_values) {
+                                         bool mandatory, const std::vector<V>& enum_values) {
 
   lambdas_dump_.push_back([ptr, parameter_name = std::move(parameter_name),
                            mandatory, enum_values](nlohmann::json& json) {
@@ -300,15 +300,28 @@ void JsonCompatible::RegisterDumpingEnum(T* ptr, std::string parameter_name,
   REGISTER_STRUCT_FIELD_INTERNAL_DEFAULT_VALUE(                       \
       variable_name, std::optional<type>, json_key, std::nullopt)
 
-#define REGISTER_STRUCT_ENUM_FIELD_INTERNAL_DEFAULT_VALUE(variable_name, type,     \
+#define REGISTER_STRUCT_ENUM_FIELD_INTERNAL_DEFAULT_VALUE(variable_name, type,             \
                                                      json_key, default_value, enum_values) \
-  type variable_name = [this,                                                 \
-                        variable_name_addr = &(variable_name)]() -> type {    \
-    RegisterParsingEnum(variable_name_addr, json_key, false, enum_values);                     \
-    RegisterDumpingEnum(variable_name_addr, json_key, false, enum_values);                     \
-    return default_value;                                                     \
+  type variable_name = [this,                                                              \
+                        variable_name_addr = &(variable_name)]() -> type {                 \
+    RegisterParsingEnum(variable_name_addr, json_key, false, enum_values);                 \
+    RegisterDumpingEnum(variable_name_addr, json_key, false, enum_values);                 \
+    return default_value;                                                                  \
   }()
 
-#define REGISTER_STRUCT_ENUM_FIELD_OPTIONAL(variable_name, type, json_key, ...)  \
-  REGISTER_STRUCT_ENUM_FIELD_INTERNAL_DEFAULT_VALUE(                                     \
+#define REGISTER_STRUCT_ENUM_FIELD_INTERNAL_MANDATORY_VALUE(variable_name, type,  \
+                                                            json_key, enum_values)\
+  type variable_name = [this,                                                     \
+                        variable_name_addr = &(variable_name)]() -> type {        \
+    RegisterParsingEnum(variable_name_addr, json_key, true, enum_values);         \
+    RegisterDumpingEnum(variable_name_addr, json_key, true, enum_values);         \
+    return type();                                                                \
+}()
+
+#define REGISTER_STRUCT_ENUM_FIELD_OPTIONAL(variable_name, type, json_key, ...)                 \
+  REGISTER_STRUCT_ENUM_FIELD_INTERNAL_DEFAULT_VALUE(                                            \
       variable_name, std::optional<type>, json_key, std::nullopt, std::vector<type>(__VA_ARGS__))
+
+#define REGISTER_STRUCT_ENUM_FIELD(variable_name, type, json_key, ...) \
+  REGISTER_STRUCT_ENUM_FIELD_INTERNAL_MANDATORY_VALUE(                 \
+      variable_name, type, json_key, std::vector<type>(__VA_ARGS__))
