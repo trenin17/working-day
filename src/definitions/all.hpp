@@ -223,6 +223,11 @@
 #define USE_ERROR_MESSAGE
 #endif
 
+#ifdef V1_TRACKER_TASKS_MEDIA_UPLOAD
+#define USE_ERROR_MESSAGE
+#endif
+
+
 #ifdef USE_LIST_EMPLOYEE
 struct ListEmployee : public JsonCompatible {
   // For postgres initialization type needs to be default constructible
@@ -806,6 +811,7 @@ struct TrackerTasksListItem : public JsonCompatible {
 #endif
 
 #ifdef USE_TRACKER_TASKS_INFO_ITEM
+
 struct TrackerTasksInfoItem : public JsonCompatible {
   // For postgres initialization type needs to be default constructible
   TrackerTasksInfoItem() = default;
@@ -821,7 +827,7 @@ struct TrackerTasksInfoItem : public JsonCompatible {
 
   // Method for postgres initialization of non-trivial types
   auto Introspect() {
-    return std::tie(title, project_name, description, id, creator, assignee, status);
+    return std::tie(title, project_name, description, id, creator, assignee, status, media_links);
   }
 
   REGISTER_STRUCT_FIELD(title, std::string, "title");
@@ -830,8 +836,8 @@ struct TrackerTasksInfoItem : public JsonCompatible {
   REGISTER_STRUCT_FIELD_OPTIONAL(id, std::string, "id");
   REGISTER_STRUCT_FIELD(creator, std::string, "creator");
   REGISTER_STRUCT_FIELD_OPTIONAL(assignee, std::string, "assignee");
-  // 
   REGISTER_STRUCT_ENUM_FIELD(status, std::string, "status", {"Open", "InProgress", "Review", "Done"});
+  REGISTER_STRUCT_FIELD_OPTIONAL(media_links, std::vector<std::string>, "media_links");
 };
 #endif
 
@@ -847,5 +853,6 @@ struct TrackerTasksEditRequest : public JsonCompatible {
   REGISTER_STRUCT_FIELD_OPTIONAL(description, std::string, "description");
   REGISTER_STRUCT_FIELD_OPTIONAL(project_name, std::string, "project_name");
   REGISTER_STRUCT_FIELD_OPTIONAL(assignee, std::string, "assignee");
+  REGISTER_STRUCT_ENUM_FIELD_OPTIONAL(status, std::string, "status", {"Open", "InProgress", "Review", "Done"});
 };
 #endif

@@ -13,4 +13,7 @@ std::string GeneratePhotoPresignedLink(const std::string& key,
 std::string GenerateDocumentPresignedLink(const std::string& key,
                                           const LinkType type);
 
+std::string GenerateTrackerTasksMediaPresignedLink(const std::string& key,
+                                                   const LinkType type);
+
 }  // namespace utils::s3_presigned_links
