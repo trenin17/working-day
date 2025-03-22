@@ -13,8 +13,9 @@
 #include <userver/storages/postgres/component.hpp>
 #include <userver/utils/boost_uuid4.hpp>
 #include <userver/utils/uuid4.hpp>
+#include <userver/yaml_config/merge_schemas.hpp>
 
-#include <definitions/all.hpp>
+#include "definitions/all.hpp"
 
 #include "utils/s3_presigned_links.hpp"
 
@@ -48,7 +49,8 @@ class TrackerTasksMediaUploadHandler final
         pg_cluster_(
             component_context
                 .FindComponent<userver::components::Postgres>("key-value")
-                .GetCluster()) {}
+                .GetCluster()),
+  is_testing_(config["is_testing"].As<bool>()) {}
 
   std::string HandleRequestThrow(
       const userver::server::http::HttpRequest& request,
@@ -58,6 +60,7 @@ class TrackerTasksMediaUploadHandler final
         static_cast<std::string>("Access-Control-Allow-Origin"), "*");
     request.GetHttpResponse().SetHeader(
         static_cast<std::string>("Access-Control-Allow-Headers"), "*");
+
 
     auto task_id = request.GetArg("task_id");
 
@@ -69,9 +72,13 @@ class TrackerTasksMediaUploadHandler final
     
     const auto& company_id = ctx.GetData<std::string>("company_id");
 
+    fprintf(stderr, "IS_TESTING: %d\n", is_testing_);
+
+
     auto media_id = userver::utils::generators::GenerateUuid();
     auto upload_link = utils::s3_presigned_links::GenerateTrackerTasksMediaPresignedLink(
-        media_id, utils::s3_presigned_links::Upload);
+        media_id, utils::s3_presigned_links::Upload, is_testing_);
+
 
     auto result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kMaster,
@@ -85,8 +92,21 @@ class TrackerTasksMediaUploadHandler final
     return response.ToJSON();
   }
 
+  static userver::yaml_config::Schema GetStaticConfigSchema() {
+    return userver::yaml_config::MergeSchemas<HandlerBase>(R"(
+type: object
+description: Tracker tasks media upload handler schema
+additionalProperties: false
+properties:
+    is_testing:
+        type: boolean
+        description: flag for testing mode
+)");
+  }
+
  private:
   userver::storages::postgres::ClusterPtr pg_cluster_;
+  bool is_testing_ = false;
 };
 
 }  // namespace

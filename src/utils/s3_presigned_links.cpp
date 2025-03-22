@@ -8,10 +8,12 @@
 namespace utils::s3_presigned_links {
 
 std::string GeneratePresignedLink(const std::string& key, const LinkType type,
+                                  bool is_testing,
                                   const std::string& bucket) {
   std::string result;
-
-  {
+  if (is_testing) {
+    result = "s3 test link";
+  } else {
     Aws::Client::ClientConfiguration config;
     config.region = Aws::String("ru-central1");
     config.endpointOverride = Aws::String("https://storage.yandexcloud.net");
@@ -34,24 +36,29 @@ std::string GeneratePresignedLink(const std::string& key, const LinkType type,
         break;
     }
   }
-
+  
   return result;
 }
 
+std::string GeneratePresignedLink(const std::string& key, const LinkType type,
+  const std::string& bucket) {
+return GeneratePresignedLink(key, type, false, bucket);
+}
+
 std::string GeneratePhotoPresignedLink(const std::string& key,
-                                       const LinkType type) {
-  return GeneratePresignedLink(key, type, "working-day-photos");
+                                       const LinkType type, bool is_testing) {
+  return GeneratePresignedLink(key, type, is_testing, "working-day-photos");
 }
 
 std::string GenerateDocumentPresignedLink(const std::string& key,
-                                          const LinkType type) {
-  return GeneratePresignedLink(key, type, "working-day-documents");
+                                          const LinkType type, bool is_testing) {
+  return GeneratePresignedLink(key, type, is_testing, "working-day-documents");
 }
 
 std::string GenerateTrackerTasksMediaPresignedLink(const std::string& key,
-                                                   const LinkType type) {
+                                                   const LinkType type, bool is_testing) {
   // return GeneratePresignedLink(key, type, "working-day-tracker-tasks-media");
-  return GeneratePresignedLink(key, type, "working-day-photos");
+  return GeneratePresignedLink(key, type, is_testing, "working-day-photos");
 }
 
 }  // namespace utils::s3_presigned_links
