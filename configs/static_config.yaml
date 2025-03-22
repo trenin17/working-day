@@ -473,6 +473,7 @@ components_manager:
                   - bearer
                 scopes:
                   - user
+            is_testing: $is_testing
 
         handler-implicit-http-options:
             as_fallback: implicit-http-options
