@@ -12,7 +12,18 @@ std::string GeneratePresignedLink(const std::string& key, const LinkType type,
                                   const std::string& bucket) {
   std::string result;
   if (is_testing) {
-    result = "s3 test link";
+    switch (type) {
+      case LinkType::Upload:
+        result = "s3 upload test link";
+        break;
+
+      case LinkType::Download:
+        result = "s3 download test link";
+        break;
+        
+      default:
+        break;
+    }
   } else {
     Aws::Client::ClientConfiguration config;
     config.region = Aws::String("ru-central1");

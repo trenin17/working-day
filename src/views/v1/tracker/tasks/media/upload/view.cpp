@@ -50,7 +50,7 @@ class TrackerTasksMediaUploadHandler final
             component_context
                 .FindComponent<userver::components::Postgres>("key-value")
                 .GetCluster()),
-  is_testing_(config["is_testing"].As<bool>()) {}
+        is_testing_(config["is_testing"].As<bool>()) {}
 
   std::string HandleRequestThrow(
       const userver::server::http::HttpRequest& request,
@@ -72,13 +72,9 @@ class TrackerTasksMediaUploadHandler final
     
     const auto& company_id = ctx.GetData<std::string>("company_id");
 
-    fprintf(stderr, "IS_TESTING: %d\n", is_testing_);
-
-
     auto media_id = userver::utils::generators::GenerateUuid();
     auto upload_link = utils::s3_presigned_links::GenerateTrackerTasksMediaPresignedLink(
         media_id, utils::s3_presigned_links::Upload, is_testing_);
-
 
     auto result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kMaster,

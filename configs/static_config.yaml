@@ -443,6 +443,7 @@ components_manager:
                   - bearer
                 scopes:
                   - user
+            is_testing: $is_testing
 
         handler-v1-tracker-tasks-assigned-to-user:
             path: /v1/tracker/tasks/assigned-to-user           
