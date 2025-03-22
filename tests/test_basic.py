@@ -1287,7 +1287,7 @@ async def test_tracker_tasks_info_and_edit(service_client):
         '"creator":"first_id",'
         '"description":"description for old task",'
         '"id":"first-1",'
-        '"media_links":["link 1","link 2"],'
+        '"media_links":["s3 download test link","s3 download test link"],'
         '"project_name":"first",'
         '"status":"Open",'
         '"title":"old task"}')
@@ -1320,7 +1320,7 @@ async def test_tracker_tasks_info_and_edit(service_client):
         '"creator":"first_id",'
         '"description":"new description for old task",'
         '"id":"first-1",'
-        '"media_links":["link 1","link 2"],'
+        '"media_links":["s3 download test link","s3 download test link"],'
         '"project_name":"first",'
         '"status":"InProgress",'
         '"title":"not old task"}')
@@ -1366,7 +1366,7 @@ async def test_tracker_tasks_media_upload(service_client):
     assert response.status == 200
     response_json = json.loads(response.text)
 
-    assert response_json["url"] == "s3 test link"
+    assert response_json["url"] == "s3 upload test link"
 
     response = await service_client.get(
         '/v1/tracker/tasks/info',
@@ -1378,6 +1378,8 @@ async def test_tracker_tasks_media_upload(service_client):
     response_json = json.loads(response.text)
     media_links = response_json["media_links"]
     assert len(media_links) == 3
+    for i in range(3):
+        assert media_links[i] == "s3 download test link"
 
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])
 async def test_end(service_client):

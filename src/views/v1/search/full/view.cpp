@@ -112,6 +112,7 @@ class SearchFullHandler final
     for (auto& key : search_keys) {
       append(key, parameters, filter);
     }
+//
 
     auto result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kMaster,

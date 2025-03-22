@@ -11,6 +11,7 @@
 #include <userver/server/handlers/http_handler_base.hpp>
 #include <userver/storages/postgres/cluster.hpp>
 #include <userver/storages/postgres/component.hpp>
+#include <userver/yaml_config/merge_schemas.hpp>
 
 #include "utils/s3_presigned_links.hpp"
 
@@ -32,7 +33,8 @@ class InfoTrackerTasksHandler final
         pg_cluster_(
             component_context
                 .FindComponent<userver::components::Postgres>("key-value")
-                .GetCluster()) {}
+                .GetCluster()),
+        is_testing_(config["is_testing"].As<bool>()) {}
 
   std::string HandleRequestThrow(
       const userver::server::http::HttpRequest& request,
@@ -68,11 +70,31 @@ class InfoTrackerTasksHandler final
 
     TrackerTasksInfoItem response{result.AsSingleRow<TrackerTasksInfoItem>(userver::storages::postgres::kRowTag)};
 
+    if (response.media_links.has_value()) {
+      for (auto& link : response.media_links.value()) {
+          link = utils::s3_presigned_links::GenerateTrackerTasksMediaPresignedLink(
+              link, utils::s3_presigned_links::Download, is_testing_);
+      }
+    }
+
     return response.ToJsonString();
+  }
+
+  static userver::yaml_config::Schema GetStaticConfigSchema() {
+    return userver::yaml_config::MergeSchemas<HandlerBase>(R"(
+type: object
+description: Tracker tasks media upload handler schema
+additionalProperties: false
+properties:
+    is_testing:
+        type: boolean
+        description: flag for testing mode
+)");
   }
 
  private:
   userver::storages::postgres::ClusterPtr pg_cluster_;
+  bool is_testing_ = false;
 };
 
 }  // namespace
