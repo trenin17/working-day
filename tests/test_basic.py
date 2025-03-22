@@ -1366,8 +1366,7 @@ async def test_tracker_tasks_media_upload(service_client):
     assert response.status == 200
     response_json = json.loads(response.text)
 
-    assert response_json["url"].startswith(
-        "https://working-day-photos.storage.yandexcloud.net")
+    assert response_json["url"] == "s3 test link"
 
     response = await service_client.get(
         '/v1/tracker/tasks/info',
