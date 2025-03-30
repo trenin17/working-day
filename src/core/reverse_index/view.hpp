@@ -24,6 +24,14 @@ class EmployeeAllData {
   std::optional<std::vector<std::string>> phones;
 };
 
+class TrackerTasksAllData {
+ public:
+  std::string task_id;
+  std::optional<std::string> title, description, project_name, creator,
+      assignee, status;
+  std::string company_id;
+};
+
 std::string ConvertToLower(std::string s);
 
 class ReverseIndexResponse : public JsonCompatible {

@@ -26,6 +26,118 @@ namespace views::v1::tracker::tasks::edit {
 
 namespace {
 
+core::reverse_index::ReverseIndexResponse AddTaskToReverseIndexFunc(
+    userver::storages::postgres::ClusterPtr cluster,
+    core::reverse_index::TrackerTasksAllData data) {
+
+    std::vector<std::string> words;
+    std::istringstream stream(data.title.value());
+    std::string word;
+
+    while (stream >> word) {
+        words.push_back(core::reverse_index::ConvertToLower(word));
+    }
+
+  userver::storages::postgres::ParameterStore parameters;
+  std::string filter;
+
+  parameters.PushBack(data.task_id);
+
+  for (auto& w : words) {
+    auto separator = (parameters.Size() == 1 ? "[" : ", ");
+    parameters.PushBack(w);
+    filter += fmt::format("{}${}", separator, parameters.Size());
+  }
+
+  auto result =
+      cluster->Execute(userver::storages::postgres::ClusterHostType::kMaster,
+                       "WITH input_data AS ( "
+                       "  SELECT ARRAY" +
+                           filter +
+                           "] AS keys, $1 AS id "
+                           ") "
+                           "INSERT INTO working_day_" +
+                           data.company_id +
+                           ".reverse_index (key, ids, entity_type) "
+                           "SELECT key, ARRAY[id] AS ids, 'tasks' AS entity_type "
+                           "FROM input_data, LATERAL unnest(keys) AS key "
+                           "ON CONFLICT (key) DO UPDATE "
+                           "SET ids = array_append(working_day_" +
+                           data.company_id +
+                           ".reverse_index.ids, "
+                           "EXCLUDED.ids[1]); ",
+                       parameters);
+
+  core::reverse_index::ReverseIndexResponse response(data.task_id);
+
+  return response;
+}
+
+struct EditTaskValuesRow {
+  std::optional<std::string> title;
+};
+
+core::reverse_index::TrackerTasksAllData FetchOldTaskData(
+    userver::storages::postgres::ClusterPtr cluster,
+    core::reverse_index::TrackerTasksAllData data) {
+  auto grab_result = cluster->Execute(
+      userver::storages::postgres::ClusterHostType::kMaster,
+      "SELECT CASE WHEN $2 IS NULL THEN NULL ELSE title END "
+      "FROM working_day_" +
+          data.company_id +
+          ".tracker_tasks "
+          "WHERE id = $1; ",
+      data.task_id, data.title);
+
+  auto old_values = grab_result.AsSingleRow<EditTaskValuesRow>(
+      userver::storages::postgres::kRowTag);
+
+  core::reverse_index::TrackerTasksAllData data_old{data.task_id, old_values.title};
+  data_old.company_id = data.company_id;
+
+  return data_old;
+}
+
+core::reverse_index::ReverseIndexResponse EditTaskReverseIndexFunc(
+  userver::storages::postgres::ClusterPtr cluster,
+  core::reverse_index::TrackerTasksAllData old_data,
+  core::reverse_index::TrackerTasksAllData new_data) {
+
+  if (old_data.title && new_data.title &&
+      old_data.title.value() != new_data.title.value()) {
+
+      userver::storages::postgres::ParameterStore parameters;
+      parameters.PushBack(old_data.task_id);
+
+      std::vector<std::string> old_words;
+      std::istringstream old_stream(old_data.title.value());
+      std::string word;
+
+      while (old_stream >> word) {
+        old_words.push_back(core::reverse_index::ConvertToLower(word));
+      }
+
+      std::string filter;
+      for (const auto& w : old_words) {
+        auto separator = (parameters.Size() == 1 ? "(" : ", ");
+        parameters.PushBack(w);
+        filter += fmt::format("{}${}", separator, parameters.Size());
+      }
+      if (parameters.Size() > 1) {
+        auto result = 
+          cluster->Execute(userver::storages::postgres::ClusterHostType::kMaster,
+                            "UPDATE working_day_" + old_data.company_id +
+                                ".reverse_index "
+                                "SET ids = array_remove(ids, $1) "
+                                "WHERE key IN " +
+                                filter + ");",
+                            parameters);
+      }
+      return AddTaskToReverseIndexFunc(cluster, new_data);
+  }
+  core::reverse_index::ReverseIndexResponse response(new_data.task_id);
+  return response;
+}
 
 class TrackerTasksEditHandler : public userver::server::handlers::HttpHandlerBase {
  public:
@@ -73,6 +185,22 @@ class TrackerTasksEditHandler : public userver::server::handlers::HttpHandlerBas
     TrackerTasksEditRequest request_body;
     request_body.ParseRegisteredFields(request.RequestBody());
 
+    core::reverse_index::TrackerTasksAllData data_new{task_id,
+                                                      request_body.title};
+    data_new.company_id = company_id;
+
+    core::reverse_index::TrackerTasksAllData data_old =
+        FetchOldTaskData(pg_cluster_, data_new);
+
+    userver::storages::postgres::ClusterPtr cluster = pg_cluster_;
+    core::reverse_index::ReverseIndexRequest r_index_request{
+        [cluster, data_old,
+         data_new]() -> core::reverse_index::ReverseIndexResponse {
+          return EditTaskReverseIndexFunc(cluster, data_old, data_new);
+        }};
+
+    core::reverse_index::ReverseIndexHandler(r_index_request);
+
     auto result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kMaster,
         "UPDATE working_day_" + company_id +
@@ -88,8 +216,8 @@ class TrackerTasksEditHandler : public userver::server::handlers::HttpHandlerBas
 
     return "";
   }
-// сюда статус optional 
- private:
+
+private:
   userver::storages::postgres::ClusterPtr pg_cluster_;
 };
 

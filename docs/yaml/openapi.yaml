@@ -916,7 +916,7 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/ErrorMessage'
+                                $ref: '#/components/schemas/ErrorMessage'         
 
     /v1/messenger/list-chats:
         get:
@@ -1454,6 +1454,12 @@ components:
             properties:
                 search_key:
                     type: string
+                tag:
+                    type: string
+                    enum:
+                      - employees
+                      - tasks
+                      - all
 
         SearchFullRequest:
             type: object
@@ -1466,6 +1472,12 @@ components:
                     type: string
                 limit:
                     type: integer
+                tag:
+                    type: string
+                    enum:
+                      - employees
+                      - tasks
+                      - all
 
         SearchSuggestRequest:
             type: object
@@ -1488,6 +1500,10 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/ListEmployee'
+                tasks:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/TrackerTasksListItem'
 
         AttendanceListAllRequest:
             type: object
@@ -1899,6 +1915,11 @@ components:
                     type: string
                 status:
                     type: string
+                    enum:
+                      - Open
+                      - InProgress
+                      - Review
+                      - Done
 
         TrackerTasksMediaUploadResponse:
             type: object
@@ -1908,4 +1929,3 @@ components:
             properties:
                 url:
                     type: string
-                    

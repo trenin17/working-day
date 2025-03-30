@@ -14,9 +14,59 @@
 
 #include "definitions/all.hpp"
 
+#include "core/reverse_index/view.hpp"
+
 namespace views::v1::tracker::tasks::add {
 
 namespace {
+
+core::reverse_index::ReverseIndexResponse AddTaskToReverseIndexFunc(
+    userver::storages::postgres::ClusterPtr cluster,
+    core::reverse_index::TrackerTasksAllData data) {
+
+    std::vector<std::string> words;
+    std::istringstream stream(data.title.value());
+    std::string word;
+
+    while (stream >> word) {
+        words.push_back(core::reverse_index::ConvertToLower(word));
+    }
+
+  userver::storages::postgres::ParameterStore parameters;
+  std::string filter;
+
+  parameters.PushBack(data.task_id);
+
+  for (auto& w : words) {
+    auto separator = (parameters.Size() == 1 ? "[" : ", ");
+    parameters.PushBack(w);
+    filter += fmt::format("{}${}", separator, parameters.Size());
+  }
+
+  auto result =
+      cluster->Execute(userver::storages::postgres::ClusterHostType::kMaster,
+                       "WITH input_data AS ( "
+                       "  SELECT ARRAY" +
+                           filter +
+                           "] AS keys, $1 AS id "
+                           ") "
+                           "INSERT INTO working_day_" +
+                           data.company_id +
+                           ".reverse_index (key, ids, entity_type) "
+                           "SELECT key, ARRAY[id] AS ids, 'tasks' AS entity_type "
+                           "FROM input_data, LATERAL unnest(keys) AS key "
+                           "ON CONFLICT (key) DO UPDATE "
+                           "SET ids = array_append(working_day_" +
+                           data.company_id +
+                           ".reverse_index.ids, "
+                           "EXCLUDED.ids[1]); ",
+                       parameters);
+
+  core::reverse_index::ReverseIndexResponse response(data.task_id);
+
+  return response;
+}
+    
 
 class TrackerTasksAddHandler final
     : public userver::server::handlers::HttpHandlerBase {
@@ -82,6 +132,17 @@ class TrackerTasksAddHandler final
         user_id,
         request_body.assignee,
         "Open");
+
+    core::reverse_index::TrackerTasksAllData data{id, request_body.title};
+    data.company_id = company_id;
+
+    userver::storages::postgres::ClusterPtr cluster = pg_cluster_;
+    core::reverse_index::ReverseIndexRequest r_index_request{
+        [cluster, data]() -> core::reverse_index::ReverseIndexResponse {
+          return AddTaskToReverseIndexFunc(cluster, data);
+        }};
+
+    core::reverse_index::ReverseIndexHandler(r_index_request);
     
     auto update_project = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kMaster,

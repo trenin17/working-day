@@ -32,6 +32,10 @@
 #define USE_SEARCH_RESPONSE
 #endif
 
+#ifdef USE_SEARCH_BASIC_REQUEST
+#define USE_TRACKER_TASKS_LIST_ITEM
+#endif
+
 #ifdef V1_SEARCH_FULL
 #define USE_SEARCH_FULL_REQUEST
 #define USE_SEARCH_RESPONSE
@@ -43,6 +47,7 @@
 #endif
 
 #ifdef USE_SEARCH_RESPONSE
+#define USE_TRACKER_TASKS_LIST_ITEM
 #define USE_LIST_EMPLOYEE
 #endif
 
@@ -195,6 +200,7 @@
 #endif
 
 #ifdef V1_TRACKER_TASKS_ADD
+#define USE_REVERSE_INDEX
 #define USE_TRACKER_TASKS_ADD_REQUEST
 #endif
 
@@ -219,6 +225,7 @@
 #endif
 
 #ifdef V1_TRACKER_TASKS_EDIT
+#define USE_REVERSE_INDEX
 #define USE_TRACKER_TASKS_EDIT_REQUEST
 #define USE_ERROR_MESSAGE
 #endif
@@ -226,7 +233,6 @@
 #ifdef V1_TRACKER_TASKS_MEDIA_UPLOAD
 #define USE_ERROR_MESSAGE
 #endif
-
 
 #ifdef USE_LIST_EMPLOYEE
 struct ListEmployee : public JsonCompatible {
@@ -302,6 +308,7 @@ struct ProfileEditRequest : public JsonCompatible {
 #ifdef USE_SEARCH_BASIC_REQUEST
 struct SearchBasicRequest : public JsonCompatible {
   REGISTER_STRUCT_FIELD(search_key, std::string, "search_key");
+  REGISTER_STRUCT_ENUM_FIELD_OPTIONAL(tag, std::string, "tag", {"employees", "tasks", "all"});
 };
 #endif
 
@@ -309,6 +316,7 @@ struct SearchBasicRequest : public JsonCompatible {
 struct SearchFullRequest : public JsonCompatible {
   REGISTER_STRUCT_FIELD(search_key, std::string, "search_key");
   REGISTER_STRUCT_FIELD(limit, int, "limit");
+  REGISTER_STRUCT_ENUM_FIELD_OPTIONAL(tag, std::string, "tag", {"employees", "tasks", "all"});
 };
 #endif
 
@@ -316,12 +324,6 @@ struct SearchFullRequest : public JsonCompatible {
 struct SearchSuggestRequest : public JsonCompatible {
   REGISTER_STRUCT_FIELD(search_key, std::string, "search_key");
   REGISTER_STRUCT_FIELD(limit, int, "limit");
-};
-#endif
-
-#ifdef USE_SEARCH_RESPONSE
-struct SearchResponse : public JsonCompatible {
-  REGISTER_STRUCT_FIELD(employees, std::vector<ListEmployee>, "employees");
 };
 #endif
 
@@ -783,7 +785,6 @@ struct TrackerTasksAddRequest : public JsonCompatible {
 #endif
 
 #ifdef USE_TRACKER_TASKS_LIST_ITEM
-
 struct TrackerTasksListItem : public JsonCompatible {
   // For postgres initialization type needs to be default constructible
   TrackerTasksListItem() = default;
@@ -811,7 +812,6 @@ struct TrackerTasksListItem : public JsonCompatible {
 #endif
 
 #ifdef USE_TRACKER_TASKS_INFO_ITEM
-
 struct TrackerTasksInfoItem : public JsonCompatible {
   // For postgres initialization type needs to be default constructible
   TrackerTasksInfoItem() = default;
@@ -854,5 +854,12 @@ struct TrackerTasksEditRequest : public JsonCompatible {
   REGISTER_STRUCT_FIELD_OPTIONAL(project_name, std::string, "project_name");
   REGISTER_STRUCT_FIELD_OPTIONAL(assignee, std::string, "assignee");
   REGISTER_STRUCT_ENUM_FIELD_OPTIONAL(status, std::string, "status", {"Open", "InProgress", "Review", "Done"});
+};
+#endif
+
+#ifdef USE_SEARCH_RESPONSE
+struct SearchResponse : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(employees, std::vector<ListEmployee>, "employees");
+  REGISTER_STRUCT_FIELD(tasks, std::vector<TrackerTasksListItem>, "tasks");
 };
 #endif

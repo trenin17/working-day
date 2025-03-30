@@ -35,6 +35,7 @@ class SearchBasicHandler final
 
   struct IDsRow {
     std::vector<std::string> ids;
+    std::string entity_type;
   };
 
   std::string HandleRequestThrow(
@@ -54,13 +55,25 @@ class SearchBasicHandler final
     request_body.search_key =
         core::reverse_index::ConvertToLower(request_body.search_key);
 
+
+    std::string tag = request_body.tag.value_or("employees");
+    std::string entity_filter = (tag == "all") 
+                                ? "" 
+                                : "AND entity_type = ";
+    if (tag == "employees") {
+      entity_filter += "'employees'";
+    } else if (tag == "tasks") {
+      entity_filter += "'tasks'";
+    }
+    
     auto result_ids = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kSlave,
-        "SELECT ids "
+        "SELECT ids, entity_type "
         "FROM working_day_" +
             company_id +
             ".reverse_index "
-            "WHERE key = $1;",
+            "WHERE key = $1 " +
+            entity_filter + ";",
         request_body.search_key);
 
     auto IDs = result_ids.AsOptionalSingleRow<IDsRow>(
@@ -82,7 +95,7 @@ class SearchBasicHandler final
         append(val);
       }
 
-      if (parameters.Size() != 0) {
+      if (parameters.Size() != 0 && IDs.value().entity_type == "employees") {
         auto result = pg_cluster_->Execute(
             userver::storages::postgres::ClusterHostType::kSlave,
             "SELECT id, name, surname, patronymic, photo_link "
@@ -95,6 +108,19 @@ class SearchBasicHandler final
 
         response.employees = result.AsContainer<std::vector<ListEmployee>>(
             userver::storages::postgres::kRowTag);
+      } else if (parameters.Size() != 0 && IDs.value().entity_type == "tasks") {
+        auto result = pg_cluster_->Execute(
+          userver::storages::postgres::ClusterHostType::kSlave,
+          "SELECT title, project_name, id, creator, assignee "
+          "FROM working_day_" +
+              company_id +
+              ".tracker_tasks "
+              "WHERE id IN " +
+              filter + ");",
+          parameters);
+
+      response.tasks = result.AsContainer<std::vector<TrackerTasksListItem>>(
+          userver::storages::postgres::kRowTag);
       }
     }
 
