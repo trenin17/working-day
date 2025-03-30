@@ -48,6 +48,14 @@
 #include "views/v1/search/full/view.hpp"
 #include "views/v1/search/suggest/view.hpp"
 #include "views/v1/superuser/company/add/view.hpp"
+#include "views/v1/tracker/projects/add/view.hpp"
+#include "views/v1/tracker/projects/list/view.hpp"
+#include "views/v1/tracker/tasks/add/view.hpp"
+#include "views/v1/tracker/tasks/list/view.hpp"
+#include "views/v1/tracker/tasks/info/view.hpp"
+#include "views/v1/tracker/tasks/assigned_to_user/view.hpp"
+#include "views/v1/tracker/tasks/edit/view.hpp"
+#include "views/v1/tracker/tasks/media/upload/view.hpp"
 
 int main(int argc, char* argv[]) {
   Aws::SDKOptions options;
@@ -102,7 +110,15 @@ int main(int argc, char* argv[]) {
   views::v1::documents::get_signs::AppendDocumentsGetSigns(component_list);
   views::v1::superuser::company::add::AppendSuperuserCompanyAdd(component_list);
   views::v1::inventory::add::AppendInventoryAdd(component_list);
-
+  views::v1::tracker::projects::add::AppendTrackerProjectsAdd(component_list);
+  views::v1::tracker::projects::list::AppendTrackerProjectsList(component_list);
+  views::v1::tracker::tasks::add::AppendTrackerTasksAdd(component_list);
+  views::v1::tracker::tasks::list::AppendTrackerTasksList(component_list);
+  views::v1::tracker::tasks::info::AppendTrackerTasksInfo(component_list);
+  views::v1::tracker::tasks::assigned_to_user::AppendTrackerTasksAssignedToUser(component_list);
+  views::v1::tracker::tasks::edit::AppendTrackerTasksEdit(component_list);
+  views::v1::tracker::tasks::media::upload::AppendTrackerTasksMediaUpload(component_list);
+  
   int err_code = userver::utils::DaemonMain(argc, argv, component_list);
 
   Aws::ShutdownAPI(options);

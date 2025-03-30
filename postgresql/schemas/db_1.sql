@@ -87,10 +87,13 @@ CREATE TABLE IF NOT EXISTS working_day_first.payments (
 CREATE INDEX idx_payments_by_user_id ON working_day_first.payments(user_id);
 CREATE TABLE IF NOT EXISTS working_day_first.reverse_index (
     key TEXT PRIMARY KEY,
-    ids TEXT[]
+    ids TEXT[],
+    entity_type TEXT DEFAULT 'employees' CHECK (entity_type IN ('employees', 'tasks'))
 );
 
 CREATE INDEX trgm_idx ON working_day_first.reverse_index USING GIST (key gist_trgm_ops);
+CREATE INDEX entity_type_idx ON working_day_first.reverse_index (entity_type);
+
 DROP TABLE IF EXISTS working_day_first.documents;
 
 CREATE TABLE IF NOT EXISTS working_day_first.documents (
@@ -158,3 +161,21 @@ CREATE TYPE wd_general.inventory_item AS (
 
 ALTER TABLE working_day_first.employees
 ADD COLUMN inventory wd_general.inventory_item[] NOT NULL DEFAULT ARRAY[]::wd_general.inventory_item[];
+
+CREATE TABLE IF NOT EXISTS working_day_first.tracker_projects (
+    project_name TEXT PRIMARY KEY,
+    tasks_count INT NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS working_day_first.tracker_tasks (
+    id TEXT PRIMARY KEY NOT NULL,
+    title TEXT NOT NULL,
+    description TEXT,
+    project_name TEXT NOT NULL,
+    creator TEXT NOT NULL,
+    assignee TEXT,
+    status TEXT CHECK (status IN ('Open', 'InProgress', 'Review', 'Done')),
+    media_links TEXT[] DEFAULT ARRAY[]::TEXT[],
+    FOREIGN KEY (creator) REFERENCES working_day_first.employees (id) ON DELETE CASCADE,
+    FOREIGN KEY (assignee) REFERENCES working_day_first.employees (id) ON DELETE CASCADE
+);

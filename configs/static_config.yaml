@@ -394,6 +394,88 @@ components_manager:
                   - superuser
             db: $dbconnection
 
+        handler-v1-tracker-projects-add:
+            path: /v1/tracker/projects/add
+            method: POST
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - user
+
+        handler-v1-tracker-projects-list:
+            path: /v1/tracker/projects/list
+            method: GET
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - user
+
+        handler-v1-tracker-tasks-add:
+            path: /v1/tracker/tasks/add
+            method: POST
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - user
+
+        handler-v1-tracker-tasks-list:
+            path: /v1/tracker/tasks/list
+            method: GET
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - user
+        
+        handler-v1-tracker-tasks-info:
+            path: /v1/tracker/tasks/info          
+            method: GET
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - user
+            is_testing: $is_testing
+
+        handler-v1-tracker-tasks-assigned-to-user:
+            path: /v1/tracker/tasks/assigned-to-user           
+            method: POST
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - user
+
+        handler-v1-tracker-tasks-edit:
+            path: /v1/tracker/tasks/edit
+            method: POST
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - user
+
+        handler-v1-tracker-tasks-media-upload:
+            path: /v1/tracker/tasks/media/upload
+            method: POST
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - user
+            is_testing: $is_testing
+
         handler-implicit-http-options:
             as_fallback: implicit-http-options
             method: OPTIONS
