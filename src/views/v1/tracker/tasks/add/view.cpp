@@ -109,6 +109,21 @@ class TrackerTasksAddHandler final
           userver::server::http::HttpStatus::kNotFound);
         return ErrorMessage{"Wrong project name"}.ToJsonString();
     }
+    if (request_body.assignee.has_value()) {
+        auto find_employee = pg_cluster_->Execute(
+            userver::storages::postgres::ClusterHostType::kMaster,
+            "SELECT COUNT(*) FROM working_day_" + company_id +
+                ".employees WHERE id = $1",
+            request_body.assignee.value());
+        
+        int employess_count = find_employee.AsSingleRow<int>();
+        if (!employess_count) {
+            request.GetHttpResponse().SetStatus(
+                userver::server::http::HttpStatus::kNotFound);
+            return ErrorMessage{"Wrong assignee"}.ToJsonString();
+        }
+    
+    }
 
     auto find_tasks = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kMaster,
