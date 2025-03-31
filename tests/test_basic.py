@@ -1087,6 +1087,17 @@ async def test_tracker_tasks_bad_add(service_client):
               'description': 'description of the first task'},
     )
     assert response.status == 404
+    assert response.text ==  '{"message":"Wrong project name"}'
+    response = await service_client.post(
+        '/v1/tracker/tasks/add',
+        headers={'Authorization': 'Bearer first_token'},
+        json={'title': 'second task',
+              'project_name': 'first',
+              'description': 'description of the first task',
+              'assignee': 'unknown_id'},
+    )
+    assert response.status == 404
+    assert response.text ==  '{"message":"Wrong assignee"}'
 
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])
 async def test_tracker_tasks_add_and_list(service_client):
@@ -1111,9 +1122,9 @@ async def test_tracker_tasks_add_and_list(service_client):
     response = await service_client.post(
         '/v1/tracker/tasks/add',
         headers={'Authorization': 'Bearer first_token'},
-        json={'title': 'task 1',
+        json={'title': 'task 3',
               'project_name': 'second',
-              'description': 'in second project'},
+              'assignee': 'second_id'},
     )
     assert response.status == 200
 
@@ -1152,10 +1163,11 @@ async def test_tracker_tasks_add_and_list(service_client):
             "creator": "first_id",
         },
         {
-            "title": "task 1",
+            "title": "task 3",
             "project_name": "second",
             "id": "second-1",
             "creator": "first_id",
+            "assignee": "second_id",
         },
     ]
     assert data["tasks"] == expected_tasks

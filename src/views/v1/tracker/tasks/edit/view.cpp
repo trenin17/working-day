@@ -214,7 +214,7 @@ class TrackerTasksEditHandler : public userver::server::handlers::HttpHandlerBas
         task_id, request_body.title, request_body.description, request_body.project_name,
         request_body.assignee, request_body.status);
 
-    return "";
+    return "Task was changed";
   }
 
 private:
