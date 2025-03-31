@@ -158,3 +158,6 @@ CREATE TYPE wd_general.inventory_item AS (
 
 ALTER TABLE working_day_first.employees
 ADD COLUMN inventory wd_general.inventory_item[] NOT NULL DEFAULT ARRAY[]::wd_general.inventory_item[];
+
+ALTER TABLE working_day_first.employees
+ADD COLUMN job_position TEXT;
