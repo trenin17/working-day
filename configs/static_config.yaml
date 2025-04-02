@@ -80,7 +80,7 @@ components_manager:
             environment-secrets-key: SECDIST_CONFIG
 
         handler-v1-employee-add:
-            path: /v1/employee/add           
+            path: /v1/employee/add
             method: POST
             task_processor: main-task-processor
             auth:
@@ -91,7 +91,7 @@ components_manager:
                   - superuser
 
         handler-v1-employee-add-head:
-            path: /v1/employee/add-head           
+            path: /v1/employee/add-head
             method: POST
             task_processor: main-task-processor
             auth:
@@ -101,7 +101,7 @@ components_manager:
                   - admin
 
         handler-v1-employee-info:
-            path: /v1/employee/info          
+            path: /v1/employee/info
             method: GET
             task_processor: main-task-processor
             auth:
@@ -111,7 +111,7 @@ components_manager:
                   - user
 
         handler-v1-employee-remove:
-            path: /v1/employee/remove          
+            path: /v1/employee/remove
             method: POST
             task_processor: main-task-processor
             auth:
@@ -121,7 +121,7 @@ components_manager:
                   - admin
 
         handler-v1-employees:
-            path: /v1/employees         
+            path: /v1/employees
             method: GET
             task_processor: main-task-processor
             auth:
@@ -131,7 +131,7 @@ components_manager:
                   - user
 
         handler-v1-profile-upload-photo:
-            path: /v1/profile/upload-photo         
+            path: /v1/profile/upload-photo
             method: POST
             task_processor: main-task-processor
             auth:
@@ -139,7 +139,7 @@ components_manager:
                   - bearer
                 scopes:
                   - user
-        
+
         handler-v1-profile-edit:
             path: /v1/profile/edit
             method: POST
@@ -321,7 +321,7 @@ components_manager:
                   - bearer
                 scopes:
                   - user
-        
+
         handler-v1-documents-download:
             path: /v1/documents/download
             method: GET
@@ -416,3 +416,33 @@ components_manager:
 
         dns-client:
             fs-task-processor: fs-task-processor
+
+        handler-v1-messenger-create-chat:
+            path: /v1/messenger/create-chat
+            method: POST
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - user
+
+        handler-v1-messenger-list-chats:
+            path: /v1/messenger/list-chats
+            method: POST
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - user
+
+        handler-v1-messenger-recent-messages:
+            path: /v1/messenger/recent-messages
+            method: POST
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - user

@@ -16,10 +16,18 @@ DO NOTHING;
 -- INSERT INTO working_day_first.documents(id, name, sign_required, description)
 -- VALUES ('first_document', 'First', TRUE, 'First document'),
 --        ('second_document', 'Second', FALSE, 'Second document')
-    
+
 -- INSERT INTO working_day_first.employee_document(employee_id, document_id, signed)
 -- VALUES ('first_id', 'first_document', TRUE),
 --        ('second_id', 'second_document', FALSE)
 
 INSERT INTO working_day_first.teams(id, name) VALUES ('default_team', 'Default team'), ('stranger_team', 'Stranger team');
 INSERT INTO working_day_first.employee_team(employee_id, team_id) VALUES ('first_id', 'default_team'), ('second_id', 'default_team'), ('stranger_id', 'stranger_team');
+
+INSERT INTO working_day_first.messenger_chats (chat_id, chat_name)
+VALUES
+  ('chat1', 'Test Chat');
+
+INSERT INTO working_day_first.messages (chat_id, timestamp, sender_id, content)
+VALUES
+  ('chat1', '2025-02-25 10:00:00+00', 'user1', 'Hello world!');

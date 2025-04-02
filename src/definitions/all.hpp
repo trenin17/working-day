@@ -168,6 +168,23 @@
 #define USE_INVENTORY_ITEM
 #endif
 
+#ifdef V1_MESSENGER_CREATE_CHAT
+#define USE_CREATE_CHAT_REQUEST
+#define USE_CREATE_CHAT_RESPONSE
+#endif
+
+#ifdef V1_MESSENGER_INFO
+#define USE_MESSAGES
+#define USE_MESSENGER_LISTED_CHAT_INFO
+#define USE_MESSENGER_LIST_ALL_CHATS
+#define USE_LOAD_RECENT_MESSAGES_REQUEST
+#endif
+
+#ifdef USE_MESSAGES
+#define USE_MESSENGER_MESSAGE_CONTENT
+#define USE_MESSENGER_MESSAGE
+#endif
+
 #ifdef USE_LIST_EMPLOYEE
 struct ListEmployee : public JsonCompatible {
   // For postgres initialization type needs to be default constructible
@@ -609,5 +626,70 @@ struct Employee : public JsonCompatible {
   REGISTER_STRUCT_FIELD_OPTIONAL(inventory, std::vector<InventoryItem>,
                                  "inventory");
   REGISTER_STRUCT_FIELD_OPTIONAL(job_position, std::string, "job_position");
+};
+#endif
+
+#ifdef USE_MESSENGER_MESSAGE_CONTENT
+struct MessengerMessageContent : public JsonCompatible {
+  MessengerMessageContent() = default;
+  MessengerMessageContent(const std::string& content) : content(content) {};
+
+  REGISTER_STRUCT_FIELD(content, std::string, "content");
+};
+#endif
+
+#ifdef USE_MESSENGER_MESSAGE
+struct MessengerMessage : public JsonCompatible {
+  MessengerMessage() = default;
+
+  REGISTER_STRUCT_FIELD(chat_id, std::string, "chat_id");
+  REGISTER_STRUCT_FIELD(sender_id, std::string, "sender_id");
+  REGISTER_STRUCT_FIELD(content, MessengerMessageContent, "content");
+  REGISTER_STRUCT_FIELD(timestamp, userver::storages::postgres::TimePoint, "timestamp");
+};
+#endif
+
+#ifdef USE_MESSENGER_LISTED_CHAT_INFO
+struct MessengerListedChatInfo : public JsonCompatible {
+  // For postgres initialization type needs to be default constructible
+  MessengerListedChatInfo() = default;
+
+  // Make sure to initialize parsing first for new structure
+  MessengerListedChatInfo(MessengerListedChatInfo&& other) { *this = std::move(other); }
+
+  MessengerListedChatInfo(const MessengerListedChatInfo& other) { *this = other; }
+
+  MessengerListedChatInfo& operator=(MessengerListedChatInfo&& other) = default;
+
+  MessengerListedChatInfo& operator=(const MessengerListedChatInfo& other) = default;
+
+  REGISTER_STRUCT_FIELD(chat_id, std::string, "chat_id");
+  REGISTER_STRUCT_FIELD(chat_name, std::string, "chat_name");
+  REGISTER_STRUCT_FIELD(last_message, MessengerMessage, "last_message");
+};
+#endif
+
+#ifdef USE_MESSENGER_LIST_ALL_CHATS
+struct MessengerListAllChats : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(chats, std::vector<MessengerListedChatInfo>, "chats");
+};
+#endif
+
+#ifdef USE_CREATE_CHAT_REQUEST
+struct CreateChatRequest : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(chat_name, std::string, "chat_name");
+  REGISTER_STRUCT_FIELD(id_list, std::vector<std::string>, "id_list");
+};
+#endif
+
+#ifdef USE_CREATE_CHAT_RESPONSE
+struct CreateChatResponse : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(chat_id, std::string, "chat_id");
+};
+#endif
+
+#ifdef USE_LOAD_RECENT_MESSAGES_REQUEST
+struct LoadRecentMessagesRequest : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(chat_id, std::string, "chat_id");
 };
 #endif

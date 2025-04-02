@@ -64,6 +64,9 @@ add_library(${PROJECT_NAME}_objs OBJECT
 	src/views/v1/documents/get_signs/view.cpp
 	src/views/v1/superuser/company/add/view.cpp
 	src/views/v1/inventory/add/view.cpp
+	src/views/v1/messenger/create_chat/view.cpp
+	src/views/v1/messenger/list_chats/view.cpp
+	src/views/v1/messenger/recent_messages/view.cpp
 )
 target_link_libraries(${PROJECT_NAME}_objs PUBLIC userver-postgresql)
 target_link_libraries(${PROJECT_NAME}_objs PRIVATE nlohmann_json::nlohmann_json)
