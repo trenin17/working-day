@@ -112,7 +112,7 @@ async def test_add(service_client):
     response = await service_client.post(
         '/v1/employee/add',
         headers={'Authorization': 'Bearer first_token'},
-        json={'name': 'Third', 'surname': 'C', 'role': 'user'},
+        json={'name': 'Third', 'surname': 'C', 'role': 'user', 'job_position': 'worker'},
     )
 
     assert response.status == 200
@@ -127,7 +127,7 @@ async def test_add(service_client):
     )
 
     assert response.status == 200
-    assert response.text == ('{"id":"' + new_id + '","inventory":[],"name":"Third",'
+    assert response.text == ('{"id":"' + new_id + '","inventory":[],"job_position":"worker","name":"Third",'
                              '"password":"' + new_password + '",'
                              '"phones":[],"surname":"C"}')
 
@@ -208,7 +208,7 @@ async def test_edit(service_client):
     response = await service_client.post(
         '/v1/profile/edit',
         headers={'Authorization': 'Bearer second_token'},
-        json={'email': 'second@mail.com'},
+        json={'email': 'second@mail.com', 'job_position': 'worker'},
     )
 
     assert response.status == 200
@@ -225,6 +225,7 @@ async def test_edit(service_client):
     email = json.loads(response_body)['email']
 
     assert email == 'second@mail.com'
+    assert json.loads(response_body)['job_position'] == 'worker'
 
 
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])

@@ -20,6 +20,11 @@ namespace views::v1::employee::info {
 
 namespace {
 
+struct debugPosition {
+  std::optional<std::string> job_position;
+};
+
+
 class InfoEmployeeHandler final
     : public userver::server::handlers::HttpHandlerBase {
  public:
@@ -51,6 +56,20 @@ class InfoEmployeeHandler final
       employee_id = user_id;
     }
 
+    auto debug = pg_cluster_->Execute(
+        userver::storages::postgres::ClusterHostType::kMaster,
+        "SELECT job_position FROM working_day_" + company_id +
+            ".employees WHERE id = $1",
+        employee_id);
+
+    auto debug_result = debug.AsSingleRow<debugPosition>(
+        userver::storages::postgres::kRowTag);
+        
+    LOG_INFO() << "DEBUG JOB POSITION HAS VALUE " << debug_result.job_position.has_value();
+    if (debug_result.job_position.has_value()) {
+      LOG_INFO() << "DEBUG JOB POSITION " << debug_result.job_position.value();
+    }
+
     auto result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kSlave,
         "SELECT employees.id, employees.name, employees.surname, "
@@ -60,7 +79,7 @@ class InfoEmployeeHandler final
         "employees.telegram_id, employees.vk_id, employees.team, "
         "case when employees.head_id is null then null else ROW (heads.id, "
         "heads.name, "
-        "heads.surname, NULL::TEXT, NULL::TEXT) end, employees.inventory "
+        "heads.surname, NULL::TEXT, NULL::TEXT) end as head_info, employees.inventory, employees.job_position "
         "FROM working_day_" +
             company_id +
             ".employees as employees "
@@ -79,6 +98,11 @@ class InfoEmployeeHandler final
 
     Employee response{
         result.AsSingleRow<Employee>(userver::storages::postgres::kRowTag)};
+    
+    LOG_INFO() << "JOB POSITION HAS VALUE " << response.job_position.has_value();
+    if (response.job_position.has_value()) {
+      LOG_INFO() << "JOB POSITION " << response.job_position.value();
+    }
 
     if (response.photo_link.has_value()) {
       response.photo_link =

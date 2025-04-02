@@ -218,6 +218,7 @@ struct AddEmployeeRequest : public JsonCompatible {
   REGISTER_STRUCT_FIELD(surname, std::string, "surname");
   REGISTER_STRUCT_FIELD(role, std::string, "role");
   REGISTER_STRUCT_FIELD_OPTIONAL(patronymic, std::string, "patronymic");
+  REGISTER_STRUCT_FIELD_OPTIONAL(job_position, std::string, "job_position");
   REGISTER_STRUCT_FIELD_OPTIONAL(company_id, std::string, "company_id");
 };
 #endif
@@ -251,6 +252,7 @@ struct ProfileEditRequest : public JsonCompatible {
   REGISTER_STRUCT_FIELD_OPTIONAL(telegram_id, std::string, "telegram_id");
   REGISTER_STRUCT_FIELD_OPTIONAL(vk_id, std::string, "vk_id");
   REGISTER_STRUCT_FIELD_OPTIONAL(team, std::string, "team");
+  REGISTER_STRUCT_FIELD_OPTIONAL(job_position, std::string, "job_position");
 };
 #endif
 
@@ -604,7 +606,7 @@ struct Employee : public JsonCompatible {
   auto Introspect() {
     return std::tie(id, name, surname, patronymic, photo_link, phones, email,
                     birthday, password, head_id, telegram_id, vk_id, team,
-                    head_info, inventory);
+                    head_info, inventory, job_position);
   }
 
   REGISTER_STRUCT_FIELD(id, std::string, "id");
@@ -623,6 +625,7 @@ struct Employee : public JsonCompatible {
   REGISTER_STRUCT_FIELD_OPTIONAL(head_info, ListEmployee, "head_info");
   REGISTER_STRUCT_FIELD_OPTIONAL(inventory, std::vector<InventoryItem>,
                                  "inventory");
+  REGISTER_STRUCT_FIELD_OPTIONAL(job_position, std::string, "job_position");
 };
 #endif
 

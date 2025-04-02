@@ -828,6 +828,7 @@ components:
               - name
               - surname
               - role
+              - job_position
             properties:
                 name:
                     type: string
@@ -837,6 +838,8 @@ components:
                     type: string
                 role:
                     $ref: '#/components/schemas/Role'
+                job_position:
+                    type: string
                 company_id:
                     description: Company id of new employee. This field is available for superuser only
                     type: string
@@ -902,6 +905,8 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/InventoryItem'
+                job_position:
+                    type: string
 
         ProfileEditRequest:
             type: object
