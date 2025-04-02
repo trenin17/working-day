@@ -170,6 +170,7 @@
 
 #ifdef V1_MESSENGER_CREATE_CHAT
 #define USE_CREATE_CHAT_REQUEST
+#define USE_CREATE_CHAT_RESPONSE
 #endif
 
 #ifdef V1_MESSENGER_INFO
@@ -675,6 +676,12 @@ struct MessengerListAllChats : public JsonCompatible {
 struct CreateChatRequest : public JsonCompatible {
   REGISTER_STRUCT_FIELD(chat_name, std::string, "chat_name");
   REGISTER_STRUCT_FIELD(id_list, std::vector<std::string>, "id_list");
+};
+#endif
+
+#ifdef USE_CREATE_CHAT_RESPONSE
+struct CreateChatResponse : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(chat_id, std::string, "chat_id");
 };
 #endif
 

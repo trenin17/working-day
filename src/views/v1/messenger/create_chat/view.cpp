@@ -55,8 +55,16 @@ class CreateChatHandler final
         company_id);
 
     auto result = pg_cluster_->Execute(
-        userver::storages::postgres::ClusterHostType::kMaster, std::move(query),
+        userver::storages::postgres::ClusterHostType::kMaster, query,
         id, request_body.chat_name);
+
+    query = fmt::format(
+        "INSERT INTO working_day_{}.messages (chat_id) "
+        "VALUES ($1);",
+        company_id);
+
+    result = pg_cluster_->Execute(
+        userver::storages::postgres::ClusterHostType::kMaster, std::move(query), id);
 
     userver::storages::postgres::ParameterStore parameters;
     std::string filter;
@@ -77,7 +85,9 @@ class CreateChatHandler final
                             "ON CONFLICT (employee_id, chat_id) DO NOTHING;",
                             parameters);
 
-    return "";
+    CreateChatResponse response;
+    response.chat_id = std::move(id);
+    return response.ToJsonString();
   }
 
  private:

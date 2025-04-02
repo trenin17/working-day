@@ -20,8 +20,8 @@ namespace views::v1::messenger::recent_messages {
 struct MessageRow {
   std::string chat_id;
   userver::storages::postgres::TimePoint timestamp;
-  std::string sender_id;
-  std::string content;
+  std::optional<std::string> sender_id;
+  std::optional<std::string> content;
 };
 
 namespace {
@@ -76,8 +76,8 @@ class LoadRecentMessagesHandler final
       MessengerMessage msg;
       msg.chat_id = messages[i].chat_id;
       msg.timestamp = messages[i].timestamp;
-      msg.sender_id = messages[i].sender_id;
-      msg.content = MessengerMessageContent(messages[i].content);
+      msg.sender_id = messages[i].sender_id.value_or("");
+      msg.content = MessengerMessageContent(messages[i].content.value_or(""));
       jsonArray[i] = msg.ToJsonString();
     }
     return to_string(jsonArray);
