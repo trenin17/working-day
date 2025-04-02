@@ -1030,22 +1030,24 @@ async def test_inventory(service_client):
 
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])
 async def test_chat_create_and_list(service_client):
-    response = await service_client.post(
+    create_response = await service_client.post(
         '/v1/messenger/create-chat',
         headers={'Authorization': 'Bearer first_token'},
         json={'chat_name': 'test_name', 'id_list': ['first_id']}
     )
 
-    assert response.status == 200
+    assert create_response.status == 200
+    create_response_json = json.loads(create_response.text)
 
-    response = await service_client.post(
+    list_response = await service_client.post(
         '/v1/messenger/list-chats',
         params={'employee_id': 'first_id'},
         headers={'Authorization': 'Bearer first_token'}
     )
 
-    assert response.status == 200
-    assert response.text.find('test_name') > -1
+    assert list_response.status == 200
+    assert list_response.text.find('test_name') > -1
+    assert list_response.text.find(create_response_json['chat_id'])
 
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])
 async def test_load_recent_messages(service_client):

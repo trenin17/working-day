@@ -739,6 +739,10 @@ paths:
             responses:
                 '200':
                     description: Chat created
+                    content:
+                        application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateChatResponse'
                 '400':
                     description: Error creating chat
                     content:
@@ -1533,6 +1537,15 @@ components:
                     type: array
                     items:
                         type: string
+
+        CreateChatResponse:
+            type: object
+            additionalProperties: false
+            required:
+              - chat_id
+            properties:
+                chat_id:
+                    type: string
 
         LoadRecentMessagesRequest:
             type: object
