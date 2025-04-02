@@ -750,7 +750,7 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/ErrorMessage'
 
-    /v1/messenger/load-recent-messages:
+    /v1/messenger/recent-messages:
         get:
             description: Get recent messages of a chat
             parameters:
