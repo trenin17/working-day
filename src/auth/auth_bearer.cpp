@@ -125,17 +125,18 @@ AuthCheckerBearer::AuthCheckResult AuthCheckerBearer::CheckAuth(
 }
 /// [auth checker definition 5]
 
+CheckerFactory::CheckerFactory(const userver::components::ComponentContext& context)
+     : auth_cache_(context.FindComponent<AuthCache>()), pg_cluster_(context.FindComponent<userver::components::Postgres>("key-value")
+     .GetCluster()) {}
+
 /// [auth checker factory definition]
-userver::server::handlers::auth::AuthCheckerBasePtr CheckerFactory::operator()(
-    const ::userver::components::ComponentContext& context,
-    const userver::server::handlers::auth::HandlerAuthConfig& auth_config,
-    const userver::server::handlers::auth::AuthCheckerSettings&) const {
+userver::server::handlers::auth::AuthCheckerBasePtr CheckerFactory::MakeAuthChecker(
+  const userver::server::handlers::auth::HandlerAuthConfig& auth_config
+) const {
   auto scopes = auth_config["scopes"].As<userver::server::auth::UserScopes>({});
-  const auto& auth_cache = context.FindComponent<AuthCache>();
   return std::make_shared<AuthCheckerBearer>(
-      auth_cache, std::move(scopes),
-      context.FindComponent<userver::components::Postgres>("key-value")
-          .GetCluster());
+      auth_cache_, std::move(scopes),
+      pg_cluster_);
 }
 /// [auth checker factory definition]
 
