@@ -28,6 +28,8 @@ find_package(AWSSDK REQUIRED COMPONENTS s3 sts)
 # Common sources
 add_library(${PROJECT_NAME}_objs OBJECT
     src/hello.cpp
+	src/core/messenger/web_socket/web_socket.cpp
+	src/core/messenger/queue_manager/queue_manager.cpp
 	src/views/v1/employee/add/view.cpp
 	src/views/v1/employee/add_head/view.cpp
 	src/views/v1/employee/info/view.cpp
@@ -130,3 +132,5 @@ FILE(GLOB CONFIGS_FILES ${CMAKE_CURRENT_SOURCE_DIR}/configs/*.yaml ${CMAKE_CURRE
 
 install(TARGETS ${PROJECT_NAME} DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT ${PROJECT_NAME})
 install(FILES ${CONFIGS_FILES} DESTINATION ${CMAKE_INSTALL_SYSCONFDIR}/${PROJECT_NAME} COMPONENT ${PROJECT_NAME})
+
+add_definitions(-DUSERVER_POSTGRES_ENABLE_LEGACY_TIMESTAMP=1)

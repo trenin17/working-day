@@ -810,7 +810,7 @@ struct MessengerMessage : public JsonCompatible {
   REGISTER_STRUCT_FIELD(chat_id, std::string, "chat_id");
   REGISTER_STRUCT_FIELD(sender_id, std::string, "sender_id");
   REGISTER_STRUCT_FIELD(content, MessengerMessageContent, "content");
-  REGISTER_STRUCT_FIELD(timestamp, userver::storages::postgres::TimePoint, "timestamp");
+  REGISTER_STRUCT_FIELD_OPTIONAL(timestamp, userver::storages::postgres::TimePoint, "timestamp");
 };
 #endif
 

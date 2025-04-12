@@ -3,6 +3,7 @@ from wsgiref import headers
 import pytest
 import json
 import re
+import websockets
 from string import Template
 
 from testsuite.databases import pgsql
