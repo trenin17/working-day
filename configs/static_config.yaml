@@ -433,7 +433,7 @@ components_manager:
                   - bearer
                 scopes:
                   - user
-it
+
         handler-v1-tracker-tasks-info:
             path: /v1/tracker/tasks/info
             method: GET
@@ -528,4 +528,11 @@ it
                   - bearer
                 scopes:
                   - user
+
+        websocket-handler:            # Finally! Websocket handler.
+            path: /chat               # Registering handlers '/*' find files.
+            method: GET               # Handle only GET requests.
+            task_processor: main-task-processor  # Run it on CPU bound task processor
+            max-remote-payload: 100000
+            fragment-size: 100000
 
