@@ -28,6 +28,7 @@ find_package(AWSSDK REQUIRED COMPONENTS s3 sts)
 # Common sources
 add_library(${PROJECT_NAME}_objs OBJECT
     src/hello.cpp
+	src/core/messenger/web_socket/web_socket.cpp
 	src/views/v1/employee/add/view.cpp
 	src/views/v1/employee/add_head/view.cpp
 	src/views/v1/employee/info/view.cpp

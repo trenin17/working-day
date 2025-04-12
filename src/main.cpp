@@ -15,6 +15,7 @@
 
 #include "auth/auth_bearer.hpp"
 #include "auth/user_info_cache.hpp"
+#include "core/messenger/web_socket/web_socket.hpp"
 #include "utils/custom_implicit_options.hpp"
 #include "views/v1/abscence/request/view.hpp"
 #include "views/v1/abscence/reschedule/view.hpp"
@@ -126,7 +127,7 @@ int main(int argc, char* argv[]) {
   views::v1::tracker::tasks::assigned_to_user::AppendTrackerTasksAssignedToUser(component_list);
   views::v1::tracker::tasks::edit::AppendTrackerTasksEdit(component_list);
   views::v1::tracker::tasks::media::upload::AppendTrackerTasksMediaUpload(component_list);
-  
+  websocket::AppendWebSocket(component_list);
   int err_code = userver::utils::DaemonMain(argc, argv, component_list);
 
   Aws::ShutdownAPI(options);

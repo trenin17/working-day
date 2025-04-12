@@ -433,9 +433,9 @@ components_manager:
                   - bearer
                 scopes:
                   - user
-        
+
         handler-v1-tracker-tasks-info:
-            path: /v1/tracker/tasks/info          
+            path: /v1/tracker/tasks/info
             method: GET
             task_processor: main-task-processor
             auth:
@@ -446,7 +446,7 @@ components_manager:
             is_testing: $is_testing
 
         handler-v1-tracker-tasks-assigned-to-user:
-            path: /v1/tracker/tasks/assigned-to-user           
+            path: /v1/tracker/tasks/assigned-to-user
             method: POST
             task_processor: main-task-processor
             auth:
@@ -528,3 +528,4 @@ components_manager:
                   - bearer
                 scopes:
                   - user
+
