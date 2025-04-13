@@ -1,4 +1,5 @@
 #define V1_TRACKER_TASKS_EDIT
+#define USERVER_POSTGRES_ENABLE_LEGACY_TIMESTAMP 1
 
 #include "view.hpp"
 
@@ -209,10 +210,11 @@ class TrackerTasksEditHandler : public userver::server::handlers::HttpHandlerBas
             "description = case when $3 is null then description else $3 end, "
             "project_name = case when $4 is null then project_name else $4 end, "
             "assignee = case when $5 is null then assignee else $5 end, "
-            "status = case when $6 is null then status else $6 end "
+            "status = case when $6 is null then status else $6 end, "
+            "deadline = case when $7 is null then deadline else $7 end "
             "WHERE id = $1",
         task_id, request_body.title, request_body.description, request_body.project_name,
-        request_body.assignee, request_body.status);
+        request_body.assignee, request_body.status, request_body.deadline);
 
     return "Task was changed";
   }

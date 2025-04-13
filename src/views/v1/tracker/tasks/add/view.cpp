@@ -1,4 +1,5 @@
 #define V1_TRACKER_TASKS_ADD
+#define USERVER_POSTGRES_ENABLE_LEGACY_TIMESTAMP 1
 
 #include "view.hpp"
 
@@ -138,15 +139,16 @@ class TrackerTasksAddHandler final
     auto result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kMaster,
         "INSERT INTO working_day_" + company_id +
-            ".tracker_tasks (title, description, project_name, id, creator, assignee, status) "
-            "VALUES ($1, $2, $3, $4, $5, $6, $7)",
+            ".tracker_tasks (title, description, project_name, id, creator, assignee, status, deadline) "
+            "VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
         request_body.title,
         request_body.description,
         request_body.project_name,
         id,
         user_id,
         request_body.assignee,
-        "Open");
+        "Open",
+        request_body.deadline);
 
     core::reverse_index::TrackerTasksAllData data{id, request_body.title};
     data.company_id = company_id;

@@ -2,6 +2,7 @@ import asyncio
 from wsgiref import headers
 import pytest
 import json
+import re
 from string import Template
 
 from testsuite.databases import pgsql
@@ -1303,7 +1304,9 @@ async def test_tracker_tasks_info_and_edit(service_client):
     assert response.status == 200
     assert response.text == (
         '{"assignee":"stranger_id",'
+        '"created_ts":"2025-04-12T10:00:00.000000",'
         '"creator":"first_id",'
+        '"deadline":"2025-04-12T10:00:00.000000",'
         '"description":"description for old task",'
         '"id":"first-1",'
         '"media_links":["s3 download test link","s3 download test link"],'
@@ -1336,7 +1339,9 @@ async def test_tracker_tasks_info_and_edit(service_client):
 
     assert response.text == (
         '{"assignee":"stranger_id",'
+        '"created_ts":"2025-04-12T10:00:00.000000",'
         '"creator":"first_id",'
+        '"deadline":"2025-04-12T10:00:00.000000",'
         '"description":"new description for old task",'
         '"id":"first-1",'
         '"media_links":["s3 download test link","s3 download test link"],'
@@ -1604,6 +1609,88 @@ async def test_tracker_tasks_bad_tag_search(service_client):
         headers={'Authorization': 'Bearer second_token'},
     )
     assert response.status == 500
+
+@pytest.mark.pgsql('db_1', files=['initial_data.sql'])
+async def test_tracker_tasks_add_with_deadline(service_client):
+
+    response = await service_client.post(
+        '/v1/tracker/tasks/add',
+        headers={'Authorization': 'Bearer first_token'},
+        json={'title': 'task 1',
+              'project_name': 'first',
+              'deadline': '2025-08-24T14:00:00.000000'},
+    )
+    assert response.status == 200
+
+    response = await service_client.get(
+        '/v1/tracker/tasks/info',
+        params={'task_id': 'first-3'},
+        headers={'Authorization': 'Bearer first_token'},
+    )
+    assert response.status == 200
+    response_data = json.loads(response.text)
+    expected_response = {
+        "creator":"first_id",
+        "deadline":"2025-08-24T14:00:00.000000",
+        "id":"first-3",
+        "media_links":[],
+        "project_name":"first",
+        "status":"Open",
+        "title":"task 1"
+    }
+    assert re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}",  response_data["created_ts"])
+
+    response_data.pop("created_ts")
+    assert response_data == expected_response
+
+@pytest.mark.pgsql('db_1', files=['initial_data.sql'])
+async def test_tracker_tasks_edit_deadline(service_client):
+
+    response = await service_client.get(
+        '/v1/tracker/tasks/info',
+        params={'task_id': 'first-1'},
+        headers={'Authorization': 'Bearer first_token'},
+    )
+    assert response.status == 200
+    assert response.text == (
+        '{"assignee":"stranger_id",'
+        '"created_ts":"2025-04-12T10:00:00.000000",'
+        '"creator":"first_id",'
+        '"deadline":"2025-04-12T10:00:00.000000",'
+        '"description":"description for old task",'
+        '"id":"first-1",'
+        '"media_links":["s3 download test link","s3 download test link"],'
+        '"project_name":"first",'
+        '"status":"Open",'
+        '"title":"old task"}')
+
+    response = await service_client.post(
+        '/v1/tracker/tasks/edit',
+        headers={'Authorization': 'Bearer second_token'},
+        params={'task_id': 'first-1'},
+        json={'deadline': '2025-08-24T14:00:00.000000'},
+    )
+    assert response.status == 200
+
+    response = await service_client.get(
+        '/v1/tracker/tasks/info',
+        params={'task_id': 'first-1'},
+        headers={'Authorization': 'Bearer first_token'},
+    )
+    assert response.status == 200
+
+    assert response.text == (
+        '{"assignee":"stranger_id",'
+        '"created_ts":"2025-04-12T10:00:00.000000",'
+        '"creator":"first_id",'
+        '"deadline":"2025-08-24T14:00:00.000000",'
+        '"description":"description for old task",'
+        '"id":"first-1",'
+        '"media_links":["s3 download test link","s3 download test link"],'
+        '"project_name":"first",'
+        '"status":"Open",'
+        '"title":"old task"}')
+
 
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])
 async def test_end(service_client):

@@ -209,6 +209,8 @@ CREATE TABLE IF NOT EXISTS working_day_first.tracker_tasks (
     assignee TEXT,
     status TEXT CHECK (status IN ('Open', 'InProgress', 'Review', 'Done')),
     media_links TEXT[] DEFAULT ARRAY[]::TEXT[],
+    created_ts TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    deadline TIMESTAMPTZ,
     FOREIGN KEY (creator) REFERENCES working_day_first.employees (id) ON DELETE CASCADE,
     FOREIGN KEY (assignee) REFERENCES working_day_first.employees (id) ON DELETE CASCADE
 );

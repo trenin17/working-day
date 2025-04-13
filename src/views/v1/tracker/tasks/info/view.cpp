@@ -57,7 +57,7 @@ class InfoTrackerTasksHandler final
 
     auto result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kSlave,
-        "SELECT title, project_name, description, id, creator, assignee, status, media_links "
+        "SELECT title, project_name, description, id, creator, assignee, status, media_links, created_ts, deadline "
         "FROM working_day_" + company_id + ".tracker_tasks "
             "WHERE id = $1",
         task_id);

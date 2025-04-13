@@ -781,6 +781,7 @@ struct TrackerTasksAddRequest : public JsonCompatible {
   REGISTER_STRUCT_FIELD(project_name, std::string, "project_name");
   REGISTER_STRUCT_FIELD_OPTIONAL(description, std::string, "description");
   REGISTER_STRUCT_FIELD_OPTIONAL(assignee, std::string, "assignee");
+  REGISTER_STRUCT_FIELD_OPTIONAL(deadline, userver::storages::postgres::TimePoint, "deadline");
 };
 #endif
 
@@ -827,7 +828,7 @@ struct TrackerTasksInfoItem : public JsonCompatible {
 
   // Method for postgres initialization of non-trivial types
   auto Introspect() {
-    return std::tie(title, project_name, description, id, creator, assignee, status, media_links);
+    return std::tie(title, project_name, description, id, creator, assignee, status, media_links, created_ts, deadline);
   }
 
   REGISTER_STRUCT_FIELD(title, std::string, "title");
@@ -838,6 +839,8 @@ struct TrackerTasksInfoItem : public JsonCompatible {
   REGISTER_STRUCT_FIELD_OPTIONAL(assignee, std::string, "assignee");
   REGISTER_STRUCT_ENUM_FIELD(status, std::string, "status", {"Open", "InProgress", "Review", "Done"});
   REGISTER_STRUCT_FIELD_OPTIONAL(media_links, std::vector<std::string>, "media_links");
+  REGISTER_STRUCT_FIELD(created_ts, userver::storages::postgres::TimePoint, "created_ts");
+  REGISTER_STRUCT_FIELD_OPTIONAL(deadline, userver::storages::postgres::TimePoint, "deadline");
 };
 #endif
 
@@ -854,6 +857,7 @@ struct TrackerTasksEditRequest : public JsonCompatible {
   REGISTER_STRUCT_FIELD_OPTIONAL(project_name, std::string, "project_name");
   REGISTER_STRUCT_FIELD_OPTIONAL(assignee, std::string, "assignee");
   REGISTER_STRUCT_ENUM_FIELD_OPTIONAL(status, std::string, "status", {"Open", "InProgress", "Review", "Done"});
+  REGISTER_STRUCT_FIELD_OPTIONAL(deadline, userver::storages::postgres::TimePoint, "deadline");
 };
 #endif
 

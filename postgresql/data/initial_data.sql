@@ -18,9 +18,9 @@ VALUES ('first', 2),
 ON CONFLICT (project_name)
 DO NOTHING;
 
-INSERT INTO working_day_first.tracker_tasks(id, title, description, project_name, creator, assignee, status, media_links)
-VALUES ('first-1', 'old task', 'description for old task', 'first', 'first_id', 'stranger_id', 'Open', ARRAY ['link 1', 'link 2']),
-       ('first-2', 'young task', 'description for young task', 'first', 'second_id', 'stranger_id', 'InProgress', ARRAY ['link'])
+INSERT INTO working_day_first.tracker_tasks(id, title, description, project_name, creator, assignee, status, media_links, created_ts, deadline)
+VALUES ('first-1', 'old task', 'description for old task', 'first', 'first_id', 'stranger_id', 'Open', ARRAY ['link 1', 'link 2'], '2025-04-12 10:00:00+00', '2025-04-12 10:00:00+00'),
+       ('first-2', 'young task', 'description for young task', 'first', 'second_id', 'stranger_id', 'InProgress', ARRAY ['link'], '2025-04-12 10:00:00+00', '2025-04-12 10:00:00+00')
 ON CONFLICT (id)
 DO NOTHING;
 

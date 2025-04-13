@@ -1838,7 +1838,9 @@ components:
                     description: The creator of the task
                 assignee:
                     type: string
-                    description: The assigned person for the task    
+                    description: The assigned person for the task  
+                deadline:
+                    $ref: '#/components/schemas/Timestamp'  
 
         TrackerTasksInfoItem:
             type: object
@@ -1871,6 +1873,11 @@ components:
                     type: array
                     items:
                         type: string
+                created_at:
+                    $ref: '#/components/schemas/Timestamp'
+                deadline:
+                    $ref: '#/components/schemas/Timestamp'
+                
         
         TrackerTasksListItem:
             type: object
@@ -1920,6 +1927,8 @@ components:
                       - InProgress
                       - Review
                       - Done
+                deadline:
+                    $ref: '#/components/schemas/Timestamp'
 
         TrackerTasksMediaUploadResponse:
             type: object
