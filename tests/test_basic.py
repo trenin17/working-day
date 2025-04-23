@@ -842,6 +842,16 @@ async def test_documents_send(service_client):
     assert response.text == (
         '{"notifications":[{"created":"' + created_time + '","id":"' + id + '","is_read":false,"sender":{"id":"tc","name":"Third","surname":"C"},"text":"Вам отправлен новый документ \\"doc1\\". Его можно просмотреть в разделе Документы.","type":"generic"}]}')
 
+    response = await service_client.post(
+        '/v1/notifications',
+        headers={'Authorization': 'Bearer second_token'}
+    )
+    assert response.status == 200
+    created_time = json.loads(response.text)['notifications'][0]['created']
+    id = json.loads(response.text)['notifications'][0]['id']
+    assert response.text == (
+        '{"notifications":[{"created":"' + created_time + '","id":"' + id + '","is_read":false,"sender":{"id":"tc","name":"Third","surname":"C"},"text":"Вам отправлен новый документ \\"doc1\\". Его можно просмотреть в разделе Документы.","type":"generic"}]}')
+
     response = await service_client.get(
         '/v1/documents/list',
         headers={'Authorization': 'Bearer second_token'}

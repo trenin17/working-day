@@ -164,6 +164,13 @@ ADD COLUMN inventory wd_general.inventory_item[] NOT NULL DEFAULT ARRAY[]::wd_ge
 
 ALTER TABLE working_day_first.employees
 ADD COLUMN job_position TEXT;
+
+UPDATE working_day_first.employees 
+SET job_position = position 
+WHERE job_position IS NULL AND position IS NOT NULL;
+
+ALTER TABLE working_day_first.employees DROP COLUMN IF EXISTS position;
+
 DROP TABLE IF EXISTS working_day_first.messenger_chats;
 
 CREATE TABLE IF NOT EXISTS working_day_first.messenger_chats (

@@ -60,12 +60,10 @@ class DocumentsSendHandler final
     auto notification_text = "Вам отправлен новый документ \"" +
                              request_body.document.name +
                              "\". Его можно просмотреть в разделе Документы.";
-    auto notification_id = userver::utils::generators::GenerateUuid();
 
     userver::storages::postgres::ParameterStore parameters,
         parameters_notifications;
     std::string filter, filter_notifications;
-    parameters_notifications.PushBack(notification_id);
     parameters_notifications.PushBack("generic");
     parameters_notifications.PushBack(notification_text);
     parameters_notifications.PushBack(user_id);
@@ -75,9 +73,14 @@ class DocumentsSendHandler final
       parameters.PushBack(employee_id);
       parameters.PushBack(request_body.document.id);
 
+      auto notification_id = userver::utils::generators::GenerateUuid();
+
       filter_notifications +=
-          "($1, $2, $3, $4, $" +
-          std::to_string(parameters_notifications.Size() + 1) + "),";
+          "($" + std::to_string(parameters_notifications.Size() + 1) +
+          ", $1, $2, $3, $" +
+          std::to_string(parameters_notifications.Size() + 2) + "),";
+
+      parameters_notifications.PushBack(notification_id);
       parameters_notifications.PushBack(employee_id);
     }
     filter.pop_back();

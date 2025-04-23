@@ -48,12 +48,12 @@ struct ActionInfo {
 
 struct EmployeeInfo {
   std::string name, surname, subcompany;
-  std::optional<std::string> patronymic, head_id, position;
+  std::optional<std::string> patronymic, head_id, job_position;
 };
 
 struct HeadInfo {
   std::string name, surname;
-  std::optional<std::string> patronymic, position;
+  std::optional<std::string> patronymic, job_position;
 };
 
 struct VacationDocumentRequest {
@@ -87,7 +87,7 @@ void GenerateVacationDocument(
 
   auto employee_info =
       trx.Execute(
-             "SELECT name, surname, subcompany, patronymic, head_id, position "
+             "SELECT name, surname, subcompany, patronymic, head_id, job_position "
              "FROM working_day_" +
                  company_id +
                  ".employees "
@@ -97,7 +97,7 @@ void GenerateVacationDocument(
 
   auto head_info =
       trx.Execute(
-             "SELECT name, surname, patronymic, position "
+             "SELECT name, surname, patronymic, job_position "
              "FROM working_day_" +
                  company_id +
                  ".employees "
@@ -123,8 +123,8 @@ void GenerateVacationDocument(
       action_info.end_date, "UTC", "%d.%m.%Y"),
   link_request.employee_patronymic = employee_info.patronymic;
   link_request.head_patronymic = head_info.patronymic;
-  link_request.employee_position = employee_info.position;
-  link_request.head_position = head_info.position;
+  link_request.employee_position = employee_info.job_position;
+  link_request.head_position = head_info.job_position;
 
   auto file_key = userver::utils::generators::GenerateUuid();
   auto response = http_client.CreateRequest()

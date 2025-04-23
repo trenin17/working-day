@@ -31,13 +31,13 @@ class ActionInfo {
 class EmployeeInfo {
  public:
   std::string name, surname;
-  std::optional<std::string> patronymic, head_id, position;
+  std::optional<std::string> patronymic, head_id, job_position;
 };
 
 class HeadInfo {
  public:
   std::string name, surname;
-  std::optional<std::string> patronymic, position;
+  std::optional<std::string> patronymic, job_position;
 };
 
 class DocumentsVacationHandler final
@@ -110,7 +110,7 @@ class DocumentsVacationHandler final
 
     auto employee_info =
         trx.Execute(
-               "SELECT name, surname, patronymic, head_id, position "
+               "SELECT name, surname, patronymic, head_id, job_position "
                "FROM working_day_" +
                    company_id +
                    ".employees "
@@ -124,7 +124,7 @@ class DocumentsVacationHandler final
 
     auto head_info =
         trx.Execute(
-               "SELECT name, surname, patronymic, position "
+               "SELECT name, surname, patronymic, job_position "
                "FROM working_day_" +
                    company_id +
                    ".employees "
@@ -145,8 +145,8 @@ class DocumentsVacationHandler final
         action_info.end_date, "UTC", "%d.%m.%Y"),
     link_request.employee_patronymic = employee_info.patronymic;
     link_request.head_patronymic = head_info.patronymic;
-    link_request.employee_position = employee_info.position;
-    link_request.head_position = head_info.position;
+    link_request.employee_position = employee_info.job_position;
+    link_request.head_position = head_info.job_position;
 
     if (request_type == "split") {
       auto first_action =
