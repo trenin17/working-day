@@ -6,7 +6,7 @@
 #include <userver/components/component_list.hpp>
 
 
-namespace websocket {
+namespace core::websocket {
 
 void AppendWebSocket(userver::components::ComponentList& component_list);
 

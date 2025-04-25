@@ -127,7 +127,7 @@ int main(int argc, char* argv[]) {
   views::v1::tracker::tasks::assigned_to_user::AppendTrackerTasksAssignedToUser(component_list);
   views::v1::tracker::tasks::edit::AppendTrackerTasksEdit(component_list);
   views::v1::tracker::tasks::media::upload::AppendTrackerTasksMediaUpload(component_list);
-  websocket::AppendWebSocket(component_list);
+  core::websocket::AppendWebSocket(component_list);
   int err_code = userver::utils::DaemonMain(argc, argv, component_list);
 
   Aws::ShutdownAPI(options);

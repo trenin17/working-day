@@ -10,11 +10,15 @@
 #include <userver/engine/async.hpp>
 #include <userver/concurrent/mpsc_queue.hpp>
 #include <userver/logging/log.hpp>
+#include <userver/storages/postgres/io/chrono.hpp>
+#include <chrono>
 
-#include <iostream>
 #include "definitions/all.hpp"
+#include "core/messenger/queue_manager/queue_manager.hpp"
 
-namespace websocket {
+using json = nlohmann::json;
+
+namespace core::websocket {
 
 namespace {
     struct EmployeeId {
@@ -41,7 +45,7 @@ public:
 
 
     void Handle(userver::server::websocket::WebSocketConnection& chat, userver::server::request::RequestContext& context) const override {
-        const std::string company_id = "first";
+        std::string company_id = "first";
         std::string user_id;
 
         auto connection_queue = userver::concurrent::MpscQueue<userver::server::websocket::Message>::Create();
@@ -79,11 +83,17 @@ public:
 
                 user_id = protocol_message.sender_id;
 
-                RegisterQueue(user_id, connection_queue);
+                auto j = json::parse(incoming_message.data);
+                if (j["content"].contains("company_id")) {
+                    company_id = j["content"]["company_id"];
+                }
+
+                core::queue_manager::QueueManager::GetInstance().RegisterQueue(company_id, user_id, connection_queue);
 
                 PersistMessage(company_id, protocol_message);
 
-                BroadcastMessage(GetChatMembers(company_id, protocol_message.chat_id), incoming_message);
+                BroadcastMessage(company_id, GetChatMembers(company_id, protocol_message.chat_id), incoming_message);
+                // BroadcastMessage(company_id, {EmployeeId("test_id1"), EmployeeId("test_id2")}, incoming_message);
             }
         } catch (const std::exception& ex) {
             LOG_ERROR() << "WebSocket error: " << ex.what();
@@ -95,25 +105,14 @@ public:
         }
 
         if (!user_id.empty()) {
-            UnregisterQueue(user_id);
+            core::queue_manager::QueueManager::GetInstance().UnregisterQueue(company_id, user_id);
         }
     }
 
 private:
-    static void RegisterQueue(const std::string& user_id,
-        std::shared_ptr<userver::concurrent::MpscQueue<userver::server::websocket::Message>> queue) {
-        std::lock_guard<std::mutex> lock(queues_mutex_);
-        queues_[user_id] = queue;
-    }
-
-    static void UnregisterQueue(const std::string& user_id) {
-        std::lock_guard<std::mutex> lock(queues_mutex_);
-        queues_.erase(user_id);
-    }
-
-    void BroadcastMessage(const std::vector<EmployeeId>& employee_ids, userver::server::websocket::Message message) const {
+    void BroadcastMessage(const std::string& company_id, const std::vector<EmployeeId>& employee_ids, userver::server::websocket::Message message) const {
         for (const auto& IdStruct: employee_ids) {
-            auto queue = GetQueueFor(IdStruct.id);
+            auto queue = core::queue_manager::QueueManager::GetInstance().GetQueueFor(company_id, IdStruct.id);
             if (queue) {
                 auto msg_copy = message;
                 auto producer = (*queue).GetProducer();
@@ -137,7 +136,11 @@ private:
         return result.AsContainer<std::vector<EmployeeId>>(userver::storages::postgres::kRowTag);
     }
 
-    void PersistMessage(const std::string& company_id, const MessengerMessage& message) const {
+    void PersistMessage(const std::string& company_id, MessengerMessage message) const {
+        auto now = std::chrono::system_clock::now();
+        userver::storages::postgres::TimePoint pg_time_point{now};
+        message.timestamp = pg_time_point;
+
         auto query = fmt::format(
             "INSERT INTO working_day_{0}.messages(chat_id, timestamp, sender_id, content) "
             "VALUES($1, $2, $3, $4) ",
@@ -145,33 +148,12 @@ private:
 
         auto result = pg_cluster_->Execute(
             userver::storages::postgres::ClusterHostType::kMaster, query,
-            message.chat_id, message.timestamp, message.sender_id, message.content.content);
-    }
-
-    static std::shared_ptr<userver::concurrent::MpscQueue<userver::server::websocket::Message>> GetQueueFor(const std::string& user_id) {
-        std::lock_guard<std::mutex> lock(queues_mutex_);
-        auto it = queues_.find(user_id);
-        if (it != queues_.end()) {
-            if (it->second) {
-                return it->second;
-            } else {
-                LOG_WARNING() << "Queue is dead";
-                queues_.erase(user_id);
-            }
-        }
-        LOG_WARNING() << "Queue not found";
-        return nullptr;
+            message.chat_id, message.timestamp.value(), message.sender_id, message.content.content);
     }
 
 private:
-    static std::mutex queues_mutex_;
-    static std::unordered_map<std::string, std::shared_ptr<userver::concurrent::MpscQueue<userver::server::websocket::Message>>> queues_;
     userver::storages::postgres::ClusterPtr pg_cluster_;
 };
-
-std::mutex websocket::WebsocketsHandler::queues_mutex_;
-std::unordered_map<std::string, std::shared_ptr<userver::concurrent::MpscQueue<userver::server::websocket::Message>>>
-    websocket::WebsocketsHandler::queues_;
 
 void AppendWebSocket(userver::components::ComponentList& component_list) {
   component_list.Append<WebsocketsHandler>();

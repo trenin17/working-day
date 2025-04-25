@@ -2,6 +2,7 @@ import asyncio
 from wsgiref import headers
 import pytest
 import json
+import websockets
 from string import Template
 
 from testsuite.databases import pgsql
@@ -1273,7 +1274,7 @@ async def test_tracker_assigned_tasks_to_user (service_client):
     data = response.json()
 
     tasks = data["tasks"]
-    assert len(tasks) == 3   
+    assert len(tasks) == 3
     assert tasks[0]["title"] == 'Task1'
     assert tasks[1]["title"] == 'Task3'
     assert tasks[2]["title"] == 'Task5'
@@ -1359,7 +1360,7 @@ async def test_tracker_tasks_bad_params_info_edit(service_client):
         headers={'Authorization': 'Bearer first_token'},
     )
     assert response.status == 404
-    
+
     response = await service_client.post(
         '/v1/tracker/tasks/edit',
         headers={'Authorization': 'Bearer second_token'},
@@ -1393,7 +1394,7 @@ async def test_tracker_tasks_media_upload(service_client):
         headers={'Authorization': 'Bearer first_token'},
     )
     assert response.status == 200
-    
+
     response_json = json.loads(response.text)
     media_links = response_json["media_links"]
     assert len(media_links) == 3
@@ -1530,7 +1531,7 @@ async def test_tracker_tasks_search_edit(service_client):
     )
 
     assert response.status == 200
-    
+
     response_required = Template('{"employees":[],'
                                  '"tasks":['
                                  '{"assignee":"first_id",'
