@@ -3,6 +3,7 @@ project(working_day CXX)
 
 # Enable userver libraries that are needed in this project
 set(USERVER_FEATURE_POSTGRESQL ON CACHE BOOL "" FORCE)
+set(USERVER_FEATURE_CHAOTIC ON CACHE BOOL "" FORCE)
 
 set(CMAKE_CXX_STANDARD 20)
 
@@ -27,6 +28,8 @@ find_package(AWSSDK REQUIRED COMPONENTS s3 sts)
 # Common sources
 add_library(${PROJECT_NAME}_objs OBJECT
     src/hello.cpp
+	src/core/messenger/web_socket/web_socket.cpp
+	src/core/messenger/queue_manager/queue_manager.cpp
 	src/views/v1/employee/add/view.cpp
 	src/views/v1/employee/add_head/view.cpp
 	src/views/v1/employee/info/view.cpp
@@ -64,6 +67,17 @@ add_library(${PROJECT_NAME}_objs OBJECT
 	src/views/v1/documents/get_signs/view.cpp
 	src/views/v1/superuser/company/add/view.cpp
 	src/views/v1/inventory/add/view.cpp
+	src/views/v1/messenger/create_chat/view.cpp
+	src/views/v1/messenger/list_chats/view.cpp
+	src/views/v1/messenger/recent_messages/view.cpp
+	src/views/v1/tracker/projects/add/view.cpp
+	src/views/v1/tracker/projects/list/view.cpp
+	src/views/v1/tracker/tasks/add/view.cpp
+	src/views/v1/tracker/tasks/list/view.cpp
+	src/views/v1/tracker/tasks/info/view.cpp
+	src/views/v1/tracker/tasks/assigned_to_user/view.cpp
+	src/views/v1/tracker/tasks/edit/view.cpp
+	src/views/v1/tracker/tasks/media/upload/view.cpp
 )
 target_link_libraries(${PROJECT_NAME}_objs PUBLIC userver-postgresql)
 target_link_libraries(${PROJECT_NAME}_objs PRIVATE nlohmann_json::nlohmann_json)
@@ -109,3 +123,5 @@ FILE(GLOB CONFIGS_FILES ${CMAKE_CURRENT_SOURCE_DIR}/configs/*.yaml ${CMAKE_CURRE
 
 install(TARGETS ${PROJECT_NAME} DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT ${PROJECT_NAME})
 install(FILES ${CONFIGS_FILES} DESTINATION ${CMAKE_INSTALL_SYSCONFDIR}/${PROJECT_NAME} COMPONENT ${PROJECT_NAME})
+
+add_definitions(-DUSERVER_POSTGRES_ENABLE_LEGACY_TIMESTAMP=1)
