@@ -47,6 +47,8 @@ class DocumentsSendHandler final
     DocumentSendRequest request_body;
     request_body.ParseRegisteredFields(request.RequestBody());
 
+    // if document id ends with docx, send request to python service. retry until 200
+
     pg_cluster_->Execute(userver::storages::postgres::ClusterHostType::kMaster,
                          "INSERT INTO working_day_" + company_id +
                              ".documents(id, name, "

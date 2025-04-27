@@ -454,10 +454,11 @@ struct SignItem : public JsonCompatible {
 
   SignItem& operator=(SignItem&& other) = default;
 
-  auto Introspect() { return std::tie(employee, is_signed); }
+  auto Introspect() { return std::tie(employee, is_signed, document_id); }
 
   REGISTER_STRUCT_FIELD(employee, ListEmployee, "employee");
   REGISTER_STRUCT_FIELD(is_signed, bool, "signed");
+  REGISTER_STRUCT_FIELD_OPTIONAL(document_id, std::string, "document_id");
 };
 #endif
 

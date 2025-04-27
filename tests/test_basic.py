@@ -874,9 +874,9 @@ async def test_documents_send(service_client):
     assert response.status == 200
     assert response.text == (
         '{"signs":['
-        '{"employee":{"id":"second_id","name":"Second","surname":"B"},'
+        '{"document_id":"id1", "employee":{"id":"second_id","name":"Second","surname":"B"},'
         '"signed":false},'
-        '{"employee":{"id":"first_id","name":"First","surname":"A"},'
+        '{"document_id":"c1800ba5e80c4344adb7aa59b31c3c3d.pdf", "employee":{"id":"first_id","name":"First","surname":"A"},'
         '"signed":true}'
         ']}')
 

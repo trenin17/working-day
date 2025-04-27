@@ -569,6 +569,8 @@ paths:
             responses:
                 '200':
                     description: Document was sent
+                '500':
+                    description: Document sending failed, need to retry
 
     /v1/documents/list:
         get:
@@ -1644,6 +1646,8 @@ components:
                     $ref: '#/components/schemas/ListEmployee'
                 signed:
                     type: boolean
+                document_id:
+                    type: string
 
         DocumentsGetSignsResponse:
             type: object
