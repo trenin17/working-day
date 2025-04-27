@@ -311,6 +311,7 @@ components_manager:
                   - bearer
                 scopes:
                   - admin
+            pyservice-url: 'http://python-service:3000/document/convert'
 
         handler-v1-documents-list:
             path: /v1/documents/list

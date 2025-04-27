@@ -1605,6 +1605,28 @@ async def test_tracker_tasks_bad_tag_search(service_client):
     )
     assert response.status == 500
 
+
+@pytest.mark.pgsql('db_1', files=['initial_data.sql'])
+async def test_send_docx_document(service_client):
+    response = await service_client.post(
+        '/v1/documents/send',
+        headers={'Authorization': 'Bearer first_token'},
+        json={'employee_ids': ['first_id', 'second_id'], 'document': {
+            'id': 'id1.docx', 'name': 'doc1',
+            'description': 'text1', 'sign_required': True}}
+    )
+    assert response.status == 200
+
+    response = await service_client.get(
+        '/v1/documents/list',
+        headers={'Authorization': 'Bearer first_token'}
+    )
+    assert response.status == 200
+    assert response.text == (
+        '{"documents":[{"description":"text1","id":"id1.pdf",'
+        '"name":"doc1","sign_required":true,"signed":false,"type":"admin_request"}]}')
+
+
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])
 async def test_end(service_client):
     response = await service_client.post(

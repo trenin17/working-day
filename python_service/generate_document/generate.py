@@ -7,17 +7,7 @@ import subprocess
 from aiohttp import web
 from sign_document.stamp import create_stamp, StampData
 from s3_client.aws_utils import upload_and_presign
-from threading import Lock
-
-mutex = Lock()
-
-def convert_docx_to_pdf(docx_path, output_pdf_path):
-    with mutex:
-        cmd = [
-            'libreoffice', '--headless', '--convert-to', 'pdf', '--outdir',
-            output_pdf_path, docx_path
-        ]
-        subprocess.run(cmd, check=True)
+from convert_document.convert import convert_docx_to_pdf
 
 
 def plural_form(number, first, second, third):

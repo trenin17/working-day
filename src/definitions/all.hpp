@@ -71,6 +71,7 @@
 
 #ifdef V1_DOCUMENTS_SEND
 #define USE_DOCUMENT_SEND_REQUEST
+#define USE_PYSERVICE_DOCUMENT_SEND_REQUEST
 #endif
 
 #ifdef USE_DOCUMENT_SEND_REQUEST
@@ -862,5 +863,12 @@ struct TrackerTasksEditRequest : public JsonCompatible {
 struct SearchResponse : public JsonCompatible {
   REGISTER_STRUCT_FIELD(employees, std::vector<ListEmployee>, "employees");
   REGISTER_STRUCT_FIELD(tasks, std::vector<TrackerTasksListItem>, "tasks");
+};
+#endif
+
+#ifdef USE_PYSERVICE_DOCUMENT_SEND_REQUEST
+struct PyserviceDocumentSendRequest : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(file_key, std::string, "file_key");
+  REGISTER_STRUCT_FIELD(converted_file_key, std::string, "file_key");
 };
 #endif

@@ -3,6 +3,7 @@
 #include "view.hpp"
 
 #include <userver/clients/dns/component.hpp>
+#include <userver/clients/http/component.hpp>
 #include <userver/components/component_config.hpp>
 #include <userver/components/component_context.hpp>
 #include <userver/logging/log.hpp>
@@ -11,6 +12,7 @@
 #include <userver/storages/postgres/component.hpp>
 #include <userver/utils/boost_uuid4.hpp>
 #include <userver/utils/uuid4.hpp>
+#include <userver/yaml_config/merge_schemas.hpp>
 
 #include <definitions/all.hpp>
 
@@ -30,7 +32,11 @@ class DocumentsSendHandler final
         pg_cluster_(
             component_context
                 .FindComponent<userver::components::Postgres>("key-value")
-                .GetCluster()) {}
+                .GetCluster()),
+        http_client_(
+            component_context.FindComponent<userver::components::HttpClient>()
+                .GetHttpClient()),
+        pyservice_url_(config["pyservice-url"].As<std::string>()) {}
 
   std::string HandleRequestThrow(
       const userver::server::http::HttpRequest& request,
@@ -48,6 +54,23 @@ class DocumentsSendHandler final
     request_body.ParseRegisteredFields(request.RequestBody());
 
     // if document id ends with docx, send request to python service. retry until 200
+    if (request_body.document.id.ends_with(".docx")) {
+        PyserviceDocumentSendRequest py_request;
+        py_request.file_key = request_body.document.id;
+
+        request_body.document.id = 
+            request_body.document.id.substr(0, request_body.document.id.size() - std::string(".docx").size()) + ".pdf";
+        py_request.converted_file_key = request_body.document.id;
+
+    
+        auto response = http_client_.CreateRequest()
+                            .post(pyservice_url_)
+                            .data(py_request.ToJsonString())
+                            .retry(2)  // retry once in case of error
+                            .timeout(std::chrono::milliseconds{10000})
+                            .perform();  // start performing the request
+        response->raise_for_status();
+    }
 
     pg_cluster_->Execute(userver::storages::postgres::ClusterHostType::kMaster,
                          "INSERT INTO working_day_" + company_id +
@@ -62,12 +85,10 @@ class DocumentsSendHandler final
     auto notification_text = "Вам отправлен новый документ \"" +
                              request_body.document.name +
                              "\". Его можно просмотреть в разделе Документы.";
-    auto notification_id = userver::utils::generators::GenerateUuid();
 
     userver::storages::postgres::ParameterStore parameters,
         parameters_notifications;
     std::string filter, filter_notifications;
-    parameters_notifications.PushBack(notification_id);
     parameters_notifications.PushBack("generic");
     parameters_notifications.PushBack(notification_text);
     parameters_notifications.PushBack(user_id);
@@ -77,9 +98,14 @@ class DocumentsSendHandler final
       parameters.PushBack(employee_id);
       parameters.PushBack(request_body.document.id);
 
+      auto notification_id = userver::utils::generators::GenerateUuid();
+
       filter_notifications +=
-          "($1, $2, $3, $4, $" +
-          std::to_string(parameters_notifications.Size() + 1) + "),";
+          "($" + std::to_string(parameters_notifications.Size() + 1) +
+          ", $1, $2, $3, $" +
+          std::to_string(parameters_notifications.Size() + 2) + "),";
+
+      parameters_notifications.PushBack(notification_id);
       parameters_notifications.PushBack(employee_id);
     }
     filter.pop_back();
@@ -106,8 +132,22 @@ class DocumentsSendHandler final
     return "";
   }
 
+  static userver::yaml_config::Schema GetStaticConfigSchema() {
+    return userver::yaml_config::MergeSchemas<HandlerBase>(R"(
+type: object
+description: Document send handler schema
+additionalProperties: false
+properties:
+    pyservice-url:
+        type: string
+        description: Url of python service
+)");
+  }
+
  private:
   userver::storages::postgres::ClusterPtr pg_cluster_;
+  userver::clients::http::Client& http_client_;
+  std::string pyservice_url_;
 };
 
 }  // namespace
