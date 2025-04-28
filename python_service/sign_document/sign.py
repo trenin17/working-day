@@ -27,7 +27,8 @@ async def sign_document(request):
         sign_type = 'Простая ЭП'
         signed_file_key = data['signed_file_key']
 
-        stamp_data = StampData(date, employee_initials, organization, employee_id, signed_file_key[0:-4], sign_type)
+        stamp_data = StampData(date, employee_name + " " + employee_surname + " " + employee_patronymic,
+                               organization, employee_id, signed_file_key[0:-4], sign_type)
         create_stamp(path_to_pdf, path_to_new_pdf, stamp_data)
 
         upload_file(path_to_new_pdf, signed_file_key)

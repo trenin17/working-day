@@ -419,6 +419,7 @@ struct DocumentItem : public JsonCompatible {
   REGISTER_STRUCT_FIELD_OPTIONAL(description, std::string, "description");
   REGISTER_STRUCT_FIELD_OPTIONAL(is_signed, bool, "signed");
   REGISTER_STRUCT_FIELD_OPTIONAL(parent_id, std::string, "parent_id");
+  //
 };
 #endif
 
@@ -869,6 +870,6 @@ struct SearchResponse : public JsonCompatible {
 #ifdef USE_PYSERVICE_DOCUMENT_SEND_REQUEST
 struct PyserviceDocumentSendRequest : public JsonCompatible {
   REGISTER_STRUCT_FIELD(file_key, std::string, "file_key");
-  REGISTER_STRUCT_FIELD(converted_file_key, std::string, "file_key");
+  REGISTER_STRUCT_FIELD(converted_file_key, std::string, "converted_file_key");
 };
 #endif

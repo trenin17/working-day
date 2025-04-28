@@ -76,7 +76,7 @@ class DocumentsSendHandler final
                          "INSERT INTO working_day_" + company_id +
                              ".documents(id, name, "
                              "sign_required, description, parent_id) "
-                             "VALUES($1, $2, $3, $4, $5)",
+                             "VALUES($1, $2, $3, $4, $5) ON CONFLICT (id) DO NOTHING",
                          request_body.document.id, request_body.document.name,
                          request_body.document.sign_required,
                          request_body.document.description,

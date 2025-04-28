@@ -23,10 +23,10 @@ async def convert_document(request):
 
         download_file(file_key, input_path)
 
-        convert_docx_to_pdf(input_path, output_path)
+        convert_docx_to_pdf(input_path, '/tmp')
 
         upload_file(output_path, converted_file_key)
-        
+
         subprocess.run(['rm', input_path])
         subprocess.run(['rm', output_path])
 
