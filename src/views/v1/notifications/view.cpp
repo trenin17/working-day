@@ -131,7 +131,7 @@ class NotificationsHandler final
             company_id + ".employees.id = working_day_" + company_id +
             ".notifications.sender_id "
             "WHERE user_id = $1 "
-            "LIMIT 100",
+            "ORDER BY created DESC LIMIT 100",
         user_id);
 
     NotificationsResponse response{

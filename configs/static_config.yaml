@@ -80,7 +80,7 @@ components_manager:
             environment-secrets-key: SECDIST_CONFIG
 
         handler-v1-employee-add:
-            path: /v1/employee/add           
+            path: /v1/employee/add
             method: POST
             task_processor: main-task-processor
             auth:
@@ -91,7 +91,7 @@ components_manager:
                   - superuser
 
         handler-v1-employee-add-head:
-            path: /v1/employee/add-head           
+            path: /v1/employee/add-head
             method: POST
             task_processor: main-task-processor
             auth:
@@ -101,7 +101,7 @@ components_manager:
                   - admin
 
         handler-v1-employee-info:
-            path: /v1/employee/info          
+            path: /v1/employee/info
             method: GET
             task_processor: main-task-processor
             auth:
@@ -111,7 +111,7 @@ components_manager:
                   - user
 
         handler-v1-employee-remove:
-            path: /v1/employee/remove          
+            path: /v1/employee/remove
             method: POST
             task_processor: main-task-processor
             auth:
@@ -121,7 +121,7 @@ components_manager:
                   - admin
 
         handler-v1-employees:
-            path: /v1/employees         
+            path: /v1/employees
             method: GET
             task_processor: main-task-processor
             auth:
@@ -131,7 +131,7 @@ components_manager:
                   - user
 
         handler-v1-profile-upload-photo:
-            path: /v1/profile/upload-photo         
+            path: /v1/profile/upload-photo
             method: POST
             task_processor: main-task-processor
             auth:
@@ -139,7 +139,7 @@ components_manager:
                   - bearer
                 scopes:
                   - user
-        
+
         handler-v1-profile-edit:
             path: /v1/profile/edit
             method: POST
@@ -311,6 +311,7 @@ components_manager:
                   - bearer
                 scopes:
                   - admin
+            pyservice-url: 'http://python-service:3000/document/convert'
 
         handler-v1-documents-list:
             path: /v1/documents/list
@@ -321,7 +322,7 @@ components_manager:
                   - bearer
                 scopes:
                   - user
-        
+
         handler-v1-documents-download:
             path: /v1/documents/download
             method: GET
@@ -394,6 +395,88 @@ components_manager:
                   - superuser
             db: $dbconnection
 
+        handler-v1-tracker-projects-add:
+            path: /v1/tracker/projects/add
+            method: POST
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - user
+
+        handler-v1-tracker-projects-list:
+            path: /v1/tracker/projects/list
+            method: GET
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - user
+
+        handler-v1-tracker-tasks-add:
+            path: /v1/tracker/tasks/add
+            method: POST
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - user
+
+        handler-v1-tracker-tasks-list:
+            path: /v1/tracker/tasks/list
+            method: GET
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - user
+        
+        handler-v1-tracker-tasks-info:
+            path: /v1/tracker/tasks/info          
+            method: GET
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - user
+            is_testing: $is_testing
+
+        handler-v1-tracker-tasks-assigned-to-user:
+            path: /v1/tracker/tasks/assigned-to-user           
+            method: POST
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - user
+
+        handler-v1-tracker-tasks-edit:
+            path: /v1/tracker/tasks/edit
+            method: POST
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - user
+
+        handler-v1-tracker-tasks-media-upload:
+            path: /v1/tracker/tasks/media/upload
+            method: POST
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - user
+            is_testing: $is_testing
+
         handler-implicit-http-options:
             as_fallback: implicit-http-options
             method: OPTIONS
@@ -416,3 +499,33 @@ components_manager:
 
         dns-client:
             fs-task-processor: fs-task-processor
+
+        handler-v1-messenger-create-chat:
+            path: /v1/messenger/create-chat
+            method: POST
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - user
+
+        handler-v1-messenger-list-chats:
+            path: /v1/messenger/list-chats
+            method: POST
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - user
+
+        handler-v1-messenger-recent-messages:
+            path: /v1/messenger/recent-messages
+            method: POST
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - user

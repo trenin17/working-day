@@ -3,11 +3,11 @@ info:
     description: Working Day Service
     title: Working Day Service
     version: '1.0'
-    
+
 servers:
   - url: http://84.201.137.230:8080
     description: production
-    
+
 paths:
     /v1/employees:
         get:
@@ -25,7 +25,7 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/EmployeesResponse'
-                    
+
     /v1/employee/add:
         post:
             description: Add new employee
@@ -72,7 +72,7 @@ paths:
             responses:
                 '200':
                     description: Head was added
-                            
+
 
     /v1/employee/remove:
         post:
@@ -458,7 +458,7 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/SearchResponse'
-                                
+
     /v1/search/full:
         post:
             description: Get employees by multiple keys
@@ -569,6 +569,8 @@ paths:
             responses:
                 '200':
                     description: Document was sent
+                '500':
+                    description: Document sending failed, need to retry
 
     /v1/documents/list:
         get:
@@ -647,7 +649,7 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/DocumentsGetSignsResponse'
-    
+
     /v1/documents/sign:
         post:
             description: Sign the document
@@ -703,6 +705,289 @@ paths:
             responses:
                 '200':
                     description: Inventory item was added
+    /v1/tracker/projects/add:
+        post:
+            description: Add new project
+            parameters:
+              - in: header
+                name: Authorization
+                description: Token of session user
+                schema:
+                    type: string
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/TrackerProjectsAddRequest'
+            responses:
+                '200':
+                    description: Project item was added
+
+    /v1/tracker/projects/list:
+        get:
+            description: Get list of all existing projects
+            parameters:
+              - in: header
+                name: Authorization
+                description: Token of session user
+                schema:
+                    type: string
+            responses:
+                '200':
+                    description: List of projects
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/TrackerProjectsListResponse'
+
+    /v1/tracker/tasks/add:
+        post:
+            description: Add new task
+            parameters:
+              - in: header
+                name: Authorization
+                description: Token of session user
+                schema:
+                    type: string
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/TrackerTasksAddRequest'
+            responses:
+                '200':
+                    description: Task was added
+                '404':
+                    description: Project not found
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+
+    /v1/tracker/tasks/list:
+        get:
+            description: Get list of all existing tasks
+            parameters:
+                - in: header
+                name: Authorization
+                description: Token of session user
+                schema:
+                    type: string
+            responses:
+                '200':
+                    description: List of tasks
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/TrackerTasksListResponse'
+
+    /v1/tracker/tasks/info:
+        get:
+            description: Get task info
+            parameters:
+              - in: query
+                name: task_id
+                description: Id of the task to check
+                schema:
+                    type: string
+              - in: header
+                name: Authorization
+                description: Token of session user
+                schema:
+                    type: string
+            responses:
+                '200':
+                    description: Task information
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/TrackerTasksInfoItem'
+                '400':
+                    description: Bad request
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+                '404':
+                    description: Not found
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+
+    /v1/tracker/tasks/assigned-to-user:
+        get:
+            description: Get all tasks assigned to the user
+            parameters:
+              - in: query
+                name: employee_id
+                description: Id of the employee to get tasks for
+                schema:
+                    type: string
+              - in: header
+                name: Authorization
+                description: Token of session user
+                schema:
+                    type: string
+            responses:
+                '200':
+                    description: List of tasks assigned to the user
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    tasks:
+                                        type: array
+                                        items:
+                                            $ref: '#/components/schemas/TrackerTasksListItem'
+                '400':
+                description: Bad request, missing parameters
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/ErrorMessage'
+                '404':
+                    description: Not found
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+
+    /v1/tracker/tasks/edit:
+    post:
+        description: Edit task information
+        parameters:
+            - in: query
+                name: task_id
+                description: Id of the task to edit information for
+                schema:
+                    type: string
+            - in: header
+            name: Authorization
+            description: Token of session user
+            schema:
+                type: string
+        requestBody:
+            required: true
+            content:
+                application/json:
+                    schema:
+                        $ref: '#/components/schemas/TrackerTasksEditRequest'
+        responses:
+            '200':
+                description: Information was updated
+            '400':
+                description: Bad request, missing parameters
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/ErrorMessage'
+            '404':
+                    description: Not found
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+
+    /v1/tracker/tasks/media/upload:
+        post:
+            description: Upload media for the task
+            parameters:
+              - in: query
+                name: task_id
+                schema:
+                    type: string
+              - in: header
+                name: Authorization
+                description: Token of session user
+                schema:
+                    type: string
+            
+            responses:
+                '200':
+                    description: Upload link
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/TrackerTasksMediaUploadResponse'
+                '400':
+                    description: Bad request
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'         
+
+    /v1/messenger/list-chats:
+        get:
+            description: Get a list of user's chats
+            parameters:
+              - in: header
+                name: Authorization
+                description: Token of session user
+                schema:
+                    type: string
+            responses:
+                '200':
+                    description: List of chats
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/MessengerListAllChats'
+
+    /v1/messenger/create-chat:
+        post:
+            description: Create new chat
+            parameters:
+              - in: header
+                name: Authorization
+                description: Token of session user
+                schema:
+                    type: string
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateChatRequest'
+            responses:
+                '200':
+                    description: Chat created
+                    content:
+                        application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateChatResponse'
+                '400':
+                    description: Error creating chat
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+
+    /v1/messenger/recent-messages:
+        get:
+            description: Get recent messages of a chat
+            parameters:
+              - in: header
+                name: Authorization
+                description: Token of session user
+                schema:
+                    type: string
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/LoadRecentMessagesRequest'
+            responses:
+                '200':
+                    description: List of recent messages
+                    content:
+                        type: array
+                        items:
+                            $ref: '#/components/schemas/MessengerMessage'
 
 components:
     schemas:
@@ -751,7 +1036,7 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/ListEmployee'
-                    
+
         EmployeeAddRequest:
             type: object
             additionalProperties: false
@@ -767,14 +1052,14 @@ components:
                     type: string
                 patronymic:
                     type: string
-                role: 
+                role:
                     $ref: '#/components/schemas/Role'
                 job_position:
                     type: string
                 company_id:
                     description: Company id of new employee. This field is available for superuser only
                     type: string
-                    
+
         LoginInfo:
             type: object
             additionalProperties: false
@@ -795,7 +1080,7 @@ components:
             properties:
                 head_id:
                     type: string
-        
+
         Employee:
             type: object
             additionalProperties: false
@@ -859,9 +1144,7 @@ components:
                     type: string
                 team:
                     type: string
-                job_position:
-                    type: string
-        
+
         AuthorizeRequest:
             type: object
             additionalProperties: false
@@ -1006,8 +1289,8 @@ components:
                 end_date:
                     $ref: '#/components/schemas/Timestamp'
                 type:
-                    $ref: '#/components/schemas/AbscenceType'       
-        
+                    $ref: '#/components/schemas/AbscenceType'
+
         AbscenceType:
             type: string
             enum:
@@ -1057,7 +1340,7 @@ components:
             properties:
                 url:
                     type: string
-        
+
         Role:
             type: string
             enum:
@@ -1089,7 +1372,7 @@ components:
                     type: string
                 split_date:
                     $ref: '#/components/schemas/Timestamp'
-        
+
         AbscenceSplitResponse:
             type: object
             additionalProperties: false
@@ -1133,7 +1416,7 @@ components:
                     type: array
                     items:
                         $ref: "#/components/schemas/Payment"
-        
+
         Payment:
             type: object
             additionalProperties: false
@@ -1171,6 +1454,12 @@ components:
             properties:
                 search_key:
                     type: string
+                tag:
+                    type: string
+                    enum:
+                      - employees
+                      - tasks
+                      - all
 
         SearchFullRequest:
             type: object
@@ -1183,6 +1472,12 @@ components:
                     type: string
                 limit:
                     type: integer
+                tag:
+                    type: string
+                    enum:
+                      - employees
+                      - tasks
+                      - all
 
         SearchSuggestRequest:
             type: object
@@ -1194,7 +1489,7 @@ components:
                     type: string
                 limit:
                     type: integer
-            
+
         SearchResponse:
             type: object
             additionalProperties: false
@@ -1205,6 +1500,10 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/ListEmployee'
+                tasks:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/TrackerTasksListItem'
 
         AttendanceListAllRequest:
             type: object
@@ -1347,6 +1646,8 @@ components:
                     $ref: '#/components/schemas/ListEmployee'
                 signed:
                     type: boolean
+                document_id:
+                    type: string
 
         DocumentsGetSignsResponse:
             type: object
@@ -1358,7 +1659,7 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/SignItem'
-                        
+
         SuperuserCompanyAddRequest:
             type: object
             additionalProperties: false
@@ -1403,4 +1704,230 @@ components:
                 item:
                     $ref: '#/components/schemas/InventoryItem'
                 employee_id:
+                    type: string
+
+        MessengerMessageContent:
+            type: object
+            additionalProperties: false
+            properties:
+                content:
+                    type: string # temporary
+
+        MessengerMessage:
+            type: object
+            additionalProperties: false
+            required:
+              - chat_id
+              - sender_id
+              - content
+              - timestamp
+            properties:
+                chat_id:
+                    type: string
+                sender_id:
+                    type: string
+                content:
+                    $ref: '#/components/schemas/MessengerMessageContent'
+                timestamp:
+                    $ref: '#/components/schemas/Timestamp'
+
+        MessengerListedChatInfo:
+            type: object
+            additionalProperties: false
+            required:
+              - chat_id
+              - chat_name
+            properties:
+                chat_id:
+                    type: string
+                chat_name:
+                    type: string
+                last_message:
+                    $ref: '#/components/schemas/MessengerMessage'
+
+        MessengerListAllChats:
+            type: object
+            additionalProperties: false
+            required:
+              - chats
+            properties:
+                chats:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/MessengerListedChatInfo'
+
+        CreateChatRequest:
+            type: object
+            additionalProperties: false
+            required:
+              - chat_name
+              - id_list
+            properties:
+                chat_name:
+                    type: string
+                id_list:
+                    type: array
+                    items:
+                        type: string
+
+        CreateChatResponse:
+            type: object
+            additionalProperties: false
+            required:
+              - chat_id
+            properties:
+                chat_id:
+                    type: string
+
+        LoadRecentMessagesRequest:
+            type: object
+            additionalProperties: false
+            required:
+              - chat_id
+            properties:
+                chat_id:
+                    type: string
+
+        TrackerProjectsAddRequest:
+            type: object
+            additionalProperties: false
+            required:
+              - project_name
+            properties:
+                project_name:
+                    type: string
+
+        TrackerProjectsListItem:
+            type: object
+            additionalProperties: false
+            required:
+              -  project_name
+            properties:
+                project_name:
+                    type: string
+                tasks_count:
+                    type: integer
+
+        TrackerProjectsListResponse:
+            type: object
+            additionalProperties: false
+            properties:
+                projects:
+                    type: array
+                    description: List of project items
+                    items:
+                        $ref: '#/components/schemas/TrackerProjectsListItem'
+
+        TrackerTasksAddRequest:
+            type: object
+            additionalProperties: false
+            required:
+              - title
+              - project_name
+              - creator
+            properties:
+                title:
+                    type: string 
+                    description: Name of the task
+                project_name:
+                    type: string
+                    description: Name of the parent project
+                description:
+                    type: string
+                    description: Description of the task
+                creator:
+                    type: string
+                    description: The creator of the task
+                assignee:
+                    type: string
+                    description: The assigned person for the task    
+
+        TrackerTasksInfoItem:
+            type: object
+            additionalProperties: false
+            required:
+              -  title
+              -  project_name
+              -  creator
+            properties:
+                title:
+                    type: string
+                id:
+                    type: string
+                project_name:
+                    type: string
+                description:
+                    type: string
+                creator:
+                    type: string
+                assignee:
+                    type: string
+                status:
+                    type: string
+                    enum:
+                      - Open
+                      - InProgress
+                      - Review
+                      - Done
+                media_links:
+                    type: array
+                    items:
+                        type: string
+        
+        TrackerTasksListItem:
+            type: object
+            additionalProperties: false
+            required:
+              -  title
+              -  project_name
+              -  creator
+            properties:
+                title:
+                    type: string
+                id:
+                    type: string
+                project_name:
+                    type: string
+                creator:
+                    type: string
+                assignee:
+                    type: string
+            
+        TrackerTasksListResponse:
+            type: object
+            additionalProperties: false
+            properties:
+                tasks:
+                    type: array
+                    description: List of tasks items
+                    items:
+                        $ref: '#/components/schemas/TrackerTasksListItem'
+
+        TrackerTasksEditRequest:
+            type: object
+            additionalProperties: false
+            properties:
+                title:
+                    type: string
+                description:
+                    type: string
+                project_name:
+                    type: string
+                assignee:
+                    type: string
+                status:
+                    type: string
+                    enum:
+                      - Open
+                      - InProgress
+                      - Review
+                      - Done
+
+        TrackerTasksMediaUploadResponse:
+            type: object
+            additionalProperties: false
+            required:
+              - url
+            properties:
+                url:
                     type: string

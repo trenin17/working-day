@@ -11,7 +11,7 @@ export SCHEMA=$1
 export COMPANY_NAME=$2
 SCRIPT_DIR=$(dirname "$(realpath "$BASH_SOURCE")")
 MIGRATIONS_DIR=$(realpath "$SCRIPT_DIR/../postgresql/migrations")
-MIGRATIONS=$(find "$MIGRATIONS_DIR" -name '*.sql' | sort)
+MIGRATIONS=$(find "$MIGRATIONS_DIR" -name '*.sql' | sort -V)
 cd $MIGRATIONS_DIR
 
 
