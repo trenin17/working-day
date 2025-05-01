@@ -773,21 +773,6 @@ paths:
                         items:
                             $ref: '#/components/schemas/MessengerMessage'
 
-    /v1/messenger/search_message:
-        post:
-            description: Searches for a message in a given chat
-            parameters:
-              - in: header
-                name: Authorization
-                description: Token of session user
-                schema:
-                    type: string
-            requestBody:
-                required: true
-                content:
-                    application/json:
-                        schema:
-                            $ref: '#/components/schemas/MessengerSearchRequest'
             responses:
                 '200':
                     description: List of employees
@@ -1305,6 +1290,13 @@ components:
             properties:
                 search_key:
                     type: string
+                tag:
+                    type: string
+                    enum:
+                      - employees
+                      - tasks
+                      - messages
+                      - all
 
         SearchFullRequest:
             type: object
@@ -1317,6 +1309,14 @@ components:
                     type: string
                 limit:
                     type: integer
+                tag:
+                    type: string
+                    enum:
+                      - employees
+                      - tasks
+                      - messages
+                      - all
+
 
         SearchSuggestRequest:
             type: object
@@ -1328,6 +1328,13 @@ components:
                     type: string
                 limit:
                     type: integer
+                tag:
+                    type: string
+                    enum:
+                      - employees
+                      - tasks
+                      - messages
+                      - all
 
         SearchResponse:
             type: object
@@ -1339,6 +1346,19 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/ListEmployee'
+                properties:
+                employees:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/ListEmployee'
+                tasks:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/TrackerTasksListItem'
+                messages:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/MessengerMessage'
 
         AttendanceListAllRequest:
             type: object
@@ -1620,29 +1640,6 @@ components:
             properties:
                 chat_id:
                     type: string
-
-        MessageSearchRequest:
-            type: object
-            additionalProperties: false
-            required:
-              - chat_id
-              - search_key
-            properties:
-                chat_id:
-                    type: string
-                search_key:
-                    type: string
-
-        MessageSearchResponse:
-            type: object
-            additionalProperties: false
-            required:
-              - messages
-            properties:
-                messages:
-                    type: array
-                    items:
-                        $ref: '#/components/schemas/MessengerMessage'
 
         MessengerMarkReadRequest:
             type: object
