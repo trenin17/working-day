@@ -3,11 +3,11 @@ info:
     description: Working Day Service
     title: Working Day Service
     version: '1.0'
-    
+
 servers:
   - url: http://84.201.137.230:8080
     description: production
-    
+
 paths:
     /v1/employees:
         get:
@@ -25,7 +25,7 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/EmployeesResponse'
-                    
+
     /v1/employee/add:
         post:
             description: Add new employee
@@ -72,7 +72,7 @@ paths:
             responses:
                 '200':
                     description: Head was added
-                            
+
 
     /v1/employee/remove:
         post:
@@ -458,7 +458,7 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/SearchResponse'
-                                
+
     /v1/search/full:
         post:
             description: Get employees by multiple keys
@@ -647,7 +647,7 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/DocumentsGetSignsResponse'
-    
+
     /v1/documents/sign:
         post:
             description: Sign the document
@@ -704,6 +704,125 @@ paths:
                 '200':
                     description: Inventory item was added
 
+    /v1/messenger/list-chats:
+        get:
+            description: Get a list of user's chats
+            parameters:
+              - in: header
+                name: Authorization
+                description: Token of session user
+                schema:
+                    type: string
+            responses:
+                '200':
+                    description: List of chats
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/MessengerListAllChats'
+
+    /v1/messenger/create-chat:
+        post:
+            description: Create new chat
+            parameters:
+              - in: header
+                name: Authorization
+                description: Token of session user
+                schema:
+                    type: string
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateChatRequest'
+            responses:
+                '200':
+                    description: Chat created
+                    content:
+                        application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateChatResponse'
+                '400':
+                    description: Error creating chat
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+
+    /v1/messenger/recent-messages:
+        get:
+            description: Get recent messages of a chat
+            parameters:
+              - in: header
+                name: Authorization
+                description: Token of session user
+                schema:
+                    type: string
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/LoadRecentMessagesRequest'
+            responses:
+                '200':
+                    description: List of recent messages
+                    content:
+                        type: array
+                        items:
+                            $ref: '#/components/schemas/MessengerMessage'
+
+            responses:
+                '200':
+                    description: List of employees
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/MessengerSearchResponse'
+
+    /v1/messenger/mark_as_read:
+        post:
+            description: Mark messages as read (send only the last read message, all of the above will be marked read automatically)
+            parameters:
+              - in: header
+                name: Authorization
+                description: Token of session user
+                schema:
+                    type: string
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/MessengerMarkReadRequest'
+            responses:
+                '200':
+                    description: Messages were marked
+
+    /v1/messenger/chat_members:
+        get:
+            description: Get a list of members of a given chat
+            parameters:
+              - in: header
+                name: Authorization
+                description: Token of session user
+                schema:
+                    type: string
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/MessengerChatMembersRequest'
+            responses:
+                '200':
+                    description: List of employees
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/MessengerChatMembersResponse'
+
 components:
     schemas:
         ErrorMessage:
@@ -751,7 +870,7 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/ListEmployee'
-                    
+
         EmployeeAddRequest:
             type: object
             additionalProperties: false
@@ -767,14 +886,14 @@ components:
                     type: string
                 patronymic:
                     type: string
-                role: 
+                role:
                     $ref: '#/components/schemas/Role'
                 job_position:
                     type: string
                 company_id:
                     description: Company id of new employee. This field is available for superuser only
                     type: string
-                    
+
         LoginInfo:
             type: object
             additionalProperties: false
@@ -795,7 +914,7 @@ components:
             properties:
                 head_id:
                     type: string
-        
+
         Employee:
             type: object
             additionalProperties: false
@@ -861,7 +980,7 @@ components:
                     type: string
                 job_position:
                     type: string
-        
+
         AuthorizeRequest:
             type: object
             additionalProperties: false
@@ -1006,8 +1125,8 @@ components:
                 end_date:
                     $ref: '#/components/schemas/Timestamp'
                 type:
-                    $ref: '#/components/schemas/AbscenceType'       
-        
+                    $ref: '#/components/schemas/AbscenceType'
+
         AbscenceType:
             type: string
             enum:
@@ -1057,7 +1176,7 @@ components:
             properties:
                 url:
                     type: string
-        
+
         Role:
             type: string
             enum:
@@ -1089,7 +1208,7 @@ components:
                     type: string
                 split_date:
                     $ref: '#/components/schemas/Timestamp'
-        
+
         AbscenceSplitResponse:
             type: object
             additionalProperties: false
@@ -1133,7 +1252,7 @@ components:
                     type: array
                     items:
                         $ref: "#/components/schemas/Payment"
-        
+
         Payment:
             type: object
             additionalProperties: false
@@ -1171,6 +1290,13 @@ components:
             properties:
                 search_key:
                     type: string
+                tag:
+                    type: string
+                    enum:
+                      - employees
+                      - tasks
+                      - messages
+                      - all
 
         SearchFullRequest:
             type: object
@@ -1183,6 +1309,14 @@ components:
                     type: string
                 limit:
                     type: integer
+                tag:
+                    type: string
+                    enum:
+                      - employees
+                      - tasks
+                      - messages
+                      - all
+
 
         SearchSuggestRequest:
             type: object
@@ -1194,7 +1328,14 @@ components:
                     type: string
                 limit:
                     type: integer
-            
+                tag:
+                    type: string
+                    enum:
+                      - employees
+                      - tasks
+                      - messages
+                      - all
+
         SearchResponse:
             type: object
             additionalProperties: false
@@ -1205,6 +1346,19 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/ListEmployee'
+                properties:
+                employees:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/ListEmployee'
+                tasks:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/TrackerTasksListItem'
+                messages:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/MessengerMessage'
 
         AttendanceListAllRequest:
             type: object
@@ -1358,7 +1512,7 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/SignItem'
-                        
+
         SuperuserCompanyAddRequest:
             type: object
             additionalProperties: false
@@ -1404,3 +1558,117 @@ components:
                     $ref: '#/components/schemas/InventoryItem'
                 employee_id:
                     type: string
+
+        MessengerMessageContent:
+            type: object
+            additionalProperties: false
+            properties:
+                content:
+                    type: string # temporary
+
+        MessengerMessage:
+            type: object
+            additionalProperties: false
+            required:
+              - chat_id
+              - sender_id
+              - content
+              - timestamp
+            properties:
+                chat_id:
+                    type: string
+                sender_id:
+                    type: string
+                content:
+                    $ref: '#/components/schemas/MessengerMessageContent'
+                timestamp:
+                    $ref: '#/components/schemas/Timestamp'
+
+        MessengerListedChatInfo:
+            type: object
+            additionalProperties: false
+            required:
+              - chat_id
+              - chat_name
+            properties:
+                chat_id:
+                    type: string
+                chat_name:
+                    type: string
+                last_message:
+                    $ref: '#/components/schemas/MessengerMessage'
+
+        MessengerListAllChats:
+            type: object
+            additionalProperties: false
+            required:
+              - chats
+            properties:
+                chats:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/MessengerListedChatInfo'
+
+        CreateChatRequest:
+            type: object
+            additionalProperties: false
+            required:
+              - chat_name
+              - id_list
+            properties:
+                chat_name:
+                    type: string
+                id_list:
+                    type: array
+                    items:
+                        type: string
+
+        CreateChatResponse:
+            type: object
+            additionalProperties: false
+            required:
+              - chat_id
+            properties:
+                chat_id:
+                    type: string
+
+        LoadRecentMessagesRequest:
+            type: object
+            additionalProperties: false
+            required:
+              - chat_id
+            properties:
+                chat_id:
+                    type: string
+
+        MessengerMarkReadRequest:
+            type: object
+            additionalProperties: false
+            required:
+              - chat_id
+              - timestamp
+            properties:
+                chat_id:
+                    type: string
+                timestamp:
+                    $ref: '#/components/schemas/Timestamp'
+
+        MessengerChatMembersRequest:
+            type: object
+            additionalProperties: false
+            required:
+              - chat_id
+            properties:
+                chat_id:
+                    type: string
+
+        MessengerChatMembersResponse:
+            type: object
+            additionalProperties: false
+            required:
+              - members_id
+            properties:
+                members_id:
+                    type: array
+                    items:
+                        type: string
