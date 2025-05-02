@@ -48,9 +48,7 @@ class EmployeesHandler final
         "SELECT id, name, surname, patronymic, photo_link "
         "FROM working_day_" +
             company_id +
-            ".employees "
-            "WHERE head_id = $1",
-        user_id);
+            ".employees");
 
     EmployeesResponse response;
     response.employees = result.AsContainer<std::vector<ListEmployee>>(

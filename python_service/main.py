@@ -1,6 +1,7 @@
 from aiohttp import web
 from generate_document.generate import generate_document
 from sign_document.sign import sign_document
+from convert_document.convert import convert_document
 import subprocess
 
 
@@ -14,5 +15,6 @@ subprocess.run(['rm', '/tmp/esv_create.pdf'])
 app = web.Application()
 app.add_routes([web.post('/document/generate', generate_document)])
 app.add_routes([web.post('/document/sign', sign_document)])
+app.add_routes([web.post('/document/convert', convert_document)])
 
 web.run_app(app, host='0.0.0.0', port=3000)

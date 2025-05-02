@@ -885,9 +885,9 @@ async def test_documents_send(service_client):
     assert response.status == 200
     assert response.text == (
         '{"signs":['
-        '{"employee":{"id":"second_id","name":"Second","surname":"B"},'
+        '{"document_id":"id1", "employee":{"id":"second_id","name":"Second","surname":"B"},'
         '"signed":false},'
-        '{"employee":{"id":"first_id","name":"First","surname":"A"},'
+        '{"document_id":"c1800ba5e80c4344adb7aa59b31c3c3d.pdf", "employee":{"id":"first_id","name":"First","surname":"A"},'
         '"signed":true}'
         ']}')
 
@@ -1700,6 +1700,26 @@ async def test_tracker_tasks_edit_deadline(service_client):
         '"project_name":"first",'
         '"status":"Open",'
         '"title":"old task"}')
+
+@pytest.mark.pgsql('db_1', files=['initial_data.sql'])
+async def test_send_docx_document(service_client):
+    response = await service_client.post(
+        '/v1/documents/send',
+        headers={'Authorization': 'Bearer first_token'},
+        json={'employee_ids': ['first_id', 'second_id'], 'document': {
+            'id': 'id1.docx', 'name': 'doc1',
+            'description': 'text1', 'sign_required': True}}
+    )
+    assert response.status == 200
+
+    response = await service_client.get(
+        '/v1/documents/list',
+        headers={'Authorization': 'Bearer first_token'}
+    )
+    assert response.status == 200
+    assert response.text == (
+        '{"documents":[{"description":"text1","id":"id1.pdf",'
+        '"name":"doc1","sign_required":true,"signed":false,"type":"admin_request"}]}')
 
 
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])

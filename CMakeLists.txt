@@ -3,6 +3,7 @@ project(working_day CXX)
 
 # Enable userver libraries that are needed in this project
 set(USERVER_FEATURE_POSTGRESQL ON CACHE BOOL "" FORCE)
+set(USERVER_FEATURE_CHAOTIC ON CACHE BOOL "" FORCE)
 
 set(CMAKE_CXX_STANDARD 20)
 

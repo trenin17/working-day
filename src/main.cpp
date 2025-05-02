@@ -64,8 +64,10 @@ int main(int argc, char* argv[]) {
   Aws::SDKOptions options;
   Aws::InitAPI(options);
 
-  userver::server::handlers::auth::RegisterAuthCheckerFactory(
-      "bearer", std::make_unique<auth::CheckerFactory>());
+  userver::server::handlers::auth::RegisterAuthCheckerFactory<auth::CheckerFactory>();
+
+  // userver::server::handlers::auth::RegisterAuthCheckerFactory(
+      // "bearer", std::make_unique<auth::CheckerFactory>());
 
   auto component_list =
       userver::components::MinimalServerComponentList()

@@ -71,6 +71,7 @@
 
 #ifdef V1_DOCUMENTS_SEND
 #define USE_DOCUMENT_SEND_REQUEST
+#define USE_PYSERVICE_DOCUMENT_SEND_REQUEST
 #endif
 
 #ifdef USE_DOCUMENT_SEND_REQUEST
@@ -418,6 +419,7 @@ struct DocumentItem : public JsonCompatible {
   REGISTER_STRUCT_FIELD_OPTIONAL(description, std::string, "description");
   REGISTER_STRUCT_FIELD_OPTIONAL(is_signed, bool, "signed");
   REGISTER_STRUCT_FIELD_OPTIONAL(parent_id, std::string, "parent_id");
+  //
 };
 #endif
 
@@ -454,10 +456,11 @@ struct SignItem : public JsonCompatible {
 
   SignItem& operator=(SignItem&& other) = default;
 
-  auto Introspect() { return std::tie(employee, is_signed); }
+  auto Introspect() { return std::tie(employee, is_signed, document_id); }
 
   REGISTER_STRUCT_FIELD(employee, ListEmployee, "employee");
   REGISTER_STRUCT_FIELD(is_signed, bool, "signed");
+  REGISTER_STRUCT_FIELD_OPTIONAL(document_id, std::string, "document_id");
 };
 #endif
 
@@ -865,5 +868,12 @@ struct TrackerTasksEditRequest : public JsonCompatible {
 struct SearchResponse : public JsonCompatible {
   REGISTER_STRUCT_FIELD(employees, std::vector<ListEmployee>, "employees");
   REGISTER_STRUCT_FIELD(tasks, std::vector<TrackerTasksListItem>, "tasks");
+};
+#endif
+
+#ifdef USE_PYSERVICE_DOCUMENT_SEND_REQUEST
+struct PyserviceDocumentSendRequest : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(file_key, std::string, "file_key");
+  REGISTER_STRUCT_FIELD(converted_file_key, std::string, "converted_file_key");
 };
 #endif

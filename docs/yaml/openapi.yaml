@@ -569,6 +569,8 @@ paths:
             responses:
                 '200':
                     description: Document was sent
+                '500':
+                    description: Document sending failed, need to retry
 
     /v1/documents/list:
         get:
@@ -1143,7 +1145,6 @@ components:
                 team:
                     type: string
                 job_position:
-                    type: string
 
         AuthorizeRequest:
             type: object
@@ -1646,6 +1647,8 @@ components:
                     $ref: '#/components/schemas/ListEmployee'
                 signed:
                     type: boolean
+                document_id:
+                    type: string
 
         DocumentsGetSignsResponse:
             type: object
@@ -1840,7 +1843,7 @@ components:
                     type: string
                     description: The assigned person for the task  
                 deadline:
-                    $ref: '#/components/schemas/Timestamp'  
+                    $ref: '#/components/schemas/Timestamp'
 
         TrackerTasksInfoItem:
             type: object
@@ -1877,7 +1880,6 @@ components:
                     $ref: '#/components/schemas/Timestamp'
                 deadline:
                     $ref: '#/components/schemas/Timestamp'
-                
         
         TrackerTasksListItem:
             type: object
