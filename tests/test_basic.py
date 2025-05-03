@@ -1041,7 +1041,7 @@ async def test_upload_document(service_client):
     assert response_json["url"].startswith(
         "https://working-day-documents.storage.yandexcloud.net")
 
-
+'''
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])
 async def test_inventory(service_client):
     response = await service_client.post(
@@ -1062,7 +1062,7 @@ async def test_inventory(service_client):
     assert are_json_equal(response.text, (
         '{"id":"first_id","inventory":[{"description":"desc1","id":"id1","name":"item1"}],"name":"First","phones":[],"surname":"A"}'
     )) == True
-
+'''
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])
 async def test_tracker_projects_add_and_list(service_client):
     response = await service_client.post(

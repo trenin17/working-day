@@ -897,10 +897,6 @@ struct DocumentsChainMetadataItemPg {
   std::string employee_id;
   bool requires_signature;
   int status;
-  bool operator==(const DocumentsChainMetadataItemPg& rhs) const {
-    return employee_id == rhs.employee_id && requires_signature == rhs.requires_signature && status == rhs.status;
-  }
-
 };
 
 struct DocumentsChainMetadataItem : public JsonCompatible {
@@ -926,7 +922,7 @@ struct DocumentsChainMetadataItem : public JsonCompatible {
 
 template <>
 struct userver::storages::postgres::io::CppToUserPg<DocumentsChainMetadataItemPg> {
-  static constexpr DBTypeName postgres_name = "wd_general._chain_metadata_item";
+  static constexpr DBTypeName postgres_name = "wd_general.chain_metadata_item";
 };
 #endif
 
@@ -938,6 +934,15 @@ struct DocumentsChainUpdateRequest : public JsonCompatible {
 
 #ifdef USE_DOCUMENTS_CHAIN_UPDATE_RESPONSE
 struct DocumentsChainUpdateResponse : public JsonCompatible {
-  REGISTER_STRUCT_FIELD(chain_metadata, std::vector<DocumentsChainMetadataItemPg>, "chain_metadata");
+  DocumentsChainUpdateResponse() = default;
+
+  DocumentsChainUpdateResponse(DocumentsChainUpdateResponse&& other) { *this = std::move(other); }
+  DocumentsChainUpdateResponse& operator=(DocumentsChainUpdateResponse&& other) = default;
+
+  auto Introspect() {
+    return std::tie(chain_metadata);
+  }
+  
+  REGISTER_STRUCT_FIELD(chain_metadata, std::vector<DocumentsChainMetadataItem>, "chain_metadata");
 };
 #endif

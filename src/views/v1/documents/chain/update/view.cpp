@@ -79,8 +79,9 @@ properties:
         request.SetResponseStatus(userver::server::http::HttpStatus::kNotFound);
         return ErrorMessage{"Document not found"}.ToJsonString();
     }
+
     auto chain_metadata =
-        result.AsContainer<std::vector<DocumentsChainMetadataItemPg>>(userver::storages::postgres::kRowTag);
+        result.AsSingleRow<DocumentsChainUpdateResponse>(userver::storages::postgres::kRowTag);
 
   /*  
           result.AsSingleRow<std::vector<DocumentsChainMetadataItemPg>>(userver::storages::postgres::kRowTag);
