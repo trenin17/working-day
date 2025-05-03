@@ -146,10 +146,6 @@
 #define USE_ERROR_MESSAGE
 #endif
 
-#ifdef USE_LIST_EMPLOYEE_WITH_SUBCOMPANY
-#define USE_LIST_EMPLOYEE
-#endif
-
 #ifdef V1_ABSCENCE_REQUEST
 #define USE_ABSCENCE_REQUEST_REQUEST
 #define USE_ABSCENCE_REQUEST_RESPONSE
@@ -233,6 +229,22 @@
 
 #ifdef V1_TRACKER_TASKS_MEDIA_UPLOAD
 #define USE_ERROR_MESSAGE
+#endif
+
+#ifdef V1_DOCUMENTS_CHAIN_UPDATE
+#define USE_LIST_EMPLOYEE_WITH_SUBCOMPANY
+#define USE_PYSERVICE_DOCUMENT_SIGN_REQUEST
+#define USE_DOCUMENTS_CHAIN_UPDATE_REQUEST
+#define USE_DOCUMENTS_CHAIN_UPDATE_RESPONSE
+#define USE_ERROR_MESSAGE
+#endif
+
+#ifdef USE_LIST_EMPLOYEE_WITH_SUBCOMPANY
+#define USE_LIST_EMPLOYEE
+#endif
+
+#ifdef USE_DOCUMENTS_CHAIN_UPDATE_RESPONSE
+#define USE_DOCUMENTS_CHAIN_METADATA_ITEM
 #endif
 
 #ifdef USE_LIST_EMPLOYEE
@@ -585,6 +597,7 @@ struct PyserviceDocumentSignRequest : public JsonCompatible {
   REGISTER_STRUCT_FIELD(subcompany, std::string, "subcompany");
   REGISTER_STRUCT_FIELD(file_key, std::string, "file_key");
   REGISTER_STRUCT_FIELD(signed_file_key, std::string, "signed_file_key");
+  REGISTER_STRUCT_FIELD_OPTIONAL(is_first_signature, bool, "is_first_signature");
 };
 #endif
 
@@ -875,5 +888,56 @@ struct SearchResponse : public JsonCompatible {
 struct PyserviceDocumentSendRequest : public JsonCompatible {
   REGISTER_STRUCT_FIELD(file_key, std::string, "file_key");
   REGISTER_STRUCT_FIELD(converted_file_key, std::string, "converted_file_key");
+};
+#endif
+
+#ifdef USE_DOCUMENTS_CHAIN_METADATA_ITEM
+
+struct DocumentsChainMetadataItemPg {
+  std::string employee_id;
+  bool requires_signature;
+  int status;
+  bool operator==(const DocumentsChainMetadataItemPg& rhs) const {
+    return employee_id == rhs.employee_id && requires_signature == rhs.requires_signature && status == rhs.status;
+  }
+
+};
+
+struct DocumentsChainMetadataItem : public JsonCompatible {
+  DocumentsChainMetadataItem() = default;
+  DocumentsChainMetadataItem(const DocumentsChainMetadataItemPg& pg) {
+    employee_id = pg.employee_id;
+    requires_signature = pg.requires_signature;
+    status = pg.status;
+  }
+
+  DocumentsChainMetadataItem(DocumentsChainMetadataItem&& other) { *this = std::move(other); }
+
+  DocumentsChainMetadataItem& operator=(DocumentsChainMetadataItem&& other) = default;
+
+  auto Introspect() {
+    return std::tie(employee_id, requires_signature, status);
+  }
+
+  REGISTER_STRUCT_FIELD(employee_id, std::string, "employee_id");
+  REGISTER_STRUCT_FIELD(requires_signature, bool, "requires_signature", false);
+  REGISTER_STRUCT_FIELD(status, int, "status");
+};
+
+template <>
+struct userver::storages::postgres::io::CppToUserPg<DocumentsChainMetadataItemPg> {
+  static constexpr DBTypeName postgres_name = "wd_general._chain_metadata_item";
+};
+#endif
+
+#ifdef USE_DOCUMENTS_CHAIN_UPDATE_REQUEST
+struct DocumentsChainUpdateRequest : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(approval_status, int, "approval_status");
+};
+#endif
+
+#ifdef USE_DOCUMENTS_CHAIN_UPDATE_RESPONSE
+struct DocumentsChainUpdateResponse : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(chain_metadata, std::vector<DocumentsChainMetadataItemPg>, "chain_metadata");
 };
 #endif

@@ -529,3 +529,14 @@ components_manager:
                   - bearer
                 scopes:
                   - user
+
+        handler-v1-documents-chain-update:
+            path: /v1/documents/chain/update
+            method: POST
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - user
+            pyservice-url: 'http://python-service:3000/document/sign'

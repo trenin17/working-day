@@ -33,6 +33,44 @@ DO NOTHING;
 -- VALUES ('first_id', 'first_document', TRUE),
 --        ('second_id', 'second_document', FALSE)
 
+INSERT INTO working_day_first.documents(id, name, sign_required, description, chain_metadata)
+VALUES (
+  'doc_with_chain', 
+  'Document with chain', 
+  TRUE, 
+  'Test document with approval chain',
+  ARRAY[
+    ('first_id', TRUE, 0)::wd_general.chain_metadata_item,
+    ('second_id', FALSE, 0)::wd_general.chain_metadata_item
+  ]
+),(
+  'rejected_doc', 
+  'Rejected document', 
+  TRUE, 
+  '',
+  ARRAY[
+    ('first_id', TRUE, 2)::wd_general.chain_metadata_item,
+    ('second_id', FALSE, 0)::wd_general.chain_metadata_item
+  ]
+);
+
+INSERT INTO working_day_first.documents(id, name, sign_required, description, chain_metadata)
+VALUES (
+  'empty_chain_doc', 
+  'Empty chain doc', 
+  FALSE, 
+  'Document without approval chain',
+  ARRAY[]::wd_general.chain_metadata_item[]
+);
+
+INSERT INTO working_day_first.employee_document(employee_id, document_id, signed)
+VALUES 
+  ('first_id', 'doc_with_chain', FALSE),
+  ('second_id', 'doc_with_chain', FALSE),
+  ('first_id', 'rejected_doc', FALSE),
+  ('second_id', 'rejected_doc', FALSE);
+
+
 INSERT INTO working_day_first.teams(id, name) VALUES ('default_team', 'Default team'), ('stranger_team', 'Stranger team');
 INSERT INTO working_day_first.employee_team(employee_id, team_id) VALUES ('first_id', 'default_team'), ('second_id', 'default_team'), ('stranger_id', 'stranger_team');
 

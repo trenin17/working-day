@@ -165,9 +165,19 @@ ADD COLUMN inventory wd_general.inventory_item[] NOT NULL DEFAULT ARRAY[]::wd_ge
 ALTER TABLE working_day_first.employees
 ADD COLUMN job_position TEXT;
 
-UPDATE working_day_first.employees 
-SET job_position = position 
-WHERE job_position IS NULL AND position IS NOT NULL;
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_schema = 'working_day_first' 
+        AND table_name = 'employees' 
+        AND column_name = 'position'
+    ) THEN
+        UPDATE working_day_first.employees 
+        SET job_position = position 
+        WHERE job_position IS NULL;
+    END IF;
+END $$;
 
 ALTER TABLE working_day_first.employees DROP COLUMN IF EXISTS position;
 
@@ -221,3 +231,12 @@ CREATE TABLE IF NOT EXISTS working_day_first.tracker_tasks (
     FOREIGN KEY (creator) REFERENCES working_day_first.employees (id) ON DELETE CASCADE,
     FOREIGN KEY (assignee) REFERENCES working_day_first.employees (id) ON DELETE CASCADE
 );
+
+CREATE TYPE wd_general.chain_metadata_item AS (
+    employee_id TEXT,
+    requires_signature BOOLEAN,
+    status INT
+);
+
+ALTER TABLE working_day_first.documents
+ADD COLUMN chain_metadata wd_general.chain_metadata_item[] NOT NULL DEFAULT ARRAY[]::wd_general.chain_metadata_item[];

@@ -989,6 +989,54 @@ paths:
                         items:
                             $ref: '#/components/schemas/MessengerMessage'
 
+    /v1/documents/chain/update:
+        post:
+            description: Update status of the document
+            parameters:
+              - in: header
+                name: Authorization
+                description: Token of session user
+                schema:
+                    type: string
+              - in: query
+                name: document_id
+                description: Id of the document
+                schema:
+                    type: string
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/DocumentsChainUpdateRequest'
+            responses:
+                '200':
+                    description: Document was signed
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/DocumentsChainUpdateResponse'
+                '404':
+                    description: Not found
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+                '400':
+                    description: Bad request
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+                '409':
+                    description: Conflict
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+
+
+
 components:
     schemas:
         ErrorMessage:
@@ -1940,3 +1988,48 @@ components:
             properties:
                 url:
                     type: string
+
+        DocumentsChainMetadataItem:
+            type: object
+            additionalProperties: false
+            required:
+              - employee_id
+              - requires_signature
+              - status
+            properties:
+                employee_id:
+                    type: string
+                requires_signature:
+                    type: boolean
+                status:
+                    type: int
+                    enum: [0, 1, 2]
+                    description: 
+                     0 - not_reached
+                     1 - approved
+                     2 - rejected
+
+        DocumentsChainUpdateRequest:
+            type: object
+            additionalProperties: false
+            required:
+              - approval_status
+            properties:
+                approval_status:
+                    type: int
+                    enum: [0, 1, 2]
+                    description: 
+                     0 - sign and approve
+                     1 - approve
+                     2 - reject
+
+        DocumentsChainUpdateResponse:
+            type: object
+            additionalProperties: false
+            required:
+              - chain_metadata
+            properties:
+                chain_metadata:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/DocumentsChainMetadataItem'
