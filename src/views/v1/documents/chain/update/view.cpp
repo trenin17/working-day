@@ -18,6 +18,10 @@
 
 namespace views::v1::documents::chain::update {
 
+struct MetadataContainer {
+  std::vector<DocumentsChainMetadataItemPg> chain_metadata;
+};
+
 namespace {
 
 class DocumentsChainUpdateHandler final
@@ -81,7 +85,7 @@ properties:
     }
 
     auto chain_metadata =
-        result.AsSingleRow<DocumentsChainUpdateResponse>(userver::storages::postgres::kRowTag);
+        result.AsSingleRow<MetadataContainer>(userver::storages::postgres::kRowTag);
 
   /*  
           result.AsSingleRow<std::vector<DocumentsChainMetadataItemPg>>(userver::storages::postgres::kRowTag);
