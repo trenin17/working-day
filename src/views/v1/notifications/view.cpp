@@ -108,31 +108,34 @@ class NotificationsHandler final
     const auto& company_id = ctx.GetData<std::string>("company_id");
 
     auto result = pg_cluster_->Execute(
-        userver::storages::postgres::ClusterHostType::kSlave,
-        "SELECT working_day_" + company_id +
-            ".notifications.id, type, text, is_read, ROW "
-            "(working_day_" +
-            company_id + ".employees.id, working_day_" + company_id +
-            ".employees.name, "
-            "working_day_" +
-            company_id + ".employees.surname, working_day_" + company_id +
-            ".employees.patronymic, "
-            "working_day_" +
-            company_id +
-            ".employees.photo_link), "
-            "action_id, created "
-            "FROM working_day_" +
-            company_id +
-            ".notifications "
-            "LEFT JOIN working_day_" +
-            company_id +
-            ".employees "
-            "ON working_day_" +
-            company_id + ".employees.id = working_day_" + company_id +
-            ".notifications.sender_id "
-            "WHERE user_id = $1 "
-            "ORDER BY created DESC LIMIT 100",
-        user_id);
+      userver::storages::postgres::ClusterHostType::kSlave,
+        R"(
+        SELECT 
+            n.id, 
+            n.type, 
+            n.text, 
+            n.is_read,
+            CASE 
+                WHEN n.sender_id IS NULL THEN NULL
+                ELSE ROW(
+                    e.id, 
+                    e.name, 
+                    e.surname, 
+                    e.patronymic, 
+                    e.photo_link
+                )
+            END,
+            n.action_id, 
+            n.created
+        FROM working_day_)" + company_id + R"(.notifications n
+        LEFT JOIN working_day_)" + company_id + R"(.employees e 
+            ON e.id = n.sender_id
+        WHERE n.user_id = $1
+        ORDER BY n.created DESC 
+        LIMIT 100
+        )",
+        user_id
+    );
 
     NotificationsResponse response{
         result.AsContainer<std::vector<Notification>>(

@@ -54,6 +54,10 @@ def userver_config_pyservice(mockserver_info):
             'pyservice-url'
         ] = mockserver_info.url('document/convert')
 
+        components['handler-v1-documents-chain-update'][
+            'pyservice-url'
+        ] = mockserver_info.url('document/convert')
+
     return do_patch
     # /// [patch configs]
 

@@ -19,7 +19,7 @@
 namespace views::v1::documents::chain::update {
 
 struct MetadataContainer {
-  std::vector<DocumentsChainMetadataItemPg> chain_metadata;
+    std::vector<DocumentsChainMetadataItemPg> chain_metadata;
 };
 
 namespace {
@@ -85,10 +85,7 @@ properties:
     }
 
     auto chain_metadata =
-        result.AsSingleRow<MetadataContainer>(userver::storages::postgres::kRowTag);
-
-  /*  
-          result.AsSingleRow<std::vector<DocumentsChainMetadataItemPg>>(userver::storages::postgres::kRowTag);
+        result.AsSingleRow<MetadataContainer>(userver::storages::postgres::kRowTag).chain_metadata;
 
     if (!chain_metadata.empty()) {
         auto rejected_it = std::find_if(chain_metadata.begin(), chain_metadata.end(),
@@ -121,6 +118,7 @@ properties:
 
     if (request_body.approval_status == 2) {
         current_it->status = 2;
+        SendNotifications(company_id, document_id, user_id, chain_metadata, "rejected");
     } else if (request_body.approval_status == current_it->requires_signature) {
         request.SetResponseStatus(userver::server::http::HttpStatus::kBadRequest);
         if (current_it->requires_signature)
@@ -128,7 +126,8 @@ properties:
         else
             return ErrorMessage{"Document doesn't require a signature"}.ToJsonString();  
     } else if (!current_it->requires_signature) {
-            current_it->status = 1;
+        current_it->status = 1;
+        SendNotifications(company_id, document_id, user_id, chain_metadata, "approved");
     } else {
         result = pg_cluster_->Execute(
             userver::storages::postgres::ClusterHostType::kSlave,
@@ -164,7 +163,7 @@ properties:
             "UPDATE working_day_" + company_id + ".employee_document "
             "SET signed = true "
             "WHERE employee_id = $1 AND document_id = $2",
-            user_id, py_request.signed_file_key, true);
+            user_id, document_id);
 
         result = pg_cluster_->Execute(
             userver::storages::postgres::ClusterHostType::kMaster,
@@ -173,22 +172,22 @@ properties:
             "WHERE id = $1",
             document_id);
         current_it->status = 1;
+        SendNotifications(company_id, document_id, user_id, chain_metadata, "signed and approved");
     }
-    std::vector<DocumentsChainMetadataItemPg> metadata;
-    for (const auto& item : chain_metadata) {
-        chain_metadata.emplace_back(DocumentsChainMetadataItemPg{
-            item.employee_id,
-            item.requires_signature,
-            static_cast<int>(item.status)
-        });
-    }
+
+    size_t element_index = current_it - chain_metadata.begin();
     result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kMaster,
         "UPDATE working_day_" + company_id + ".documents "
-        "SET chain_metadata = $2 "
+        "SET chain_metadata[" + std::to_string(element_index + 1) + "] = $2 "
         "WHERE id = $1",
-        document_id, metadata);
-
+        document_id,
+        DocumentsChainMetadataItemPg{
+            current_it->employee_id,
+            current_it->requires_signature,
+            current_it->status
+        }
+    );
     result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kSlave,
         "SELECT chain_metadata "
@@ -197,17 +196,87 @@ properties:
             ".documents "
             "WHERE id = $1",
         document_id);
-    DocumentsChainUpdateResponse response;
-    response.chain_metadata = result.AsContainer<std::vector<DocumentsChainMetadataItem>>(
-        userver::storages::postgres::kRowTag);
 
-    return response.ToJsonString();*/ return "";
+    DocumentsChainUpdateResponse response = result.AsSingleRow<DocumentsChainUpdateResponse>(userver::storages::postgres::kRowTag);
+    return response.ToJsonString();
   }
 
  private:
   userver::storages::postgres::ClusterPtr pg_cluster_;
   userver::clients::http::Client& http_client_;
   std::string pyservice_url_;
+
+  struct Employee {
+    std::string name, surname;
+  };
+
+  void SendNotifications(
+    const std::string& company_id,
+    const std::string& document_id,
+    const std::string& user_id,
+    const std::vector<DocumentsChainMetadataItemPg>& chain_metadata,
+    const std::string& action_type) const {
+
+        auto doc_result = pg_cluster_->Execute(
+            userver::storages::postgres::ClusterHostType::kSlave,
+            "SELECT name FROM working_day_" + company_id + ".documents "
+            "WHERE id = $1",
+            document_id);
+
+        std::string doc_name;
+        if (!doc_result.IsEmpty()) {
+            doc_name = doc_result.AsSingleRow<std::string>();
+        }
+    
+        auto emp_result = pg_cluster_->Execute(
+            userver::storages::postgres::ClusterHostType::kSlave,
+            "SELECT name, surname FROM working_day_" + company_id + ".employees "
+            "WHERE id = $1",
+            user_id);
+
+        std::string employee_name;
+        if (!emp_result.IsEmpty()) {
+            auto emp_row = emp_result.AsSingleRow<Employee>(userver::storages::postgres::kRowTag);
+            employee_name = emp_row.name + " " + emp_row.surname;
+        }
+
+        std::string notification_text;
+        if (action_type == "signed and approved") {
+            notification_text = fmt::format("Документ '{}' был подписан и утвержден пользователем {}.", doc_name, employee_name);
+        } else if (action_type == "approved") {
+            notification_text = fmt::format("Документ '{}' был утвержден пользователем {}.", doc_name, employee_name);
+        } else if (action_type == "rejected") {
+            notification_text = fmt::format("Документ '{}' был отклонен пользователем {}.", doc_name, employee_name);
+        }
+
+        userver::storages::postgres::ParameterStore parameters;
+        std::string filter;
+
+        parameters.PushBack("generic");
+        parameters.PushBack(notification_text);
+
+        for (const auto& participant : chain_metadata) {
+            auto notification_id = userver::utils::generators::GenerateUuid();
+
+            filter += "($" + std::to_string(parameters.Size() + 1) + 
+                    ", $1, $2, $" + 
+                    std::to_string(parameters.Size() + 2) + "),";
+
+            parameters.PushBack(notification_id);
+            parameters.PushBack(participant.employee_id);
+        }
+        
+        if (!filter.empty()) {
+            filter.pop_back();
+
+            pg_cluster_->Execute(
+                userver::storages::postgres::ClusterHostType::kMaster,
+                "INSERT INTO working_day_" + company_id + 
+                ".notifications(id, type, text, user_id) "
+                "VALUES " + filter + " ON CONFLICT (id) DO NOTHING",
+                parameters);
+        }
+    }
 };
 
 }  // namespace
