@@ -72,95 +72,91 @@ def delete_tmp_files(file_key):
 
 
 async def generate_document(request):
-    try:
-        # Retrieve `file_key` from the query string
-        file_key = request.rel_url.query['file_key']
+    # Retrieve `file_key` from the query string
+    file_key = request.rel_url.query['file_key']
 
-        # Get JSON data from the body
-        data = await request.json()
-        request_type = data['request_type']
+    # Get JSON data from the body
+    data = await request.json()
+    request_type = data['request_type']
 
-        employee_id = data['employee_id']
-        employee_name = data['employee_name']
-        employee_surname = data['employee_surname']
-        employee_patronymic = data.get('employee_patronymic', "")
-        employee_position = data.get('employee_position', "")
+    employee_id = data['employee_id']
+    employee_name = data['employee_name']
+    employee_surname = data['employee_surname']
+    employee_patronymic = data.get('employee_patronymic', "")
+    employee_position = data.get('employee_position', "")
 
-        company_name = data.get('subcompany', "")
-        company_id = data.get('company_id', "")
+    company_name = data.get('subcompany', "")
+    company_id = data.get('company_id', "")
 
-        head_name = data['head_name']
-        head_surname = data['head_surname']
-        head_patronymic = data.get('head_patronymic', "")
-        head_position = data.get('head_position', "")
-        start_date = data['start_date']
-        end_date = data['end_date']
-        duration = get_duration(start_date, end_date)
+    head_name = data['head_name']
+    head_surname = data['head_surname']
+    head_patronymic = data.get('head_patronymic', "")
+    head_position = data.get('head_position', "")
+    start_date = data['start_date']
+    end_date = data['end_date']
+    duration = get_duration(start_date, end_date)
 
-        first_start_date = data.get('first_start_date', "")
-        second_start_date = data.get('second_start_date', "")
-        first_end_date = data.get('first_end_date', "")
-        second_end_date = data.get('second_end_date', "")
-        first_duration = ""
-        if first_start_date and first_end_date:
-            first_duration = get_duration(first_start_date, first_end_date)
-        second_duration = ""
-        if second_start_date and second_end_date:
-            second_duration = get_duration(second_start_date, second_end_date)
+    first_start_date = data.get('first_start_date', "")
+    second_start_date = data.get('second_start_date', "")
+    first_end_date = data.get('first_end_date', "")
+    second_end_date = data.get('second_end_date', "")
+    first_duration = ""
+    if first_start_date and first_end_date:
+        first_duration = get_duration(first_start_date, first_end_date)
+    second_duration = ""
+    if second_start_date and second_end_date:
+        second_duration = get_duration(second_start_date, second_end_date)
 
-        employee_initials = f"{employee_surname} {employee_name[0]}."
-        if employee_patronymic:
-            employee_initials += f"{employee_patronymic[0]}."
+    employee_initials = f"{employee_surname} {employee_name[0]}."
+    if employee_patronymic:
+        employee_initials += f"{employee_patronymic[0]}."
 
-        head_initials = f"{head_surname} {head_name[0]}."
-        if head_patronymic:
-            head_initials += f"{head_patronymic[0]}."
+    head_initials = f"{head_surname} {head_name[0]}."
+    if head_patronymic:
+        head_initials += f"{head_patronymic[0]}."
 
-        now_date = datetime.today().strftime('%d.%m.%Y')
-        if company_name == "Евсикова С. В. ИП":
-            company_id = 'evsikovaip'
-        
-        replacements = {
-            '%employee_name%': employee_name,
-            '%employee_surname%': employee_surname,
-            '%employee_patronymic%': employee_patronymic,
-            '%employee_position%': employee_position,
-            '%employee_initials%': employee_initials,
-            '%company_name%': company_name,
-            '%head_name%': head_name,
-            '%head_surname%': head_surname,
-            '%head_patronymic%': head_patronymic,
-            '%head_position%': head_position,
-            '%head_initials%': head_initials,
-            '%start_date%': start_date,
-            '%end_date%': end_date,
-            '%duration%': duration,
-            '%now_date%': now_date,
-            '%first_start_date%': first_start_date,
-            '%first_end_date%': first_end_date,
-            '%first_duration%': first_duration,
-            '%second_start_date%': second_start_date,
-            '%second_end_date%': second_end_date,
-            '%second_duration%': second_duration
-        }
+    now_date = datetime.today().strftime('%d.%m.%Y')
+    if company_name == "Евсикова С. В. ИП":
+        company_id = 'evsikovaip'
+    
+    replacements = {
+        '%employee_name%': employee_name,
+        '%employee_surname%': employee_surname,
+        '%employee_patronymic%': employee_patronymic,
+        '%employee_position%': employee_position,
+        '%employee_initials%': employee_initials,
+        '%company_name%': company_name,
+        '%head_name%': head_name,
+        '%head_surname%': head_surname,
+        '%head_patronymic%': head_patronymic,
+        '%head_position%': head_position,
+        '%head_initials%': head_initials,
+        '%start_date%': start_date,
+        '%end_date%': end_date,
+        '%duration%': duration,
+        '%now_date%': now_date,
+        '%first_start_date%': first_start_date,
+        '%first_end_date%': first_end_date,
+        '%first_duration%': first_duration,
+        '%second_start_date%': second_start_date,
+        '%second_end_date%': second_end_date,
+        '%second_duration%': second_duration
+    }
 
-        file_name = file_key + '.docx'
-        output_path_word = '/tmp/' + file_name
-        replace_macros_in_word("generate_document/templates/" + company_id + "_" + request_type + ".docx",
-                                replacements, output_path_word)
+    file_name = file_key + '.docx'
+    output_path_word = '/tmp/' + file_name
+    replace_macros_in_word("generate_document/templates/" + company_id + "_" + request_type + ".docx",
+                            replacements, output_path_word)
 
-        output_path_pdf = '/tmp/' + file_key + '.pdf'
+    output_path_pdf = '/tmp/' + file_key + '.pdf'
 
-        convert_docx_to_pdf(output_path_word, '/tmp')
+    convert_docx_to_pdf(output_path_word, '/tmp')
 
-        output_path_pdf_signed = '/tmp/' + file_key + '_signed.pdf'
-        stamp_data = StampData(now_date, employee_name + " " + employee_surname + " " + employee_patronymic,
-                               company_name, employee_id, file_key)
-        create_stamp(output_path_pdf, output_path_pdf_signed, stamp_data)
+    output_path_pdf_signed = '/tmp/' + file_key + '_signed.pdf'
+    stamp_data = StampData(now_date, employee_name + " " + employee_surname + " " + employee_patronymic,
+                            company_name, employee_id, file_key)
+    create_stamp(output_path_pdf, output_path_pdf_signed, stamp_data)
 
-        url = upload_and_presign(output_path_pdf_signed, file_key + '.pdf')
-        delete_tmp_files(file_key)
-        return web.Response(status=200, content_type='text/plain', text=url)
-
-    except Exception as e:
-        return web.Response(status=500, text=str(e))
+    url = upload_and_presign(output_path_pdf_signed, file_key + '.pdf')
+    delete_tmp_files(file_key)
+    return web.Response(status=200, content_type='text/plain', text=url)
