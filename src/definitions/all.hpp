@@ -239,12 +239,22 @@
 #define USE_ERROR_MESSAGE
 #endif
 
-#ifdef USE_LIST_EMPLOYEE_WITH_SUBCOMPANY
-#define USE_LIST_EMPLOYEE
-#endif
-
 #ifdef USE_DOCUMENTS_CHAIN_UPDATE_RESPONSE
 #define USE_DOCUMENTS_CHAIN_METADATA_ITEM
+#endif
+
+#ifdef V1_DOCUMENTS_CHAIN_ADD
+#define USE_LIST_EMPLOYEE_WITH_SUBCOMPANY
+#define USE_DOCUMENTS_CHAIN_ADD_REQUEST
+#define USE_ERROR_MESSAGE
+#endif
+
+#ifdef USE_DOCUMENTS_CHAIN_ADD_REQUEST
+#define USE_DOCUMENTS_CHAIN_METADATA_ITEM
+#endif
+
+#ifdef USE_LIST_EMPLOYEE_WITH_SUBCOMPANY
+#define USE_LIST_EMPLOYEE
 #endif
 
 #ifdef USE_LIST_EMPLOYEE
@@ -943,6 +953,12 @@ struct DocumentsChainUpdateResponse : public JsonCompatible {
     return std::tie(chain_metadata);
   }
   
+  REGISTER_STRUCT_FIELD(chain_metadata, std::vector<DocumentsChainMetadataItem>, "chain_metadata");
+};
+#endif
+
+#ifdef USE_DOCUMENTS_CHAIN_ADD_REQUEST
+struct DocumentsChainAddRequest : public JsonCompatible {
   REGISTER_STRUCT_FIELD(chain_metadata, std::vector<DocumentsChainMetadataItem>, "chain_metadata");
 };
 #endif

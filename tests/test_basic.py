@@ -1913,6 +1913,146 @@ async def test_chain_update_nonexistent_document(service_client):
     assert "Document not found" in response.text
 
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])
+async def test_chain_add(service_client):
+    response = await service_client.post(
+        '/v1/documents/chain/add',
+        headers={'Authorization': 'Bearer first_token'},
+        params={'document_id': 'empty_chain_doc'},
+        json={
+            'chain_metadata': [
+                {
+                    'employee_id': 'first_id',
+                    'requires_signature': True,
+                    'status': 0
+                },
+                {
+                    'employee_id': 'second_id',
+                    'requires_signature': False,
+                    'status': 0
+                }
+            ]
+        }
+    )
+    assert response.status == 200
+    response = await service_client.post(
+        '/v1/documents/chain/update',
+        headers={'Authorization': 'Bearer first_token'},
+        params={'document_id': 'empty_chain_doc'},
+        json={'approval_status': 0}
+    )
+    assert response.status == 200
+    expected_response = {
+        "chain_metadata": [
+            {"employee_id": "first_id", "requires_signature": True, "status": 1},
+            {"employee_id": "second_id", "requires_signature": False, "status": 0},
+        ]
+    }
+    response_data = json.loads(response.text)
+    assert response_data == expected_response
+
+    response = await service_client.get(
+        '/v1/documents/get-signs',
+        headers={'Authorization': 'Bearer first_token'},
+        params={'document_id': 'empty_chain_doc'}
+    )
+    assert response.status == 200
+    response_data = json.loads(response.text)
+
+    assert len(response_data["signs"]) == 2
+    first_sign = next(s for s in response_data["signs"] if s["employee"]["id"] == "first_id")
+    second_sign = next(s for s in response_data["signs"] if s["employee"]["id"] == "second_id")
+    assert first_sign["signed"] is True
+    assert second_sign["signed"] is False
+
+    auth = 'Bearer first_token'
+    for _ in range(2):
+        response = await service_client.post(
+            '/v1/notifications',
+            headers={'Authorization': auth}
+        )
+        assert response.status == 200
+
+        created_time0 = json.loads(response.text)['notifications'][0]['created']
+        id0 = json.loads(response.text)['notifications'][0]['id']
+
+        created_time1 = json.loads(response.text)['notifications'][1]['created']
+        id1 = json.loads(response.text)['notifications'][1]['id']
+
+        assert response.text == (
+            '{"notifications":[{"created":"'+ created_time0 + '","id":"' + id0 + '",'
+            '"is_read":false,"text":"Документ \'Empty chain doc\' был подписан и утвержден пользователем First A.'
+            '","type":"generic"},{"created":"'+ created_time1 +'","id":"' + id1 + '","is_read":false,'
+            '"text":"Документ \'Empty chain doc\' был добавлен пользователем First A.","type":"generic"}]}')
+        auth = 'Bearer second_token'
+
+
+@pytest.mark.pgsql('db_1', files=['initial_data.sql'])
+async def test_chain_add_empty_metadata(service_client):
+    response = await service_client.post(
+        '/v1/documents/chain/add',
+        headers={'Authorization': 'Bearer first_token'},
+        params={'document_id': 'empty_chain_doc'},
+        json={
+            'chain_metadata': []
+        }
+    )
+    assert response.status == 400
+
+@pytest.mark.pgsql('db_1', files=['initial_data.sql'])
+async def test_chain_add_nonexistent_document(service_client):
+    response = await service_client.post(
+        '/v1/documents/chain/add',
+        headers={'Authorization': 'Bearer first_token'},
+        params={'document_id': 'nonexistent_doc'},
+        json={
+            'chain_metadata': [
+                {
+                    'employee_id': 'first_id',
+                    'requires_signature': True,
+                    'status': 0
+                }
+            ]
+        }
+    )
+    assert response.status == 404
+
+@pytest.mark.pgsql('db_1', files=['initial_data.sql'])
+async def test_chain_add_to_document_with_chain(service_client):
+    response = await service_client.post(
+        '/v1/documents/chain/add',
+        headers={'Authorization': 'Bearer first_token'},
+        params={'document_id': 'doc_with_chain'},
+        json={
+            'chain_metadata': [
+                {
+                    'employee_id': 'first_id',
+                    'requires_signature': True,
+                    'status': 0
+                }
+            ]
+        }
+    )
+    assert response.status == 409
+
+@pytest.mark.pgsql('db_1', files=['initial_data.sql'])
+async def test_chain_add_with_invalid_employees(service_client):
+    response = await service_client.post(
+        '/v1/documents/chain/add',
+        headers={'Authorization': 'Bearer first_token'},
+        params={'document_id': 'empty_chain_doc'},
+        json={
+            'chain_metadata': [
+                {
+                    'employee_id': 'invalid_id',
+                    'requires_signature': True,
+                    'status': 0
+                }
+            ]
+        }
+    )
+    assert response.status == 400
+
+@pytest.mark.pgsql('db_1', files=['initial_data.sql'])
 async def test_end(service_client):
     response = await service_client.post(
         '/v1/clear-tasks',

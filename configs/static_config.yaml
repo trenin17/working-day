@@ -477,6 +477,16 @@ components_manager:
                   - user
             is_testing: $is_testing
 
+        handler-v1-documents-chain-add:
+            path: /v1/documents/chain/add
+            method: POST
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - user
+
         handler-implicit-http-options:
             as_fallback: implicit-http-options
             method: OPTIONS
