@@ -177,7 +177,7 @@ class SearchFullHandler final
         "    FROM unnest(ARRAY[" +
             filter +
             "]) AS search_key "
-            "    WHERE similarity(search_key, key) > 0.4 "
+            "    WHERE similarity(search_key, key) > 0.4 AND entity_type = 'employees'"
             ");",
         parameters);
 

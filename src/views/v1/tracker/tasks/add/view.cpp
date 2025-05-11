@@ -57,7 +57,7 @@ core::reverse_index::ReverseIndexResponse AddTaskToReverseIndexFunc(
                            ".reverse_index (key, ids, entity_type) "
                            "SELECT key, ARRAY[id] AS ids, 'tasks' AS entity_type "
                            "FROM input_data, LATERAL unnest(keys) AS key "
-                           "ON CONFLICT (key) DO UPDATE "
+                           "ON CONFLICT (key, entity_type) DO UPDATE "
                            "SET ids = array_append(working_day_" +
                            data.company_id +
                            ".reverse_index.ids, "

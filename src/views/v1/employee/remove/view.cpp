@@ -71,12 +71,15 @@ core::reverse_index::ReverseIndexResponse DeleteReverseIndexFunc(
                            "SET ids = array_remove(ids, $1) "
                            "WHERE key IN " +
                            filter +
-                           "); "
+                           ") "
+                           "AND entity_type = 'employees'; "
                            "DELETE FROM working_day_" +
                            data.company_id.value() +
                            ".reverse_index "
                            "WHERE key IN " +
-                           filter + ") AND ids = '{}'; ",
+                           filter + ") "
+                           "AND entity_type = 'employees' "
+                           "AND ids = '{}'; ",
                        parameters);
 
   core::reverse_index::ReverseIndexResponse response(data.employee_id);

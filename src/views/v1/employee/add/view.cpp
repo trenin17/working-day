@@ -60,10 +60,10 @@ core::reverse_index::ReverseIndexResponse AddReverseIndexFunc(
                            ") "
                            "INSERT INTO working_day_" +
                            data.company_id.value() +
-                           ".reverse_index (key, ids) "
-                           "SELECT key, ARRAY[id] AS ids "
+                           ".reverse_index (key, ids, entity_type) "
+                           "SELECT key, ARRAY[id] AS ids, 'employees' AS entity_type  "
                            "FROM input_data, LATERAL unnest(keys) AS key "
-                           "ON CONFLICT (key) DO UPDATE "
+                           "ON CONFLICT (key, entity_type) DO UPDATE "
                            "SET ids = array_append(working_day_" +
                            data.company_id.value() +
                            ".reverse_index.ids, "

@@ -62,7 +62,7 @@ core::reverse_index::ReverseIndexResponse AddTaskToReverseIndexFunc(
                            ".reverse_index (key, ids, entity_type) "
                            "SELECT key, ARRAY[id] AS ids, 'tasks' AS entity_type "
                            "FROM input_data, LATERAL unnest(keys) AS key "
-                           "ON CONFLICT (key) DO UPDATE "
+                           "ON CONFLICT (key, entity_type) DO UPDATE "
                            "SET ids = array_append(working_day_" +
                            data.company_id +
                            ".reverse_index.ids, "
@@ -131,7 +131,8 @@ core::reverse_index::ReverseIndexResponse EditTaskReverseIndexFunc(
                                 ".reverse_index "
                                 "SET ids = array_remove(ids, $1) "
                                 "WHERE key IN " +
-                                filter + ");",
+                                filter + ") "
+                                "AND entity_type = 'tasks';",
                             parameters);
       }
       return AddTaskToReverseIndexFunc(cluster, new_data);

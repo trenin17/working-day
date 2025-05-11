@@ -1594,49 +1594,69 @@ async def test_tracker_tasks_search_edit(service_client):
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])
 async def test_tracker_tasks_and_employees_search(service_client):
     response = await service_client.post(
+        '/v1/employee/add',
+        headers={'Authorization': 'Bearer first_token'},
+        json={'name': 'new', 'surname': 'D', 'role': 'user'},
+    )
+    assert response.status == 200
+    new_id = json.loads(response.text)['login']
+
+    response = await service_client.post(
         '/v1/tracker/tasks/add',
-        headers={'Authorization': 'Bearer second_token'},
+        headers={'Authorization': 'Bearer first_token'},
         json={
                 'title': 'new',
                 'project_name': 'second',
-                'assignee': 'first_id',
+                'assignee': 'second_id',
              },
     )
     assert response.status == 200
 
+    await asyncio.sleep(1)
+    # basic search (tasks)
     response = await service_client.post(
-        '/v1/employee/add',
-        headers={'Authorization': 'Bearer zero_token'},
-        json={'name': 'new', 'surname': 'B',
-              'role': 'admin', 'company_id': 'second'},
-    )
-
-    assert response.status == 200
-
-    ''' response_required = Template('{"employees":[{"id":"",'
-                                 '"name":"Fourth","surname":"D"}],'
-                                 '"tasks":[]}')'''
-
-
-    response = await service_client.post(
-        '/v1/search/full',
-        json={
-                'search_key': 'new',
-                'limit': 2,
-                'tag': 'all',
-             },
-        headers={'Authorization': 'Bearer second_token'},
+        '/v1/search/basic',
+        json={'search_key': 'new', 'tag':'tasks'},
+        headers={'Authorization': 'Bearer first_token'},
     )
     assert response.status == 200
-    response_required = Template('{"employees":[],"tasks":['
-                                 '{"assignee":"first_id",'
-                                 '"creator":"second_id",'
+    response_required = Template('{"employees":[],'
+                                 '"tasks":[{'
+                                 '"assignee":"second_id",'
+                                 '"creator":"first_id",'
                                  '"id":"second-1",'
                                  '"project_name":"second",'
-                                 '"title":"new"}'
-                                 ']}')
-    assert response.text == response_required.substitute(id='second-1')
-
+                                 '"title":"new"}]}')
+    assert response.text == response_required.substitute()
+    # basic search (employees)
+    response = await service_client.post(
+        '/v1/search/basic',
+        json={'search_key': 'new', 'tag':'employees'},
+        headers={'Authorization': 'Bearer first_token'},
+    )
+    assert response.status == 200
+    response_required = Template('{"employees":[{"id":"${id}",'
+                                 '"name":"new","surname":"D"}],'
+                                 '"tasks":[]}')
+    assert compare_employees(
+        response.text, response_required.substitute(id=new_id))
+    # full search (all)
+    response = await service_client.post(
+        '/v1/search/full',
+        json={'search_key': 'new','limit':2, 'tag':'all'},
+        headers={'Authorization': 'Bearer first_token'},
+    )
+    assert response.status == 200
+    response_required = Template('{"employees":[{"id":"${id}",'
+                                 '"name":"new","surname":"D"}],'
+                                 '"tasks":[{'
+                                 '"assignee":"second_id",'
+                                 '"creator":"first_id",'
+                                 '"id":"second-1",'
+                                 '"project_name":"second",'
+                                 '"title":"new"}]}')
+    assert response.text == response_required.substitute(id=new_id)
+    
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])
 async def test_tracker_tasks_bad_tag_search(service_client):
     response = await service_client.post(
@@ -1756,7 +1776,6 @@ async def test_send_docx_document(service_client):
     }
     response_data = json.loads(response.text)
     assert response_data == expected_response
-
         
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])
 async def test_chain_update_approve(service_client):
@@ -1984,7 +2003,6 @@ async def test_chain_add(service_client):
             '","type":"generic"},{"created":"'+ created_time1 +'","id":"' + id1 + '","is_read":false,'
             '"text":"Документ \'Empty chain doc\' был добавлен пользователем First A.","type":"generic"}]}')
         auth = 'Bearer second_token'
-
 
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])
 async def test_chain_add_empty_metadata(service_client):

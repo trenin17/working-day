@@ -87,12 +87,20 @@ CREATE TABLE IF NOT EXISTS working_day_first.payments (
 CREATE INDEX idx_payments_by_user_id ON working_day_first.payments(user_id);
 CREATE TABLE IF NOT EXISTS working_day_first.reverse_index (
     key TEXT PRIMARY KEY,
-    ids TEXT[],
-    entity_type TEXT DEFAULT 'employees' CHECK (entity_type IN ('employees', 'tasks'))
+    ids TEXT[]
 );
 
+ALTER TABLE working_day_first.reverse_index
+ADD COLUMN entity_type TEXT DEFAULT 'employees' CHECK (entity_type IN ('employees', 'tasks'));
+
+ALTER TABLE working_day_first.reverse_index 
+DROP CONSTRAINT reverse_index_pkey;
+
+ALTER TABLE working_day_first.reverse_index 
+ADD CONSTRAINT reverse_index_key_entity_uniq UNIQUE (key, entity_type);
+
 CREATE INDEX trgm_idx ON working_day_first.reverse_index USING GIST (key gist_trgm_ops);
-CREATE INDEX entity_type_idx ON working_day_first.reverse_index (entity_type);
+
 
 DROP TABLE IF EXISTS working_day_first.documents;
 

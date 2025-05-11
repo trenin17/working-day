@@ -134,7 +134,7 @@ class SearchSuggestHandler final
               company_id +
               ".reverse_index "
               "WHERE key IN " +
-              filter + ");",
+              filter + ") AND entity_type = 'employees';",
           parameters);
 
       id_sets = result1.AsContainer<std::vector<IDsRow>>(
@@ -149,7 +149,7 @@ class SearchSuggestHandler final
             ".reverse_index "
             "WHERE key LIKE '" +
             search_keys[search_keys.size() - 1] +
-            "%' "
+            "%' AND entity_type = 'employees' "
             "ORDER BY key;");
 
     auto suggest_id_sets = result2.AsContainer<std::vector<IDsRow>>(
