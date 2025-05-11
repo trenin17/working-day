@@ -56,14 +56,16 @@ class SearchBasicHandler final
         core::reverse_index::ConvertToLower(request_body.search_key);
 
 
-    std::string tag = request_body.tag.value_or("employees");
-    std::string entity_filter = (tag == "all") 
-                                ? "" 
-                                : "AND entity_type = ";
-    if (tag == "employees") {
-      entity_filter += "'employees'";
-    } else if (tag == "tasks") {
-      entity_filter += "'tasks'";
+    auto tags = request_body.tags.value_or(std::vector<std::string>{"employees"});
+
+    std::string entity_filter;
+    if (!tags.empty()) {
+      entity_filter = "AND entity_type IN (";
+      for (size_t i = 0; i < tags.size(); ++i) {
+        if (i > 0) entity_filter += ",";
+        entity_filter += "'" + tags[i] + "'";
+      }
+      entity_filter += ")";
     }
     
     auto result_ids = pg_cluster_->Execute(

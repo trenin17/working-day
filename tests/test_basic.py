@@ -1462,7 +1462,7 @@ async def test_tracker_tasks_search_add(service_client):
         json={
                 'search_key': 'task for searching',
                 'limit': 1,
-                'tag': 'tasks',
+                'tags': ["tasks"],
              },
         headers={'Authorization': 'Bearer first_token'},
     )
@@ -1495,7 +1495,7 @@ async def test_tracker_tasks_search_edit(service_client):
         json={
                 'search_key': 'edit',
                 'limit': 1,
-                'tag': 'tasks',
+                'tags': ["tasks"],
              },
         headers={'Authorization': 'Bearer second_token'},
     )
@@ -1526,7 +1526,7 @@ async def test_tracker_tasks_search_edit(service_client):
         json={
                 'search_key': 'Edit task',
                 'limit': 1,
-                'tag': 'tasks',
+                'tags': ["tasks"],
              },
     )
     assert response.status == 200
@@ -1538,7 +1538,7 @@ async def test_tracker_tasks_search_edit(service_client):
         json={
                 'search_key': 'Updated task',
                 'limit': 1,
-                'tag': 'tasks',
+                'tags': ["tasks"],
              },
     )
 
@@ -1569,7 +1569,7 @@ async def test_tracker_tasks_search_edit(service_client):
         json={
                 'search_key': 'Updated task',
                 'limit': 2,
-                'tag': 'tasks',
+                'tags': ["tasks"],
              },
     )
 
@@ -1616,7 +1616,7 @@ async def test_tracker_tasks_and_employees_search(service_client):
     # basic search (tasks)
     response = await service_client.post(
         '/v1/search/basic',
-        json={'search_key': 'new', 'tag':'tasks'},
+        json={'search_key': 'new', 'tags':["tasks"]},
         headers={'Authorization': 'Bearer first_token'},
     )
     assert response.status == 200
@@ -1631,7 +1631,7 @@ async def test_tracker_tasks_and_employees_search(service_client):
     # basic search (employees)
     response = await service_client.post(
         '/v1/search/basic',
-        json={'search_key': 'new', 'tag':'employees'},
+        json={'search_key': 'new', 'tags':["employees"]},
         headers={'Authorization': 'Bearer first_token'},
     )
     assert response.status == 200
@@ -1643,7 +1643,7 @@ async def test_tracker_tasks_and_employees_search(service_client):
     # full search (all)
     response = await service_client.post(
         '/v1/search/full',
-        json={'search_key': 'new','limit':2, 'tag':'all'},
+        json={'search_key': 'new','limit':2, 'tags':["employees", "tasks"]},
         headers={'Authorization': 'Bearer first_token'},
     )
     assert response.status == 200
@@ -1664,7 +1664,7 @@ async def test_tracker_tasks_bad_tag_search(service_client):
         json={
                 'search_key': 'new',
                 'limit': 2,
-                'tag': 'bad tag',
+                'tags': "not array tag",
              },
         headers={'Authorization': 'Bearer second_token'},
     )

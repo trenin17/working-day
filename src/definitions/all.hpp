@@ -331,7 +331,7 @@ struct ProfileEditRequest : public JsonCompatible {
 #ifdef USE_SEARCH_BASIC_REQUEST
 struct SearchBasicRequest : public JsonCompatible {
   REGISTER_STRUCT_FIELD(search_key, std::string, "search_key");
-  REGISTER_STRUCT_ENUM_FIELD_OPTIONAL(tag, std::string, "tag", {"employees", "tasks", "all"});
+  REGISTER_STRUCT_FIELD_OPTIONAL(tags, std::vector<std::string>, "tags");
 };
 #endif
 
@@ -339,7 +339,7 @@ struct SearchBasicRequest : public JsonCompatible {
 struct SearchFullRequest : public JsonCompatible {
   REGISTER_STRUCT_FIELD(search_key, std::string, "search_key");
   REGISTER_STRUCT_FIELD(limit, int, "limit");
-  REGISTER_STRUCT_ENUM_FIELD_OPTIONAL(tag, std::string, "tag", {"employees", "tasks", "all"});
+  REGISTER_STRUCT_FIELD_OPTIONAL(tags, std::vector<std::string>, "tags");
 };
 #endif
 

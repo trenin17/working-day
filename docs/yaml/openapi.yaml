@@ -1544,13 +1544,10 @@ components:
             properties:
                 search_key:
                     type: string
-                tag:
-                    type: string
-                    enum:
-                      - employees
-                      - tasks
-                      - all
-
+                tags:
+                    type: array
+                    items:
+                        type: string
         SearchFullRequest:
             type: object
             additionalProperties: false
@@ -1562,13 +1559,10 @@ components:
                     type: string
                 limit:
                     type: integer
-                tag:
-                    type: string
-                    enum:
-                      - employees
-                      - tasks
-                      - all
-
+                tags:
+                    type: array
+                    items:
+                        type: string
         SearchSuggestRequest:
             type: object
             additionalProperties: false

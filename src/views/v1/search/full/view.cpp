@@ -34,7 +34,7 @@ struct IdsItem {
   std::string entity_type;
 };
 
-std::vector<IdsItem> GetIds(const auto& id_sets, const int& limit, const std::string& entity_type) {
+std::vector<IdsItem> GetIds(const auto& id_sets, const int& limit) {
   std::unordered_map<std::string, std::pair<double, std::string>> m;
   for (const auto& el : id_sets) {
     for (const std::string& id : el.ids) {
@@ -123,13 +123,16 @@ class SearchFullHandler final
       append(key, parameters, filter);
     }
 
-    std::string tag = request_body.tag.value_or("employees");
-    std::string entity_filter = (tag == "all") 
-                                ? "" 
-                                : "AND entity_type = $" +  std::to_string(parameters.Size() + 1);
-    
-    if (tag != "all") {
-      parameters.PushBack(tag);
+    auto tags = request_body.tags.value_or(std::vector<std::string>{"employees"});
+
+    std::string entity_filter;
+    if (!tags.empty()) {
+      entity_filter = "AND entity_type IN (";
+      for (size_t i = 0; i < tags.size(); ++i) {
+        if (i > 0) entity_filter += ",";
+        entity_filter += "'" + tags[i] + "'";
+      }
+      entity_filter += ")";
     }
 
     auto result = pg_cluster_->Execute(
@@ -150,7 +153,7 @@ class SearchFullHandler final
 
     // Intersecting sets
 
-    std::vector<IdsItem> final_ids = GetIds(id_sets, request_body.limit, tag);
+    std::vector<IdsItem> final_ids = GetIds(id_sets, request_body.limit);
 
     // fetching ids' values and returning them
 
