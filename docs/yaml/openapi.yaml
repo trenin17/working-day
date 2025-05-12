@@ -1698,6 +1698,8 @@ components:
                 parent_id:
                     description: Parent document Id
                     type: string
+                created_ts:
+                    $ref: '#/components/schemas/Timestamp'
                 chain_metadata:
                     description: Metadata information for chain of approvals
                     type: array
