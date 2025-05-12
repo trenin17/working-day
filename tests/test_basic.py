@@ -836,6 +836,7 @@ async def test_documents_send(service_client):
             {"description": "", "id": "rejected_doc", "name": "Rejected document", "sign_required": True, "signed": False, "type": "admin_request"}
         ]
     }
+    assert response.text == ""
     response_data = json.loads(response.text)
     assert response_data == expected_response
 

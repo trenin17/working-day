@@ -1698,6 +1698,11 @@ components:
                 parent_id:
                     description: Parent document Id
                     type: string
+                chain_metadata:
+                    description: Metadata information for chain of approvals
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/DocumentsChainMetadataItem'
 
         DownloadDocumentResponse:
             type: object

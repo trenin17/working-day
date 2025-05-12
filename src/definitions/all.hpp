@@ -98,6 +98,10 @@
 #define USE_DOCUMENT_ITEM
 #endif
 
+#ifdef USE_DOCUMENT_ITEM
+#define USE_DOCUMENTS_CHAIN_METADATA_ITEM
+#endif
+
 #ifdef V1_DOCUMENTS_GET_SIGNS
 #define USE_DOCUMENTS_GET_SIGNS_RESPONSE
 #endif
@@ -421,6 +425,41 @@ struct UploadDocumentResponse : public JsonCompatible {
 };
 #endif
 
+#ifdef USE_DOCUMENTS_CHAIN_METADATA_ITEM
+
+struct DocumentsChainMetadataItemPg {
+  std::string employee_id;
+  bool requires_signature;
+  int status;
+};
+
+struct DocumentsChainMetadataItem : public JsonCompatible {
+  DocumentsChainMetadataItem() = default;
+  DocumentsChainMetadataItem(const DocumentsChainMetadataItemPg& pg) {
+    employee_id = pg.employee_id;
+    requires_signature = pg.requires_signature;
+    status = pg.status;
+  }
+
+  DocumentsChainMetadataItem(DocumentsChainMetadataItem&& other) { *this = std::move(other); }
+
+  DocumentsChainMetadataItem& operator=(DocumentsChainMetadataItem&& other) = default;
+
+  auto Introspect() {
+    return std::tie(employee_id, requires_signature, status);
+  }
+
+  REGISTER_STRUCT_FIELD(employee_id, std::string, "employee_id");
+  REGISTER_STRUCT_FIELD(requires_signature, bool, "requires_signature", false);
+  REGISTER_STRUCT_FIELD(status, int, "status");
+};
+
+template <>
+struct userver::storages::postgres::io::CppToUserPg<DocumentsChainMetadataItemPg> {
+  static constexpr DBTypeName postgres_name = "wd_general.chain_metadata_item";
+};
+#endif
+
 #ifdef USE_DOCUMENT_ITEM
 struct DocumentItem : public JsonCompatible {
   DocumentItem() = default;
@@ -431,7 +470,7 @@ struct DocumentItem : public JsonCompatible {
 
   auto Introspect() {
     return std::tie(id, name, type, sign_required, description, is_signed,
-                    parent_id);
+                    parent_id, created_ts, chain_metadata);
   }
 
   REGISTER_STRUCT_FIELD(id, std::string, "id");
@@ -441,7 +480,8 @@ struct DocumentItem : public JsonCompatible {
   REGISTER_STRUCT_FIELD_OPTIONAL(description, std::string, "description");
   REGISTER_STRUCT_FIELD_OPTIONAL(is_signed, bool, "signed");
   REGISTER_STRUCT_FIELD_OPTIONAL(parent_id, std::string, "parent_id");
-  //
+  REGISTER_STRUCT_FIELD_OPTIONAL(created_ts, userver::storages::postgres::TimePoint, "created_ts");
+  REGISTER_STRUCT_FIELD_OPTIONAL(chain_metadata, std::vector<DocumentsChainMetadataItem>, "chain_metadata");
 };
 #endif
 
@@ -898,41 +938,6 @@ struct SearchResponse : public JsonCompatible {
 struct PyserviceDocumentSendRequest : public JsonCompatible {
   REGISTER_STRUCT_FIELD(file_key, std::string, "file_key");
   REGISTER_STRUCT_FIELD(converted_file_key, std::string, "converted_file_key");
-};
-#endif
-
-#ifdef USE_DOCUMENTS_CHAIN_METADATA_ITEM
-
-struct DocumentsChainMetadataItemPg {
-  std::string employee_id;
-  bool requires_signature;
-  int status;
-};
-
-struct DocumentsChainMetadataItem : public JsonCompatible {
-  DocumentsChainMetadataItem() = default;
-  DocumentsChainMetadataItem(const DocumentsChainMetadataItemPg& pg) {
-    employee_id = pg.employee_id;
-    requires_signature = pg.requires_signature;
-    status = pg.status;
-  }
-
-  DocumentsChainMetadataItem(DocumentsChainMetadataItem&& other) { *this = std::move(other); }
-
-  DocumentsChainMetadataItem& operator=(DocumentsChainMetadataItem&& other) = default;
-
-  auto Introspect() {
-    return std::tie(employee_id, requires_signature, status);
-  }
-
-  REGISTER_STRUCT_FIELD(employee_id, std::string, "employee_id");
-  REGISTER_STRUCT_FIELD(requires_signature, bool, "requires_signature", false);
-  REGISTER_STRUCT_FIELD(status, int, "status");
-};
-
-template <>
-struct userver::storages::postgres::io::CppToUserPg<DocumentsChainMetadataItemPg> {
-  static constexpr DBTypeName postgres_name = "wd_general.chain_metadata_item";
 };
 #endif
 

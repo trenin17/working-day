@@ -1,0 +1,8 @@
+/tmp/logs/working_day/log.txt {
+    size 100M
+    copytruncate
+    rotate 5
+    compress
+    missingok
+    notifempty
+}

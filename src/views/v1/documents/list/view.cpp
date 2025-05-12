@@ -44,13 +44,15 @@ class DocumentsListHandler final
     const auto& user_id = ctx.GetData<std::string>("user_id");
     const auto& company_id = ctx.GetData<std::string>("company_id");
 
+    LOG_ERROR() << "Executing";
+
     auto result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kMaster,
         "SELECT d.id, d.name, "
             "d.type, d.sign_required, "
             "d.description, "
             "ed.signed, "
-            "NULL::TEXT as parent_id, d.created_ts  "
+            "NULL::TEXT as parent_id, d.created_ts, d.chain_metadata "
             "FROM working_day_" +
             company_id +
             ".documents d "
@@ -64,6 +66,10 @@ class DocumentsListHandler final
     DocumentsListResponse response;
     response.documents = result.AsContainer<std::vector<DocumentItem>>(
         userver::storages::postgres::kRowTag);
+    
+    LOG_ERROR() << "Executed";
+
+    LOG_ERROR() << response.ToJsonString();
 
     return response.ToJsonString();
   }

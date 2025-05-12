@@ -48,7 +48,7 @@ class DocumentsListAllHandler final
         userver::storages::postgres::ClusterHostType::kMaster,
         "SELECT id, name, "
         "type, sign_required, "
-        "description, NULL::BOOLEAN as signed, NULL::TEXT as parent_id "
+        "description, NULL::BOOLEAN as signed, NULL::TEXT as parent_id, created_ts, chain_metadata "
         "FROM working_day_" +
             company_id +
             ".documents "

@@ -15,6 +15,7 @@ RUN mkdir ./generate_document ./sign_document
 COPY generate_document ./generate_document/
 COPY main.py .
 COPY sign_document ./sign_document
+COPY convert_document ./convert_document
 COPY s3_client ./s3_client
 COPY start_service.sh .
 

@@ -78,6 +78,7 @@ async def generate_document(request):
     # Get JSON data from the body
     data = await request.json()
     request_type = data['request_type']
+    action_type = data['action_type']
 
     employee_id = data['employee_id']
     employee_name = data['employee_name']
@@ -145,7 +146,7 @@ async def generate_document(request):
 
     file_name = file_key + '.docx'
     output_path_word = '/tmp/' + file_name
-    replace_macros_in_word("generate_document/templates/" + company_id + "_" + request_type + ".docx",
+    replace_macros_in_word("generate_document/templates/" + company_id + "_" + action_type + "_" + request_type + ".docx",
                             replacements, output_path_word)
 
     output_path_pdf = '/tmp/' + file_key + '.pdf'
