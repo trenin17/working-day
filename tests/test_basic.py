@@ -829,15 +829,39 @@ async def test_documents_send(service_client):
         headers={'Authorization': 'Bearer first_token'}
     )
     assert response.status == 200
+    response_data = json.loads(response.text)
     expected_response = {
         "documents": [
-            {"description": "text1", "id": "id1", "name": "doc1", "sign_required": True, "signed": False, "type": "admin_request"},
-            {"description": "Test document with approval chain", "id": "doc_with_chain", "name": "Document with chain", "sign_required": True, "signed": False, "type": "admin_request"},
-            {"description": "", "id": "rejected_doc", "name": "Rejected document", "sign_required": True, "signed": False, "type": "admin_request"}
+            {"chain_metadata":[],
+             "created_ts": response_data["documents"][0]["created_ts"],
+             "description": "text1", 
+             "id": "id1", 
+             "name": "doc1",
+             "sign_required": True,
+             "signed": False,
+             "type": "admin_request"},
+            {"chain_metadata":[
+                {"employee_id":"first_id","requires_signature":True,"status":0},
+                {"employee_id":"second_id","requires_signature":False,"status":0}],
+             "created_ts": response_data["documents"][1]["created_ts"],
+             "description": "Test document with approval chain",
+             "id": "doc_with_chain",
+             "name": "Document with chain",
+             "sign_required": True,
+             "signed": False,
+             "type": "admin_request"},
+            {"chain_metadata":[
+                {"employee_id":"first_id","requires_signature":True,"status":2},
+                {"employee_id":"second_id","requires_signature":False,"status":0}],
+             "created_ts": response_data["documents"][2]["created_ts"],
+             "description": "",
+             "id": "rejected_doc",
+             "name": "Rejected document",
+             "sign_required": True,
+             "signed": False,
+             "type": "admin_request"}
         ]
     }
-    assert response.text == ""
-    response_data = json.loads(response.text)
     assert response_data == expected_response
 
     response = await service_client.post(
@@ -880,15 +904,21 @@ async def test_documents_send(service_client):
         headers={'Authorization': 'Bearer ' + token},
     )
     assert response.status == 200
+    response_data = json.loads(response.text)
     expected_response = {
         "documents": [
-            {"description": "Test document with approval chain", "id": "doc_with_chain", "name": "Document with chain", "sign_required": True, "type": "admin_request"},
-            {"description": "", "id": "rejected_doc", "name": "Rejected document", "sign_required": True, "type": "admin_request"},
-            {"description": "Document without approval chain", "id": "empty_chain_doc", "name": "Empty chain doc", "sign_required": False, "type": "admin_request"},
-            {"description": "text1", "id": "id1", "name": "doc1", "sign_required": True, "type": "admin_request"}
+            {"chain_metadata":[
+                {"employee_id": "first_id","requires_signature": True,"status": 0},
+                {"employee_id": "second_id","requires_signature": False,"status": 0}],
+             "created_ts": response_data["documents"][0]["created_ts"], "description": "Test document with approval chain", "id": "doc_with_chain", "name": "Document with chain", "sign_required": True, "type": "admin_request"},
+            {"chain_metadata":[
+                {"employee_id": "first_id", "requires_signature": True, "status": 2},
+                {"employee_id": "second_id","requires_signature": False,"status": 0}],
+             "created_ts": response_data["documents"][1]["created_ts"], "description": "", "id": "rejected_doc", "name": "Rejected document", "sign_required": True, "type": "admin_request"},
+            {"chain_metadata":[], "created_ts": response_data["documents"][2]["created_ts"], "description": "Document without approval chain", "id": "empty_chain_doc", "name": "Empty chain doc", "sign_required": False, "type": "admin_request"},
+            {"chain_metadata":[], "created_ts": response_data["documents"][3]["created_ts"], "description": "text1", "id": "id1", "name": "doc1", "sign_required": True, "type": "admin_request"}
        ]
     }
-    response_data = json.loads(response.text)
     assert response_data == expected_response
 
     response = await service_client.get(
@@ -1768,14 +1798,39 @@ async def test_send_docx_document(service_client):
         headers={'Authorization': 'Bearer first_token'}
     )
     assert response.status == 200
+    response_data = json.loads(response.text)
     expected_response = {
         "documents": [
-            {"description": "text1", "id": "id1.pdf", "name": "doc1", "sign_required": True, "signed": False, "type": "admin_request"},
-            {"description": "Test document with approval chain", "id": "doc_with_chain", "name": "Document with chain", "sign_required": True, "signed": False, "type": "admin_request"},
-            {"description": "", "id": "rejected_doc", "name": "Rejected document", "sign_required": True, "signed": False, "type": "admin_request"}
+            {"chain_metadata":[],
+             "created_ts": response_data["documents"][0]["created_ts"],
+             "description": "text1", 
+             "id": "id1.pdf",
+             "name": "doc1", 
+             "sign_required": True, 
+             "signed": False, 
+             "type": "admin_request"},
+            {"chain_metadata":[
+                {"employee_id":"first_id","requires_signature":True,"status":0},
+                {"employee_id":"second_id","requires_signature":False,"status":0}],
+             "created_ts": response_data["documents"][1]["created_ts"],
+             "description": "Test document with approval chain",
+             "id": "doc_with_chain",
+             "name": "Document with chain",
+             "sign_required": True,
+             "signed": False, "type":
+             "admin_request"},
+            {"chain_metadata":[
+                {"employee_id":"first_id","requires_signature":True,"status":2},
+                {"employee_id":"second_id","requires_signature":False,"status":0}],
+             "created_ts": response_data["documents"][2]["created_ts"],
+             "description": "",
+             "id": "rejected_doc",
+             "name": "Rejected document",
+             "sign_required": True,
+             "signed": False,
+             "type": "admin_request"}
         ]
     }
-    response_data = json.loads(response.text)
     assert response_data == expected_response
         
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])
