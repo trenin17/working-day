@@ -429,7 +429,7 @@ struct UploadDocumentResponse : public JsonCompatible {
 
 struct DocumentsChainMetadataItemPg {
   std::string employee_id;
-  bool requires_signature;
+  int requires_signature;
   int status;
 };
 
@@ -450,7 +450,7 @@ struct DocumentsChainMetadataItem : public JsonCompatible {
   }
 
   REGISTER_STRUCT_FIELD(employee_id, std::string, "employee_id");
-  REGISTER_STRUCT_FIELD(requires_signature, bool, "requires_signature", false);
+  REGISTER_STRUCT_FIELD(requires_signature, int, "requires_signature", 0);
   REGISTER_STRUCT_FIELD(status, int, "status");
 };
 

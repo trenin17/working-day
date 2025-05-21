@@ -248,3 +248,30 @@ CREATE TYPE wd_general.chain_metadata_item AS (
 
 ALTER TABLE working_day_first.documents
 ADD COLUMN chain_metadata wd_general.chain_metadata_item[] NOT NULL DEFAULT ARRAY[]::wd_general.chain_metadata_item[];
+
+ALTER TYPE wd_general.chain_metadata_item RENAME TO chain_metadata_item_old;
+
+CREATE TYPE wd_general.chain_metadata_item AS (
+    employee_id TEXT,
+    requires_signature INT,
+    status INT
+);
+
+ALTER TABLE working_day_first.documents
+ADD COLUMN chain_metadata_new wd_general.chain_metadata_item[] NOT NULL DEFAULT ARRAY[]::wd_general.chain_metadata_item[];
+
+UPDATE working_day_first.documents
+SET chain_metadata_new = (
+    SELECT ARRAY(
+        SELECT ROW(
+            item.employee_id,
+            CASE WHEN item.requires_signature THEN 1 ELSE 0 END,
+            item.status
+        )::wd_general.chain_metadata_item
+        FROM unnest(chain_metadata) AS item
+    )
+);
+
+ALTER TABLE working_day_first.documents DROP COLUMN chain_metadata;
+ALTER TABLE working_day_first.documents RENAME COLUMN chain_metadata_new TO chain_metadata;
+DROP TYPE wd_general.chain_metadata_item_old;

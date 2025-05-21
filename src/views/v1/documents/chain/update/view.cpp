@@ -116,19 +116,25 @@ properties:
         return ErrorMessage{"Not your turn to approve"}.ToJsonString();
     }
 
-    if (request_body.approval_status == 2) {
+    if (request_body.approval_status == 3) { // REJECT
         current_it->status = 2;
         SendNotifications(company_id, document_id, user_id, chain_metadata, "rejected");
-    } else if (request_body.approval_status == current_it->requires_signature) {
+    } 
+    else if (request_body.approval_status == 2 && current_it->requires_signature) {
         request.SetResponseStatus(userver::server::http::HttpStatus::kBadRequest);
-        if (current_it->requires_signature)
-            return ErrorMessage{"Document requires a signature"}.ToJsonString();  
-        else
-            return ErrorMessage{"Document doesn't require a signature"}.ToJsonString();  
-    } else if (!current_it->requires_signature) {
+        return ErrorMessage{"Document requires a signature"}.ToJsonString();  
+
+    } else if ((!request_body.approval_status || request_body.approval_status == 1) && !current_it->requires_signature) {
+        request.SetResponseStatus(userver::server::http::HttpStatus::kBadRequest);
+        return ErrorMessage{"Document doesn't require a signature"}.ToJsonString();  
+    } 
+    // approve a document that does not require a signature
+    else if (!current_it->requires_signature && request_body.approval_status == 2) {
         current_it->status = 1;
         SendNotifications(company_id, document_id, user_id, chain_metadata, "approved");
-    } else {
+    } 
+    // approve with regular signature
+    else if (current_it->requires_signature == 1 && !request_body.approval_status) {
         result = pg_cluster_->Execute(
             userver::storages::postgres::ClusterHostType::kSlave,
             "SELECT id, name, surname, patronymic, photo_link, subcompany "
@@ -165,14 +171,17 @@ properties:
             "WHERE employee_id = $1 AND document_id = $2",
             user_id, document_id);
 
-        result = pg_cluster_->Execute(
-            userver::storages::postgres::ClusterHostType::kMaster,
-            "UPDATE working_day_" + company_id + ".documents "
-            "SET sign_required = false "
-            "WHERE id = $1",
-            document_id);
         current_it->status = 1;
         SendNotifications(company_id, document_id, user_id, chain_metadata, "signed and approved");
+    } 
+    // approve with unqualified signature 
+    else if (current_it->requires_signature == 2 && request_body.approval_status == 1) {
+        request.SetResponseStatus(userver::server::http::HttpStatus::kBadRequest);
+        return ErrorMessage{"Not implemented yet"}.ToJsonString();
+
+    } else {
+        request.SetResponseStatus(userver::server::http::HttpStatus::kBadRequest);
+        return ErrorMessage{"Bad request"}.ToJsonString();
     }
 
     size_t element_index = current_it - chain_metadata.begin();

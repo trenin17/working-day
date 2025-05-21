@@ -2042,13 +2042,18 @@ components:
                 employee_id:
                     type: string
                 requires_signature:
-                    type: boolean
+                    type: int
+                    enum: [0, 1, 2]
+                    description:
+                     0 - does not require a signature
+                     1 - requires a regular signature
+                     2 - requires an unqualified signature
                 status:
                     type: int
                     enum: [0, 1, 2]
                     description: 
                      0 - not_reached
-                     1 - approved
+                     1 - approved 
                      2 - rejected
 
         DocumentsChainUpdateRequest:
@@ -2059,11 +2064,12 @@ components:
             properties:
                 approval_status:
                     type: int
-                    enum: [0, 1, 2]
+                    enum: [0, 1, 2, 3]
                     description: 
-                     0 - sign and approve
-                     1 - approve
-                     2 - reject
+                     0 - sign with regular signature and approve
+                     1 - sign with unqualified signature and approve
+                     2 - approve
+                     3 - reject
 
         DocumentsChainUpdateResponse:
             type: object
