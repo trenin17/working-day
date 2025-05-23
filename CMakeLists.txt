@@ -3,6 +3,7 @@ project(working_day CXX)
 
 # Enable userver libraries that are needed in this project
 set(USERVER_FEATURE_POSTGRESQL ON CACHE BOOL "" FORCE)
+set(USERVER_FEATURE_CHAOTIC ON CACHE BOOL "" FORCE)
 
 set(CMAKE_CXX_STANDARD 20)
 
@@ -64,6 +65,19 @@ add_library(${PROJECT_NAME}_objs OBJECT
 	src/views/v1/documents/get_signs/view.cpp
 	src/views/v1/superuser/company/add/view.cpp
 	src/views/v1/inventory/add/view.cpp
+	src/views/v1/messenger/create_chat/view.cpp
+	src/views/v1/messenger/list_chats/view.cpp
+	src/views/v1/messenger/recent_messages/view.cpp
+	src/views/v1/tracker/projects/add/view.cpp
+	src/views/v1/tracker/projects/list/view.cpp
+	src/views/v1/tracker/tasks/add/view.cpp
+	src/views/v1/tracker/tasks/list/view.cpp
+	src/views/v1/tracker/tasks/info/view.cpp
+	src/views/v1/tracker/tasks/assigned_to_user/view.cpp
+	src/views/v1/tracker/tasks/edit/view.cpp
+	src/views/v1/tracker/tasks/media/upload/view.cpp
+	src/views/v1/documents/chain/update/view.cpp
+	src/views/v1/documents/chain/add/view.cpp
 )
 target_link_libraries(${PROJECT_NAME}_objs PUBLIC userver-postgresql)
 target_link_libraries(${PROJECT_NAME}_objs PRIVATE nlohmann_json::nlohmann_json)

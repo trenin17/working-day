@@ -44,40 +44,32 @@ class DocumentsListHandler final
     const auto& user_id = ctx.GetData<std::string>("user_id");
     const auto& company_id = ctx.GetData<std::string>("company_id");
 
+    LOG_ERROR() << "Executing";
+
     auto result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kMaster,
-        "SELECT working_day_" + company_id + ".documents.id, working_day_" +
-            company_id +
-            ".documents.name, "
-            "working_day_" +
-            company_id + ".documents.type, working_day_" + company_id +
-            ".documents.sign_required, "
-            "working_day_" +
-            company_id +
-            ".documents.description, "
-            "working_day_" +
-            company_id +
-            ".employee_document.signed, "
-            "NULL::TEXT as parent_id "
+        "SELECT d.id, d.name, "
+            "d.type, d.sign_required, "
+            "d.description, "
+            "ed.signed, "
+            "NULL::TEXT as parent_id, d.created_ts, d.chain_metadata "
             "FROM working_day_" +
             company_id +
-            ".documents "
+            ".documents d "
             "JOIN working_day_" +
-            company_id + ".employee_document ON working_day_" + company_id +
-            ".documents.id = "
-            "working_day_" +
-            company_id +
-            ".employee_document.document_id "
-            "WHERE working_day_" +
-            company_id +
-            ".employee_document.employee_id = $1 "
-            "ORDER BY working_day_" +
-            company_id + ".documents.created_ts DESC",
+            company_id + ".employee_document ed ON d.id = "
+            "ed.document_id "
+            "WHERE ed.employee_id = $1 "
+            "ORDER BY d.created_ts DESC",
         user_id);
 
     DocumentsListResponse response;
     response.documents = result.AsContainer<std::vector<DocumentItem>>(
         userver::storages::postgres::kRowTag);
+    
+    LOG_ERROR() << "Executed";
+
+    LOG_ERROR() << response.ToJsonString();
 
     return response.ToJsonString();
   }

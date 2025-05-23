@@ -39,6 +39,9 @@
 #include "views/v1/employee/remove/view.hpp"
 #include "views/v1/employees/view.hpp"
 #include "views/v1/inventory/add/view.hpp"
+#include "views/v1/messenger/create_chat/view.hpp"
+#include "views/v1/messenger/list_chats/view.hpp"
+#include "views/v1/messenger/recent_messages/view.hpp"
 #include "views/v1/notifications/view.hpp"
 #include "views/v1/payments/add_bulk/view.hpp"
 #include "views/v1/payments/view.hpp"
@@ -48,13 +51,25 @@
 #include "views/v1/search/full/view.hpp"
 #include "views/v1/search/suggest/view.hpp"
 #include "views/v1/superuser/company/add/view.hpp"
+#include "views/v1/tracker/projects/add/view.hpp"
+#include "views/v1/tracker/projects/list/view.hpp"
+#include "views/v1/tracker/tasks/add/view.hpp"
+#include "views/v1/tracker/tasks/list/view.hpp"
+#include "views/v1/tracker/tasks/info/view.hpp"
+#include "views/v1/tracker/tasks/assigned_to_user/view.hpp"
+#include "views/v1/tracker/tasks/edit/view.hpp"
+#include "views/v1/tracker/tasks/media/upload/view.hpp"
+#include "views/v1/documents/chain/update/view.hpp"
+#include "views/v1/documents/chain/add/view.hpp"
 
 int main(int argc, char* argv[]) {
   Aws::SDKOptions options;
   Aws::InitAPI(options);
 
-  userver::server::handlers::auth::RegisterAuthCheckerFactory(
-      "bearer", std::make_unique<auth::CheckerFactory>());
+  userver::server::handlers::auth::RegisterAuthCheckerFactory<auth::CheckerFactory>();
+
+  // userver::server::handlers::auth::RegisterAuthCheckerFactory(
+      // "bearer", std::make_unique<auth::CheckerFactory>());
 
   auto component_list =
       userver::components::MinimalServerComponentList()
@@ -102,7 +117,20 @@ int main(int argc, char* argv[]) {
   views::v1::documents::get_signs::AppendDocumentsGetSigns(component_list);
   views::v1::superuser::company::add::AppendSuperuserCompanyAdd(component_list);
   views::v1::inventory::add::AppendInventoryAdd(component_list);
-
+  views::v1::messenger::create::AppendCreateChat(component_list);
+  views::v1::messenger::list_chats::AppendListChats(component_list);
+  views::v1::messenger::recent_messages::AppendRecentMessages(component_list);
+  views::v1::tracker::projects::add::AppendTrackerProjectsAdd(component_list);
+  views::v1::tracker::projects::list::AppendTrackerProjectsList(component_list);
+  views::v1::tracker::tasks::add::AppendTrackerTasksAdd(component_list);
+  views::v1::tracker::tasks::list::AppendTrackerTasksList(component_list);
+  views::v1::tracker::tasks::info::AppendTrackerTasksInfo(component_list);
+  views::v1::tracker::tasks::assigned_to_user::AppendTrackerTasksAssignedToUser(component_list);
+  views::v1::tracker::tasks::edit::AppendTrackerTasksEdit(component_list);
+  views::v1::tracker::tasks::media::upload::AppendTrackerTasksMediaUpload(component_list);
+  views::v1::documents::chain::update::AppendDocumentsChainUpdate(component_list);
+  views::v1::documents::chain::add::AppendDocumentsChainAdd(component_list);
+  
   int err_code = userver::utils::DaemonMain(argc, argv, component_list);
 
   Aws::ShutdownAPI(options);

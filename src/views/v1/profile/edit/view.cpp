@@ -94,7 +94,8 @@ core::reverse_index::ReverseIndexResponse EditReverseIndexFunc(
                              ".reverse_index "
                              "SET ids = array_remove(ids, $1) "
                              "WHERE key IN " +
-                             filter + "); ",
+                             filter + ") "
+                             "AND entity_type = 'employees';",
                          parameters);
   }
 
@@ -132,10 +133,10 @@ core::reverse_index::ReverseIndexResponse EditReverseIndexFunc(
                              ") "
                              "INSERT INTO working_day_" +
                              old_data.company_id.value() +
-                             ".reverse_index (key, ids) "
-                             "SELECT key, ARRAY[id] AS ids "
+                             ".reverse_index (key, ids, entity_type) "
+                             "SELECT key, ARRAY[id] AS ids, 'employees' AS entity_type "
                              "FROM input_data, LATERAL unnest(keys) AS key "
-                             "ON CONFLICT (key) DO UPDATE "
+                             "ON CONFLICT (key, entity_type) DO UPDATE "
                              "SET ids = array_append(working_day_" +
                              old_data.company_id.value() +
                              ".reverse_index.ids, "

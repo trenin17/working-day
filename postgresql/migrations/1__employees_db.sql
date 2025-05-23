@@ -12,7 +12,6 @@ CREATE TABLE IF NOT EXISTS ${SCHEMA}.employees (
     email TEXT,
     birthday TEXT,
     role TEXT DEFAULT 'user',
-    position TEXT,
     telegram_id TEXT,
     vk_id TEXT,
     team TEXT, -- deprecated TODO: remove

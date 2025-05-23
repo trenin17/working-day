@@ -50,6 +50,14 @@ def userver_config_pyservice(mockserver_info):
             'pyservice-url'
         ] = mockserver_info.url('document/sign')
 
+        components['handler-v1-documents-send'][
+            'pyservice-url'
+        ] = mockserver_info.url('document/convert')
+
+        components['handler-v1-documents-chain-update'][
+            'pyservice-url'
+        ] = mockserver_info.url('document/convert')
+
     return do_patch
     # /// [patch configs]
 
@@ -64,6 +72,12 @@ def mock_pyservice(mockserver) -> None:
         }
 
     @mockserver.json_handler('/document/sign')
+    def mock(request):
+        return {
+            'response': 'OK'
+        }
+    
+    @mockserver.json_handler('/document/convert')
     def mock(request):
         return {
             'response': 'OK'

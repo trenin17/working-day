@@ -90,7 +90,18 @@ CREATE TABLE IF NOT EXISTS working_day_first.reverse_index (
     ids TEXT[]
 );
 
+ALTER TABLE working_day_first.reverse_index
+ADD COLUMN entity_type TEXT DEFAULT 'employees' CHECK (entity_type IN ('employees', 'tasks'));
+
+ALTER TABLE working_day_first.reverse_index 
+DROP CONSTRAINT reverse_index_pkey;
+
+ALTER TABLE working_day_first.reverse_index 
+ADD CONSTRAINT reverse_index_key_entity_uniq UNIQUE (key, entity_type);
+
 CREATE INDEX trgm_idx ON working_day_first.reverse_index USING GIST (key gist_trgm_ops);
+
+
 DROP TABLE IF EXISTS working_day_first.documents;
 
 CREATE TABLE IF NOT EXISTS working_day_first.documents (
@@ -161,3 +172,106 @@ ADD COLUMN inventory wd_general.inventory_item[] NOT NULL DEFAULT ARRAY[]::wd_ge
 
 ALTER TABLE working_day_first.employees
 ADD COLUMN job_position TEXT;
+
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_schema = 'working_day_first' 
+        AND table_name = 'employees' 
+        AND column_name = 'position'
+    ) THEN
+        UPDATE working_day_first.employees 
+        SET job_position = position 
+        WHERE job_position IS NULL;
+    END IF;
+END $$;
+
+ALTER TABLE working_day_first.employees DROP COLUMN IF EXISTS position;
+
+DROP TABLE IF EXISTS working_day_first.messenger_chats;
+
+CREATE TABLE IF NOT EXISTS working_day_first.messenger_chats (
+    chat_id TEXT PRIMARY KEY,
+    chat_name TEXT
+);
+
+DROP TABLE IF EXISTS working_day_first.messages;
+
+CREATE TABLE IF NOT EXISTS working_day_first.messages (
+    chat_id TEXT,
+    timestamp TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    sender_id TEXT,
+    content TEXT,
+    PRIMARY KEY (chat_id, timestamp),
+    FOREIGN KEY (chat_id) REFERENCES working_day_first.messenger_chats (chat_id) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_messages_chat_timestamp
+  ON working_day_first.messages (chat_id ASC, timestamp DESC);
+
+DROP TABLE IF EXISTS working_day_first.employee_chats;
+
+CREATE TABLE IF NOT EXISTS working_day_first.employee_chats (
+  employee_id TEXT NOT NULL,
+  chat_id TEXT,
+  PRIMARY KEY (employee_id, chat_id),
+  FOREIGN KEY (employee_id) REFERENCES working_day_first.employees (id) ON DELETE CASCADE,
+  FOREIGN KEY (chat_id) REFERENCES working_day_first.messenger_chats (chat_id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS working_day_first.tracker_projects (
+    project_name TEXT PRIMARY KEY,
+    tasks_count INT NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS working_day_first.tracker_tasks (
+    id TEXT PRIMARY KEY NOT NULL,
+    title TEXT NOT NULL,
+    description TEXT,
+    project_name TEXT NOT NULL,
+    creator TEXT NOT NULL,
+    assignee TEXT,
+    status TEXT CHECK (status IN ('Open', 'InProgress', 'Review', 'Done')),
+    media_links TEXT[] DEFAULT ARRAY[]::TEXT[],
+    created_ts TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    deadline TIMESTAMPTZ,
+    FOREIGN KEY (creator) REFERENCES working_day_first.employees (id) ON DELETE CASCADE,
+    FOREIGN KEY (assignee) REFERENCES working_day_first.employees (id) ON DELETE CASCADE
+);
+
+CREATE TYPE wd_general.chain_metadata_item AS (
+    employee_id TEXT,
+    requires_signature BOOLEAN,
+    status INT
+);
+
+ALTER TABLE working_day_first.documents
+ADD COLUMN chain_metadata wd_general.chain_metadata_item[] NOT NULL DEFAULT ARRAY[]::wd_general.chain_metadata_item[];
+
+ALTER TYPE wd_general.chain_metadata_item RENAME TO chain_metadata_item_old;
+
+CREATE TYPE wd_general.chain_metadata_item AS (
+    employee_id TEXT,
+    requires_signature INT,
+    status INT
+);
+
+ALTER TABLE working_day_first.documents
+ADD COLUMN chain_metadata_new wd_general.chain_metadata_item[] NOT NULL DEFAULT ARRAY[]::wd_general.chain_metadata_item[];
+
+UPDATE working_day_first.documents
+SET chain_metadata_new = (
+    SELECT ARRAY(
+        SELECT ROW(
+            item.employee_id,
+            CASE WHEN item.requires_signature THEN 1 ELSE 0 END,
+            item.status
+        )::wd_general.chain_metadata_item
+        FROM unnest(chain_metadata) AS item
+    )
+);
+
+ALTER TABLE working_day_first.documents DROP COLUMN chain_metadata;
+ALTER TABLE working_day_first.documents RENAME COLUMN chain_metadata_new TO chain_metadata;
+DROP TYPE wd_general.chain_metadata_item_old;

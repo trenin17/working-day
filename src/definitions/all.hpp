@@ -32,6 +32,10 @@
 #define USE_SEARCH_RESPONSE
 #endif
 
+#ifdef USE_SEARCH_BASIC_REQUEST
+#define USE_TRACKER_TASKS_LIST_ITEM
+#endif
+
 #ifdef V1_SEARCH_FULL
 #define USE_SEARCH_FULL_REQUEST
 #define USE_SEARCH_RESPONSE
@@ -43,6 +47,7 @@
 #endif
 
 #ifdef USE_SEARCH_RESPONSE
+#define USE_TRACKER_TASKS_LIST_ITEM
 #define USE_LIST_EMPLOYEE
 #endif
 
@@ -66,6 +71,7 @@
 
 #ifdef V1_DOCUMENTS_SEND
 #define USE_DOCUMENT_SEND_REQUEST
+#define USE_PYSERVICE_DOCUMENT_SEND_REQUEST
 #endif
 
 #ifdef USE_DOCUMENT_SEND_REQUEST
@@ -90,6 +96,10 @@
 
 #ifdef USE_DOCUMENTS_LIST_ALL_RESPONSE
 #define USE_DOCUMENT_ITEM
+#endif
+
+#ifdef USE_DOCUMENT_ITEM
+#define USE_DOCUMENTS_CHAIN_METADATA_ITEM
 #endif
 
 #ifdef V1_DOCUMENTS_GET_SIGNS
@@ -140,10 +150,6 @@
 #define USE_ERROR_MESSAGE
 #endif
 
-#ifdef USE_LIST_EMPLOYEE_WITH_SUBCOMPANY
-#define USE_LIST_EMPLOYEE
-#endif
-
 #ifdef V1_ABSCENCE_REQUEST
 #define USE_ABSCENCE_REQUEST_REQUEST
 #define USE_ABSCENCE_REQUEST_RESPONSE
@@ -166,6 +172,93 @@
 #ifdef USE_EMPLOYEE
 #define USE_LIST_EMPLOYEE
 #define USE_INVENTORY_ITEM
+#endif
+
+#ifdef V1_MESSENGER_CREATE_CHAT
+#define USE_CREATE_CHAT_REQUEST
+#define USE_CREATE_CHAT_RESPONSE
+#endif
+
+#ifdef V1_MESSENGER_INFO
+#define USE_MESSAGES
+#define USE_MESSENGER_LISTED_CHAT_INFO
+#define USE_MESSENGER_LIST_ALL_CHATS
+#define USE_LOAD_RECENT_MESSAGES_REQUEST
+#endif
+
+#ifdef USE_MESSAGES
+#define USE_MESSENGER_MESSAGE_CONTENT
+#define USE_MESSENGER_MESSAGE
+#endif
+
+#ifdef V1_TRACKER_PROJECTS_ADD
+#define USE_TRACKER_PROJECTS_ADD_REQUEST
+#endif
+
+#ifdef V1_TRACKER_PROJECTS_LIST
+#define USE_TRACKER_PROJECTS_LIST_ITEM
+#define USE_TRACKER_PROJECTS_LIST_RESPONSE
+#endif
+
+#ifdef V1_TRACKER_TASKS_ADD
+#define USE_REVERSE_INDEX
+#define USE_TRACKER_TASKS_ADD_REQUEST
+#endif
+
+#ifdef USE_TRACKER_TASKS_ADD_REQUEST
+#define USE_ERROR_MESSAGE
+#endif
+
+#ifdef V1_TRACKER_TASKS_LIST
+#define USE_TRACKER_TASKS_LIST_ITEM
+#define USE_TRACKER_TASKS_LIST_RESPONSE
+#endif
+
+#ifdef V1_TRACKER_TASKS_INFO
+#define USE_TRACKER_TASKS_INFO_ITEM
+#define USE_ERROR_MESSAGE
+#endif
+
+#ifdef V1_TRACKER_TASKS_ASSIGNED_TO_USER
+#define USE_TRACKER_TASKS_LIST_ITEM
+#define USE_TRACKER_TASKS_LIST_RESPONSE
+#define USE_ERROR_MESSAGE
+#endif
+
+#ifdef V1_TRACKER_TASKS_EDIT
+#define USE_REVERSE_INDEX
+#define USE_TRACKER_TASKS_EDIT_REQUEST
+#define USE_ERROR_MESSAGE
+#endif
+
+#ifdef V1_TRACKER_TASKS_MEDIA_UPLOAD
+#define USE_ERROR_MESSAGE
+#endif
+
+#ifdef V1_DOCUMENTS_CHAIN_UPDATE
+#define USE_LIST_EMPLOYEE_WITH_SUBCOMPANY
+#define USE_PYSERVICE_DOCUMENT_SIGN_REQUEST
+#define USE_DOCUMENTS_CHAIN_UPDATE_REQUEST
+#define USE_DOCUMENTS_CHAIN_UPDATE_RESPONSE
+#define USE_ERROR_MESSAGE
+#endif
+
+#ifdef USE_DOCUMENTS_CHAIN_UPDATE_RESPONSE
+#define USE_DOCUMENTS_CHAIN_METADATA_ITEM
+#endif
+
+#ifdef V1_DOCUMENTS_CHAIN_ADD
+#define USE_LIST_EMPLOYEE_WITH_SUBCOMPANY
+#define USE_DOCUMENTS_CHAIN_ADD_REQUEST
+#define USE_ERROR_MESSAGE
+#endif
+
+#ifdef USE_DOCUMENTS_CHAIN_ADD_REQUEST
+#define USE_DOCUMENTS_CHAIN_METADATA_ITEM
+#endif
+
+#ifdef USE_LIST_EMPLOYEE_WITH_SUBCOMPANY
+#define USE_LIST_EMPLOYEE
 #endif
 
 #ifdef USE_LIST_EMPLOYEE
@@ -242,6 +335,7 @@ struct ProfileEditRequest : public JsonCompatible {
 #ifdef USE_SEARCH_BASIC_REQUEST
 struct SearchBasicRequest : public JsonCompatible {
   REGISTER_STRUCT_FIELD(search_key, std::string, "search_key");
+  REGISTER_STRUCT_FIELD_OPTIONAL(tags, std::vector<std::string>, "tags");
 };
 #endif
 
@@ -249,6 +343,7 @@ struct SearchBasicRequest : public JsonCompatible {
 struct SearchFullRequest : public JsonCompatible {
   REGISTER_STRUCT_FIELD(search_key, std::string, "search_key");
   REGISTER_STRUCT_FIELD(limit, int, "limit");
+  REGISTER_STRUCT_FIELD_OPTIONAL(tags, std::vector<std::string>, "tags");
 };
 #endif
 
@@ -256,12 +351,6 @@ struct SearchFullRequest : public JsonCompatible {
 struct SearchSuggestRequest : public JsonCompatible {
   REGISTER_STRUCT_FIELD(search_key, std::string, "search_key");
   REGISTER_STRUCT_FIELD(limit, int, "limit");
-};
-#endif
-
-#ifdef USE_SEARCH_RESPONSE
-struct SearchResponse : public JsonCompatible {
-  REGISTER_STRUCT_FIELD(employees, std::vector<ListEmployee>, "employees");
 };
 #endif
 
@@ -336,6 +425,41 @@ struct UploadDocumentResponse : public JsonCompatible {
 };
 #endif
 
+#ifdef USE_DOCUMENTS_CHAIN_METADATA_ITEM
+
+struct DocumentsChainMetadataItemPg {
+  std::string employee_id;
+  int requires_signature;
+  int status;
+};
+
+struct DocumentsChainMetadataItem : public JsonCompatible {
+  DocumentsChainMetadataItem() = default;
+  DocumentsChainMetadataItem(const DocumentsChainMetadataItemPg& pg) {
+    employee_id = pg.employee_id;
+    requires_signature = pg.requires_signature;
+    status = pg.status;
+  }
+
+  DocumentsChainMetadataItem(DocumentsChainMetadataItem&& other) { *this = std::move(other); }
+
+  DocumentsChainMetadataItem& operator=(DocumentsChainMetadataItem&& other) = default;
+
+  auto Introspect() {
+    return std::tie(employee_id, requires_signature, status);
+  }
+
+  REGISTER_STRUCT_FIELD(employee_id, std::string, "employee_id");
+  REGISTER_STRUCT_FIELD(requires_signature, int, "requires_signature", 0);
+  REGISTER_STRUCT_FIELD(status, int, "status");
+};
+
+template <>
+struct userver::storages::postgres::io::CppToUserPg<DocumentsChainMetadataItemPg> {
+  static constexpr DBTypeName postgres_name = "wd_general.chain_metadata_item";
+};
+#endif
+
 #ifdef USE_DOCUMENT_ITEM
 struct DocumentItem : public JsonCompatible {
   DocumentItem() = default;
@@ -346,7 +470,7 @@ struct DocumentItem : public JsonCompatible {
 
   auto Introspect() {
     return std::tie(id, name, type, sign_required, description, is_signed,
-                    parent_id);
+                    parent_id, created_ts, chain_metadata);
   }
 
   REGISTER_STRUCT_FIELD(id, std::string, "id");
@@ -356,6 +480,8 @@ struct DocumentItem : public JsonCompatible {
   REGISTER_STRUCT_FIELD_OPTIONAL(description, std::string, "description");
   REGISTER_STRUCT_FIELD_OPTIONAL(is_signed, bool, "signed");
   REGISTER_STRUCT_FIELD_OPTIONAL(parent_id, std::string, "parent_id");
+  REGISTER_STRUCT_FIELD_OPTIONAL(created_ts, userver::storages::postgres::TimePoint, "created_ts");
+  REGISTER_STRUCT_FIELD_OPTIONAL(chain_metadata, std::vector<DocumentsChainMetadataItem>, "chain_metadata");
 };
 #endif
 
@@ -392,10 +518,11 @@ struct SignItem : public JsonCompatible {
 
   SignItem& operator=(SignItem&& other) = default;
 
-  auto Introspect() { return std::tie(employee, is_signed); }
+  auto Introspect() { return std::tie(employee, is_signed, document_id); }
 
   REGISTER_STRUCT_FIELD(employee, ListEmployee, "employee");
   REGISTER_STRUCT_FIELD(is_signed, bool, "signed");
+  REGISTER_STRUCT_FIELD_OPTIONAL(document_id, std::string, "document_id");
 };
 #endif
 
@@ -520,6 +647,7 @@ struct PyserviceDocumentSignRequest : public JsonCompatible {
   REGISTER_STRUCT_FIELD(subcompany, std::string, "subcompany");
   REGISTER_STRUCT_FIELD(file_key, std::string, "file_key");
   REGISTER_STRUCT_FIELD(signed_file_key, std::string, "signed_file_key");
+  REGISTER_STRUCT_FIELD_OPTIONAL(is_first_signature, bool, "is_first_signature");
 };
 #endif
 
@@ -609,5 +737,233 @@ struct Employee : public JsonCompatible {
   REGISTER_STRUCT_FIELD_OPTIONAL(inventory, std::vector<InventoryItem>,
                                  "inventory");
   REGISTER_STRUCT_FIELD_OPTIONAL(job_position, std::string, "job_position");
+};
+#endif
+
+#ifdef USE_MESSENGER_MESSAGE_CONTENT
+struct MessengerMessageContent : public JsonCompatible {
+  MessengerMessageContent() = default;
+  MessengerMessageContent(const std::string& content) : content(content) {};
+
+  REGISTER_STRUCT_FIELD(content, std::string, "content");
+};
+#endif
+
+#ifdef USE_MESSENGER_MESSAGE
+struct MessengerMessage : public JsonCompatible {
+  MessengerMessage() = default;
+
+  REGISTER_STRUCT_FIELD(chat_id, std::string, "chat_id");
+  REGISTER_STRUCT_FIELD(sender_id, std::string, "sender_id");
+  REGISTER_STRUCT_FIELD(content, MessengerMessageContent, "content");
+  REGISTER_STRUCT_FIELD(timestamp, userver::storages::postgres::TimePoint, "timestamp");
+};
+#endif
+
+#ifdef USE_MESSENGER_LISTED_CHAT_INFO
+struct MessengerListedChatInfo : public JsonCompatible {
+  // For postgres initialization type needs to be default constructible
+  MessengerListedChatInfo() = default;
+
+  // Make sure to initialize parsing first for new structure
+  MessengerListedChatInfo(MessengerListedChatInfo&& other) { *this = std::move(other); }
+
+  MessengerListedChatInfo(const MessengerListedChatInfo& other) { *this = other; }
+
+  MessengerListedChatInfo& operator=(MessengerListedChatInfo&& other) = default;
+
+  MessengerListedChatInfo& operator=(const MessengerListedChatInfo& other) = default;
+
+  REGISTER_STRUCT_FIELD(chat_id, std::string, "chat_id");
+  REGISTER_STRUCT_FIELD(chat_name, std::string, "chat_name");
+  REGISTER_STRUCT_FIELD(last_message, MessengerMessage, "last_message");
+};
+#endif
+
+#ifdef USE_MESSENGER_LIST_ALL_CHATS
+struct MessengerListAllChats : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(chats, std::vector<MessengerListedChatInfo>, "chats");
+};
+#endif
+
+#ifdef USE_CREATE_CHAT_REQUEST
+struct CreateChatRequest : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(chat_name, std::string, "chat_name");
+  REGISTER_STRUCT_FIELD(id_list, std::vector<std::string>, "id_list");
+};
+#endif
+
+#ifdef USE_CREATE_CHAT_RESPONSE
+struct CreateChatResponse : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(chat_id, std::string, "chat_id");
+};
+#endif
+
+#ifdef USE_LOAD_RECENT_MESSAGES_REQUEST
+struct LoadRecentMessagesRequest : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(chat_id, std::string, "chat_id");
+};
+#endif
+
+#ifdef USE_TRACKER_PROJECTS_ADD_REQUEST
+struct TrackerProjectsAddRequest : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(project_name, std::string, "project_name");
+};
+#endif
+
+#ifdef USE_TRACKER_PROJECTS_LIST_ITEM
+struct TrackerProjectsListItem : public JsonCompatible {
+  // For postgres initialization type needs to be default constructible
+  TrackerProjectsListItem() = default;
+
+  // Make sure to initialize parsing first for new structure
+  TrackerProjectsListItem(TrackerProjectsListItem&& other) { *this = std::move(other); }
+
+  TrackerProjectsListItem(const TrackerProjectsListItem& other) { *this = other; }
+
+  TrackerProjectsListItem& operator=(TrackerProjectsListItem&& other) = default;
+
+  TrackerProjectsListItem& operator=(const TrackerProjectsListItem& other) = default;
+
+  // Method for postgres initialization of non-trivial types
+  auto Introspect() {
+    return std::tie(project_name, tasks_count);
+  }
+
+  REGISTER_STRUCT_FIELD(project_name, std::string, "project_name");
+  REGISTER_STRUCT_FIELD(tasks_count, int, "tasks_count");
+};
+#endif
+
+#ifdef USE_TRACKER_PROJECTS_LIST_RESPONSE
+struct TrackerProjectsListResponse : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(projects, std::vector<TrackerProjectsListItem>, "projects");
+};
+#endif
+
+#ifdef USE_TRACKER_TASKS_ADD_REQUEST
+struct TrackerTasksAddRequest : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(title, std::string, "title");
+  REGISTER_STRUCT_FIELD(project_name, std::string, "project_name");
+  REGISTER_STRUCT_FIELD_OPTIONAL(description, std::string, "description");
+  REGISTER_STRUCT_FIELD_OPTIONAL(assignee, std::string, "assignee");
+  REGISTER_STRUCT_FIELD_OPTIONAL(deadline, userver::storages::postgres::TimePoint, "deadline");
+};
+#endif
+
+#ifdef USE_TRACKER_TASKS_LIST_ITEM
+struct TrackerTasksListItem : public JsonCompatible {
+  // For postgres initialization type needs to be default constructible
+  TrackerTasksListItem() = default;
+
+  // Make sure to initialize parsing first for new structure
+  TrackerTasksListItem(TrackerTasksListItem&& other) { *this = std::move(other); }
+
+  TrackerTasksListItem(const TrackerTasksListItem& other) { *this = other; }
+
+  TrackerTasksListItem& operator=(TrackerTasksListItem&& other) = default;
+
+  TrackerTasksListItem& operator=(const TrackerTasksListItem& other) = default;
+
+  // Method for postgres initialization of non-trivial types
+  auto Introspect() {
+    return std::tie(title, project_name, id, creator, assignee);
+  }
+
+  REGISTER_STRUCT_FIELD(title, std::string, "title");
+  REGISTER_STRUCT_FIELD(project_name, std::string, "project_name");
+  REGISTER_STRUCT_FIELD_OPTIONAL(id, std::string, "id");
+  REGISTER_STRUCT_FIELD(creator, std::string, "creator");
+  REGISTER_STRUCT_FIELD_OPTIONAL(assignee, std::string, "assignee");
+};
+#endif
+
+#ifdef USE_TRACKER_TASKS_INFO_ITEM
+struct TrackerTasksInfoItem : public JsonCompatible {
+  // For postgres initialization type needs to be default constructible
+  TrackerTasksInfoItem() = default;
+
+  // Make sure to initialize parsing first for new structure
+  TrackerTasksInfoItem(TrackerTasksInfoItem&& other) { *this = std::move(other); }
+
+  TrackerTasksInfoItem(const TrackerTasksInfoItem& other) { *this = other; }
+
+  TrackerTasksInfoItem& operator=(TrackerTasksInfoItem&& other) = default;
+
+  TrackerTasksInfoItem& operator=(const TrackerTasksInfoItem& other) = default;
+
+  // Method for postgres initialization of non-trivial types
+  auto Introspect() {
+    return std::tie(title, project_name, description, id, creator, assignee, status, media_links, created_ts, deadline);
+  }
+
+  REGISTER_STRUCT_FIELD(title, std::string, "title");
+  REGISTER_STRUCT_FIELD(project_name, std::string, "project_name");
+  REGISTER_STRUCT_FIELD_OPTIONAL(description, std::string, "description");
+  REGISTER_STRUCT_FIELD_OPTIONAL(id, std::string, "id");
+  REGISTER_STRUCT_FIELD(creator, std::string, "creator");
+  REGISTER_STRUCT_FIELD_OPTIONAL(assignee, std::string, "assignee");
+  REGISTER_STRUCT_ENUM_FIELD(status, std::string, "status", {"Open", "InProgress", "Review", "Done"});
+  REGISTER_STRUCT_FIELD_OPTIONAL(media_links, std::vector<std::string>, "media_links");
+  REGISTER_STRUCT_FIELD(created_ts, userver::storages::postgres::TimePoint, "created_ts");
+  REGISTER_STRUCT_FIELD_OPTIONAL(deadline, userver::storages::postgres::TimePoint, "deadline");
+};
+#endif
+
+#ifdef USE_TRACKER_TASKS_LIST_RESPONSE
+struct TrackerTasksListResponse : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(tasks, std::vector<TrackerTasksListItem>, "tasks");
+};
+#endif
+
+#ifdef USE_TRACKER_TASKS_EDIT_REQUEST
+struct TrackerTasksEditRequest : public JsonCompatible {
+  REGISTER_STRUCT_FIELD_OPTIONAL(title, std::string, "title");
+  REGISTER_STRUCT_FIELD_OPTIONAL(description, std::string, "description");
+  REGISTER_STRUCT_FIELD_OPTIONAL(project_name, std::string, "project_name");
+  REGISTER_STRUCT_FIELD_OPTIONAL(assignee, std::string, "assignee");
+  REGISTER_STRUCT_ENUM_FIELD_OPTIONAL(status, std::string, "status", {"Open", "InProgress", "Review", "Done"});
+  REGISTER_STRUCT_FIELD_OPTIONAL(deadline, userver::storages::postgres::TimePoint, "deadline");
+};
+#endif
+
+#ifdef USE_SEARCH_RESPONSE
+struct SearchResponse : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(employees, std::vector<ListEmployee>, "employees");
+  REGISTER_STRUCT_FIELD(tasks, std::vector<TrackerTasksListItem>, "tasks");
+};
+#endif
+
+#ifdef USE_PYSERVICE_DOCUMENT_SEND_REQUEST
+struct PyserviceDocumentSendRequest : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(file_key, std::string, "file_key");
+  REGISTER_STRUCT_FIELD(converted_file_key, std::string, "converted_file_key");
+};
+#endif
+
+#ifdef USE_DOCUMENTS_CHAIN_UPDATE_REQUEST
+struct DocumentsChainUpdateRequest : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(approval_status, int, "approval_status");
+};
+#endif
+
+#ifdef USE_DOCUMENTS_CHAIN_UPDATE_RESPONSE
+struct DocumentsChainUpdateResponse : public JsonCompatible {
+  DocumentsChainUpdateResponse() = default;
+
+  DocumentsChainUpdateResponse(DocumentsChainUpdateResponse&& other) { *this = std::move(other); }
+  DocumentsChainUpdateResponse& operator=(DocumentsChainUpdateResponse&& other) = default;
+
+  auto Introspect() {
+    return std::tie(chain_metadata);
+  }
+  
+  REGISTER_STRUCT_FIELD(chain_metadata, std::vector<DocumentsChainMetadataItem>, "chain_metadata");
+};
+#endif
+
+#ifdef USE_DOCUMENTS_CHAIN_ADD_REQUEST
+struct DocumentsChainAddRequest : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(chain_metadata, std::vector<DocumentsChainMetadataItem>, "chain_metadata");
 };
 #endif
