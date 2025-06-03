@@ -275,3 +275,30 @@ SET chain_metadata_new = (
 ALTER TABLE working_day_first.documents DROP COLUMN chain_metadata;
 ALTER TABLE working_day_first.documents RENAME COLUMN chain_metadata_new TO chain_metadata;
 DROP TYPE wd_general.chain_metadata_item_old;
+
+ALTER TABLE working_day_first.documents 
+ADD COLUMN IF NOT EXISTS visibility_status INT DEFAULT 0;
+
+DROP TABLE IF EXISTS working_day_first.archive_of_documents;
+
+CREATE TABLE IF NOT EXISTS working_day_first.archive_of_documents(
+    id TEXT PRIMARY KEY,
+    document_id TEXT NOT NULL,
+    actor_id TEXT NOT NULL,
+    action_type TEXT NOT NULL, -- 'archived', 'restored', 'signed'...
+    comment TEXT,
+    created_ts TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    FOREIGN KEY (document_id) REFERENCES working_day_first.documents (id) ON DELETE CASCADE,
+    FOREIGN KEY (actor_id) REFERENCES working_day_first.employees (id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_logs_document_time
+ON working_day_first.archive_of_documents (document_id, created_ts DESC);
+
+DROP TABLE IF EXISTS working_day_first.employee_permissions;
+
+CREATE TABLE IF NOT EXISTS working_day_first.employee_permissions (
+    employee_id TEXT PRIMARY KEY,
+    can_delete INT DEFAULT 0,
+    FOREIGN KEY (employee_id) REFERENCES working_day_first.employees(id) ON DELETE CASCADE
+);
