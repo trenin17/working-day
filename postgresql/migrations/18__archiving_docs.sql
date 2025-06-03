@@ -1,4 +1,4 @@
-ALTER TABLE ${SCHEMA}.documents 
+ALTER TABLE ${SCHEMA}.documents
 ADD COLUMN IF NOT EXISTS visibility_status INT DEFAULT 0;
 
 DROP TABLE IF EXISTS ${SCHEMA}.documents_history;
