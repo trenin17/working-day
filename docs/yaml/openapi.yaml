@@ -1077,6 +1077,141 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/ErrorMessage'
 
+    /v1/documents/delete:
+        post:
+            description: Archive the document (mark as deleted)
+            parameters:
+              - in: header
+                name: Authorization
+                description: Token of session user
+                schema:
+                    type: string
+              - in: query
+                name: document_id
+                description: Id of the document
+                schema:
+                    type: string
+            responses:
+                '200':
+                    description: Document was deleted
+                '404':
+                    description: Document not found
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+                '400':
+                    description: Bad request
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+                '403':
+                    description: The user has no rights
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+
+
+    /v1/documents/restore:
+        post:
+            description: Restore previously deleted document
+            parameters:
+              - in: header
+                name: Authorization
+                description: Token of session user
+                schema:
+                    type: string
+              - in: query
+                name: document_id
+                description: Id of the document
+                schema:
+                    type: string
+            responses:
+                '200':
+                    description: Document restored successfully
+
+    /v1/documents/history:
+        post:
+            description: Get all log entries for a specific document
+            parameters:
+              - in: header
+                name: Authorization
+                description: Token of session user
+                schema:
+                    type: string
+              - in: query
+                name: document_id
+                description: Id of the document
+                schema:
+                    type: string
+            responses:
+                '200':
+                    description: Document history
+                    content:
+                        application/json:
+                        schema:
+                            $ref: '#/components/schemas/DocumentHistoryEntries'
+
+    /v1/employee/get-permissions:
+        get:
+            description: Get permissions of current user
+            parameters:
+              - in: header
+                name: Authorization
+                description: Token of session user
+                schema:
+                    type: string
+            responses:
+                '200':
+                    description: User permissions
+                    content:
+                        application/json:
+                        schema:
+                            $ref: '#/components/schemas/EmployeePermissions'
+
+    /v1/employee/set-permissions:
+        post:
+            description: Set permissions for an employee
+            parameters:
+              - in: header
+                name: Authorization
+                description: Token of session user
+                schema:
+                    type: string
+              - in: query
+                name: employee_id
+                description: Id of the document
+                schema:
+                    type: string
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/EmployeePermissionsSetRequest'
+            responses:
+                '200':
+                    description: Permissions updated successfully
+                '400':
+                    description: Bad request
+                    content:
+                    application/json:
+                        schema:
+                        $ref: '#/components/schemas/ErrorMessage'
+                '403':
+                    description: Forbidden - insufficient rights
+                    content:
+                    application/json:
+                        schema:
+                        $ref: '#/components/schemas/ErrorMessage'
+                '404':
+                    description: User not found
+                    content:
+                    application/json:
+                        schema:
+                        $ref: '#/components/schemas/ErrorMessage'
 
 components:
     schemas:
@@ -2092,3 +2227,60 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/DocumentsChainMetadataItem'
+        
+        DocumentHistoryEntry:
+            type: object
+            additionalProperties: false
+            required:
+              - document_id
+              - actor_id
+              - action_type
+              - created_ts
+            properties:
+                id:
+                    type: string
+                document_id:
+                    type: string
+                actor_id:
+                    type: string
+                    description: ID of the employee who performed the action
+                action_type:
+                    type: string
+                    description: Type of action (archived, restored, signed, etc.)
+                comment:
+                    type: string
+                    description: Optional comment
+                created_ts:
+                    $ref: '#/components/schemas/Timestamp'
+                    description: Timestamp of the action
+
+        DocumentHistoryEntries:
+            type: object
+            additionalProperties: false
+            properties:
+                tasks:
+                    type: array
+                    description: List of actions items
+                    items:
+                        $ref: '#/components/schemas/DocumentHistoryEntry'
+
+        EmployeePermissions:
+            type: object
+            additionalProperties: false
+            required:
+              - can_delete
+              # etc
+            properties:
+                can_delete:
+                    type: integer
+                    description: Permission to delete (archive) the document
+                # etc
+
+        EmployeePermissionsSetRequest:
+            type: object
+            additionalProperties: false
+            properties:
+                can_delete:
+                    type: integer
+                    description: Permission level to delete (archive) the document
+                # etc
