@@ -282,23 +282,24 @@ ADD COLUMN IF NOT EXISTS visibility_status INT DEFAULT 0;
 DROP TABLE IF EXISTS working_day_first.archive_of_documents;
 
 CREATE TABLE IF NOT EXISTS working_day_first.archive_of_documents(
-    id TEXT PRIMARY KEY,
     document_id TEXT NOT NULL,
     actor_id TEXT NOT NULL,
-    action_type TEXT NOT NULL, -- 'archived', 'restored', 'signed'...
+    action_type TEXT NOT NULL,
     comment TEXT,
     created_ts TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     FOREIGN KEY (document_id) REFERENCES working_day_first.documents (id) ON DELETE CASCADE,
-    FOREIGN KEY (actor_id) REFERENCES working_day_first.employees (id) ON DELETE CASCADE
+    FOREIGN KEY (actor_id) REFERENCES working_day_first.employees (id) ON DELETE CASCADE,
+    CHECK (action_type IN ('archived', 'restored', 'signed' /*, etc.*/)),
+    PRIMARY KEY (document_id, created_ts)
 );
-
-CREATE INDEX IF NOT EXISTS idx_logs_document_time
-ON working_day_first.archive_of_documents (document_id, created_ts DESC);
 
 DROP TABLE IF EXISTS working_day_first.employee_permissions;
 
 CREATE TABLE IF NOT EXISTS working_day_first.employee_permissions (
-    employee_id TEXT PRIMARY KEY,
-    can_delete INT DEFAULT 0,
-    FOREIGN KEY (employee_id) REFERENCES working_day_first.employees(id) ON DELETE CASCADE
+    employee_id TEXT,
+    permission_type TEXT NOT NULL,
+    permission_value INT DEFAULT 0,
+    FOREIGN KEY (employee_id) REFERENCES working_day_first.employees(id) ON DELETE CASCADE,
+    CHECK (permission_type IN ('can_delete' /*, etc.*/)),
+    PRIMARY KEY (employee_id, permission_type)
 );

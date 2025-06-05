@@ -1154,7 +1154,7 @@ paths:
                         schema:
                             $ref: '#/components/schemas/DocumentHistoryEntries'
 
-    /v1/employee/get-permissions:
+    /v1/employee/permissions/list:
         get:
             description: Get permissions of current user
             parameters:
@@ -1171,7 +1171,7 @@ paths:
                         schema:
                             $ref: '#/components/schemas/EmployeePermissions'
 
-    /v1/employee/set-permissions:
+    /v1/employee/permissions/set:
         post:
             description: Set permissions for an employee
             parameters:
@@ -1193,7 +1193,11 @@ paths:
                             $ref: '#/components/schemas/EmployeePermissionsSetRequest'
             responses:
                 '200':
-                    description: Permissions updated successfully
+                    description: New user permissions
+                    content:
+                        application/json:
+                        schema:
+                            $ref: '#/components/schemas/EmployeePermissions'
                 '400':
                     description: Bad request
                     content:
@@ -2237,8 +2241,6 @@ components:
               - action_type
               - created_ts
             properties:
-                id:
-                    type: string
                 document_id:
                     type: string
                 actor_id:
@@ -2264,23 +2266,39 @@ components:
                     items:
                         $ref: '#/components/schemas/DocumentHistoryEntry'
 
+        EmployeePermissionsItem:
+            type: object
+            additionalProperties: false
+            required:
+              - permission_type
+              - permission_value
+            properties:
+                permission_type:
+                    type: string
+                    enum:
+                      - can_delete
+                      # etc.
+                permission_value:
+                    type: int
+
         EmployeePermissions:
             type: object
             additionalProperties: false
             required:
-              - can_delete
-              # etc
+              - permissions
             properties:
-                can_delete:
-                    type: integer
-                    description: Permission to delete (archive) the document
-                # etc
+                permissions:
+                    description: Current permissions of employee
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/EmployeePermissionsItem'
 
         EmployeePermissionsSetRequest:
             type: object
             additionalProperties: false
             properties:
-                can_delete:
-                    type: integer
-                    description: Permission level to delete (archive) the document
-                # etc
+                permissions:
+                    description: New permissions of employee
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/EmployeePermissionsItem'
