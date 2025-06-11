@@ -1091,6 +1091,11 @@ paths:
                 description: Id of the document
                 schema:
                     type: string
+              - in: query
+                name: comment
+                description: Reason or comment for deleting the document
+                schema:
+                    type: string
             responses:
                 '200':
                     description: Document was deleted
@@ -1126,6 +1131,11 @@ paths:
               - in: query
                 name: document_id
                 description: Id of the document
+                schema:
+                    type: string
+              - in: query
+                name: comment
+                description: Reason or comment for restoring the document
                 schema:
                     type: string
             responses:
@@ -1844,6 +1854,9 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/DocumentsChainMetadataItem'
+                visibility_status:
+                    description: Document visibility status (0 — visible, 1 — archived)
+                    type: int
 
         DownloadDocumentResponse:
             type: object
@@ -2276,7 +2289,7 @@ components:
                 permission_type:
                     type: string
                     enum:
-                      - can_delete
+                      - can_delete_documents
                       # etc.
                 permission_value:
                     type: int
