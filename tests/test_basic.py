@@ -2316,7 +2316,6 @@ async def test_documents_archiving(service_client):
     hist = response.json()['history']
     assert hist[-1]['action_type'] == 'archived'
     assert hist[-1]['comment'] == 'archive for testing'
-
     response = await service_client.post(
         '/v1/documents/restore',
         headers={'Authorization': 'Bearer second_token'},
@@ -2340,7 +2339,6 @@ async def test_documents_archiving(service_client):
     assert hist[-1]['action_type'] == 'restored'
     assert hist[-1]['comment'] == 'restoring'
 
-
     response = await service_client.post(
         '/v1/notifications',
         headers={'Authorization': 'Bearer first_token'}
@@ -2358,7 +2356,6 @@ async def test_documents_archiving(service_client):
         '"type":"generic"},{"created":"'+ created_time1 + '","id":"' + id1 + '",'
         '"is_read":false,"text":"Документ \'Document with chain\' был удален пользователем First A.",'
         '"type":"generic"}]}')
-
     response = await service_client.post(
         '/v1/notifications',
         headers={'Authorization': 'Bearer second_token'}

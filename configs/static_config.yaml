@@ -611,7 +611,6 @@ components_manager:
                   - bearer
                 scopes:
                   - user
-
         handler-v1-employee-permissions-list:
             path: /v1/employee/permissions/list
             method: POST

@@ -1108,3 +1108,72 @@ struct AbscenceVerdictResponse : public JsonCompatible {
   REGISTER_STRUCT_FIELD(signed_file_key, std::string, "signed_file_key");
 };
 #endif
+
+#ifdef USE_DOCUMENTS_REMOVE_RESTORE_ITEM
+struct DocumentsRemoveRestoreItem : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(document_id, std::string, "document_id");
+  REGISTER_STRUCT_FIELD_OPTIONAL(comment, std::string, "comment");
+};
+#endif
+
+#ifdef USE_DOCUMENT_HISTORY_ITEM
+struct DocumentHistoryItem : public JsonCompatible {
+  // For postgres initialization type needs to be default constructible
+  DocumentHistoryItem() = default;
+
+  // Make sure to initialize parsing first for new structure
+  DocumentHistoryItem(DocumentHistoryItem&& other) { *this = std::move(other); }
+
+  DocumentHistoryItem(const DocumentHistoryItem& other) { *this = other; }
+
+  DocumentHistoryItem& operator=(DocumentHistoryItem&& other) = default;
+
+  DocumentHistoryItem& operator=(const DocumentHistoryItem& other) = default;
+
+  // Method for postgres initialization of non-trivial types
+  auto Introspect() {
+    return std::tie(actor_id, action_type, comment, created_ts);
+  }
+
+  REGISTER_STRUCT_FIELD(actor_id, std::string, "actor_id");
+  REGISTER_STRUCT_FIELD(action_type, std::string, "action_type");
+  REGISTER_STRUCT_FIELD_OPTIONAL(comment, std::string, "comment");
+  REGISTER_STRUCT_FIELD(created_ts, userver::storages::postgres::TimePoint, "created_ts");
+};
+#endif
+
+#ifdef USE_DOCUMENT_HISTORY_RESPONSE
+struct DocumentHistoryResponse : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(history, std::vector<DocumentHistoryItem>, "history");
+};
+#endif
+
+#ifdef USE_EMPLOYEE_PERMISSIONS_ITEM
+struct EmployeePermissionsItem : public JsonCompatible {
+  // For postgres initialization type needs to be default constructible
+  EmployeePermissionsItem() = default;
+
+  // Make sure to initialize parsing first for new structure
+  EmployeePermissionsItem(EmployeePermissionsItem&& other) { *this = std::move(other); }
+
+  EmployeePermissionsItem(const EmployeePermissionsItem& other) { *this = other; }
+
+  EmployeePermissionsItem& operator=(EmployeePermissionsItem&& other) = default;
+
+  EmployeePermissionsItem& operator=(const EmployeePermissionsItem& other) = default;
+
+  // Method for postgres initialization of non-trivial types
+  auto Introspect() {
+    return std::tie(permission_type, permission_value);
+  }
+
+  REGISTER_STRUCT_ENUM_FIELD(permission_type, std::string, "permission_type", {"can_remove_documents", "can_edit_employee_permissions" /*, etc*/ });
+  REGISTER_STRUCT_FIELD(permission_value, int, "permission_value");
+};
+#endif
+
+#ifdef USE_EMPLOYEE_PERMISSIONS
+struct EmployeePermissions : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(permissions, std::vector<EmployeePermissionsItem>, "permissions");
+};
+#endif

@@ -62,7 +62,7 @@ class DocumentsRestoreHandler final
     auto perm_result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kSlave,
         "SELECT permission_value "
-        "FROM working_day_" + 
+        "FROM working_day_" +
             company_id +
             ".employee_permissions "
         "WHERE employee_id = $1 AND permission_type = 'can_remove_documents'",
@@ -76,8 +76,8 @@ class DocumentsRestoreHandler final
     auto result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kSlave,
         "SELECT 1 "
-        "FROM working_day_" + 
-            company_id + 
+        "FROM working_day_" +
+            company_id +
             ".documents "
         "WHERE id = $1",
         request_body.document_id);
@@ -110,7 +110,7 @@ class DocumentsRestoreHandler final
             "WHERE id = $1",
         request_body.document_id);
     auto chain_metadata_pg = result.AsSingleRow<MetadataContainer>(userver::storages::postgres::kRowTag).chain_metadata;
-    
+
     SendNotifications(company_id, request_body.document_id, user_id, chain_metadata_pg);
     return "Document restored successfully";
   }
@@ -138,7 +138,7 @@ class DocumentsRestoreHandler final
         if (!doc_result.IsEmpty()) {
             doc_name = doc_result.AsSingleRow<std::string>();
         }
-    
+
         auto emp_result = pg_cluster_->Execute(
             userver::storages::postgres::ClusterHostType::kSlave,
             "SELECT name, surname FROM working_day_" + company_id + ".employees "
@@ -163,20 +163,20 @@ class DocumentsRestoreHandler final
         for (const auto& participant : chain_metadata) {
             auto notification_id = userver::utils::generators::GenerateUuid();
 
-            filter += "($" + std::to_string(parameters.Size() + 1) + 
-                    ", $1, $2, $" + 
+            filter += "($" + std::to_string(parameters.Size() + 1) +
+                    ", $1, $2, $" +
                     std::to_string(parameters.Size() + 2) + "),";
 
             parameters.PushBack(notification_id);
             parameters.PushBack(participant.employee_id);
         }
-        
+
         if (!filter.empty()) {
             filter.pop_back();
 
             pg_cluster_->Execute(
                 userver::storages::postgres::ClusterHostType::kMaster,
-                "INSERT INTO working_day_" + company_id + 
+                "INSERT INTO working_day_" + company_id +
                 ".notifications(id, type, text, user_id) "
                 "VALUES " + filter + " ON CONFLICT (id) DO NOTHING",
                 parameters);

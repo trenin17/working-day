@@ -55,7 +55,7 @@ class EmployeePermissionsSetHandler final
 
     auto emp_result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kSlave,
-        "SELECT 1 FROM working_day_" + 
+        "SELECT 1 FROM working_day_" +
             company_id +
             ".employees "
         "WHERE id = $1",
@@ -106,7 +106,7 @@ class EmployeePermissionsSetHandler final
 
         auto emp_result = pg_cluster_->Execute(
             userver::storages::postgres::ClusterHostType::kSlave,
-            "SELECT name, surname FROM working_day_" + 
+            "SELECT name, surname FROM working_day_" +
                 company_id +
                 ".employees "
             "WHERE id = $1",
@@ -130,10 +130,10 @@ class EmployeePermissionsSetHandler final
         parameters.PushBack(employee_id);
 
         filter = "($3, $1, $2, $4)";
-        
+
         pg_cluster_->Execute(
             userver::storages::postgres::ClusterHostType::kMaster,
-            "INSERT INTO working_day_" + company_id + 
+            "INSERT INTO working_day_" + company_id +
             ".notifications(id, type, text, user_id) "
             "VALUES " + filter + " ON CONFLICT (id) DO NOTHING",
             parameters);
