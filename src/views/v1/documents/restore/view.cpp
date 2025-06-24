@@ -1,4 +1,4 @@
-#define V1_DOCUMENTS_CHAIN_ADD
+#define V1_DOCUMENTS_RESTORE
 
 #include "view.hpp"
 
@@ -16,7 +16,7 @@
 
 #include <definitions/all.hpp>
 
-namespace views::v1::documents::chain::add {
+namespace views::v1::documents::restore {
 
 struct MetadataContainer {
     std::vector<DocumentsChainMetadataItemPg> chain_metadata;
@@ -24,12 +24,12 @@ struct MetadataContainer {
 
 namespace {
 
-class DocumentsChainAddHandler final
+class DocumentsRestoreHandler final
     : public userver::server::handlers::HttpHandlerBase {
  public:
-  static constexpr std::string_view kName = "handler-v1-documents-chain-add";
+  static constexpr std::string_view kName = "handler-v1-documents-restore";
 
-  DocumentsChainAddHandler(
+  DocumentsRestoreHandler(
     const userver::components::ComponentConfig& config,
       const userver::components::ComponentContext& component_context)
       : HttpHandlerBase(config, component_context),
@@ -50,89 +50,69 @@ class DocumentsChainAddHandler final
 
     const auto& user_id = ctx.GetData<std::string>("user_id");
     const auto& company_id = ctx.GetData<std::string>("company_id");
-    const auto& document_id = request.GetArg("document_id");
 
-    DocumentsChainAddRequest request_body;
+    DocumentsRemoveRestoreItem request_body;
     request_body.ParseRegisteredFields(request.RequestBody());
 
-    if (request_body.chain_metadata.empty()) {
+    if (request_body.document_id.empty()) {
         request.SetResponseStatus(userver::server::http::HttpStatus::kBadRequest);
-        return ErrorMessage{"Chain metadata cannot be empty"}.ToJsonString();
+        return ErrorMessage{"Missing document_id"}.ToJsonString();
+    }
+
+    auto perm_result = pg_cluster_->Execute(
+        userver::storages::postgres::ClusterHostType::kSlave,
+        "SELECT permission_value "
+        "FROM working_day_" + 
+            company_id +
+            ".employee_permissions "
+        "WHERE employee_id = $1 AND permission_type = 'can_remove_documents'",
+        user_id);
+
+    if (perm_result.IsEmpty() || perm_result.AsSingleRow<int>() == 0) {
+        request.SetResponseStatus(userver::server::http::HttpStatus::kForbidden);
+        return ErrorMessage{"Insufficient rights"}.ToJsonString();
     }
 
     auto result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kSlave,
-        "SELECT chain_metadata "
-        "FROM working_day_" +
-            company_id +
+        "SELECT 1 "
+        "FROM working_day_" + 
+            company_id + 
             ".documents "
-            "WHERE id = $1",
-        document_id);
+        "WHERE id = $1",
+        request_body.document_id);
 
     if (result.IsEmpty()) {
         request.SetResponseStatus(userver::server::http::HttpStatus::kNotFound);
         return ErrorMessage{"Document not found"}.ToJsonString();
     }
 
-    auto existing_chain = result.AsSingleRow<MetadataContainer>(userver::storages::postgres::kRowTag).chain_metadata;
-    if (!existing_chain.empty()) {
-      request.SetResponseStatus(userver::server::http::HttpStatus::kConflict);
-      return ErrorMessage{"Document already has a signature chain"}.ToJsonString();
-    }
-
-    std::vector<std::string> employee_ids;
-    for (const auto& item : request_body.chain_metadata) {
-      employee_ids.push_back(item.employee_id);
-    }
-
-    auto employees_result = pg_cluster_->Execute(
-        userver::storages::postgres::ClusterHostType::kSlave,
-        "SELECT id FROM working_day_" + company_id + ".employees "
-        "WHERE id = ANY($1)",
-        employee_ids);
-
-    if (employees_result.Size() != employee_ids.size()) {
-      request.SetResponseStatus(userver::server::http::HttpStatus::kBadRequest);
-      return ErrorMessage{"One or more employee IDs are invalid"}.ToJsonString();
-    }
-
-    std::vector<DocumentsChainMetadataItemPg> chain_metadata_pg;
-    for (const auto& item : request_body.chain_metadata) {
-      chain_metadata_pg.emplace_back(
-          DocumentsChainMetadataItemPg{
-              item.employee_id,
-              item.requires_signature,
-              item.status
-          });
-    }
-
-    result = pg_cluster_->Execute(
+    pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kMaster,
         "UPDATE working_day_" + company_id + ".documents "
-        "SET chain_metadata = $2 "
-        "WHERE id = $1 ",
-        document_id,
-        chain_metadata_pg);
+        "SET visibility_status = 0 "
+        "WHERE id = $1",
+        request_body.document_id);
 
-    userver::storages::postgres::ParameterStore parameters;
-    std::string filter;
-    parameters.PushBack(document_id);
+    pg_cluster_->Execute(
+        userver::storages::postgres::ClusterHostType::kMaster,
+        "INSERT INTO working_day_" + company_id + ".archive_of_documents "
+        "(document_id, actor_id, action_type, comment) "
+        "VALUES ($1, $2, 'restored', $3)",
+        request_body.document_id, user_id, request_body.comment);
 
-    for (const auto& item : chain_metadata_pg) {
-        filter += "($" + std::to_string(parameters.Size() + 1) + ", $1),";
-        parameters.PushBack(item.employee_id);
-    }
-    if (!filter.empty()) {
-        filter.pop_back();
-        pg_cluster_->Execute(
-            userver::storages::postgres::ClusterHostType::kMaster,
-            "INSERT INTO working_day_" + company_id + 
-            ".employee_document(employee_id, document_id) "
-            "VALUES " + filter + " ON CONFLICT DO NOTHING",
-            parameters);
-    }
-    SendNotifications(company_id, document_id, user_id, chain_metadata_pg);
-    return "Chain was added";
+    result = pg_cluster_->Execute(
+        userver::storages::postgres::ClusterHostType::kSlave,
+        "SELECT chain_metadata "
+        "FROM working_day_" +
+            company_id +
+            ".documents "
+            "WHERE id = $1",
+        request_body.document_id);
+    auto chain_metadata_pg = result.AsSingleRow<MetadataContainer>(userver::storages::postgres::kRowTag).chain_metadata;
+    
+    SendNotifications(company_id, request_body.document_id, user_id, chain_metadata_pg);
+    return "Document restored successfully";
   }
 
  private:
@@ -172,7 +152,7 @@ class DocumentsChainAddHandler final
         }
 
         std::string notification_text;
-        notification_text = fmt::format("Документ '{}' был добавлен пользователем {}.", doc_name, employee_name);
+        notification_text = fmt::format("Документ '{}' был восстановлен пользователем {}.", doc_name, employee_name);
 
         userver::storages::postgres::ParameterStore parameters;
         std::string filter;
@@ -206,8 +186,8 @@ class DocumentsChainAddHandler final
 
 }  // namespace
 
-void AppendDocumentsChainAdd(userver::components::ComponentList& component_list) {
-  component_list.Append<DocumentsChainAddHandler>();
+void AppendDocumentsRestore(userver::components::ComponentList& component_list) {
+  component_list.Append<DocumentsRestoreHandler>();
 }
 
-}  // namespace views::v1::documents::chain::add
+}  // namespace views::v1::documents::restore

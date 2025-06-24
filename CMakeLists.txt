@@ -78,6 +78,11 @@ add_library(${PROJECT_NAME}_objs OBJECT
 	src/views/v1/tracker/tasks/media/upload/view.cpp
 	src/views/v1/documents/chain/update/view.cpp
 	src/views/v1/documents/chain/add/view.cpp
+	src/views/v1/documents/remove/view.cpp
+	src/views/v1/documents/restore/view.cpp
+	src/views/v1/documents/history/view.cpp
+	src/views/v1/employee/permissions/list/view.cpp
+	src/views/v1/employee/permissions/set/view.cpp
 )
 target_link_libraries(${PROJECT_NAME}_objs PUBLIC userver-postgresql)
 target_link_libraries(${PROJECT_NAME}_objs PRIVATE nlohmann_json::nlohmann_json)

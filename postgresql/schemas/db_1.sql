@@ -289,7 +289,7 @@ CREATE TABLE IF NOT EXISTS working_day_first.archive_of_documents(
     created_ts TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     FOREIGN KEY (document_id) REFERENCES working_day_first.documents (id) ON DELETE CASCADE,
     FOREIGN KEY (actor_id) REFERENCES working_day_first.employees (id) ON DELETE CASCADE,
-    CHECK (action_type IN ('archived', 'restored', 'signed' /*, etc.*/)),
+    CHECK (action_type IN ('archived', 'restored'/*, 'signed', etc.*/)),
     PRIMARY KEY (document_id, created_ts)
 );
 
@@ -300,6 +300,6 @@ CREATE TABLE IF NOT EXISTS working_day_first.employee_permissions (
     permission_type TEXT NOT NULL,
     permission_value INT DEFAULT 0,
     FOREIGN KEY (employee_id) REFERENCES working_day_first.employees(id) ON DELETE CASCADE,
-    CHECK (permission_type IN ('can_delete' /*, etc.*/)),
+    CHECK (permission_type IN ('can_remove_documents', 'can_edit_employee_permissions' /*, etc.*/)),
     PRIMARY KEY (employee_id, permission_type)
 );

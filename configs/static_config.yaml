@@ -550,3 +550,53 @@ components_manager:
                 scopes:
                   - user
             pyservice-url: 'http://python-service:3000/document/sign'
+
+        handler-v1-documents-remove:
+            path: /v1/documents/remove
+            method: POST
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - user
+
+        handler-v1-documents-restore:
+            path: /v1/documents/restore
+            method: POST
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - user
+
+        handler-v1-documents-history:
+            path: /v1/documents/history
+            method: POST
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - user
+        
+        handler-v1-employee-permissions-list:
+            path: /v1/employee/permissions/list
+            method: POST
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - user
+
+        handler-v1-employee-permissions-set:
+            path: /v1/employee/permissions/set
+            method: POST
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - user

@@ -5,6 +5,6 @@ CREATE TABLE IF NOT EXISTS ${SCHEMA}.employee_permissions (
     permission_type TEXT NOT NULL,
     permission_value INT DEFAULT 0,
     FOREIGN KEY (employee_id) REFERENCES ${SCHEMA}.employees(id) ON DELETE CASCADE,
-    CHECK (permission_type IN ('can_delete_documents' /*, etc.*/)),
+    CHECK (permission_type IN ('can_remove_documents', 'can_edit_employee_permissions' /*, etc.*/)),
     PRIMARY KEY (employee_id, permission_type)
 );

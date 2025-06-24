@@ -61,6 +61,11 @@
 #include "views/v1/tracker/tasks/media/upload/view.hpp"
 #include "views/v1/documents/chain/update/view.hpp"
 #include "views/v1/documents/chain/add/view.hpp"
+#include "views/v1/documents/remove/view.hpp"
+#include "views/v1/documents/restore/view.hpp"
+#include "views/v1/documents/history/view.hpp"
+#include "views/v1/employee/permissions/list/view.hpp"
+#include "views/v1/employee/permissions/set/view.hpp"
 
 int main(int argc, char* argv[]) {
   Aws::SDKOptions options;
@@ -130,7 +135,12 @@ int main(int argc, char* argv[]) {
   views::v1::tracker::tasks::media::upload::AppendTrackerTasksMediaUpload(component_list);
   views::v1::documents::chain::update::AppendDocumentsChainUpdate(component_list);
   views::v1::documents::chain::add::AppendDocumentsChainAdd(component_list);
-  
+  views::v1::documents::remove::AppendDocumentsRemove(component_list);
+  views::v1::documents::restore::AppendDocumentsRestore(component_list);
+  views::v1::documents::history::AppendDocumentsHistory(component_list);
+  views::v1::employee::permissions::list::AppendEmployeePermissionsList(component_list);
+  views::v1::employee::permissions::set::AppendEmployeePermissionsSet(component_list);
+
   int err_code = userver::utils::DaemonMain(argc, argv, component_list);
 
   Aws::ShutdownAPI(options);

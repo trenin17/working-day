@@ -81,3 +81,12 @@ VALUES
 INSERT INTO working_day_first.messages (chat_id, timestamp, sender_id, content)
 VALUES
   ('chat1', '2025-02-25 10:00:00+00', 'user1', 'Hello world!');
+
+INSERT INTO working_day_first.employee_permissions(employee_id, permission_type, permission_value)
+VALUES
+  ('first_id', 'can_remove_documents', 1),
+  ('first_id', 'can_edit_employee_permissions', 1),
+  ('second_id', 'can_remove_documents', 0),
+  ('second_id', 'can_edit_employee_permissions', 0)
+ON CONFLICT (employee_id, permission_type)
+DO UPDATE SET permission_value = EXCLUDED.permission_value;

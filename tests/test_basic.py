@@ -2126,6 +2126,215 @@ async def test_chain_add_with_invalid_employees(service_client):
     )
     assert response.status == 400
 
+
+@pytest.mark.pgsql('db_1', files=['initial_data.sql'])
+async def test_permissions_list(service_client):
+    response = await service_client.post(
+        '/v1/employee/permissions/list',
+        headers={'Authorization': 'Bearer first_token'},
+        params={'employee_id': 'first_id'},
+    )
+    assert response.status == 200
+    assert response.json() == {
+        'permissions': [
+            {'permission_type': 'can_remove_documents', 'permission_value': 1},
+            {'permission_type': 'can_edit_employee_permissions', 'permission_value': 1},
+        ]
+    }
+    response = await service_client.post(
+        '/v1/employee/permissions/list',
+        headers={'Authorization': 'Bearer second_token'},
+    )
+    assert response.status == 400
+    response = await service_client.post(
+        '/v1/employee/permissions/list',
+        headers={'Authorization': 'Bearer first_token'},
+        params={'employee_id': 'unknown_id'},
+    )
+    assert response.status == 404
+
+@pytest.mark.pgsql('db_1', files=['initial_data.sql'])
+async def test_permissions_set(service_client):
+    response = await service_client.post(
+        '/v1/employee/permissions/set',
+        headers={'Authorization': 'Bearer second_token'},
+        params={'employee_id': 'second_id'},
+        json={
+            'permissions': [
+                {'permission_type': 'can_remove_documents', 'permission_value': 1},
+                {'permission_type': 'can_edit_employee_permissions', 'permission_value': 1},
+            ]
+        },
+    )
+    assert response.status == 403
+    assert response.json()['message'] == 'Insufficient rights'
+
+    response = await service_client.post(
+        '/v1/employee/permissions/set',
+        headers={'Authorization': 'Bearer first_token'},
+        params={'employee_id': 'second_id'},
+        json={
+            'permissions': [
+                {'permission_type': 'can_remove_documents', 'permission_value': 1},
+                {'permission_type': 'can_edit_employee_permissions', 'permission_value': 1},
+            ]
+        },
+    )
+    assert response.status == 200
+    assert response.json() == {
+        'permissions': [
+            {'permission_type': 'can_remove_documents', 'permission_value': 1},
+            {'permission_type': 'can_edit_employee_permissions', 'permission_value': 1},
+        ]
+    }
+    response = await service_client.post(
+        '/v1/notifications',
+        headers={'Authorization': 'Bearer second_token'}
+    )
+    assert response.status == 200
+
+    created_time = json.loads(response.text)['notifications'][0]['created']
+    id = json.loads(response.text)['notifications'][0]['id']
+    assert response.text == (
+        '{"notifications":[{"created":"'+ created_time + '","id":"' + id + '",'
+        '"is_read":false,"text":"Ваши права были изменены пользователем First A.",'
+        '"type":"generic"}]}')
+
+    response = await service_client.post(
+        '/v1/employee/permissions/list',
+        headers={'Authorization': 'Bearer first_token'},
+        params={'employee_id': 'second_id'},
+    )
+    assert response.status == 200
+    assert response.json() == {
+        'permissions': [
+            {'permission_type': 'can_remove_documents', 'permission_value': 1},
+            {'permission_type': 'can_edit_employee_permissions', 'permission_value': 1},
+        ]
+    }
+    response = await service_client.post(
+        '/v1/employee/permissions/set',
+        headers={'Authorization': 'Bearer second_token'},
+        params={'employee_id': 'first_id'},
+        json={
+            'permissions': [
+                {'permission_type': 'can_remove_documents', 'permission_value': 0},
+                {'permission_type': 'can_edit_employee_permissions', 'permission_value': 0},
+            ]
+        },
+    )
+    assert response.status == 200
+    assert response.json() == {
+        'permissions': [
+            {'permission_type': 'can_remove_documents', 'permission_value': 0},
+            {'permission_type': 'can_edit_employee_permissions', 'permission_value': 0},
+        ]
+    }
+    response = await service_client.post(
+        '/v1/employee/permissions/set',
+        headers={'Authorization': 'Bearer second_token'},
+        params={'employee_id': 'unknown'},
+        json={
+            'permissions': [
+                {'permission_type': 'can_remove_documents', 'permission_value': 0},
+                {'permission_type': 'can_edit_employee_permissions', 'permission_value': 0},
+            ]
+        },
+    )
+    assert response.status == 404
+
+@pytest.mark.pgsql('db_1', files=['initial_data.sql'])
+async def test_documents_archiving(service_client):
+    response = await service_client.post(
+        '/v1/documents/remove',
+        headers={'Authorization': 'Bearer first_token'},
+        json={'document_id': 'doc_with_chain', 'comment': 'archive for testing'},
+    )
+    assert response.status == 200
+
+    response = await service_client.post(
+        '/v1/documents/history',
+        headers={'Authorization': 'Bearer first_token'},
+        params={'document_id': 'doc_with_chain'},
+    )
+    hist = response.json()['history']
+    assert hist[-1]['action_type'] == 'archived'
+    assert hist[-1]['comment'] == 'archive for testing'
+    
+    response = await service_client.post(
+        '/v1/documents/restore',
+        headers={'Authorization': 'Bearer second_token'},
+        json={'document_id': 'doc_with_chain', 'comment': 'restoring for testing'},
+    )
+    assert response.status == 403
+
+    response = await service_client.post(
+        '/v1/documents/restore',
+        headers={'Authorization': 'Bearer first_token'},
+        json={'document_id': 'doc_with_chain', 'comment': 'restoring'},
+    )
+    assert response.status == 200
+
+    response = await service_client.post(
+        '/v1/documents/history',
+        headers={'Authorization': 'Bearer first_token'},
+        params={'document_id': 'doc_with_chain'},
+    )
+    hist = response.json()['history']
+    assert hist[-1]['action_type'] == 'restored'
+    assert hist[-1]['comment'] == 'restoring'
+
+    
+    response = await service_client.post(
+        '/v1/notifications',
+        headers={'Authorization': 'Bearer first_token'}
+    )
+    assert response.status == 200
+
+    created_time0 = json.loads(response.text)['notifications'][0]['created']
+    id0 = json.loads(response.text)['notifications'][0]['id']
+    created_time1 = json.loads(response.text)['notifications'][1]['created']
+    id1 = json.loads(response.text)['notifications'][1]['id']
+
+    assert response.text == (
+        '{"notifications":[{"created":"'+ created_time0 + '","id":"' + id0 + '",'
+        '"is_read":false,"text":"Документ \'Document with chain\' был восстановлен пользователем First A.",'
+        '"type":"generic"},{"created":"'+ created_time1 + '","id":"' + id1 + '",'
+        '"is_read":false,"text":"Документ \'Document with chain\' был удален пользователем First A.",'
+        '"type":"generic"}]}')
+    
+    response = await service_client.post(
+        '/v1/notifications',
+        headers={'Authorization': 'Bearer second_token'}
+    )
+    assert response.status == 200
+
+    created_time0 = json.loads(response.text)['notifications'][0]['created']
+    id0 = json.loads(response.text)['notifications'][0]['id']
+    created_time1 = json.loads(response.text)['notifications'][1]['created']
+    id1 = json.loads(response.text)['notifications'][1]['id']
+
+    assert response.text == (
+        '{"notifications":[{"created":"'+ created_time0 + '","id":"' + id0 + '",'
+        '"is_read":false,"text":"Документ \'Document with chain\' был восстановлен пользователем First A.",'
+        '"type":"generic"},{"created":"'+ created_time1 + '","id":"' + id1 + '",'
+        '"is_read":false,"text":"Документ \'Document with chain\' был удален пользователем First A.",'
+        '"type":"generic"}]}')
+
+    response = await service_client.post(
+        '/v1/documents/remove',
+        headers={'Authorization': 'Bearer second_token'},
+        json={'document_id': 'doc_with_chain'},
+    )
+    assert response.status == 403
+
+    response = await service_client.post(
+        '/v1/documents/remove',
+        headers={'Authorization': 'Bearer first_token'},
+        json={'document_id': 'unknown'},
+    )
+    assert response.status == 404
+
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])
 async def test_end(service_client):
     response = await service_client.post(
