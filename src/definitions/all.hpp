@@ -1011,7 +1011,6 @@ struct DocumentsChainUpdateResponse : public JsonCompatible {
   auto Introspect() {
     return std::tie(chain_metadata);
   }
-
   REGISTER_STRUCT_FIELD(chain_metadata, std::vector<DocumentsChainMetadataItem>, "chain_metadata_new");
 };
 #endif
