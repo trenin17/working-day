@@ -486,7 +486,7 @@ struct DocumentsChainMetadataItem : public JsonCompatible {
 
 template <>
 struct userver::storages::postgres::io::CppToUserPg<DocumentsChainMetadataItemPg> {
-  static constexpr DBTypeName postgres_name = "wd_general.chain_metadata_item";
+  static constexpr DBTypeName postgres_name = "wd_general.chain_metadata_item_new";
 };
 #endif
 
@@ -511,7 +511,7 @@ struct DocumentItem : public JsonCompatible {
   REGISTER_STRUCT_FIELD_OPTIONAL(is_signed, bool, "signed");
   REGISTER_STRUCT_FIELD_OPTIONAL(parent_id, std::string, "parent_id");
   REGISTER_STRUCT_FIELD_OPTIONAL(created_ts, userver::storages::postgres::TimePoint, "created_ts");
-  REGISTER_STRUCT_FIELD_OPTIONAL(chain_metadata, std::vector<DocumentsChainMetadataItem>, "chain_metadata");
+  REGISTER_STRUCT_FIELD_OPTIONAL(chain_metadata, std::vector<DocumentsChainMetadataItem>, "chain_metadata_new");
 };
 #endif
 
@@ -988,13 +988,13 @@ struct DocumentsChainUpdateResponse : public JsonCompatible {
     return std::tie(chain_metadata);
   }
   
-  REGISTER_STRUCT_FIELD(chain_metadata, std::vector<DocumentsChainMetadataItem>, "chain_metadata");
+  REGISTER_STRUCT_FIELD(chain_metadata, std::vector<DocumentsChainMetadataItem>, "chain_metadata_new");
 };
 #endif
 
 #ifdef USE_DOCUMENTS_CHAIN_ADD_REQUEST
 struct DocumentsChainAddRequest : public JsonCompatible {
-  REGISTER_STRUCT_FIELD(chain_metadata, std::vector<DocumentsChainMetadataItem>, "chain_metadata");
+  REGISTER_STRUCT_FIELD(chain_metadata, std::vector<DocumentsChainMetadataItem>, "chain_metadata_new");
 };
 #endif
 

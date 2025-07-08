@@ -249,16 +249,14 @@ CREATE TYPE wd_general.chain_metadata_item AS (
 ALTER TABLE working_day_first.documents
 ADD COLUMN chain_metadata wd_general.chain_metadata_item[] NOT NULL DEFAULT ARRAY[]::wd_general.chain_metadata_item[];
 
-ALTER TYPE wd_general.chain_metadata_item RENAME TO chain_metadata_item_old;
-
-CREATE TYPE wd_general.chain_metadata_item AS (
+CREATE TYPE wd_general.chain_metadata_item_new AS (
     employee_id TEXT,
     requires_signature INT,
     status INT
 );
 
 ALTER TABLE working_day_first.documents
-ADD COLUMN chain_metadata_new wd_general.chain_metadata_item[] NOT NULL DEFAULT ARRAY[]::wd_general.chain_metadata_item[];
+ADD COLUMN chain_metadata_new wd_general.chain_metadata_item_new[] NOT NULL DEFAULT ARRAY[]::wd_general.chain_metadata_item_new[];
 
 UPDATE working_day_first.documents
 SET chain_metadata_new = (
@@ -267,14 +265,13 @@ SET chain_metadata_new = (
             item.employee_id,
             CASE WHEN item.requires_signature THEN 1 ELSE 0 END,
             item.status
-        )::wd_general.chain_metadata_item
+        )::wd_general.chain_metadata_item_new
         FROM unnest(chain_metadata) AS item
     )
-);
+);  
 
 ALTER TABLE working_day_first.documents DROP COLUMN chain_metadata;
-ALTER TABLE working_day_first.documents RENAME COLUMN chain_metadata_new TO chain_metadata;
-DROP TYPE wd_general.chain_metadata_item_old;
+DROP TYPE IF EXISTS wd_general.chain_metadata_item;
 
 ALTER TABLE working_day_first.documents 
 ADD COLUMN IF NOT EXISTS visibility_status INT DEFAULT 0;

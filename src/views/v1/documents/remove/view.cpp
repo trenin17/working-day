@@ -103,7 +103,7 @@ class DocumentsRemoveHandler final
 
     result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kSlave,
-        "SELECT chain_metadata "
+        "SELECT chain_metadata_new "
         "FROM working_day_" +
             company_id +
             ".documents "

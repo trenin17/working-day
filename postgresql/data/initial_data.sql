@@ -33,15 +33,15 @@ DO NOTHING;
 -- VALUES ('first_id', 'first_document', TRUE),
 --        ('second_id', 'second_document', FALSE)
 
-INSERT INTO working_day_first.documents(id, name, sign_required, description, chain_metadata)
+INSERT INTO working_day_first.documents(id, name, sign_required, description, chain_metadata_new)
 VALUES (
   'doc_with_chain', 
   'Document with chain', 
   TRUE, 
   'Test document with approval chain',
   ARRAY[
-    ('first_id', TRUE, 0)::wd_general.chain_metadata_item,
-    ('second_id', FALSE, 0)::wd_general.chain_metadata_item
+    ('first_id', 1, 0)::wd_general.chain_metadata_item_new,
+    ('second_id', 0, 0)::wd_general.chain_metadata_item_new
   ]
 ),(
   'rejected_doc', 
@@ -49,18 +49,18 @@ VALUES (
   TRUE, 
   '',
   ARRAY[
-    ('first_id', TRUE, 2)::wd_general.chain_metadata_item,
-    ('second_id', FALSE, 0)::wd_general.chain_metadata_item
+    ('first_id', 1, 2)::wd_general.chain_metadata_item_new,
+    ('second_id', 0, 0)::wd_general.chain_metadata_item_new
   ]
 );
 
-INSERT INTO working_day_first.documents(id, name, sign_required, description, chain_metadata)
+INSERT INTO working_day_first.documents(id, name, sign_required, description, chain_metadata_new)
 VALUES (
   'empty_chain_doc', 
   'Empty chain doc', 
   FALSE, 
   'Document without approval chain',
-  ARRAY[]::wd_general.chain_metadata_item[]
+  ARRAY[]::wd_general.chain_metadata_item_new[]
 );
 
 INSERT INTO working_day_first.employee_document(employee_id, document_id, signed)

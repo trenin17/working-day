@@ -62,7 +62,7 @@ class DocumentsChainAddHandler final
 
     auto result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kSlave,
-        "SELECT chain_metadata "
+        "SELECT chain_metadata_new "
         "FROM working_day_" +
             company_id +
             ".documents "
@@ -109,7 +109,7 @@ class DocumentsChainAddHandler final
     result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kMaster,
         "UPDATE working_day_" + company_id + ".documents "
-        "SET chain_metadata = $2 "
+        "SET chain_metadata_new = $2 "
         "WHERE id = $1 ",
         document_id,
         chain_metadata_pg);
