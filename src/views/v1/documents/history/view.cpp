@@ -56,7 +56,7 @@ class DocumentsHistoryHandler final
     auto result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kSlave,
         "SELECT actor_id, action_type, comment, created_ts "
-        "FROM working_day_" + company_id + ".archive_of_documents "
+        "FROM working_day_" + company_id + ".documents_history "
         "WHERE document_id = $1 ORDER BY created_ts",
         document_id);
 

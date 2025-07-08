@@ -96,7 +96,7 @@ class DocumentsRemoveHandler final
 
     pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kMaster,
-        "INSERT INTO working_day_" + company_id + ".archive_of_documents "
+        "INSERT INTO working_day_" + company_id + ".documents_history "
         "(document_id, actor_id, action_type, comment) "
         "VALUES ($1, $2, 'archived', $3)",
         request_body.document_id, user_id, request_body.comment);

@@ -276,9 +276,9 @@ DROP TYPE IF EXISTS wd_general.chain_metadata_item;
 ALTER TABLE working_day_first.documents 
 ADD COLUMN IF NOT EXISTS visibility_status INT DEFAULT 0;
 
-DROP TABLE IF EXISTS working_day_first.archive_of_documents;
+DROP TABLE IF EXISTS working_day_first.documents_history;
 
-CREATE TABLE IF NOT EXISTS working_day_first.archive_of_documents(
+CREATE TABLE IF NOT EXISTS working_day_first.documents_history(
     document_id TEXT NOT NULL,
     actor_id TEXT NOT NULL,
     action_type TEXT NOT NULL,

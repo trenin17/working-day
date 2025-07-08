@@ -1,9 +1,9 @@
 ALTER TABLE ${SCHEMA}.documents 
 ADD COLUMN IF NOT EXISTS visibility_status INT DEFAULT 0;
 
-DROP TABLE IF EXISTS ${SCHEMA}.archive_of_documents;
+DROP TABLE IF EXISTS ${SCHEMA}.documents_history;
 
-CREATE TABLE IF NOT EXISTS ${SCHEMA}.archive_of_documents(
+CREATE TABLE IF NOT EXISTS ${SCHEMA}.documents_history(
     document_id TEXT NOT NULL,
     actor_id TEXT NOT NULL,
     action_type TEXT NOT NULL,
