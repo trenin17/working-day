@@ -297,6 +297,6 @@ CREATE TABLE IF NOT EXISTS working_day_first.employee_permissions (
     permission_type TEXT NOT NULL,
     permission_value INT DEFAULT 0,
     FOREIGN KEY (employee_id) REFERENCES working_day_first.employees(id) ON DELETE CASCADE,
-    CHECK (permission_type IN ('can_remove_documents', 'can_edit_employee_permissions' /*, etc.*/)),
+    CHECK (permission_type IN ('can_remove_documents'/*, etc.*/)),
     PRIMARY KEY (employee_id, permission_type)
 );

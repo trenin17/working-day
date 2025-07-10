@@ -1056,7 +1056,7 @@ struct EmployeePermissionsItem : public JsonCompatible {
     return std::tie(permission_type, permission_value);
   }
 
-  REGISTER_STRUCT_ENUM_FIELD(permission_type, std::string, "permission_type", {"can_remove_documents", "can_edit_employee_permissions" /*, etc*/ });
+  REGISTER_STRUCT_ENUM_FIELD(permission_type, std::string, "permission_type", {"can_remove_documents" /*, etc*/ });
   REGISTER_STRUCT_FIELD(permission_value, int, "permission_value");
 };
 #endif

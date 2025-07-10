@@ -53,21 +53,6 @@ class EmployeePermissionsSetHandler final
     EmployeePermissions body;
     body.ParseRegisteredFields(request.RequestBody());
 
-    auto perm_result = pg_cluster_->Execute(
-        userver::storages::postgres::ClusterHostType::kSlave,
-        "SELECT permission_value "
-        "FROM working_day_" + 
-            company_id + 
-            ".employee_permissions "
-        "WHERE employee_id = $1 "
-        "AND permission_type = 'can_edit_employee_permissions'",
-        user_id);
-
-    if (perm_result.IsEmpty() || perm_result.AsSingleRow<int>() == 0) {
-        request.SetResponseStatus(userver::server::http::HttpStatus::kForbidden);
-        return ErrorMessage{"Insufficient rights"}.ToJsonString();
-    }
-
     auto emp_result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kSlave,
         "SELECT 1 FROM working_day_" + 

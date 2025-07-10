@@ -504,7 +504,7 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/SearchResponse'
-
+#
     /v1/attendance/list-all:
         post:
             description: Get list of all employees' attendances for a given time period
@@ -1509,6 +1509,7 @@ components:
                 type:
                     type: string
                     enum:
+                    # если тип оттенденсе, то добавить тип
                       - vacation
                       - attendance
                 start_date:
@@ -1601,6 +1602,7 @@ components:
             required:
               - start_date
               - end_date
+              # att type
             properties:
                 start_date:
                     $ref: '#/components/schemas/Timestamp'
@@ -1781,6 +1783,7 @@ components:
                 end_date:
                     $ref: '#/components/schemas/Timestamp'
                     description: start_date and end_date should be in the same day
+                #
                 abscence_type:
                     $ref: '#/components/schemas/AbscenceType'
                     description: If employee has an approved abscence for a given period
@@ -2312,7 +2315,6 @@ components:
                     type: string
                     enum:
                       - can_remove_documents
-                      - can_edit_employee_permissions
                       # etc.
                 permission_value:
                     type: int

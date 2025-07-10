@@ -2138,7 +2138,6 @@ async def test_permissions_list(service_client):
     assert response.json() == {
         'permissions': [
             {'permission_type': 'can_remove_documents', 'permission_value': 1},
-            {'permission_type': 'can_edit_employee_permissions', 'permission_value': 1},
         ]
     }
     response = await service_client.post(
@@ -2162,12 +2161,10 @@ async def test_permissions_set(service_client):
         json={
             'permissions': [
                 {'permission_type': 'can_remove_documents', 'permission_value': 1},
-                {'permission_type': 'can_edit_employee_permissions', 'permission_value': 1},
             ]
         },
     )
     assert response.status == 403
-    assert response.json()['message'] == 'Insufficient rights'
 
     response = await service_client.post(
         '/v1/employee/permissions/set',
@@ -2176,7 +2173,6 @@ async def test_permissions_set(service_client):
         json={
             'permissions': [
                 {'permission_type': 'can_remove_documents', 'permission_value': 1},
-                {'permission_type': 'can_edit_employee_permissions', 'permission_value': 1},
             ]
         },
     )
@@ -2184,7 +2180,6 @@ async def test_permissions_set(service_client):
     assert response.json() == {
         'permissions': [
             {'permission_type': 'can_remove_documents', 'permission_value': 1},
-            {'permission_type': 'can_edit_employee_permissions', 'permission_value': 1},
         ]
     }
     response = await service_client.post(
@@ -2209,35 +2204,15 @@ async def test_permissions_set(service_client):
     assert response.json() == {
         'permissions': [
             {'permission_type': 'can_remove_documents', 'permission_value': 1},
-            {'permission_type': 'can_edit_employee_permissions', 'permission_value': 1},
         ]
     }
     response = await service_client.post(
         '/v1/employee/permissions/set',
-        headers={'Authorization': 'Bearer second_token'},
-        params={'employee_id': 'first_id'},
-        json={
-            'permissions': [
-                {'permission_type': 'can_remove_documents', 'permission_value': 0},
-                {'permission_type': 'can_edit_employee_permissions', 'permission_value': 0},
-            ]
-        },
-    )
-    assert response.status == 200
-    assert response.json() == {
-        'permissions': [
-            {'permission_type': 'can_remove_documents', 'permission_value': 0},
-            {'permission_type': 'can_edit_employee_permissions', 'permission_value': 0},
-        ]
-    }
-    response = await service_client.post(
-        '/v1/employee/permissions/set',
-        headers={'Authorization': 'Bearer second_token'},
+        headers={'Authorization': 'Bearer first_token'},
         params={'employee_id': 'unknown'},
         json={
             'permissions': [
                 {'permission_type': 'can_remove_documents', 'permission_value': 0},
-                {'permission_type': 'can_edit_employee_permissions', 'permission_value': 0},
             ]
         },
     )
