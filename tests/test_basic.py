@@ -642,7 +642,7 @@ async def test_attendance_list_all(service_client):
         '{"employee":{"id":"first_id","name":"First","subcompany":"first","surname":"A"},'
         '"end_date":"2023-07-21T18:00:00.000000",'
         '"start_date":"2023-07-21T10:00:00.000000",'
-        '"abscence_type":"work_nighttime"},'
+        '"attendance_type":"work_nighttime"},'
         '{"employee":{"id":"second_id","name":"Second","subcompany":"first","surname":"B"}},'
         '{"employee":{"id":"tc","name":"Third","subcompany":"first","surname":"C"}}'
         ']}')) == True
@@ -693,15 +693,15 @@ async def test_attendance_list_all(service_client):
         '{"employee":{"id":"first_id","name":"First","subcompany":"first","surname":"A"},'
         '"end_date":"2023-07-22T18:00:00.000000",'
         '"start_date":"2023-07-22T10:00:00.000000",'
-        '"abscence_type":"additional_paid_vacation"},'
+        '"attendance_type":"additional_paid_vacation"},'
         '{"employee":{"id":"first_id","name":"First","subcompany":"first","surname":"A"},'
         '"end_date":"2023-07-21T18:00:00.000000",'
         '"start_date":"2023-07-21T10:00:00.000000",'
-        '"abscence_type":"work_nighttime"},'
+        '"attendance_type":"work_nighttime"},'
         '{"employee":{"id":"second_id","name":"Second","subcompany":"first","surname":"B"},'
         '"end_date":"2023-07-22T18:00:00.000000",'
         '"start_date":"2023-07-22T10:00:00.000000",'
-        '"abscence_type":"childcare_leave"},'
+        '"attendance_type":"childcare_leave"},'
         '{"employee":{"id":"tc","name":"Third","subcompany":"first","surname":"C"}}'
         ']}')) == True
     response = await service_client.post(
@@ -716,11 +716,11 @@ async def test_attendance_list_all(service_client):
         '{"employee":{"id":"first_id","name":"First","subcompany":"first","surname":"A"},'
         '"end_date":"2023-07-22T18:00:00.000000",'
         '"start_date":"2023-07-22T10:00:00.000000",'
-        '"abscence_type":"additional_paid_vacation"},'
+        '"attendance_type":"additional_paid_vacation"},'
         '{"employee":{"id":"second_id","name":"Second","subcompany":"first","surname":"B"},'
         '"end_date":"2023-07-22T18:00:00.000000",'
         '"start_date":"2023-07-22T10:00:00.000000",'
-        '"abscence_type":"childcare_leave"},'
+        '"attendance_type":"childcare_leave"},'
         '{"employee":{"id":"tc","name":"Third","subcompany":"first","surname":"C"}}'
         ']}')) == True
     
@@ -768,11 +768,11 @@ async def test_attendance_list_all(service_client):
         '{"attendances":['
         '{"employee":{"id":"first_id","name":"First","subcompany":"first","surname":"A"},'
         '"end_date":"2023-07-21T18:00:00.000000","start_date":"2023-07-21T10:00:00.000000",'
-        '"abscence_type":"work_nighttime"},'
+        '"attendance_type":"work_nighttime"},'
 
         '{"employee":{"id":"second_id","name":"Second","subcompany":"first","surname":"B"},'
         '"end_date":"2023-07-22T18:00:00.000000","start_date":"2023-07-22T10:00:00.000000",'
-        '"abscence_type":"childcare_leave"},'
+        '"attendance_type":"childcare_leave"},'
 
         '{"employee":{"id":"tc","name":"Third","subcompany":"first","surname":"C"}},'
 

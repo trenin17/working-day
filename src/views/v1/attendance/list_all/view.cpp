@@ -76,7 +76,7 @@ class AttendanceListAllHandler final
 
     result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kSlave,
-        "SELECT a.start_date, a.end_date, a.attendance_type, "
+        "SELECT a.start_date, a.end_date, NULL::TEXT as abscence_type, a.attendance_type as attendance_type, "
         "ROW"
         "(e.id, e.name, "
         "e.surname, e.patronymic, "
@@ -102,7 +102,7 @@ class AttendanceListAllHandler final
 
     result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kSlave,
-        "SELECT a.start_date, a.end_date, a.type, "
+        "SELECT a.start_date, a.end_date, a.type as abscence_type, NULL::text as attendance_type, "
         "ROW"
         "(e.id, e.name, "
         "e.surname, e.patronymic, "
@@ -181,7 +181,7 @@ class AttendanceListAllHandler final
 
     result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kSlave,
-        "SELECT a.start_date, a.end_date, a.type, "
+        "SELECT a.start_date, a.end_date, a.type as abscence_type, NULL::text as attendance_type, "
         "ROW"
         "(e.id, e.name, "
         "e.surname, e.patronymic, "

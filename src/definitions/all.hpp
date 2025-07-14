@@ -419,7 +419,7 @@ struct AttendanceListItem : public JsonCompatible {
   AttendanceListItem& operator=(AttendanceListItem&& other) = default;
 
   auto Introspect() {
-    return std::tie(start_date, end_date, abscence_type, employee);
+    return std::tie(start_date, end_date, abscence_type, attendance_type, employee);
   }
 
   REGISTER_STRUCT_FIELD_OPTIONAL(start_date,
@@ -428,8 +428,9 @@ struct AttendanceListItem : public JsonCompatible {
   REGISTER_STRUCT_FIELD_OPTIONAL(end_date,
                                  userver::storages::postgres::TimePoint,
                                  "end_date");
-  REGISTER_STRUCT_FIELD(employee, ListEmployeeWithSubcompany, "employee");
   REGISTER_STRUCT_FIELD_OPTIONAL(abscence_type, std::string, "abscence_type");
+  REGISTER_STRUCT_FIELD_OPTIONAL(attendance_type, std::string, "attendance_type");
+  REGISTER_STRUCT_FIELD(employee, ListEmployeeWithSubcompany, "employee");
   // REGISTER_STRUCT_FIELD_OPTIONAL(abscence_date,
   // userver::storages::postgres::TimePoint, "abscence_date");
 };

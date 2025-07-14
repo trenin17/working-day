@@ -1811,6 +1811,8 @@ components:
                 abscence_type:
                     $ref: '#/components/schemas/AbscenceType'
                     description: If employee has an approved abscence for a given period
+                attendance_type:
+                    $ref: '#/components/schemas/AttendanceType'
 
         UploadDocumentResponse:
             type: object
