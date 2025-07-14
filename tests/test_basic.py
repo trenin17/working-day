@@ -619,15 +619,17 @@ async def test_attendance_list_all(service_client):
     assert response.status == 200
     token = json.loads(response.text)['token']
 
+    # 21 июля с 10 до 18 тип work_nighttime для First
     response = await service_client.post(
         '/v1/attendance/add',
         params={'employee_id': 'first_id'},
         headers={'Authorization': 'Bearer ' + token},
         json={'start_date': '2023-07-21T10:00:00',
-              'end_date': '2023-07-21T18:00:00'}
+              'end_date': '2023-07-21T18:00:00',
+              'attendance_type': 'work_nighttime'}
     )
     assert response.status == 200
-
+    
     response = await service_client.post(
         '/v1/attendance/list-all',
         headers={'Authorization': 'Bearer ' + token},
@@ -639,35 +641,43 @@ async def test_attendance_list_all(service_client):
         '{"attendances":['
         '{"employee":{"id":"first_id","name":"First","subcompany":"first","surname":"A"},'
         '"end_date":"2023-07-21T18:00:00.000000",'
-        '"start_date":"2023-07-21T10:00:00.000000"},'
+        '"start_date":"2023-07-21T10:00:00.000000",'
+        '"abscence_type":"work_nighttime"},'
         '{"employee":{"id":"second_id","name":"Second","subcompany":"first","surname":"B"}},'
         '{"employee":{"id":"tc","name":"Third","subcompany":"first","surname":"C"}}'
         ']}')) == True
+    
+    #  22 июля с 10 до 18 тип additional_paid_vacation для First
     response = await service_client.post(
         '/v1/attendance/add',
         params={'employee_id': 'first_id'},
         headers={'Authorization': 'Bearer ' + token},
         json={'start_date': '2023-07-22T10:00:00',
-              'end_date': '2023-07-22T18:00:00'}
+              'end_date': '2023-07-22T18:00:00',
+              'attendance_type': 'additional_paid_vacation'}
     )
     assert response.status == 200
 
+    #  22 июля с 9 до 17 тип study_vacation_paid для Second
     response = await service_client.post(
         '/v1/attendance/add',
         params={'employee_id': 'second_id'},
         headers={'Authorization': 'Bearer ' + token},
         json={'start_date': '2023-07-22T9:00:00',
-              'end_date': '2023-07-22T17:00:00'}
+              'end_date': '2023-07-22T17:00:00',
+              'attendance_type': 'study_vacation_paid'}
     )
     assert response.status == 200
 
     # Check overwrite the previous attendance
+    #  22 июля с 10 до 18 тип childcare_leave для Second
     response = await service_client.post(
         '/v1/attendance/add',
         params={'employee_id': 'second_id'},
         headers={'Authorization': 'Bearer ' + token},
         json={'start_date': '2023-07-22T10:00:00',
-              'end_date': '2023-07-22T18:00:00'}
+              'end_date': '2023-07-22T18:00:00',
+              'attendance_type': 'childcare_leave'}
     )
     assert response.status == 200
 
@@ -682,13 +692,16 @@ async def test_attendance_list_all(service_client):
         '{"attendances":['
         '{"employee":{"id":"first_id","name":"First","subcompany":"first","surname":"A"},'
         '"end_date":"2023-07-22T18:00:00.000000",'
-        '"start_date":"2023-07-22T10:00:00.000000"},'
+        '"start_date":"2023-07-22T10:00:00.000000",'
+        '"abscence_type":"additional_paid_vacation"},'
         '{"employee":{"id":"first_id","name":"First","subcompany":"first","surname":"A"},'
         '"end_date":"2023-07-21T18:00:00.000000",'
-        '"start_date":"2023-07-21T10:00:00.000000"},'
+        '"start_date":"2023-07-21T10:00:00.000000",'
+        '"abscence_type":"work_nighttime"},'
         '{"employee":{"id":"second_id","name":"Second","subcompany":"first","surname":"B"},'
         '"end_date":"2023-07-22T18:00:00.000000",'
-        '"start_date":"2023-07-22T10:00:00.000000"},'
+        '"start_date":"2023-07-22T10:00:00.000000",'
+        '"abscence_type":"childcare_leave"},'
         '{"employee":{"id":"tc","name":"Third","subcompany":"first","surname":"C"}}'
         ']}')) == True
     response = await service_client.post(
@@ -696,19 +709,22 @@ async def test_attendance_list_all(service_client):
         headers={'Authorization': 'Bearer ' + token},
         json={'from': '2023-07-22T00:00:00', 'to': '2023-07-23T00:00:00'}
     )
-
+    
     assert response.status == 200
     assert are_json_equal(response.text, (
         '{"attendances":['
         '{"employee":{"id":"first_id","name":"First","subcompany":"first","surname":"A"},'
         '"end_date":"2023-07-22T18:00:00.000000",'
-        '"start_date":"2023-07-22T10:00:00.000000"},'
+        '"start_date":"2023-07-22T10:00:00.000000",'
+        '"abscence_type":"additional_paid_vacation"},'
         '{"employee":{"id":"second_id","name":"Second","subcompany":"first","surname":"B"},'
         '"end_date":"2023-07-22T18:00:00.000000",'
-        '"start_date":"2023-07-22T10:00:00.000000"},'
+        '"start_date":"2023-07-22T10:00:00.000000",'
+        '"abscence_type":"childcare_leave"},'
         '{"employee":{"id":"tc","name":"Third","subcompany":"first","surname":"C"}}'
         ']}')) == True
-
+    
+    # 22-23 июля sick_leave для First
     response = await service_client.post(
         '/v1/abscence/request',
         headers={'Authorization': 'Bearer first_token'},
@@ -724,7 +740,7 @@ async def test_attendance_list_all(service_client):
         json={'action_id': action_id, 'approve': True}
     )
     assert response.status == 200
-
+    # 1-30 июля unpaid_vacation для Third
     response = await service_client.post(
         '/v1/abscence/request',
         headers={'Authorization': 'Bearer ' + token},
@@ -749,29 +765,38 @@ async def test_attendance_list_all(service_client):
 
     assert response.status == 200
     assert are_json_equal(response.text, (
-        '{"attendances":'
-        '[{"employee":{"id":"first_id","name":"First","subcompany":"first","surname":"A"},'
-        '"end_date":"2023-07-21T18:00:00.000000","start_date":"2023-07-21T10:00:00.000000"},'
-        '{"employee":{"id":"tc","name":"Third","subcompany":"first","surname":"C"}},'
-        '{"employee":{"id":"second_id","name":"Second","subcompany":"first","surname":"B"},'
-        '"end_date":"2023-07-22T18:00:00.000000","start_date":"2023-07-22T10:00:00.000000"},'
-        '{"abscence_type":"sick_leave",'
-        '"employee":{"id":"first_id","name":"First","subcompany":"first","surname":"A"},'
-        '"end_date":"2023-07-22T23:59:00.000000","start_date":"2023-07-22T00:00:00.000000"},'
-        '{"abscence_type":"sick_leave",'
-        '"employee":{"id":"first_id","name":"First","subcompany":"first","surname":"A"},'
-        '"end_date":"2023-07-23T23:59:00.000000","start_date":"2023-07-23T00:00:00.000000"},'
-        '{"abscence_type":"unpaid_vacation",'
-        '"employee":{"id":"tc","name":"Third","subcompany":"first","surname":"C"},'
-        '"end_date":"2023-07-23T23:59:00.000000","start_date":"2023-07-23T00:00:00.000000"},'
-        '{"abscence_type":"unpaid_vacation",'
-        '"employee":{"id":"tc","name":"Third","subcompany":"first","surname":"C"},'
-        '"end_date":"2023-07-22T23:59:00.000000","start_date":"2023-07-22T00:00:00.000000"},'
-        '{"abscence_type":"unpaid_vacation",'
-        '"employee":{"id":"tc","name":"Third","subcompany":"first","surname":"C"},'
-        '"end_date":"2023-07-21T23:59:00.000000","start_date":"2023-07-21T00:00:00.000000"}'
-        ']}')) == True
+        '{"attendances":['
+        '{"employee":{"id":"first_id","name":"First","subcompany":"first","surname":"A"},'
+        '"end_date":"2023-07-21T18:00:00.000000","start_date":"2023-07-21T10:00:00.000000",'
+        '"abscence_type":"work_nighttime"},'
 
+        '{"employee":{"id":"second_id","name":"Second","subcompany":"first","surname":"B"},'
+        '"end_date":"2023-07-22T18:00:00.000000","start_date":"2023-07-22T10:00:00.000000",'
+        '"abscence_type":"childcare_leave"},'
+
+        '{"employee":{"id":"tc","name":"Third","subcompany":"first","surname":"C"}},'
+
+        '{"employee":{"id":"first_id","name":"First","subcompany":"first","surname":"A"},'
+        '"end_date":"2023-07-22T23:59:00.000000","start_date":"2023-07-22T00:00:00.000000",'
+        '"abscence_type":"sick_leave"},'
+
+        '{"employee":{"id":"first_id","name":"First","subcompany":"first","surname":"A"},'
+        '"end_date":"2023-07-23T23:59:00.000000","start_date":"2023-07-23T00:00:00.000000",'
+        '"abscence_type":"sick_leave"},'
+
+        '{"employee":{"id":"tc","name":"Third","subcompany":"first","surname":"C"},'
+        '"end_date":"2023-07-21T23:59:00.000000","start_date":"2023-07-21T00:00:00.000000",'
+        '"abscence_type":"unpaid_vacation"},'
+
+        '{"employee":{"id":"tc","name":"Third","subcompany":"first","surname":"C"},'
+        '"end_date":"2023-07-22T23:59:00.000000","start_date":"2023-07-22T00:00:00.000000",'
+        '"abscence_type":"unpaid_vacation"},'
+
+        '{"employee":{"id":"tc","name":"Third","subcompany":"first","surname":"C"},'
+        '"end_date":"2023-07-23T23:59:00.000000","start_date":"2023-07-23T00:00:00.000000",'
+        '"abscence_type":"unpaid_vacation"}'
+        ']}'
+    )) == True
 
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])
 async def test_actions(service_client):

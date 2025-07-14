@@ -76,7 +76,7 @@ class AttendanceListAllHandler final
 
     result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kSlave,
-        "SELECT a.start_date, a.end_date, NULL::TEXT as type,"
+        "SELECT a.start_date, a.end_date, a.attendance_type, "
         "ROW"
         "(e.id, e.name, "
         "e.surname, e.patronymic, "

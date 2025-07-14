@@ -504,7 +504,7 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/SearchResponse'
-#
+
     /v1/attendance/list-all:
         post:
             description: Get list of all employees' attendances for a given time period
@@ -1509,7 +1509,6 @@ components:
                 type:
                     type: string
                     enum:
-                    # если тип оттенденсе, то добавить тип
                       - vacation
                       - attendance
                 start_date:
@@ -1596,18 +1595,44 @@ components:
               - manager
               - robot
 
+        AttendanceType:
+            type: string
+            enum:
+                - work_daytime # Я 
+                - work_nighttime # Н
+                - work_weekend_holiday # РВ
+                - overtime # C
+                - business_trip # K
+                - vacation # ОТ
+                - additional_paid_vacation # ОД
+                - study_vacation_paid # У
+                - study_vacation_unpaid # УД
+                - maternity_leave # Р
+                - childcare_leave # ОЖ
+                - unpaid_vacation # ДО
+                - sick_leave # Б
+                - shortened_work_time # ЛЧ
+                - absence_without_reason # ПР
+                - part_time_by_employer # НС
+                - weekend_holiday # В
+                - absence_unknown_reason # НН
+                - downtime_not_employer_fault # НП
+                - suspension_with_pay # НО
+
         AttendanceAddRequest:
             type: object
             additionalProperties: false
             required:
               - start_date
               - end_date
-              # att type
+              - attendance_type
             properties:
                 start_date:
                     $ref: '#/components/schemas/Timestamp'
                 end_date:
                     $ref: '#/components/schemas/Timestamp'
+                attendance_type:
+                    $ref: '#/components/schemas/AttendanceType'
 
         AbscenceSplitRequest:
             type: object
@@ -1783,7 +1808,6 @@ components:
                 end_date:
                     $ref: '#/components/schemas/Timestamp'
                     description: start_date and end_date should be in the same day
-                #
                 abscence_type:
                     $ref: '#/components/schemas/AbscenceType'
                     description: If employee has an approved abscence for a given period

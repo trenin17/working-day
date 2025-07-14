@@ -300,3 +300,6 @@ CREATE TABLE IF NOT EXISTS working_day_first.employee_permissions (
     CHECK (permission_type IN ('can_remove_documents'/*, etc.*/)),
     PRIMARY KEY (employee_id, permission_type)
 );
+
+ALTER TABLE working_day_first.actions
+ADD COLUMN IF NOT EXISTS attendance_type TEXT;
