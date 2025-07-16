@@ -573,7 +573,7 @@ struct UserAction : public JsonCompatible {
 
   auto Introspect() {
     return std::tie(id, type, start_date, end_date, status,
-                    blocking_actions_ids);
+                    blocking_actions_ids, attendance_type);
   }
 
   REGISTER_STRUCT_FIELD(id, std::string, "id");
@@ -585,6 +585,7 @@ struct UserAction : public JsonCompatible {
   REGISTER_STRUCT_FIELD_OPTIONAL(status, std::string, "status");
   REGISTER_STRUCT_FIELD(blocking_actions_ids, std::vector<std::string>,
                         "blocking_actions_ids");
+  REGISTER_STRUCT_FIELD_OPTIONAL(attendance_type, std::string, "attendance_type");
 };
 #endif
 

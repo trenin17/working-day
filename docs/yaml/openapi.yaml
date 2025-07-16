@@ -1521,6 +1521,8 @@ components:
                     type: array
                     items:
                         type: string
+                attendance_type:
+                    $ref: '#/components/schemas/AttendanceType'
 
         AbscenceRequestRequest:
             type: object

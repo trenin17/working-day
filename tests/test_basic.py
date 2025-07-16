@@ -820,6 +820,47 @@ async def test_actions(service_client):
         '"end_date":"2023-07-21T23:59:00.000000","id":"' + action_id + '",'
         '"start_date":"2023-07-10T00:00:00.000000","status":"pending","type":"vacation"'
         '}]}')
+    
+    response = await service_client.post(
+        '/v1/employee/add',
+        headers={'Authorization': 'Bearer first_token'},
+        json={'name': 'Third', 'surname': 'C', 'role': 'manager'},
+    )
+    assert response.status == 200
+    employee_id = json.loads(response.text)['login']
+    password = json.loads(response.text)['password']
+
+    response = await service_client.post(
+        '/v1/authorize',
+        json={'login': employee_id, 'company_id': 'first', 'password': password},
+    )
+    assert response.status == 200
+    token = json.loads(response.text)['token']
+
+    # 21 июля с 10 до 18 тип work_nighttime для First
+    response = await service_client.post(
+        '/v1/attendance/add',
+        params={'employee_id': 'first_id'},
+        headers={'Authorization': 'Bearer ' + token},
+        json={'start_date': '2023-07-22T10:00:00',
+              'end_date': '2023-07-22T18:00:00',
+              'attendance_type': 'work_nighttime'}
+    )
+    assert response.status == 200
+    
+    response = await service_client.post(
+        '/v1/actions',
+        headers={'Authorization': 'Bearer first_token'},
+        json={'from': '2023-07-22T00:00:00', 'to': '2023-07-23T00:00:00'}
+    )
+    assert response.status == 200
+
+    action_id = json.loads(response.text)['actions'][0]['id']
+    assert response.text == (
+        '{"actions":[{"attendance_type":"work_nighttime","blocking_actions_ids":[],'
+        '"end_date":"2023-07-22T18:00:00.000000","id":"' + action_id + '",'
+        '"start_date":"2023-07-22T10:00:00.000000","type":"attendance"'
+        '}]}')
 
 
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])

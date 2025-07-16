@@ -50,7 +50,7 @@ class ActionsHandler final : public userver::server::handlers::HttpHandlerBase {
 
     auto result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kSlave,
-        "SELECT id, type, start_date, end_date, status, blocking_actions_ids "
+        "SELECT id, type, start_date, end_date, status, blocking_actions_ids, attendance_type "
         "FROM working_day_" +
             company_id +
             ".actions "
