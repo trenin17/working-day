@@ -50,6 +50,34 @@ components_manager:
                 POSTGRES_DEFAULT_COMMAND_CONTROL:
                     network_timeout_ms: 750
                     statement_timeout_ms: 500
+                USERVER_NO_LOG_SPANS:
+                    prefixes:
+                        [
+                            "pg_query"
+                        ]
+                    names:
+                        [
+                            "connection_pool_monitor",
+                            "pg_maintain",
+                            "file-resolver-reload",
+                            "http/handler-server-monitor",
+                            "connlimit_watchdog",
+                            "http_easy_reinit",
+                            "pg_connect",
+                            "load_secdist_from_file",
+                            "net-resolver-init",
+                            "all_components_loaded",
+                            "first-update/auth-pg-cache",
+                            "load_secdist_from_file",
+                            "component_stop",
+                            "on_all_components_are_stopping"
+                        ]
+
+
+        logging-configurator:
+          load-enabled: true
+          limited-logging-enable: true
+          limited-logging-interval: 2s
 
         testsuite-support: {}
 

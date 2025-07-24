@@ -10,6 +10,8 @@
 #include <userver/testsuite/testsuite_support.hpp>
 #include <userver/utils/daemon_run.hpp>
 
+#include <userver/components/logging_configurator.hpp>
+
 #include <aws/core/Aws.h>
 #include <aws/core/auth/AWSCredentialsProvider.h>
 
@@ -88,7 +90,8 @@ int main(int argc, char* argv[]) {
           .Append<userver::components::Postgres>("key-value")
           .Append<userver::clients::dns::Component>()
           .Append<auth::AuthCache>()
-          .Append<utils::custom_implicit_options::CustomImplicitOptions>();
+          .Append<utils::custom_implicit_options::CustomImplicitOptions>()
+          .Append<userver::components::LoggingConfigurator>();
 
   views::v1::employee::add::AppendAddEmployee(component_list);
   views::v1::employee::add_head::AppendAddHeadEmployee(component_list);
