@@ -501,7 +501,7 @@ struct DocumentItem : public JsonCompatible {
 
   auto Introspect() {
     return std::tie(id, name, type, sign_required, description, is_signed,
-                    parent_id, created_ts, chain_metadata);
+                    parent_id, created_ts, chain_metadata, visibility_status);
   }
 
   REGISTER_STRUCT_FIELD(id, std::string, "id");
@@ -513,6 +513,8 @@ struct DocumentItem : public JsonCompatible {
   REGISTER_STRUCT_FIELD_OPTIONAL(parent_id, std::string, "parent_id");
   REGISTER_STRUCT_FIELD_OPTIONAL(created_ts, userver::storages::postgres::TimePoint, "created_ts");
   REGISTER_STRUCT_FIELD_OPTIONAL(chain_metadata, std::vector<DocumentsChainMetadataItem>, "chain_metadata_new");
+  REGISTER_STRUCT_FIELD_OPTIONAL(visibility_status, int, "visibility_status");
+
 };
 #endif
 

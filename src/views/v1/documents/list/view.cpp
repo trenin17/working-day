@@ -50,7 +50,7 @@ class DocumentsListHandler final
             "d.type, d.sign_required, "
             "d.description, "
             "ed.signed, "
-            "NULL::TEXT as parent_id, d.created_ts, d.chain_metadata_new "
+            "NULL::TEXT as parent_id, d.created_ts, d.chain_metadata_new, d.visibility_status "
             "FROM working_day_" +
             company_id +
             ".documents d "
