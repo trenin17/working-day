@@ -821,7 +821,7 @@ async def test_actions(service_client):
         '"end_date":"2023-07-21T23:59:00.000000","id":"' + action_id + '",'
         '"start_date":"2023-07-10T00:00:00.000000","status":"pending","type":"vacation"'
         '}]}')
-    
+
     response = await service_client.post(
         '/v1/employee/add',
         headers={'Authorization': 'Bearer first_token'},
@@ -848,7 +848,7 @@ async def test_actions(service_client):
               'attendance_type': 'work_nighttime'}
     )
     assert response.status == 200
-    
+
     response = await service_client.post(
         '/v1/actions',
         headers={'Authorization': 'Bearer first_token'},
