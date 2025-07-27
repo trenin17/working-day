@@ -271,7 +271,7 @@ SET chain_metadata_new = (
 );  
 
 ALTER TABLE working_day_first.documents DROP COLUMN chain_metadata;
-DROP TYPE IF EXISTS wd_general.chain_metadata_item;
+DROP TYPE IF EXISTS wd_general.chain_metadata_item CASCADE;
 
 ALTER TABLE working_day_first.documents 
 ADD COLUMN IF NOT EXISTS visibility_status INT DEFAULT 0;

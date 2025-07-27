@@ -70,7 +70,9 @@ components_manager:
                             "first-update/auth-pg-cache",
                             "load_secdist_from_file",
                             "component_stop",
-                            "on_all_components_are_stopping"
+                            "on_all_components_are_stopping",
+                            "update-task/auth-pg-cache",
+                            "file-resolver-updater"
                         ]
 
 
