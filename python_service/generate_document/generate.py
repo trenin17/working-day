@@ -43,8 +43,11 @@ def get_duration(start_date, end_date):
     return duration
 
 def replace_macros_in_word(doc_path, replacements, output_path):
-    doc = Document(doc_path)
-
+    doc = Document("generate_document/templates/first_vacation_create.docx")
+    try:
+        doc = Document(doc_path)
+    except Exception:
+        pass
     # Замена в абзацах
     for paragraph in doc.paragraphs:
         for macro, value in replacements.items():
@@ -188,4 +191,4 @@ async def generate_document(request):
         tasks[file_key] = asyncio.create_task(worker(file_key, data))
 
     # возвращаем сразу
-    return ""
+    return web.Response(status=200, content_type='text/plain', text="url")
