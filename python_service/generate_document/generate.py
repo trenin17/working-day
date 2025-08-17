@@ -9,6 +9,9 @@ from sign_document.stamp import create_stamp, StampData
 from s3_client.aws_utils import upload_and_presign
 from convert_document.convert import convert_docx_to_pdf
 
+import asyncio
+import logging
+
 
 def plural_form(number, first, second, third):
     one_digit = number % 10
@@ -28,26 +31,18 @@ def plural_form(number, first, second, third):
 def get_duration(start_date, end_date):
     start_dd = datetime.strptime(start_date, '%d.%m.%Y')
     end_dd = datetime.strptime(end_date, '%d.%m.%Y')
-
-    # вычисляем разницу между датами
     difference = end_dd - start_dd
-
-    # количество дней - это total_seconds разделить на количество секунд в дне (86400)
     duration = int(difference.total_seconds() / 86400) + 1
     duration = str(duration) + ' ' + plural_form(duration, 'календарный день', 'календарных дня', ' календарных дней')
-
     return duration
 
 def replace_macros_in_word(doc_path, replacements, output_path):
     doc = Document(doc_path)
 
-    # Замена в абзацах
     for paragraph in doc.paragraphs:
         for macro, value in replacements.items():
             if macro in paragraph.text:
                 paragraph.text = paragraph.text.replace(macro, value)
-
-    # Замена в таблицах
     for table in doc.tables:
         for row in table.rows:
             for cell in row.cells:
@@ -55,10 +50,8 @@ def replace_macros_in_word(doc_path, replacements, output_path):
                     if macro in cell.text:
                         cell.text = cell.text.replace(macro, value)
 
-    # Замена в текстовых блоках
     for element in doc.element.body:
         if element.tag == '{http://schemas.openxmlformats.org/wordprocessingml/2006/main}p':
-            # Это абзац
             text_elements = element.findall('.//{http://schemas.openxmlformats.org/wordprocessingml/2006/main}t')
             for t in text_elements:
                 for macro, value in replacements.items():
@@ -71,12 +64,7 @@ def delete_tmp_files(file_key):
     subprocess.run(['rm', '-rf', '/tmp/' + file_key + '*'])
 
 
-async def generate_document(request):
-    # Retrieve `file_key` from the query string
-    file_key = request.rel_url.query['file_key']
-
-    # Get JSON data from the body
-    data = await request.json()
+async def process_document(file_key, data):
     request_type = data['request_type']
     action_type = data['action_type']
 
@@ -101,6 +89,7 @@ async def generate_document(request):
     second_start_date = data.get('second_start_date', "")
     first_end_date = data.get('first_end_date', "")
     second_end_date = data.get('second_end_date', "")
+
     first_duration = ""
     if first_start_date and first_end_date:
         first_duration = get_duration(first_start_date, first_end_date)
@@ -146,11 +135,13 @@ async def generate_document(request):
 
     file_name = file_key + '.docx'
     output_path_word = '/tmp/' + file_name
-    replace_macros_in_word("generate_document/templates/" + company_id + "_" + action_type + "_" + request_type + ".docx",
-                            replacements, output_path_word)
+    replace_macros_in_word(
+        "generate_document/templates/" + company_id + "_" + action_type + "_" + request_type + ".docx",
+        replacements, 
+        output_path_word
+    )
 
     output_path_pdf = '/tmp/' + file_key + '.pdf'
-
     convert_docx_to_pdf(output_path_word, '/tmp')
 
     output_path_pdf_signed = '/tmp/' + file_key + '_signed.pdf'
@@ -160,4 +151,28 @@ async def generate_document(request):
 
     url = upload_and_presign(output_path_pdf_signed, file_key + '.pdf')
     delete_tmp_files(file_key)
-    return web.Response(status=200, content_type='text/plain', text=url)
+    return url
+
+tasks = {}
+async def worker(file_key, data):
+    try:
+        result = await process_document(file_key, data) 
+        logging.info(f"Document {file_key} generated successfully")
+        return result
+    except Exception as e:
+        logging.exception(f"Error while generating document {file_key}: {e}")
+        return None
+    finally:
+        tasks.pop(file_key, None)
+
+async def generate_document(request):
+    file_key = request.rel_url.query['file_key']
+    data = await request.json()
+
+    if file_key not in tasks:
+        # запускаем worker в фоне
+        tasks[file_key] = asyncio.create_task(worker(file_key, data))
+
+    # возвращаем сразу
+    return web.Response(status=200, content_type='text/plain', text="url")
+
