@@ -11,6 +11,7 @@ from convert_document.convert import convert_docx_to_pdf
 
 import asyncio
 import logging
+logger = logging.getLogger(__name__)
 
 
 def plural_form(number, first, second, third):
@@ -39,7 +40,7 @@ def get_duration(start_date, end_date):
     duration = int(difference.total_seconds() / 86400) + 1
     duration = str(duration) + ' ' + plural_form(duration,
 'календарный день', 'календарных дня', ' календарных дней')
-    
+
     return duration
 
 def replace_macros_in_word(doc_path, replacements, output_path):
@@ -47,7 +48,8 @@ def replace_macros_in_word(doc_path, replacements, output_path):
     try:
         doc = Document(doc_path)
     except Exception:
-        pass
+        logger.error(f"Path {doc_path} is incorrect. A standard template \'generate_document/templates/first_vacation_create.docx\' is used")
+
     # Замена в абзацах
     for paragraph in doc.paragraphs:
         for macro, value in replacements.items():
@@ -121,7 +123,7 @@ async def process_document(file_key, data):
     now_date = datetime.today().strftime('%d.%m.%Y')
     if company_name == "Евсикова С. В. ИП":
         company_id = 'evsikovaip'
-    
+
     replacements = {
         '%employee_name%': employee_name,
         '%employee_surname%': employee_surname,
@@ -148,9 +150,10 @@ async def process_document(file_key, data):
 
     file_name = file_key + '.docx'
     output_path_word = '/tmp/' + file_name
+    logger.info(f"company_id: {company_id}, action_type: {action_type}")
     replace_macros_in_word(
         "generate_document/templates/" + company_id + "_" + action_type + "_" + request_type + ".docx",
-        replacements, 
+        replacements,
         output_path_word
     )
 
@@ -165,12 +168,13 @@ async def process_document(file_key, data):
 
     url = upload_and_presign(output_path_pdf_signed, file_key + '.pdf')
     delete_tmp_files(file_key)
+    logger.info(f"return {url}")
     return url
 
 tasks = {}
 async def worker(file_key, data):
     try:
-        result = await process_document(file_key, data) 
+        result = await process_document(file_key, data)
         logging.info(f"Document {file_key} generated successfully")
         return result
     except Exception as e:
@@ -191,4 +195,4 @@ async def generate_document(request):
         tasks[file_key] = asyncio.create_task(worker(file_key, data))
 
     # возвращаем сразу
-    return web.Response(status=200, content_type='text/plain', text="url")
+    return web.Response(status=200, content_type='text/plain', text=file_key)
