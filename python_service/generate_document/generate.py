@@ -10,9 +10,6 @@ from s3_client.aws_utils import upload_and_presign
 from convert_document.convert import convert_docx_to_pdf
 
 import asyncio
-import logging
-logger = logging.getLogger(__name__)
-
 
 def plural_form(number, first, second, third):
     one_digit = number % 10
@@ -48,8 +45,7 @@ def replace_macros_in_word(doc_path, replacements, output_path):
     try:
         doc = Document(doc_path)
     except Exception:
-        logger.error(f"Path {doc_path} is incorrect. A standard template \'generate_document/templates/first_vacation_create.docx\' is used")
-
+        pass
     # Замена в абзацах
     for paragraph in doc.paragraphs:
         for macro, value in replacements.items():
@@ -150,7 +146,6 @@ async def process_document(file_key, data):
 
     file_name = file_key + '.docx'
     output_path_word = '/tmp/' + file_name
-    logger.info(f"company_id: {company_id}, action_type: {action_type}")
     replace_macros_in_word(
         "generate_document/templates/" + company_id + "_" + action_type + "_" + request_type + ".docx",
         replacements,
@@ -168,17 +163,14 @@ async def process_document(file_key, data):
 
     url = upload_and_presign(output_path_pdf_signed, file_key + '.pdf')
     delete_tmp_files(file_key)
-    logger.info(f"return {url}")
     return url
 
 tasks = {}
 async def worker(file_key, data):
     try:
         result = await process_document(file_key, data)
-        logging.info(f"Document {file_key} generated successfully")
         return result
     except Exception as e:
-        logging.exception(f"Error while generating document {file_key}: {e}")
         return None
     finally:
         tasks.pop(file_key, None)

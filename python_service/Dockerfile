@@ -11,7 +11,8 @@ RUN pip install -r requirements.txt
 
 RUN apt-get update && apt-get install -y libreoffice
 
-RUN mkdir ./generate_document ./sign_document
+RUN mkdir -p /app/generate_document /app/sign_document /tmp/logs
+
 COPY generate_document ./generate_document/
 COPY main.py .
 COPY sign_document ./sign_document
