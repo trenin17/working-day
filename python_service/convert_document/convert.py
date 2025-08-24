@@ -8,7 +8,6 @@ tasks = {}
 
 def convert_docx_to_pdf(docx_path, output_pdf_path):
     cmd = [
-        ### скачать бинарь libreoffice
         'libreoffice', '--headless', '--convert-to', 'pdf', '--outdir',
         output_pdf_path, docx_path
     ]
