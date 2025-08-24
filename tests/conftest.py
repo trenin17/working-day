@@ -85,7 +85,7 @@ def mock_pyservice(mockserver) -> None:
         return {
             'response': 'OK'
         }
-    
+
     @mockserver.json_handler('/document/convert')
     def mock(request):
         return {
