@@ -44,6 +44,7 @@ add_library(${PROJECT_NAME}_objs OBJECT
 	src/views/v1/actions/view.cpp
 	src/views/v1/documents/vacation/view.cpp
 	src/views/v1/attendance/add/view.cpp
+	src/views/v1/attendance/export_to_excel/view.cpp
 	src/views/v1/abscence/split/view.cpp
 	src/views/v1/abscence/reschedule/view.cpp
 	src/views/v1/payments/add_bulk/view.cpp

@@ -58,6 +58,11 @@ def userver_config_pyservice(mockserver_info):
             'pyservice-url'
         ] = mockserver_info.url('document/convert')
 
+        components['handler-v1-attendance-export-to-excel'][
+            'pyservice-url'
+        ] = mockserver_info.url('attendance/export-to-excel')
+
+
     return do_patch
     # /// [patch configs]
 
@@ -78,6 +83,12 @@ def mock_pyservice(mockserver) -> None:
         }
     
     @mockserver.json_handler('/document/convert')
+    def mock(request):
+        return {
+            'response': 'OK'
+        }
+
+    @mockserver.json_handler('/attendance/export-to-excel')
     def mock(request):
         return {
             'response': 'OK'

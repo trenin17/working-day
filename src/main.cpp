@@ -25,6 +25,7 @@
 #include "views/v1/actions/view.hpp"
 #include "views/v1/attendance/add/view.hpp"
 #include "views/v1/attendance/list_all/view.hpp"
+#include "views/v1/attendance/export_to_excel/view.hpp"
 #include "views/v1/authorize/view.hpp"
 #include "views/v1/clear-tasks/view.hpp"
 #include "views/v1/documents/download/view.hpp"
@@ -116,6 +117,7 @@ int main(int argc, char* argv[]) {
   views::v1::search_full::AppendSearchFull(component_list);
   views::v1::search_suggest::AppendSearchSuggest(component_list);
   views::v1::attendance::list_all::AppendAttendanceListAll(component_list);
+  views::v1::attendance::export_to_excel::AppendAttendanceExportToExcel(component_list);
   views::v1::documents::upload::AppendDocumentsUpload(component_list);
   views::v1::documents::send::AppendDocumentsSend(component_list);
   views::v1::documents::list::AppendDocumentsList(component_list);

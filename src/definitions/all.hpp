@@ -56,6 +56,11 @@
 #define USE_ATTENDANCE_LIST_ALL_RESPONSE
 #endif
 
+#ifdef V1_ATTENDANCE_EXPORT_TO_EXCEL
+#define USE_ATTENDANCE_LIST_ALL_REQUEST
+#define USE_ATTENDANCE_LIST_ALL_RESPONSE
+#endif
+
 #ifdef USE_ATTENDANCE_LIST_ALL_RESPONSE
 #define USE_ATTENDANCE_LIST_ITEM
 #endif
@@ -991,7 +996,7 @@ struct DocumentsChainUpdateResponse : public JsonCompatible {
   auto Introspect() {
     return std::tie(chain_metadata);
   }
-  
+
   REGISTER_STRUCT_FIELD(chain_metadata, std::vector<DocumentsChainMetadataItem>, "chain_metadata_new");
 };
 #endif

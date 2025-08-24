@@ -465,9 +465,9 @@ components_manager:
                   - bearer
                 scopes:
                   - user
-        
+
         handler-v1-tracker-tasks-info:
-            path: /v1/tracker/tasks/info          
+            path: /v1/tracker/tasks/info
             method: GET
             task_processor: main-task-processor
             auth:
@@ -478,7 +478,7 @@ components_manager:
             is_testing: $is_testing
 
         handler-v1-tracker-tasks-assigned-to-user:
-            path: /v1/tracker/tasks/assigned-to-user           
+            path: /v1/tracker/tasks/assigned-to-user
             method: POST
             task_processor: main-task-processor
             auth:
@@ -611,7 +611,7 @@ components_manager:
                   - bearer
                 scopes:
                   - user
-        
+
         handler-v1-employee-permissions-list:
             path: /v1/employee/permissions/list
             method: POST
@@ -631,3 +631,14 @@ components_manager:
                   - bearer
                 scopes:
                   - admin
+
+        handler-v1-attendance-export-to-excel:
+            path: /v1/attendance/export_to_excel
+            method: POST
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - user
+            pyservice-url: 'http://python-service:3000/attendance/export-to-excel'
