@@ -232,13 +232,18 @@ properties:
       response.attendances.push_back(std::move(overtime));
     }
 
-    // 2. Отправляем в python-сервис для генерации Excel
+      
+    const std::string from_str = userver::utils::datetime::Timestring(request_body.from, tz, "%Y-%m-%d");
+    const std::string to_str   = userver::utils::datetime::Timestring(request_body.to, tz, "%Y-%m-%d");
+
     auto file_key = userver::utils::generators::GenerateUuid();
     auto resp = http_client_.CreateRequest()
                     .post(
                         "http://python-service:3000/"
                         "attendance/export-to-excel?file_key=" +
-                        file_key)
+                        file_key + "&from_date=" +
+                        from_str + "&to_date=" +
+                        to_str)
                     .data(response.ToJsonString())
                     .retry(2)
                     .timeout(std::chrono::milliseconds{5000})

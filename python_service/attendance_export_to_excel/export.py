@@ -53,22 +53,32 @@ def transform_attendance(attendances: list[dict], date_from: str, date_to: str) 
     )
     df["Компания"] = df["employee"].apply(lambda e: e.get("subcompany", ""))
 
-    df["start_date"] = pd.to_datetime(df["start_date"])
-    df["end_date"] = pd.to_datetime(df["end_date"])
+    # Даты (могут быть пустыми)
+    df["start_date"] = pd.to_datetime(df.get("start_date"))
+    df["end_date"] = pd.to_datetime(df.get("end_date"))
 
     # приоритет: abscence_type > attendance_type
-    df["value"] = df.apply(
-        lambda r:  r.get("abscence_type") or r.get("attendance_type") or "",
-        axis=1
-    )
+    
+    def pick_code(r):
+        att = r.get("attendance_type")
+        absn = r.get("abscence_type")
 
-    # подмена значений по словарю REPLACEMENTS
-    df["value"] = df["value"].map(lambda v: REPLACEMENTS.get(v, v))
+        att  = att  if pd.notna(att)  and att  != "" else None
+        absn = absn if pd.notna(absn) and absn != "" else None
 
-    # часы считаем только для рабочих смен (WORKING_DAYS)
+        return (absn or att or "")
+
+    
+    df["raw_value"] = df.apply(pick_code, axis=1)
+
+    # замена по словарю
+    df["value"] = df["raw_value"].map(lambda v: REPLACEMENTS.get(v, v))
+
+    # часы только для рабочих смен
     df["hours"] = df.apply(
         lambda r: ((r["end_date"] - r["start_date"]).total_seconds() / 3600.0)
-        if r.get("attendance_type") in WORKING_DAYS else 0.0,
+        if pd.notna(r["start_date"]) and pd.notna(r["end_date"]) and r.get("attendance_type") in WORKING_DAYS 
+        else 0.0,
         axis=1
     )
 
@@ -78,9 +88,24 @@ def transform_attendance(attendances: list[dict], date_from: str, date_to: str) 
     for company, group in df.groupby("Компания"):
         rows = []
         for _, r in group.iterrows():
-            start_norm = r["start_date"].normalize()
-            end_norm = (r["end_date"].normalize()
-                        if pd.notna(r["end_date"]) else start_norm)
+            if pd.isna(r["start_date"]) and pd.isna(r["end_date"]):
+                for day in all_days:
+                    rows.append({
+                        "ФИО": r["ФИО"],
+                        "day": day,
+                        "value": "",
+                        "hours": 0.0,
+                    })
+                continue
+
+            start_norm = (
+                r["start_date"].normalize()
+                if pd.notna(r["start_date"]) else r["end_date"].normalize()
+            )
+            end_norm = (
+                r["end_date"].normalize()
+                if pd.notna(r["end_date"]) else start_norm
+            )
             for day in pd.date_range(start_norm, end_norm, freq="D"):
                 rows.append({
                     "ФИО": r["ФИО"],
@@ -90,7 +115,10 @@ def transform_attendance(attendances: list[dict], date_from: str, date_to: str) 
                 })
 
         df_days = pd.DataFrame(rows)
+        if df_days.empty:
+            continue
 
+        # сводная таблица: по дням — значения
         pivot = df_days.pivot_table(
             index="ФИО",
             columns="day",
@@ -98,13 +126,16 @@ def transform_attendance(attendances: list[dict], date_from: str, date_to: str) 
             aggfunc=lambda x: ",".join(str(v) for v in x if pd.notna(v) and v != "")
         ).fillna("")
 
+        # добавляем все дни периода
         pivot = pivot.reindex(columns=all_days, fill_value="")
 
+        # меняем названия колонок на числа
         day_labels = {d: str(d.day) for d in all_days}
         pivot.rename(columns=day_labels, inplace=True)
 
         pivot.reset_index(inplace=True)
 
+        # считаем часы
         work_hours = df_days.groupby("ФИО")["hours"].sum()
         pivot["work_hours"] = pivot["ФИО"].map(work_hours).fillna(0.0).round(2)
 
@@ -118,23 +149,20 @@ def transform_attendance(attendances: list[dict], date_from: str, date_to: str) 
 
 async def generate_attendance_excel(request):
     file_key = request.rel_url.query['file_key']
+    
+    from_date = request.rel_url.query['from_date']
+    to_date = request.rel_url.query['to_date']
+
+    if not from_date or not to_date:
+        return web.Response(status=400, text="from_date and to_date are required")
+
     data = await request.json()
     attendances = data.get("attendances", [])
 
     if not attendances:
         return web.Response(status=400, text="Invalid input data")
 
-    df_tmp = pd.DataFrame(attendances)
-    if "start_date" not in df_tmp.columns or "end_date" not in df_tmp.columns:
-        return web.Response(status=400, text="from/to not provided and cannot be derived")
-
-    df_tmp["start_date"] = pd.to_datetime(df_tmp["start_date"])
-    df_tmp["end_date"] = pd.to_datetime(df_tmp["end_date"])
-
-    date_from = df_tmp["start_date"].min().strftime("%Y-%m-%d")
-    date_to   = df_tmp["end_date"].max().strftime("%Y-%m-%d")
-
-    company_tables = transform_attendance(attendances, date_from, date_to)
+    company_tables = transform_attendance(attendances, from_date, to_date)
 
     with tempfile.NamedTemporaryFile(suffix=".xlsx", delete=False) as tmp:
         output = tmp.name
