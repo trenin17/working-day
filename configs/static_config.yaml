@@ -641,4 +641,16 @@ components_manager:
                   - bearer
                 scopes:
                   - user
-            pyservice-url: 'http://python-service:3000/attendance/export-to-excel'
+            pyservice-url: 'http://localhost:3000/attendance/export-to-excel'
+
+        handler-v1-documents-generate-from-template:
+            path: /v1/documents/generate_from_template
+            method: POST
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - user
+            pyservice-url: 'http://python-service:3000/document/generate-from-template'
+

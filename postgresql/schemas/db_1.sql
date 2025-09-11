@@ -303,3 +303,6 @@ CREATE TABLE IF NOT EXISTS working_day_first.employee_permissions (
 
 ALTER TABLE working_day_first.actions
 ADD COLUMN IF NOT EXISTS attendance_type TEXT;
+
+ALTER TABLE wd_general.companies
+ADD COLUMN IF NOT EXISTS head_template TEXT;

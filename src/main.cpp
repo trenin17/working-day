@@ -36,6 +36,7 @@
 #include "views/v1/documents/sign/view.hpp"
 #include "views/v1/documents/upload/view.hpp"
 #include "views/v1/documents/vacation/view.hpp"
+#include "views/v1/documents/generate_from_template/view.hpp"
 #include "views/v1/employee/add/view.hpp"
 #include "views/v1/employee/add_head/view.hpp"
 #include "views/v1/employee/info/view.hpp"
@@ -125,6 +126,7 @@ int main(int argc, char* argv[]) {
   views::v1::documents::sign::AppendDocumentsSign(component_list);
   views::v1::documents::list_all::AppendDocumentsListAll(component_list);
   views::v1::documents::get_signs::AppendDocumentsGetSigns(component_list);
+  views::v1::documents::generate_from_template::AppendDocumentsGenerateFromTemplate(component_list);
   views::v1::superuser::company::add::AppendSuperuserCompanyAdd(component_list);
   views::v1::inventory::add::AppendInventoryAdd(component_list);
   views::v1::messenger::create::AppendCreateChat(component_list);

@@ -149,6 +149,13 @@
 #define USE_ABSCENCE_VERDICT_REQUEST
 #endif
 
+#ifdef V1_DOCUMENTS_GENERATE_FROM_TEMPLATE
+#define USE_PYSERVICE_DOCUMENT_GENERATE_REQUEST
+#define USE_GENERATE_FROM_TEMPLATE_REQUEST
+#define USE_GENERATE_FROM_TEMPLATE_RESPONSE
+#define USE_ERROR_MESSAGE
+#endif
+
 #ifdef V1_DOCUMENTS_SIGN
 #define USE_LIST_EMPLOYEE_WITH_SUBCOMPANY
 #define USE_PYSERVICE_DOCUMENT_SIGN_REQUEST
@@ -664,6 +671,10 @@ struct PyserviceDocumentGenerateRequest : public JsonCompatible {
                                  "second_start_date");
   REGISTER_STRUCT_FIELD_OPTIONAL(second_end_date, std::string,
                                  "second_end_date");
+  REGISTER_STRUCT_FIELD_OPTIONAL(params, std::vector<std::string>,
+                                 "params");
+  REGISTER_STRUCT_FIELD_OPTIONAL(head_template, std::string,
+                                 "head_template");
 };
 #endif
 
@@ -1073,5 +1084,17 @@ struct EmployeePermissionsItem : public JsonCompatible {
 #ifdef USE_EMPLOYEE_PERMISSIONS
 struct EmployeePermissions : public JsonCompatible {
   REGISTER_STRUCT_FIELD(permissions, std::vector<EmployeePermissionsItem>, "permissions");
+};
+#endif
+
+#ifdef USE_GENERATE_FROM_TEMPLATE_REQUEST
+struct GenerateFromTemplateRequest : public JsonCompatible {
+  REGISTER_STRUCT_FIELD_OPTIONAL(params, std::vector<std::string>, "params");
+};
+#endif
+
+#ifdef USE_GENERATE_FROM_TEMPLATE_RESPONSE
+struct GenerateFromTemplateResponse : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(download_link, std::string, "download_link");
 };
 #endif
