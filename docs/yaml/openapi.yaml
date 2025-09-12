@@ -280,6 +280,10 @@ paths:
             responses:
                 '200':
                     description: Verdict was sent
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/AbscenceVerdictResponse'
 
     /v1/abscence/split:
         post:
@@ -727,6 +731,11 @@ paths:
             responses:
                 '200':
                     description: Document was signed
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/AbscenceVerdictResponse'
+
 
     /v1/superuser/company/add:
         post:
@@ -1604,11 +1613,27 @@ components:
         AbscenceType:
             type: string
             enum:
-                - vacation
-                - sick_leave
-                - unpaid_vacation
-                - business_trip
-                - overtime
+                - vacation                              # 5 - ежегодный отпуск
+                - sick_leave                            # больничный
+                - unpaid_vacation                       # 18 - отпуск без сохранения ЗП
+                - business_trip                         # командировка
+                - overtime                              # 19 - сверхурочная работа / работа в выходной
+                - vacation_days_instead                 # 1 - дни в счёт ежегодного отпуска
+                - payout_birth                          # 2 - единовременная выплата при рождении ребёнка
+                - certificates_on_dismissal             # 3 - выдача справок при увольнении
+                - tax_deduction_children                # 6 - налоговый вычет на детей
+                - part_time                             # 7 - заявление на неполный рабочий день
+                - maternity_childcare_15                # 8 - отпуск по уходу за ребёнком до 1.5 лет
+                - maternity_childcare_3                 # 9 - отпуск по уходу за ребёнком до 3 лет
+                - maternity_pregnancy                   # 10 - отпуск по беременности и родам
+                - transfer                              # 11 - перевод на другую должность
+                - vacation_shift                        # 12 - перенос ежегодного отпуска
+                - maternity_work_during                 # 13 - работа в период декретного отпуска
+                - personal_data_change                  # 14 - смена персональных данных
+                - resignation                           # 15 - увольнение по собственному желанию
+                - maternity_early_exit                  # 16 - досрочный выход из отпуска по уходу
+                - unpaid_vacation_with_reason           # 17 - отпуск без сохранения ЗП
+
 
         AbscenceRequestResponse:
             type: object
@@ -1624,14 +1649,26 @@ components:
             additionalProperties: false
             required:
               - action_id
+              - document_id
               - approve
             properties:
                 action_id:
+                    type: string
+                document_id:
                     type: string
                 notification_id:
                     type: string
                 approve:
                     type: boolean
+
+        AbscenceVerdictResponse:
+            type: object
+            additionalProperties: false
+            required:
+              - signed_file_key
+            properties:
+                signed_file_key:
+                    type: string
 
         DocumentsVacationResponse:
             type: object

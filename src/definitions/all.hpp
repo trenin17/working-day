@@ -147,6 +147,7 @@
 #ifdef V1_ABSCENCE_VERDICT
 #define USE_PYSERVICE_DOCUMENT_GENERATE_REQUEST
 #define USE_ABSCENCE_VERDICT_REQUEST
+#define USE_ABSCENCE_VERDICT_RESPONSE
 #endif
 
 #ifdef V1_DOCUMENTS_GENERATE_FROM_TEMPLATE
@@ -159,6 +160,7 @@
 #ifdef V1_DOCUMENTS_SIGN
 #define USE_LIST_EMPLOYEE_WITH_SUBCOMPANY
 #define USE_PYSERVICE_DOCUMENT_SIGN_REQUEST
+#define USE_ABSCENCE_VERDICT_RESPONSE
 #define USE_ERROR_MESSAGE
 #endif
 
@@ -681,6 +683,7 @@ struct PyserviceDocumentGenerateRequest : public JsonCompatible {
 #ifdef USE_ABSCENCE_VERDICT_REQUEST
 struct AbscenceVerdictRequest : public JsonCompatible {
   REGISTER_STRUCT_FIELD(action_id, std::string, "action_id");
+  REGISTER_STRUCT_FIELD(document_id, std::string, "document_id");
   REGISTER_STRUCT_FIELD_OPTIONAL(notification_id, std::string,
                                  "notification_id");
   REGISTER_STRUCT_FIELD(approve, bool, "approve");
@@ -1096,5 +1099,11 @@ struct GenerateFromTemplateRequest : public JsonCompatible {
 #ifdef USE_GENERATE_FROM_TEMPLATE_RESPONSE
 struct GenerateFromTemplateResponse : public JsonCompatible {
   REGISTER_STRUCT_FIELD(download_link, std::string, "download_link");
+};
+#endif
+
+#ifdef USE_ABSCENCE_VERDICT_RESPONSE
+struct AbscenceVerdictResponse : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(signed_file_key, std::string, "signed_file_key");
 };
 #endif

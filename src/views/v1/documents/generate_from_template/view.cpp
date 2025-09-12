@@ -99,8 +99,6 @@ properties:
 
     auto user_id = ctx.GetData<std::string>("user_id");
     const auto& company_id = ctx.GetData<std::string>("company_id");
-    LOG_WARNING() << "user_id = [" << company_id << "]";
-    LOG_WARNING() << "company_id = [" << company_id << "]";
 
     auto action_id = request.GetArg("action_id");
     GenerateFromTemplateRequest request_body;
@@ -122,9 +120,6 @@ properties:
                action_id)
             .AsSingleRow<ActionInfo>(userver::storages::postgres::kRowTag);
 
-    LOG_WARNING() << "action_info = [" << action_info << "]";
-
-
     auto employee_info =
         trx.Execute(
                "SELECT name, surname, subcompany, patronymic, head_id, job_position "
@@ -135,8 +130,6 @@ properties:
                action_info.employee_id)
             .AsSingleRow<EmployeeInfo>(userver::storages::postgres::kRowTag);
 
-    LOG_WARNING() << "employee_info = [" << employee_info << "]";
-
     auto head_info =
         trx.Execute(
                "SELECT name, surname, patronymic, job_position "
@@ -146,13 +139,6 @@ properties:
                    "WHERE id = $1 ",
                employee_info.head_id.value_or(action_info.employee_id))
             .AsSingleRow<HeadInfo>(userver::storages::postgres::kRowTag);
-    LOG_WARNING() << "head_info = [" << head_info << "]";
-
-
-    LOG_INFO() << "company_id = " << company_id;
-
-
-
 
     auto head_template = trx.Execute(
                "SELECT head_template "

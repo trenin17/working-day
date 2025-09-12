@@ -93,10 +93,10 @@ CREATE TABLE IF NOT EXISTS working_day_first.reverse_index (
 ALTER TABLE working_day_first.reverse_index
 ADD COLUMN entity_type TEXT DEFAULT 'employees' CHECK (entity_type IN ('employees', 'tasks'));
 
-ALTER TABLE working_day_first.reverse_index 
+ALTER TABLE working_day_first.reverse_index
 DROP CONSTRAINT reverse_index_pkey;
 
-ALTER TABLE working_day_first.reverse_index 
+ALTER TABLE working_day_first.reverse_index
 ADD CONSTRAINT reverse_index_key_entity_uniq UNIQUE (key, entity_type);
 
 CREATE INDEX trgm_idx ON working_day_first.reverse_index USING GIST (key gist_trgm_ops);
@@ -176,13 +176,13 @@ ADD COLUMN job_position TEXT;
 DO $$
 BEGIN
     IF EXISTS (
-        SELECT 1 FROM information_schema.columns 
-        WHERE table_schema = 'working_day_first' 
-        AND table_name = 'employees' 
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'working_day_first'
+        AND table_name = 'employees'
         AND column_name = 'position'
     ) THEN
-        UPDATE working_day_first.employees 
-        SET job_position = position 
+        UPDATE working_day_first.employees
+        SET job_position = position
         WHERE job_position IS NULL;
     END IF;
 END $$;
@@ -268,12 +268,12 @@ SET chain_metadata_new = (
         )::wd_general.chain_metadata_item_new
         FROM unnest(chain_metadata) AS item
     )
-);  
+);
 
 ALTER TABLE working_day_first.documents DROP COLUMN chain_metadata;
 DROP TYPE IF EXISTS wd_general.chain_metadata_item CASCADE;
 
-ALTER TABLE working_day_first.documents 
+ALTER TABLE working_day_first.documents
 ADD COLUMN IF NOT EXISTS visibility_status INT DEFAULT 0;
 
 DROP TABLE IF EXISTS working_day_first.documents_history;
@@ -306,3 +306,4 @@ ADD COLUMN IF NOT EXISTS attendance_type TEXT;
 
 ALTER TABLE wd_general.companies
 ADD COLUMN IF NOT EXISTS head_template TEXT;
+

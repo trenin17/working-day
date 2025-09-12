@@ -1,6 +1,7 @@
 #define V1_ABSCENCE_VERDICT
 
 #include "view.hpp"
+#include "../../documents/sign_logic/sign_logic.hpp"
 
 #include <queue>
 
@@ -65,102 +66,7 @@ void GenerateVacationDocument(
     userver::storages::postgres::ClusterPtr pg_cluster,
     userver::clients::http::Client& http_client,
     const std::string& pyservice_url) {
-  auto action_id = request.action_id;
-  auto request_type = "create";
-  auto user_id = request.user_id;
-  const auto& company_id = request.company_id;
 
-  auto trx =
-      pg_cluster->Begin("documents_vacation",
-                        userver::storages::postgres::ClusterHostType::kMaster,
-                        {});  // TODO: change to slave read tx
-
-  auto action_info =
-      trx.Execute(
-             "SELECT user_id, type, start_date, end_date "
-             "FROM working_day_" +
-                 company_id +
-                 ".actions "
-                 "WHERE id = $1",
-             action_id)
-          .AsSingleRow<ActionInfo>(userver::storages::postgres::kRowTag);
-
-  auto employee_info =
-      trx.Execute(
-             "SELECT name, surname, subcompany, patronymic, head_id, job_position "
-             "FROM working_day_" +
-                 company_id +
-                 ".employees "
-                 "WHERE id = $1 ",
-             action_info.employee_id)
-          .AsSingleRow<EmployeeInfo>(userver::storages::postgres::kRowTag);
-
-  auto head_info =
-      trx.Execute(
-             "SELECT name, surname, patronymic, job_position "
-             "FROM working_day_" +
-                 company_id +
-                 ".employees "
-                 "WHERE id = $1 ",
-             employee_info.head_id.value_or(action_info.employee_id))
-          .AsSingleRow<HeadInfo>(userver::storages::postgres::kRowTag);
-
-  trx.Commit();
-
-  PyserviceDocumentGenerateRequest link_request;
-  link_request.action_type = action_info.type;
-  link_request.request_type = request_type;
-  link_request.employee_id = action_info.employee_id;
-  link_request.employee_name = employee_info.name;
-  link_request.employee_surname = employee_info.surname;
-  link_request.subcompany = employee_info.subcompany;
-  link_request.company_id = company_id;
-  link_request.head_name = head_info.name;
-  link_request.head_surname = head_info.surname;
-  link_request.start_date = userver::utils::datetime::Timestring(
-      action_info.start_date, "UTC", "%d.%m.%Y");
-  link_request.end_date = userver::utils::datetime::Timestring(
-      action_info.end_date, "UTC", "%d.%m.%Y"),
-  link_request.employee_patronymic = employee_info.patronymic;
-  link_request.head_patronymic = head_info.patronymic;
-  link_request.employee_position = employee_info.job_position;
-  link_request.head_position = head_info.job_position;
-
-  auto file_key = userver::utils::generators::GenerateUuid();
-  auto response = http_client.CreateRequest()
-                      .post(pyservice_url + "?file_key=" + file_key)
-                      .data(link_request.ToJsonString())
-                      .retry(2)  // retry once in case of error
-                      .timeout(std::chrono::milliseconds{10000})
-                      .perform();  // start performing the request
-  response->raise_for_status();
-
-  auto action_name = ActionTypeToName(action_info.type);
-
-  auto document_name = "Запрос на " + action_name.value() + " " +
-                       employee_info.surname + " " + employee_info.name + " " +
-                       userver::utils::datetime::Timestring(
-                           action_info.start_date, "UTC", "%d.%m.%Y") +
-                       " - " +
-                       userver::utils::datetime::Timestring(
-                           action_info.end_date, "UTC", "%d.%m.%Y");
-  file_key += ".pdf";
-
-  pg_cluster->Execute(userver::storages::postgres::ClusterHostType::kMaster,
-                      "INSERT INTO working_day_" + company_id +
-                          ".documents(id, name, "
-                          "sign_required, type) "
-                          "VALUES($1, $2, $3, $4)",
-                      file_key, document_name, true, "employee_request");
-
-  pg_cluster->Execute(userver::storages::postgres::ClusterHostType::kMaster,
-                      "INSERT INTO working_day_" + company_id +
-                          ".employee_document "
-                          "(employee_id, document_id, signed) "
-                          "VALUES ($1, $2, $3), ($4, $2, $3) "
-                          "ON CONFLICT DO NOTHING",
-                      action_info.employee_id, file_key, true,
-                      employee_info.head_id.value_or(action_info.employee_id));
 }
 
 class AbscenceVerdictHandler final
@@ -194,10 +100,14 @@ class AbscenceVerdictHandler final
     request_body.ParseRegisteredFields(request.RequestBody());
     auto user_id = ctx.GetData<std::string>("user_id");
     auto company_id = ctx.GetData<std::string>("company_id");
-
+    auto document_id = request_body.document_id;
     auto trx = pg_cluster_->Begin(
         "verdict_abscence",
         userver::storages::postgres::ClusterHostType::kMaster, {});
+
+    LOG_INFO() << "company_id=" << company_id
+           << " action_id=" << request_body.action_id;
+
 
     auto action_info =
         trx.Execute(
@@ -259,27 +169,26 @@ class AbscenceVerdictHandler final
 
     trx.Commit();
 
+
     if (request_body.approve) {
-      auto tasks = tasks_.Lock();
-      while (!tasks->empty() && tasks->front().IsFinished()) {
-        tasks->pop();
-      }
+      auto auth_header = request.GetHeader("Authorization");
+      views::v1::documents::sign::logic::DocumentSignParams params{
+        company_id,
+        user_id,
+        document_id,
+        http_client_,
+        pg_cluster_,
+        pyservice_url,
+        auth_header
+      };
 
-      VacationDocumentRequest request{.action_id = request_body.action_id,
-                                      .user_id = user_id,
-                                      .company_id = company_id};
-
-      tasks->push(userver::utils::AsyncBackground(
-          "GenerateVacationDocument",
-          userver::engine::current_task::GetTaskProcessor(),
-          [req = std::move(request), this]() mutable -> int {
-            GenerateVacationDocument(std::move(req), this->pg_cluster_,
-                                     this->http_client_, this->pyservice_url);
-            return 42;
-          }));
+      auto signed_file_key = views::v1::documents::sign::logic::SignDocument(params);
+      AbscenceVerdictResponse result;
+      result.signed_file_key = signed_file_key;
+      return result.ToJsonString();
     }
 
-    return "";
+    return "Action was denied.";
   }
 
   static userver::yaml_config::Schema GetStaticConfigSchema() {
