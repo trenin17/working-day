@@ -1,6 +1,7 @@
 #define V1_DOCUMENTS_SIGN
 
 #include "view.hpp"
+#include "../../documents/sign_logic/sign_logic.hpp"
 
 #include <userver/clients/dns/component.hpp>
 #include <userver/clients/http/component.hpp>
@@ -19,13 +20,6 @@
 namespace views::v1::documents::sign {
 
 namespace {
-
-class DocumentInfo {
- public:
-  std::string id, name, type;
-  bool sign_required;
-  std::optional<std::string> description;
-};
 
 class DocumentsSignHandler final
     : public userver::server::handlers::HttpHandlerBase {
@@ -70,21 +64,28 @@ properties:
     const auto& company_id = ctx.GetData<std::string>("company_id");
     const auto& document_id = request.GetArg("document_id");
 
-    auto result = pg_cluster_->Execute(
-        userver::storages::postgres::ClusterHostType::kSlave,
-        "SELECT id, name, type, sign_required, description "
-        "FROM working_day_" +
-            company_id +
-            ".documents "
-            "WHERE id = $1",
-        document_id);
-    auto document_info =
-        result.AsSingleRow<DocumentInfo>(userver::storages::postgres::kRowTag);
+    auto auth_header = request.GetHeader("Authorization");
+    views::v1::documents::sign::logic::DocumentSignParams params{
+        company_id,
+        user_id,
+        document_id,
+        http_client_,
+        pg_cluster_,
+        pyservice_url_,
+        auth_header
+    };
 
-    if (!document_info.sign_required) {
-      request.GetHttpResponse().SetStatus(
-          userver::server::http::HttpStatus::kBadRequest);
-      return ErrorMessage{"Document doesn't require sign"}.ToJsonString();
+    try {
+        auto signed_file_key =
+            views::v1::documents::sign::logic::SignDocument(params);
+        AbscenceVerdictResponse result;
+        result.signed_file_key = signed_file_key;
+        return result.ToJsonString();
+
+    } catch (const std::runtime_error& ex) {
+        request.GetHttpResponse().SetStatus(
+            userver::server::http::HttpStatus::kBadRequest);
+        return ErrorMessage{"Document doesn't require sign"}.ToJsonString();
     }
 
     result = pg_cluster_->Execute(

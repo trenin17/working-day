@@ -1,6 +1,7 @@
 #define V1_ABSCENCE_VERDICT
 
 #include "view.hpp"
+#include "../../documents/sign_logic/sign_logic.hpp"
 
 #include <queue>
 
@@ -96,10 +97,6 @@ void GenerateVacationDocument(
     userver::storages::postgres::ClusterPtr pg_cluster,
     userver::clients::http::Client& http_client,
     const std::string& pyservice_url) {
-  auto action_id = request.action_id;
-  auto request_type = "create";
-  auto user_id = request.user_id;
-  const auto& company_id = request.company_id;
 
   auto trx =
       pg_cluster->Begin("documents_vacation",
@@ -247,10 +244,14 @@ class AbscenceVerdictHandler final
     request_body.ParseRegisteredFields(request.RequestBody());
     auto user_id = ctx.GetData<std::string>("user_id");
     auto company_id = ctx.GetData<std::string>("company_id");
-
+    auto document_id = request_body.document_id;
     auto trx = pg_cluster_->Begin(
         "verdict_abscence",
         userver::storages::postgres::ClusterHostType::kMaster, {});
+
+    LOG_INFO() << "company_id=" << company_id
+           << " action_id=" << request_body.action_id;
+
 
     auto action_info =
         trx.Execute(
@@ -320,27 +321,26 @@ class AbscenceVerdictHandler final
 
     trx.Commit();
 
+
     if (request_body.approve) {
-      auto tasks = tasks_.Lock();
-      while (!tasks->empty() && tasks->front().IsFinished()) {
-        tasks->pop();
-      }
+      auto auth_header = request.GetHeader("Authorization");
+      views::v1::documents::sign::logic::DocumentSignParams params{
+        company_id,
+        user_id,
+        document_id,
+        http_client_,
+        pg_cluster_,
+        pyservice_url,
+        auth_header
+      };
 
-      VacationDocumentRequest request{.action_id = request_body.action_id,
-                                      .user_id = user_id,
-                                      .company_id = company_id};
-
-      tasks->push(userver::utils::AsyncBackground(
-          "GenerateVacationDocument",
-          userver::engine::current_task::GetTaskProcessor(),
-          [req = std::move(request), this]() mutable -> int {
-            GenerateVacationDocument(std::move(req), this->pg_cluster_,
-                                     this->http_client_, this->pyservice_url);
-            return 42;
-          }));
+      auto signed_file_key = views::v1::documents::sign::logic::SignDocument(params);
+      AbscenceVerdictResponse result;
+      result.signed_file_key = signed_file_key;
+      return result.ToJsonString();
     }
 
-    return "";
+    return "Action was denied.";
   }
 
   static userver::yaml_config::Schema GetStaticConfigSchema() {

@@ -204,7 +204,7 @@ components_manager:
                   - bearer
                 scopes:
                   - user
-            pyservice-url: 'http://python-service:3000/document/generate'
+            pyservice-url: 'http://localhost:3000/document/sign'
 
         handler-v1-notifications:
             path: /v1/notifications
@@ -383,7 +383,7 @@ components_manager:
                   - bearer
                 scopes:
                   - user
-            pyservice-url: 'http://python-service:3000/document/sign'
+            pyservice-url: 'http://localhost:3000/document/sign'
 
         handler-v1-documents-list-all:
             path: /v1/documents/list-all
@@ -651,5 +651,5 @@ components_manager:
                   - bearer
                 scopes:
                   - user
-            pyservice-url: 'http://python-service:3000/document/generate-from-template'
+            pyservice-url: 'http://localhost:3000/document/generate-from-template'
 
