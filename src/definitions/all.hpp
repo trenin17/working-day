@@ -148,6 +148,8 @@
 #define USE_PYSERVICE_DOCUMENT_GENERATE_REQUEST
 #define USE_ABSCENCE_VERDICT_REQUEST
 #define USE_ABSCENCE_VERDICT_RESPONSE
+#define USE_PYSERVICE_DOCUMENT_SIGN_REQUEST
+#define USE_ERROR_MESSAGE
 #endif
 
 #ifdef V1_DOCUMENTS_GENERATE_FROM_TEMPLATE
@@ -683,7 +685,6 @@ struct PyserviceDocumentGenerateRequest : public JsonCompatible {
 #ifdef USE_ABSCENCE_VERDICT_REQUEST
 struct AbscenceVerdictRequest : public JsonCompatible {
   REGISTER_STRUCT_FIELD(action_id, std::string, "action_id");
-  REGISTER_STRUCT_FIELD(document_id, std::string, "document_id");
   REGISTER_STRUCT_FIELD_OPTIONAL(notification_id, std::string,
                                  "notification_id");
   REGISTER_STRUCT_FIELD(approve, bool, "approve");

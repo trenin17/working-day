@@ -284,6 +284,12 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/AbscenceVerdictResponse'
+                '404':
+                    description: Not found
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
 
     /v1/abscence/split:
         post:
@@ -1649,12 +1655,9 @@ components:
             additionalProperties: false
             required:
               - action_id
-              - document_id
               - approve
             properties:
                 action_id:
-                    type: string
-                document_id:
                     type: string
                 notification_id:
                     type: string

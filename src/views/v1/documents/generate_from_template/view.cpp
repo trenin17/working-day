@@ -101,8 +101,11 @@ properties:
     const auto& company_id = ctx.GetData<std::string>("company_id");
 
     auto action_id = request.GetArg("action_id");
+    LOG_INFO() << "action_id: " << action_id;
     GenerateFromTemplateRequest request_body;
     request_body.ParseRegisteredFields(request.RequestBody());
+
+    auto file_key = userver::utils::generators::GenerateUuid();
 
     auto trx = pg_cluster_->Begin(
         "documents_generate_from_template",
@@ -172,7 +175,7 @@ properties:
     }
     link_request.head_template = head_template;
 
-    auto file_key = userver::utils::generators::GenerateUuid();
+
     auto resp = http_client_.CreateRequest()
                     .post(
                         "http://localhost:3000/"
@@ -205,7 +208,15 @@ properties:
                              ".documents(id, name, "
                              "sign_required, type) "
                              "VALUES($1, $2, $3, $4)",
-                         file_key, document_name, true, "employee_request");
+                         file_key, document_name, false, "employee_request");
+
+    pg_cluster_->Execute(userver::storages::postgres::ClusterHostType::kMaster,
+                         "UPDATE working_day_" + company_id + ".actions "
+                             "SET document_id = $1 "
+                             "WHERE id = $2",
+                         file_key, action_id);
+
+    LOG_INFO() << "SET FILE_KEY = " << file_key;
 
     pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kMaster,
@@ -214,7 +225,7 @@ properties:
             "(employee_id, document_id, signed) "
             "VALUES ($1, $2, $3), ($4, $2, $3) "
             "ON CONFLICT DO NOTHING",
-        action_info.employee_id, file_key, true,
+        action_info.employee_id, file_key, false,
         employee_info.head_id.value_or(action_info.employee_id));
 
     return result.ToJsonString();

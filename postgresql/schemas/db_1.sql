@@ -307,3 +307,11 @@ ADD COLUMN IF NOT EXISTS attendance_type TEXT;
 ALTER TABLE wd_general.companies
 ADD COLUMN IF NOT EXISTS head_template TEXT;
 
+ALTER TABLE working_day_first.actions
+ADD COLUMN IF NOT EXISTS document_id TEXT;
+
+ALTER TABLE working_day_first.actions
+ADD CONSTRAINT actions_document_id_fkey
+FOREIGN KEY (document_id)
+REFERENCES working_day_first.documents(id)
+ON DELETE CASCADE;

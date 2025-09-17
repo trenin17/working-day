@@ -204,7 +204,7 @@ components_manager:
                   - bearer
                 scopes:
                   - user
-            pyservice-url: 'http://localhost:3000/document/sign'
+            pyservice-url: 'http://localhost:3000/document/generate'
 
         handler-v1-notifications:
             path: /v1/notifications
