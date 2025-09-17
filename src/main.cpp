@@ -70,7 +70,6 @@
 #include "views/v1/documents/history/view.hpp"
 #include "views/v1/employee/permissions/list/view.hpp"
 #include "views/v1/employee/permissions/set/view.hpp"
-#include "views/v1/documents/sign_logic/sign_logic.hpp"
 
 int main(int argc, char* argv[]) {
   Aws::SDKOptions options;
