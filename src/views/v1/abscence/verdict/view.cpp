@@ -37,6 +37,36 @@ std::optional<std::string> ActionTypeToName(const std::string& type) {
     return "неоплачиваемый отпуск";
   } else if (type == "overtime") {
     return "сверхурочное время";
+  } else if (type == "vacation_days_instead") {
+    return "дни в счёт ежегодного отпуска";
+  } else if (type == "payout_birth") {
+    return "единовременную выплату при рождении ребёнка";
+  } else if (type == "certificates_on_dismissal") {
+    return "выдачу справок при увольнении";
+  } else if (type == "tax_deduction_children") {
+    return "налоговый вычет на детей";
+  } else if (type == "part_time") {
+    return "неполный рабочий день";
+  } else if (type == "maternity_childcare_15") {
+    return "отпуск по уходу за ребёнком до 1.5 лет";
+  } else if (type == "maternity_childcare_3") {
+    return "отпуск по уходу за ребёнком до 3 лет";
+  } else if (type == "maternity_pregnancy") {
+    return "отпуск по беременности и родам";
+  } else if (type == "transfer") {
+    return "перевод на другую должность";
+  } else if (type == "vacation_shift") {
+    return "перенос ежегодного отпуска";
+  } else if (type == "maternity_work_during") {
+    return "работу в период декретного отпуска";
+  } else if (type == "personal_data_change") {
+    return "смену персональных данных";
+  } else if (type == "resignation") {
+    return "увольнение по собственному желанию";
+  } else if (type == "maternity_early_exit") {
+    return "досрочный выход из отпуска по уходу";
+  } else if (type == "unpaid_vacation_with_reason") {
+    return "отпуск без сохранения ЗП (с указанием причины)";
   }
   return std::nullopt;
 }

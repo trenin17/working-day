@@ -48,7 +48,7 @@ def replace_macros_in_word(doc_path, replacements, params, output_path):
                 paragraph.text = paragraph.text.replace(macro, value)
 
         for i, value in enumerate(params, start=1):
-            placeholder = f"%Param_{i}%"
+            placeholder = f"%Params_{i}%"
             if placeholder in paragraph.text:
                 paragraph.text = paragraph.text.replace(placeholder, value)
     # Замена в таблицах
@@ -60,7 +60,7 @@ def replace_macros_in_word(doc_path, replacements, params, output_path):
                         cell.text = cell.text.replace(macro, value)
 
                 for i, value in enumerate(params, start=1):
-                    placeholder = f"%Param_{i}%"
+                    placeholder = f"%Params_{i}%"
                     if placeholder in cell.text:
                         cell.text = cell.text.replace(placeholder, value)
 
@@ -74,7 +74,7 @@ def replace_macros_in_word(doc_path, replacements, params, output_path):
                     if macro in t.text:
                         t.text = t.text.replace(macro, value)
                 for i, value in enumerate(params, start=1):
-                    placeholder = f"%Param_{i}%"
+                    placeholder = f"%Params_{i}%"
                     if placeholder in t.text:
                         t.text = t.text.replace(placeholder, value)
     doc.save(output_path)

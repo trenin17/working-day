@@ -75,25 +75,86 @@ class AbscenceRequestHandler final
         request_body.end_date, tz, "%Y-%m-%d %H:%M:%S");
 
     if (request_body.type == "vacation") {
-      notification_text =
-          fmt::format(notification_fmt, "отпуск", start_date, end_date);
+    notification_text =
+        fmt::format(notification_fmt, "отпуск", start_date, end_date);
     } else if (request_body.type == "sick_leave") {
-      notification_text =
-          fmt::format(notification_fmt, "больничный", start_date, end_date);
+        notification_text =
+            fmt::format(notification_fmt, "больничный", start_date, end_date);
     } else if (request_body.type == "unpaid_vacation") {
-      notification_text = fmt::format(notification_fmt, "неоплачиваемый отпуск",
-                                      start_date, end_date);
+        notification_text = fmt::format(notification_fmt, "неоплачиваемый отпуск",
+                                        start_date, end_date);
     } else if (request_body.type == "business_trip") {
-      notification_text =
-          fmt::format(notification_fmt, "командировку", start_date, end_date);
+        notification_text =
+            fmt::format(notification_fmt, "командировку", start_date, end_date);
     } else if (request_body.type == "overtime") {
-      notification_text = fmt::format(notification_fmt, "сверхурочные",
-                                      start_date_time, end_date_time);
+        notification_text = fmt::format(notification_fmt, "сверхурочные",
+                                        start_date_time, end_date_time);
+    } else if (request_body.type == "vacation_days_instead") {
+        notification_text = fmt::format(notification_fmt,
+                                        "дни в счёт ежегодного отпуска",
+                                        start_date, end_date);
+    } else if (request_body.type == "payout_birth") {
+        notification_text = fmt::format(notification_fmt,
+                                        "единовременную выплату при рождении ребёнка",
+                                        start_date, end_date);
+    } else if (request_body.type == "certificates_on_dismissal") {
+        notification_text = fmt::format(notification_fmt,
+                                        "выдачу справок при увольнении",
+                                        start_date, end_date);
+    } else if (request_body.type == "tax_deduction_children") {
+        notification_text = fmt::format(notification_fmt,
+                                        "налоговый вычет на детей",
+                                        start_date, end_date);
+    } else if (request_body.type == "part_time") {
+        notification_text = fmt::format(notification_fmt,
+                                        "неполный рабочий день",
+                                        start_date, end_date);
+    } else if (request_body.type == "maternity_childcare_15") {
+        notification_text = fmt::format(notification_fmt,
+                                        "отпуск по уходу за ребёнком до 1.5 лет",
+                                        start_date, end_date);
+    } else if (request_body.type == "maternity_childcare_3") {
+        notification_text = fmt::format(notification_fmt,
+                                        "отпуск по уходу за ребёнком до 3 лет",
+                                        start_date, end_date);
+    } else if (request_body.type == "maternity_pregnancy") {
+        notification_text = fmt::format(notification_fmt,
+                                        "отпуск по беременности и родам",
+                                        start_date, end_date);
+    } else if (request_body.type == "transfer") {
+        notification_text = fmt::format(notification_fmt,
+                                        "перевод на другую должность",
+                                        start_date, end_date);
+    } else if (request_body.type == "vacation_shift") {
+        notification_text = fmt::format(notification_fmt,
+                                        "перенос ежегодного отпуска",
+                                        start_date, end_date);
+    } else if (request_body.type == "maternity_work_during") {
+        notification_text = fmt::format(notification_fmt,
+                                        "работу в период декретного отпуска",
+                                        start_date, end_date);
+    } else if (request_body.type == "personal_data_change") {
+        notification_text = fmt::format(notification_fmt,
+                                        "смену персональных данных",
+                                        start_date, end_date);
+    } else if (request_body.type == "resignation") {
+        notification_text = fmt::format(notification_fmt,
+                                        "увольнение по собственному желанию",
+                                        start_date, end_date);
+    } else if (request_body.type == "maternity_early_exit") {
+        notification_text = fmt::format(notification_fmt,
+                                        "досрочный выход из отпуска по уходу",
+                                        start_date, end_date);
+    } else if (request_body.type == "unpaid_vacation_with_reason") {
+        notification_text = fmt::format(notification_fmt,
+                                        "отпуск без сохранения ЗП (с указанием причины)",
+                                        start_date, end_date);
     } else {
-      request.GetHttpResponse().SetStatus(
-          userver::server::http::HttpStatus::kBadRequest);
-      return ErrorMessage{"Unknown abscence type"}.ToJsonString();
+        request.GetHttpResponse().SetStatus(
+            userver::server::http::HttpStatus::kBadRequest);
+        return ErrorMessage{"Unknown abscence type"}.ToJsonString();
     }
+
 
     if (request_body.type != "overtime") {
       using namespace userver::utils::datetime;
