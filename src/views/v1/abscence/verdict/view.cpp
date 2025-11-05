@@ -189,6 +189,17 @@ void GenerateVacationDocument(
                       file_key_signed, document_name, true, "employee_request");
 
   pg_cluster->Execute(userver::storages::postgres::ClusterHostType::kMaster,
+                      "DELETE FROM working_day_" + company_id + ".employee_document "
+                      "WHERE employee_id = $1 AND document_id = $2",
+                      action_info.employee_id, file_key);
+
+  pg_cluster->Execute(userver::storages::postgres::ClusterHostType::kMaster,
+                      "UPDATE working_day_" + company_id + ".documents "
+                      "SET parent_id = $2 "
+                      "WHERE id = $1",
+                      file_key, file_key_signed);
+
+  pg_cluster->Execute(userver::storages::postgres::ClusterHostType::kMaster,
                       "INSERT INTO working_day_" + company_id +
                           ".employee_document "
                           "(employee_id, document_id, signed) "
