@@ -24,7 +24,7 @@ async def process_document(file_key, data):
 
     output_path_pdf_signed = '/tmp/' + file_key + '_signed.pdf'
 
-    stamp_data = StampData(now_date, employee_name + " " + employee_surname + " " + employee_patronymic,
+    stamp_data = StampData(now_date, employee_surname + " " + employee_name + " " + employee_patronymic,
                             company_name, employee_id, file_key)
     create_stamp(output_path_pdf, output_path_pdf_signed, stamp_data)
 

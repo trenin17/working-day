@@ -11,10 +11,13 @@ REPLACEMENTS = {
     "work_weekend_holiday": "РВ",           # Работа в выходные/праздники
     "overtime": "C",                        # Сверхурочные
     "shortened_work_time": "ЛЧ",            # Сокращенное рабочее время
-    
+    "part_time": "ЛЧ",
+    "vacation_days_instead": "ОТ",
+
     "vacation": "ОТ",                       # Отпуск
     "additional_paid_vacation": "ОД",       # Дополнительный оплачиваемый отпуск
     "unpaid_vacation": "ДО",                # Отпуск без содержания
+    "unpaid_vacation_with_reason": "ДО",
 
     "study_vacation_paid": "У",             # Учебный отпуск (оплачиваемый)
     "study_vacation_unpaid": "УД",          # Учебный отпуск (неоплачиваемый)
@@ -33,16 +36,30 @@ REPLACEMENTS = {
     "weekend_holiday": "В",                 # Выходной/праздник
     "downtime_not_employer_fault": "НП",    # Простой не по вине работодателя
     "suspension_with_pay": "НО",            # Отстранение с оплатой
+
+    "payout_birth": "",
+    "certificates_on_dismissal": "",
+    "tax_deduction_children": "",
+    "maternity_childcare_15": "ОЖ",
+    "maternity_childcare_3": "ОЖ",
+    "maternity_pregnancy": "Р",
+    "transfer": "",
+    "vacation_shift": "ОТ",
+    "maternity_early_exit": "",
+    "resignation": "",
+    "maternity_work_during": "Р",
+    "personal_data_change": "",
+
 }
 
 WORKING_DAYS = (
-    "work_daytime", 
+    "work_daytime",
     "work_nighttime",
     "work_weekend_holiday",
     "overtime",
     "shortened_work_time",
     "part_time_by_employer"
-)     
+)
 
 def transform_attendance(attendances: list[dict], date_from: str, date_to: str) -> dict[str, pd.DataFrame]:
     df = pd.DataFrame(attendances)
@@ -58,17 +75,16 @@ def transform_attendance(attendances: list[dict], date_from: str, date_to: str) 
     df["end_date"] = pd.to_datetime(df.get("end_date"))
 
     # приоритет: abscence_type > attendance_type
-    
+
     def pick_code(r):
         att = r.get("attendance_type")
         absn = r.get("abscence_type")
 
         att  = att  if pd.notna(att)  and att  != "" else None
         absn = absn if pd.notna(absn) and absn != "" else None
-
         return (absn or att or "")
 
-    
+
     df["raw_value"] = df.apply(pick_code, axis=1)
 
     # замена по словарю
@@ -77,7 +93,7 @@ def transform_attendance(attendances: list[dict], date_from: str, date_to: str) 
     # часы только для рабочих смен
     df["hours"] = df.apply(
         lambda r: ((r["end_date"] - r["start_date"]).total_seconds() / 3600.0)
-        if pd.notna(r["start_date"]) and pd.notna(r["end_date"]) and r.get("attendance_type") in WORKING_DAYS 
+        if pd.notna(r["start_date"]) and pd.notna(r["end_date"]) and r.get("attendance_type") in WORKING_DAYS
         else 0.0,
         axis=1
     )
@@ -94,6 +110,7 @@ def transform_attendance(attendances: list[dict], date_from: str, date_to: str) 
                         "ФИО": r["ФИО"],
                         "day": day,
                         "value": "",
+                        "label": "",
                         "hours": 0.0,
                     })
                 continue
@@ -107,11 +124,15 @@ def transform_attendance(attendances: list[dict], date_from: str, date_to: str) 
                 if pd.notna(r["end_date"]) else start_norm
             )
             for day in pd.date_range(start_norm, end_norm, freq="D"):
+                hours_day = r["hours"] if day == start_norm else 0.0
+                label = f"{r['value']} {hours_day:.2f}".rstrip() if hours_day > 0 else (r["value"] or "")
+
                 rows.append({
                     "ФИО": r["ФИО"],
                     "day": day,
                     "value": r["value"],
-                    "hours": r["hours"] if day == start_norm else 0.0,
+                    "label": label,
+                    "hours": hours_day,
                 })
 
         df_days = pd.DataFrame(rows)
@@ -122,8 +143,8 @@ def transform_attendance(attendances: list[dict], date_from: str, date_to: str) 
         pivot = df_days.pivot_table(
             index="ФИО",
             columns="day",
-            values="value",
-            aggfunc=lambda x: ",".join(str(v) for v in x if pd.notna(v) and v != "")
+            values="label",
+            aggfunc=lambda x: ", ".join(str(v) for v in x if pd.notna(v) and v != "")
         ).fillna("")
 
         # добавляем все дни периода
@@ -149,7 +170,7 @@ def transform_attendance(attendances: list[dict], date_from: str, date_to: str) 
 
 async def generate_attendance_excel(request):
     file_key = request.rel_url.query['file_key']
-    
+
     from_date = request.rel_url.query['from_date']
     to_date = request.rel_url.query['to_date']
 
@@ -169,6 +190,11 @@ async def generate_attendance_excel(request):
 
     with pd.ExcelWriter(output, engine="openpyxl") as writer:
         row_offset = 0
+        period_text = f"Период: {from_date} — {to_date}"
+        pd.DataFrame([[period_text]]).to_excel(
+            writer, sheet_name="Attendance", startrow=row_offset, index=False, header=False
+        )
+        row_offset += 2
         for company, table in company_tables.items():
             pd.DataFrame([[f"Компания {company}"]]).to_excel(
                 writer, sheet_name="Attendance", startrow=row_offset, index=False, header=False

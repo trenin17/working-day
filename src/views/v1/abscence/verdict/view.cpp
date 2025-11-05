@@ -189,6 +189,17 @@ void GenerateVacationDocument(
                       file_key_signed, document_name, true, "employee_request");
 
   pg_cluster->Execute(userver::storages::postgres::ClusterHostType::kMaster,
+                      "DELETE FROM working_day_" + company_id + ".employee_document "
+                      "WHERE employee_id = $1 AND document_id = $2",
+                      action_info.employee_id, file_key);
+
+  pg_cluster->Execute(userver::storages::postgres::ClusterHostType::kMaster,
+                      "UPDATE working_day_" + company_id + ".documents "
+                      "SET parent_id = $2 "
+                      "WHERE id = $1",
+                      file_key, file_key_signed);
+
+  pg_cluster->Execute(userver::storages::postgres::ClusterHostType::kMaster,
                       "INSERT INTO working_day_" + company_id +
                           ".employee_document "
                           "(employee_id, document_id, signed) "
@@ -196,12 +207,6 @@ void GenerateVacationDocument(
                           "ON CONFLICT DO NOTHING",
                       action_info.employee_id, file_key_signed, true,
                       employee_info.head_id.value_or(action_info.employee_id));
-
-  pg_cluster->Execute(userver::storages::postgres::ClusterHostType::kMaster,
-                       "UPDATE working_day_" + company_id + ".documents "
-                          "SET sign_required = TRUE "
-                          "WHERE id = $1",
-                       action_info.document_id);
 
   pg_cluster->Execute(userver::storages::postgres::ClusterHostType::kMaster,
                        "UPDATE working_day_" + company_id + ".documents "
@@ -263,8 +268,6 @@ class AbscenceVerdictHandler final
       return ErrorMessage{"Document doesn't exist"}.ToJsonString();
     }
 
-    LOG_INFO() << action_info.document_id << "- DOCUMENT_ID IN ACTION!\n";
-
     auto action_name = ActionTypeToName(action_info.type);
     std::string notification_text =
         "Ваш запрос на " + action_name.value() + " с " +
@@ -281,6 +284,27 @@ class AbscenceVerdictHandler final
       notification_text += " был отклонен.";
     }
 
+
+    if (request_body.notification_id.has_value()) {
+      auto result = trx.Execute("DELETE FROM working_day_" + company_id +
+                                    ".notifications "
+                                    "WHERE id = $1 ",
+                                request_body.notification_id.value());
+    }
+
+    auto notification_id = userver::utils::generators::GenerateUuid();
+    std::optional<std::string> maybe_action_id = request_body.approve ? std::optional(request_body.action_id) : std::nullopt;
+    auto result =
+        trx.Execute("INSERT INTO working_day_" + company_id +
+                        ".notifications(id, type, text, user_id, "
+                        "sender_id, action_id) "
+                        "VALUES($1, $2, $3, $4, $5, $6) "
+                        "ON CONFLICT (id) "
+                        "DO NOTHING",
+                    notification_id, action_info.type + "_" + action_status,
+                    notification_text, action_info.employee_id, user_id,
+                    maybe_action_id);
+
     if (request_body.approve) {
       auto result = trx.Execute("UPDATE working_day_" + company_id +
                                     ".actions "
@@ -293,25 +317,6 @@ class AbscenceVerdictHandler final
                                     "WHERE id = $1 ",
                                 request_body.action_id);
     }
-
-    if (request_body.notification_id.has_value()) {
-      auto result = trx.Execute("DELETE FROM working_day_" + company_id +
-                                    ".notifications "
-                                    "WHERE id = $1 ",
-                                request_body.notification_id.value());
-    }
-
-    auto notification_id = userver::utils::generators::GenerateUuid();
-    auto result =
-        trx.Execute("INSERT INTO working_day_" + company_id +
-                        ".notifications(id, type, text, user_id, "
-                        "sender_id, action_id) "
-                        "VALUES($1, $2, $3, $4, $5, $6) "
-                        "ON CONFLICT (id) "
-                        "DO NOTHING",
-                    notification_id, action_info.type + "_" + action_status,
-                    notification_text, action_info.employee_id, user_id,
-                    request_body.action_id);
 
     trx.Commit();
 

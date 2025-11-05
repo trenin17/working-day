@@ -99,12 +99,12 @@ class AttendanceAddHandler final
     auto notification_id = userver::utils::generators::GenerateUuid();
     result = trx.Execute("INSERT INTO working_day_" + company_id +
                              ".notifications(id, type, text, user_id, "
-                             "sender_id) "
-                             "VALUES($1, $2, $3, $4, $5) "
+                             "sender_id, action_id) "
+                             "VALUES($1, $2, $3, $4, $5, $6) "
                              "ON CONFLICT (id) "
                              "DO NOTHING",
                          notification_id, "attendance_added", notification_text,
-                         employee_id, user_id);
+                         employee_id, user_id, action_id);
 
     trx.Commit();
 

@@ -33,7 +33,7 @@ class AttendanceExportToExcelHandler final
     : public userver::server::handlers::HttpHandlerBase {
  public:
   static constexpr std::string_view kName = "handler-v1-attendance-export-to-excel";
-  
+
   static userver::yaml_config::Schema GetStaticConfigSchema() {
     return userver::yaml_config::MergeSchemas<HandlerBase>(R"(
 type: object
@@ -232,7 +232,6 @@ properties:
       response.attendances.push_back(std::move(overtime));
     }
 
-      
     const std::string from_str = userver::utils::datetime::Timestring(request_body.from, tz, "%Y-%m-%d");
     const std::string to_str   = userver::utils::datetime::Timestring(request_body.to, tz, "%Y-%m-%d");
 

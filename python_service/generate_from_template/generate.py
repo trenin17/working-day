@@ -170,13 +170,6 @@ async def process_document(file_key, data):
 
     convert_docx_to_pdf(output_path_word, '/tmp')
 
-    '''
-    output_path_pdf_signed = '/tmp/' + file_key + '_signed.pdf'
-    stamp_data = StampData(now_date, employee_name + " " + employee_surname + " " + employee_patronymic,
-                            company_name, employee_id, file_key)
-     (output_path_pdf, output_path_pdf_signed, stamp_data)
-    '''
-
     url = upload_and_presign(output_path_pdf, file_key + '.pdf')
     delete_tmp_files(file_key)
     return url

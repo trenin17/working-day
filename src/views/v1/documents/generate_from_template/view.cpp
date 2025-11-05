@@ -208,7 +208,7 @@ properties:
 
     auto resp = http_client_.CreateRequest()
                     .post(
-                        "http://localhost:3000/"
+                        "http://python-service:3000/"
                         "document/generate-from-template?file_key=" +
                         file_key
                     )
@@ -245,8 +245,6 @@ properties:
                              "SET document_id = $1 "
                              "WHERE id = $2",
                          file_key, action_id);
-
-    LOG_INFO() << "SET FILE_KEY = " << file_key;
 
     pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kMaster,
