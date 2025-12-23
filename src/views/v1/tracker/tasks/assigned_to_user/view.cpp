@@ -53,7 +53,7 @@ class TrackerTasksAssignedToUserHandler final
 
     auto result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kSlave,
-        "SELECT tasks.title, tasks.project_name, tasks.id, "
+        "SELECT tasks.title, tasks.project_id, tasks.task_id, "
         "tasks.creator, tasks.assignee "
         "FROM working_day_" +
             company_id +
@@ -67,9 +67,9 @@ class TrackerTasksAssignedToUserHandler final
       return ErrorMessage{"No tasks found for the user"}.ToJsonString();
     }
 
-    std::vector<TrackerTasksListItem> tasks;
+    std::vector<TrackerTasksItemResponseShort> tasks;
     for (const auto& row : result) {
-        tasks.emplace_back(row.As<TrackerTasksListItem>(userver::storages::postgres::kRowTag));
+        tasks.emplace_back(row.As<TrackerTasksItemResponseShort>(userver::storages::postgres::kRowTag));
     }
 
     TrackerTasksListResponse response;

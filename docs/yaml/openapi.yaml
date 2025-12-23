@@ -780,6 +780,7 @@ paths:
             responses:
                 '200':
                     description: Inventory item was added
+
     /v1/tracker/projects/add:
         post:
             description: Add new project
@@ -794,10 +795,54 @@ paths:
                 content:
                     application/json:
                         schema:
-                            $ref: '#/components/schemas/TrackerProjectsAddRequest'
+                            $ref: '#/components/schemas/TrackerProjectsItemRequest'
             responses:
                 '200':
                     description: Project item was added
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/TrackerProjectsAddResponse'
+                '400':
+                    description: Bad request, missing parameters or invalid assigned_users_ids
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+
+    /v1/tracker/project/info:
+        get:
+            description: Get project info
+            parameters:
+              - in: query
+                name: project_id
+                description: ID of the project to check
+                schema:
+                    type: string
+              - in: header
+                name: Authorization
+                description: Token of session user
+                schema:
+                    type: string
+            responses:
+                '200':
+                    description: Project information
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/TrackerProjectsItemResponse'
+                '400':
+                    description: Bad request
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+                '404':
+                    description: Not found
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
 
     /v1/tracker/projects/list:
         get:
@@ -814,7 +859,76 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/TrackerProjectsListResponse'
+                                $ref: '#/components/schemas/TrackerProjectsItemResponseShort'
+
+    # TODO: /v1/tracker/project/available-to-user:
+    #        description: Get all projects available to the user
+
+    /v1/tracker/projects/edit:
+        post:
+            description: Edit project information
+            parameters:
+                - in: query
+                  name: project_id
+                  description: ID of the project to edit information for
+                  schema:
+                      type: string
+                - in: header
+                  name: Authorization
+                  description: Token of session user
+                  schema:
+                      type: string
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/TrackerProjectsEditRequest'
+            responses:
+                '200':
+                    description: Information was updated
+                '400':
+                description: Bad request, missing parameters or invalid assigned_users_ids
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/ErrorMessage'
+                '404':
+                    description: Not found
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+
+
+    /v1/tracker/projects/media/upload:
+        post:
+            description: Upload icon for the project
+            parameters:
+              - in: query
+                name: project_id
+                schema:
+                    type: string
+              - in: header
+                name: Authorization
+                description: Token of session user
+                schema:
+                    type: string
+
+            responses:
+                '200':
+                    description: Upload link
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/MediaUploadResponse'
+                '400':
+                    description: Bad request
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+
 
     /v1/tracker/tasks/add:
         post:
@@ -830,10 +944,15 @@ paths:
                 content:
                     application/json:
                         schema:
-                            $ref: '#/components/schemas/TrackerTasksAddRequest'
+                            $ref: '#/components/schemas/TrackerTasksItemRequest'
             responses:
                 '200':
-                    description: Task was added
+                    description: Task item was added
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/TrackerTasksAddResponse'
+
                 '404':
                     description: Project not found
                     content:
@@ -846,10 +965,10 @@ paths:
             description: Get list of all existing tasks
             parameters:
                 - in: header
-                name: Authorization
-                description: Token of session user
-                schema:
-                    type: string
+                  name: Authorization
+                  description: Token of session user
+                  schema:
+                      type: string
             responses:
                 '200':
                     description: List of tasks
@@ -878,7 +997,7 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/TrackerTasksInfoItem'
+                                $ref: '#/components/schemas/TrackerTasksItemResponse'
                 '400':
                     description: Bad request
                     content:
@@ -912,12 +1031,7 @@ paths:
                     content:
                         application/json:
                             schema:
-                                type: object
-                                properties:
-                                    tasks:
-                                        type: array
-                                        items:
-                                            $ref: '#/components/schemas/TrackerTasksListItem'
+                                $ref: '#/components/schemas/TrackerTasksListResponse'
                 '400':
                 description: Bad request, missing parameters
                 content:
@@ -936,15 +1050,15 @@ paths:
         description: Edit task information
         parameters:
             - in: query
-                name: task_id
-                description: Id of the task to edit information for
-                schema:
-                    type: string
+              name: task_id
+              description: Id of the task to edit information for
+              schema:
+                  type: string
             - in: header
-            name: Authorization
-            description: Token of session user
-            schema:
-                type: string
+              name: Authorization
+              description: Token of session user
+              schema:
+                  type: string
         requestBody:
             required: true
             content:
@@ -987,7 +1101,7 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/TrackerTasksMediaUploadResponse'
+                                $ref: '#/components/schemas/MediaUploadResponse'
                 '400':
                     description: Bad request
                     content:
@@ -1730,6 +1844,7 @@ components:
                 - absence_unknown_reason # НН
                 - downtime_not_employer_fault # НП
                 - suspension_with_pay # НО
+                - tracker_task_deadline # ТД
 
         AttendanceAddRequest:
             type: object
@@ -1882,7 +1997,11 @@ components:
                 tasks:
                     type: array
                     items:
-                        $ref: '#/components/schemas/TrackerTasksListItem'
+                        $ref: '#/components/schemas/TrackerTasksItemResponseShort'
+                projects:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/TrackerProjectsItemResponseShort'
 
         AttendanceListAllRequest:
             type: object
@@ -2179,25 +2298,92 @@ components:
                 chat_id:
                     type: string
 
-        TrackerProjectsAddRequest:
+        ProjectStatus:
+            type: string
+            enum:
+                - Open
+                - Pause
+                - Closed
+
+        TrackerProjectsItemRequest:
             type: object
             additionalProperties: false
             required:
-              - project_name
+                - title
             properties:
-                project_name:
+                title:
+                    type: string
+                description:
+                    type: string
+                status:
+                    $ref: '#/components/schemas/ProjectStatus'
+                assigned_users_ids:
+                    type: array
+                    items:
+                        type: string
+
+        TrackerProjectsAddResponse:
+            type: object
+            additionalProperties: false
+            required:
+              - project_id
+            properties:
+                project_id:
                     type: string
 
-        TrackerProjectsListItem:
+        TrackerProjectsItemResponseShort:
             type: object
             additionalProperties: false
             required:
-              -  project_name
+              - project_id
+              - title
+              - creator
             properties:
-                project_name:
+                project_id:
                     type: string
-                tasks_count:
-                    type: integer
+                title:
+                    type: string
+                creator:
+                    type: string
+                image_url:
+                    type: string
+
+        TrackerProjectsItemResponse:
+            allOf:
+                - $ref: '#/components/schemas/TrackerProjectsItemRequest'
+                - type: object
+                  additionalProperties: false
+                  required:
+                    - project_id
+                    - created_ts
+                    - last_updated_ts
+                    - tasks_count
+                  properties:
+                      project_id:
+                          type: string
+                      created_ts:
+                          $ref: '#/components/schemas/Timestamp'
+                      last_updated_ts:
+                          $ref: '#/components/schemas/Timestamp'
+                      tasks_count:
+                          type: integer
+                      image_url:
+                          type: string
+
+        TrackerProjectsEditRequest:
+            type: object
+            additionalProperties: false
+            properties:
+                title:
+                    type: string
+                description:
+                    type: string
+                status:
+                    $ref: '#/components/schemas/ProjectStatus'
+                assigned_users_ids:
+                    type: array
+                    items:
+                        type: string
 
         TrackerProjectsListResponse:
             type: object
@@ -2207,88 +2393,169 @@ components:
                     type: array
                     description: List of project items
                     items:
-                        $ref: '#/components/schemas/TrackerProjectsListItem'
+                        $ref: '#/components/schemas/TrackerProjectsItemResponseShort'
 
-        TrackerTasksAddRequest:
+        TaskStatus:
+            type: string
+            enum:
+                - Open
+                - InProgress
+                - Review
+                - Done
+                - Canceled # (+comment)
+
+        TaskPriority:
+            type: string
+            enum:
+                - Low
+                - Middle
+                - High
+
+        TrackerTasksItemRequest:
             type: object
             additionalProperties: false
             required:
-              - title
-              - project_name
-              - creator
+                - title
+                - project_id
             properties:
                 title:
                     type: string
                     description: Name of the task
-                project_name:
+                project_id:
                     type: string
-                    description: Name of the parent project
+                    description: ID of the parent project
                 description:
                     type: string
                     description: Description of the task
-                creator:
-                    type: string
-                    description: The creator of the task
                 assignee:
                     type: string
                     description: The assigned person for the task
                 deadline:
                     $ref: '#/components/schemas/Timestamp'
-
-        TrackerTasksInfoItem:
-            type: object
-            additionalProperties: false
-            required:
-              -  title
-              -  project_name
-              -  creator
-            properties:
-                title:
-                    type: string
-                id:
-                    type: string
-                project_name:
-                    type: string
-                description:
-                    type: string
-                creator:
-                    type: string
-                assignee:
-                    type: string
                 status:
-                    type: string
-                    enum:
-                      - Open
-                      - InProgress
-                      - Review
-                      - Done
-                media_links:
+                    $ref: '#/components/schemas/TaskStatus'
+                priority:
+                    $ref: '#/components/schemas/TaskPriority'
+                observers:
                     type: array
                     items:
                         type: string
-                created_at:
-                    $ref: '#/components/schemas/Timestamp'
-                deadline:
-                    $ref: '#/components/schemas/Timestamp'
+                related_tasks_ids:
+                    type: array
+                    items:
+                        type: string
 
-        TrackerTasksListItem:
+        TrackerTasksEditRequest:
             type: object
             additionalProperties: false
-            required:
-              -  title
-              -  project_name
-              -  creator
             properties:
                 title:
                     type: string
-                id:
+                    description: Name of the task
+                project_id:
                     type: string
-                project_name:
+                    description: ID of the parent project
+                description:
+                    type: string
+                    description: Description of the task
+                assignee:
+                    type: string
+                    description: The assigned person for the task
+                deadline:
+                    $ref: '#/components/schemas/Timestamp'
+                status:
+                    $ref: '#/components/schemas/TaskStatus'
+                priority:
+                    $ref: '#/components/schemas/TaskPriority'
+                observers:
+                    type: array
+                    items:
+                        type: string
+                related_tasks_ids:
+                    type: array
+                    items:
+                        type: string
+
+        TrackerTasksAddResponse:
+            type: object
+            additionalProperties: false
+            required:
+              - task_id
+            properties:
+                task_id:
+                    type: string
+
+        TrackerTasksItemResponseShort:
+            type: object
+            additionalProperties: false
+            required:
+              - task_id
+              - project_id
+              - title
+              - creator
+            properties:
+                task_id:
+                    type: string
+                project_id:
+                    type: string
+                title:
                     type: string
                 creator:
                     type: string
                 assignee:
                     type: string
+
+        TrackerTasksItemResponse:
+            allOf:
+                - $ref: '#/components/schemas/TrackerTasksItemResponseShort'
+                - type: object
+                  additionalProperties: false
+                  required:
+                    - status
+                    - created_ts
+                    - last_updated_ts
+                    - priority
+                  properties:
+                      description:
+                          type: string
+                          description: Description of the task
+                      status:
+                          $ref: '#/components/schemas/TaskStatus'
+                      created_ts:
+                          $ref: '#/components/schemas/Timestamp'
+                      last_updated_ts:
+                          $ref: '#/components/schemas/Timestamp'
+                      media_links:
+                          type: array
+                          items:
+                              type: string
+                      deadline:
+                          $ref: '#/components/schemas/Timestamp'
+                      action_id:
+                          type: string
+                      priority:
+                          $ref: '#/components/schemas/TaskPriority'
+                      observers:
+                          type: array
+                          items:
+                              type: string
+                      related_tasks_ids:
+                          type: array
+                          items:
+                              type: string
+
+
+
+        # -- комментарии (отдельно):
+        #    comment_id
+        #    author_id
+        #    data: text
+        #    documents_ids: list[url]
+        #    created_at
+        #    last_updated
+        #    + add/delete/edit
+        #    available_entity: document, task
+        #    --- employee_id + documents
 
         TrackerTasksListResponse:
             type: object
@@ -2298,31 +2565,9 @@ components:
                     type: array
                     description: List of tasks items
                     items:
-                        $ref: '#/components/schemas/TrackerTasksListItem'
+                        $ref: '#/components/schemas/TrackerTasksItemResponseShort'
 
-        TrackerTasksEditRequest:
-            type: object
-            additionalProperties: false
-            properties:
-                title:
-                    type: string
-                description:
-                    type: string
-                project_name:
-                    type: string
-                assignee:
-                    type: string
-                status:
-                    type: string
-                    enum:
-                      - Open
-                      - InProgress
-                      - Review
-                      - Done
-                deadline:
-                    $ref: '#/components/schemas/Timestamp'
-
-        TrackerTasksMediaUploadResponse:
+        MediaUploadResponse:
             type: object
             additionalProperties: false
             required:

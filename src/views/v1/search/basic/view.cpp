@@ -67,7 +67,7 @@ class SearchBasicHandler final
       }
       entity_filter += ")";
     }
-    
+
     auto result_ids = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kSlave,
         "SELECT ids, entity_type "
@@ -113,15 +113,28 @@ class SearchBasicHandler final
       } else if (parameters.Size() != 0 && IDs.value().entity_type == "tasks") {
         auto result = pg_cluster_->Execute(
           userver::storages::postgres::ClusterHostType::kSlave,
-          "SELECT title, project_name, id, creator, assignee "
+          "SELECT title, project_id, task_id, creator, assignee "
           "FROM working_day_" +
               company_id +
               ".tracker_tasks "
-              "WHERE id IN " +
+              "WHERE task_id IN " +
               filter + ");",
           parameters);
 
-      response.tasks = result.AsContainer<std::vector<TrackerTasksListItem>>(
+      response.tasks = result.AsContainer<std::vector<TrackerTasksItemResponseShort>>(
+          userver::storages::postgres::kRowTag);
+      } else if (parameters.Size() != 0 && IDs.value().entity_type == "projects") {
+        auto result = pg_cluster_->Execute(
+          userver::storages::postgres::ClusterHostType::kSlave,
+          "SELECT project_id, title, image_url, creator "
+          "FROM working_day_" +
+              company_id +
+              ".tracker_projects "
+              "WHERE project_id IN " +
+              filter + ");",
+          parameters);
+
+      response.projects = result.AsContainer<std::vector<TrackerProjectsItemResponseShort>>(
           userver::storages::postgres::kRowTag);
       }
     }
@@ -131,6 +144,15 @@ class SearchBasicHandler final
         employee.photo_link =
             utils::s3_presigned_links::GeneratePhotoPresignedLink(
                 employee.photo_link.value(),
+                utils::s3_presigned_links::Download);
+      }
+    }
+
+    for (auto& project : response.projects) {
+      if (project.image_url.has_value()) {
+        project.image_url =
+            utils::s3_presigned_links::GenerateTrackerProjectsMediaPresignedLink(
+                project.image_url.value(),
                 utils::s3_presigned_links::Download);
       }
     }

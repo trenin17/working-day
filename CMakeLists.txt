@@ -71,6 +71,9 @@ add_library(${PROJECT_NAME}_objs OBJECT
 	src/views/v1/messenger/recent_messages/view.cpp
 	src/views/v1/tracker/projects/add/view.cpp
 	src/views/v1/tracker/projects/list/view.cpp
+	src/views/v1/tracker/projects/media/upload/view.cpp
+	src/views/v1/tracker/projects/info/view.cpp
+	src/views/v1/tracker/projects/edit/view.cpp
 	src/views/v1/tracker/tasks/add/view.cpp
 	src/views/v1/tracker/tasks/list/view.cpp
 	src/views/v1/tracker/tasks/info/view.cpp

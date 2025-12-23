@@ -1,4 +1,4 @@
-#define V1_TRACKER_TASKS_INFO
+#define V1_TRACKER_PROJECTS_INFO
 
 #include "view.hpp"
 
@@ -17,16 +17,16 @@
 
 #include "definitions/all.hpp"
 
-namespace views::v1::tracker::tasks::info {
+namespace views::v1::tracker::projects::info {
 
 namespace {
 
-class InfoTrackerTasksHandler final
+class InfoTrackerProjectsHandler final
     : public userver::server::handlers::HttpHandlerBase {
  public:
-  static constexpr std::string_view kName = "handler-v1-tracker-tasks-info";
+  static constexpr std::string_view kName = "handler-v1-tracker-projects-info";
 
-  InfoTrackerTasksHandler(
+  InfoTrackerProjectsHandler(
       const userver::components::ComponentConfig& config,
       const userver::components::ComponentContext& component_context)
       : HttpHandlerBase(config, component_context),
@@ -47,62 +47,59 @@ class InfoTrackerTasksHandler final
 
     const auto& user_id = ctx.GetData<std::string>("user_id");
     const auto& company_id = ctx.GetData<std::string>("company_id");
-    auto task_id = request.GetArg("task_id");
+    auto project_id = request.GetArg("project_id");
 
-    if (task_id.empty()) {
+    if (project_id.empty()) {
       request.GetHttpResponse().SetStatus(
           userver::server::http::HttpStatus::kBadRequest);
-      return ErrorMessage{"Missing task_id parameter"}.ToJsonString();
+      return ErrorMessage{"Missing project_id parameter"}.ToJsonString();
     }
 
     auto result = pg_cluster_->Execute(
     userver::storages::postgres::ClusterHostType::kSlave,
     R"(
     SELECT
-        t.task_id,
-        t.title,
-        t.project_id,
-        t.description,
-        t.creator,
-        t.assignee,
-        t.status,
-        t.priority,
-        t.media_links,
-        t.created_ts,
-        t.last_updated_ts,
-        t.deadline,
-        t.action_id,
-        COALESCE(obs.observers, '{}') AS observers,
-        COALESCE(rel.related_tasks_ids, '{}') AS related_tasks_ids
-    FROM working_day_)" + company_id + R"(.tracker_tasks t
-    LEFT JOIN (
-        SELECT task_id, array_agg(employee_id) AS observers
-        FROM working_day_)" + company_id + R"(.tracker_task_observers
-        GROUP BY task_id
-    ) obs ON obs.task_id = t.task_id
-    LEFT JOIN (
-        SELECT task_id, array_agg(task_id_related) AS related_tasks_ids
-        FROM working_day_)" + company_id + R"(.tracker_task_related_tasks
-        GROUP BY task_id
-    ) rel ON rel.task_id = t.task_id
-    WHERE t.task_id = $1
+        p.project_id,
+        p.title,
+        p.description,
+        p.image_url,
+        p.creator,
+        p.tasks_count,
+        p.status,
+        p.created_ts,
+        p.last_updated_ts,
+        COALESCE(
+          array_agg(a.employee_id) FILTER (WHERE a.employee_id IS NOT NULL),
+          '{}'
+        ) AS assigned_users_ids
+    FROM working_day_)" + company_id + R"(.tracker_projects p
+    LEFT JOIN working_day_)" + company_id + R"(.tracker_project_assigned_users a
+        ON a.project_id = p.project_id
+    WHERE p.project_id = $1
+    GROUP BY
+        p.project_id,
+        p.title,
+        p.description,
+        p.image_url,
+        p.creator,
+        p.tasks_count,
+        p.status,
+        p.created_ts,
+        p.last_updated_ts
     )",
-    task_id);
-
+    project_id);
 
     if (result.IsEmpty()) {
       request.GetHttpResponse().SetStatus(
           userver::server::http::HttpStatus::kNotFound);
-      return ErrorMessage{"Task not Found"}.ToJsonString();
+      return ErrorMessage{"Project not Found"}.ToJsonString();
     }
 
-    TrackerTasksItemResponse response{result.AsSingleRow<TrackerTasksItemResponse>(userver::storages::postgres::kRowTag)};
+    TrackerProjectsItemResponse response{result.AsSingleRow<TrackerProjectsItemResponse>(userver::storages::postgres::kRowTag)};
 
-    if (response.media_links.has_value()) {
-      for (auto& link : response.media_links.value()) {
-          link = utils::s3_presigned_links::GenerateTrackerTasksMediaPresignedLink(
-              link, utils::s3_presigned_links::Download, is_testing_);
-      }
+    if (response.image_url.has_value()) {
+        response.image_url = utils::s3_presigned_links::GenerateTrackerProjectsMediaPresignedLink(
+            *response.image_url, utils::s3_presigned_links::Download, is_testing_);
     }
 
     return response.ToJsonString();
@@ -111,7 +108,7 @@ class InfoTrackerTasksHandler final
   static userver::yaml_config::Schema GetStaticConfigSchema() {
     return userver::yaml_config::MergeSchemas<HandlerBase>(R"(
 type: object
-description: Tracker tasks media upload handler schema
+description: Tracker projects media upload handler schema
 additionalProperties: false
 properties:
     is_testing:
@@ -127,8 +124,8 @@ properties:
 
 }  // namespace
 
-void AppendTrackerTasksInfo(userver::components::ComponentList& component_list) {
-  component_list.Append<InfoTrackerTasksHandler>();
+void AppendTrackerProjectsInfo(userver::components::ComponentList& component_list) {
+  component_list.Append<InfoTrackerProjectsHandler>();
 }
 
-}  // namespace views::v1::tracker::tasks::info
+}  // namespace views::v1::tracker::projects::info

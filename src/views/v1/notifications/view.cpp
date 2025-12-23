@@ -54,6 +54,9 @@ class Notification {
     if (action_id) {
       j["action_id"] = action_id.value();
     }
+    if (task_id) {
+      j["task_id"] = task_id.value();
+    }
     j["created"] = userver::utils::datetime::Timestring(created, "UTC",
                                                         "%Y-%m-%dT%H:%M:%E6S");
 
@@ -64,6 +67,7 @@ class Notification {
   bool is_read;
   std::optional<ListEmployee> sender;
   std::optional<std::string> action_id;
+  std::optional<std::string> task_id;
   userver::storages::postgres::TimePoint created;
 };
 
@@ -110,28 +114,29 @@ class NotificationsHandler final
     auto result = pg_cluster_->Execute(
       userver::storages::postgres::ClusterHostType::kSlave,
         R"(
-        SELECT 
-            n.id, 
-            n.type, 
-            n.text, 
+        SELECT
+            n.id,
+            n.type,
+            n.text,
             n.is_read,
-            CASE 
+            CASE
                 WHEN n.sender_id IS NULL THEN NULL
                 ELSE ROW(
-                    e.id, 
-                    e.name, 
-                    e.surname, 
-                    e.patronymic, 
+                    e.id,
+                    e.name,
+                    e.surname,
+                    e.patronymic,
                     e.photo_link
                 )
             END,
-            n.action_id, 
+            n.action_id,
+            n.task_id,
             n.created
         FROM working_day_)" + company_id + R"(.notifications n
-        LEFT JOIN working_day_)" + company_id + R"(.employees e 
+        LEFT JOIN working_day_)" + company_id + R"(.employees e
             ON e.id = n.sender_id
         WHERE n.user_id = $1
-        ORDER BY n.created DESC 
+        ORDER BY n.created DESC
         LIMIT 100
         )",
         user_id

@@ -446,6 +446,38 @@ components_manager:
                 scopes:
                   - user
 
+        handler-v1-tracker-projects-media-upload:
+            path: /v1/tracker/projects/media/upload
+            method: POST
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - user
+            is_testing: $is_testing
+
+        handler-v1-tracker-projects-info:
+            path: /v1/tracker/projects/info
+            method: GET
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - user
+            is_testing: $is_testing
+
+        handler-v1-tracker-projects-edit:
+            path: /v1/tracker/projects/edit
+            method: POST
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - user
+
         handler-v1-tracker-tasks-add:
             path: /v1/tracker/tasks/add
             method: POST

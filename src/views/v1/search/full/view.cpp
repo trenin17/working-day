@@ -144,7 +144,7 @@ class SearchFullHandler final
             "LATERAL unnest(ARRAY[" +
             filter +
             "]) AS search_key "
-            "WHERE similarity(search_key, key) > 0.4 " + 
+            "WHERE similarity(search_key, key) > 0.4 " +
             entity_filter + ";",
         parameters);
 
@@ -159,8 +159,8 @@ class SearchFullHandler final
 
     SearchResponse response;
 
-    userver::storages::postgres::ParameterStore parameters_employee, parameters_task;
-    std::string filter_employee, filter_task;
+    userver::storages::postgres::ParameterStore parameters_employee, parameters_task, parameters_projects;
+    std::string filter_employee, filter_task, filter_project;
 
     int cnt = 0;
 
@@ -172,7 +172,9 @@ class SearchFullHandler final
         append(val.ids, parameters_employee, filter_employee);
       } else if (val.entity_type == "tasks") {
         append(val.ids, parameters_task, filter_task);
-      } 
+      } else if (val.entity_type == "projects") {
+        append(val.ids, parameters_projects, filter_project);
+      }
       cnt++;
     }
 
@@ -205,18 +207,44 @@ class SearchFullHandler final
     if (parameters_task.Size() != 0) {
       auto result = pg_cluster_->Execute(
           userver::storages::postgres::ClusterHostType::kMaster,
-          "SELECT t.title, t.project_name, t.id, t.creator, t.assignee "
+          "SELECT t.title, t.project_id, t.task_id, t.creator, t.assignee "
           "FROM working_day_" +
               company_id +
               ".tracker_tasks AS t "
               "JOIN unnest(ARRAY[" +
               filter_task +
-              "]) WITH ORDINALITY u(id, ord) USING (id) "
+              "]) WITH ORDINALITY u(id, ord) ON t.task_id = u.id "
               "ORDER BY u.ord; ",
               parameters_task);
 
-      response.tasks = result.AsContainer<std::vector<TrackerTasksListItem>>(
+      response.tasks = result.AsContainer<std::vector<TrackerTasksItemResponseShort>>(
           userver::storages::postgres::kRowTag);
+    }
+
+    if (parameters_projects.Size() != 0) {
+      auto result = pg_cluster_->Execute(
+          userver::storages::postgres::ClusterHostType::kMaster,
+          "SELECT t.project_id, t.title, t.image_url, t.creator "
+          "FROM working_day_" +
+              company_id +
+              ".tracker_projects AS t "
+              "JOIN unnest(ARRAY[" +
+              filter_project +
+              "]) WITH ORDINALITY u(id, ord) ON t.project_id = u.id "
+              "ORDER BY u.ord; ",
+              parameters_projects);
+
+      response.projects = result.AsContainer<std::vector<TrackerProjectsItemResponseShort>>(
+          userver::storages::postgres::kRowTag);
+    }
+
+    for (auto& project : response.projects) {
+      if (project.image_url.has_value()) {
+        project.image_url =
+            utils::s3_presigned_links::GenerateTrackerProjectsMediaPresignedLink(
+                project.image_url.value(),
+                utils::s3_presigned_links::Download);
+      }
     }
 
     return response.ToJsonString();

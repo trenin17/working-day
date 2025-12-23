@@ -220,24 +220,69 @@ CREATE TABLE IF NOT EXISTS working_day_first.employee_chats (
   FOREIGN KEY (chat_id) REFERENCES working_day_first.messenger_chats (chat_id) ON DELETE CASCADE
 );
 
+DROP TABLE IF EXISTS working_day_first.tracker_project_assigned_users;
+DROP TABLE IF EXISTS working_day_first.tracker_projects;
 CREATE TABLE IF NOT EXISTS working_day_first.tracker_projects (
-    project_name TEXT PRIMARY KEY,
-    tasks_count INT NOT NULL DEFAULT 0
-);
-
-CREATE TABLE IF NOT EXISTS working_day_first.tracker_tasks (
-    id TEXT PRIMARY KEY NOT NULL,
+    project_id TEXT PRIMARY KEY NOT NULL,
     title TEXT NOT NULL,
     description TEXT,
-    project_name TEXT NOT NULL,
+    image_url TEXT,
+    creator TEXT NOT NULL,
+    tasks_count INT NOT NULL DEFAULT 0,
+    status TEXT NOT NULL CHECK (status IN ('Open', 'Pause', 'Closed')) DEFAULT 'Open',
+    created_ts TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    last_updated_ts TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    FOREIGN KEY (creator) REFERENCES working_day_first.employees (id) ON DELETE CASCADE
+);
+CREATE TABLE IF NOT EXISTS working_day_first.tracker_project_assigned_users (
+    project_id TEXT NOT NULL,
+    employee_id TEXT NOT NULL,
+    PRIMARY KEY (project_id, employee_id),
+    FOREIGN KEY (project_id) REFERENCES working_day_first.tracker_projects (project_id) ON DELETE CASCADE,
+    FOREIGN KEY (employee_id) REFERENCES working_day_first.employees (id) ON DELETE CASCADE
+);
+CREATE INDEX idx_tracker_project_assigned_users_employee
+ON working_day_first.tracker_project_assigned_users (employee_id);
+
+DROP TABLE IF EXISTS working_day_first.tracker_task_observers;
+DROP TABLE IF EXISTS working_day_first.tracker_task_related_tasks;
+DROP TABLE IF EXISTS working_day_first.tracker_tasks;
+CREATE TABLE IF NOT EXISTS working_day_first.tracker_tasks (
+    task_id TEXT PRIMARY KEY NOT NULL,
+    title TEXT NOT NULL,
+    description TEXT,
+    project_id TEXT NOT NULL,
     creator TEXT NOT NULL,
     assignee TEXT,
-    status TEXT CHECK (status IN ('Open', 'InProgress', 'Review', 'Done')),
+    status TEXT NOT NULL CHECK (status IN ('Open', 'InProgress', 'Review', 'Done')),
+    priority TEXT NOT NULL CHECK (priority IN ('Low', 'Middle', 'High')),
     media_links TEXT[] DEFAULT ARRAY[]::TEXT[],
     created_ts TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    last_updated_ts TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     deadline TIMESTAMPTZ,
+    action_id TEXT,
+    FOREIGN KEY (action_id) REFERENCES working_day_first.actions (id) ON DELETE CASCADE,
+    FOREIGN KEY (project_id) REFERENCES working_day_first.tracker_projects (project_id) ON DELETE CASCADE,
     FOREIGN KEY (creator) REFERENCES working_day_first.employees (id) ON DELETE CASCADE,
     FOREIGN KEY (assignee) REFERENCES working_day_first.employees (id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS working_day_first.tracker_task_observers (
+    task_id TEXT NOT NULL,
+    employee_id TEXT NOT NULL,
+    PRIMARY KEY (task_id, employee_id),
+    FOREIGN KEY (task_id) REFERENCES working_day_first.tracker_tasks (task_id) ON DELETE CASCADE,
+    FOREIGN KEY (employee_id) REFERENCES working_day_first.employees (id) ON DELETE CASCADE
+);
+CREATE INDEX idx_tracker_task_observers
+  ON working_day_first.tracker_task_observers (employee_id);
+
+CREATE TABLE IF NOT EXISTS working_day_first.tracker_task_related_tasks (
+    task_id TEXT NOT NULL,
+    task_id_related TEXT NOT NULL,
+    PRIMARY KEY (task_id, task_id_related),
+    FOREIGN KEY (task_id) REFERENCES working_day_first.tracker_tasks (task_id) ON DELETE CASCADE,
+    FOREIGN KEY (task_id_related) REFERENCES working_day_first.tracker_tasks (task_id) ON DELETE CASCADE
 );
 
 CREATE TYPE wd_general.chain_metadata_item AS (
@@ -315,3 +360,22 @@ ADD CONSTRAINT actions_document_id_fkey
 FOREIGN KEY (document_id)
 REFERENCES working_day_first.documents(id)
 ON DELETE CASCADE;
+
+ALTER TABLE working_day_first.reverse_index
+DROP CONSTRAINT IF EXISTS reverse_index_entity_type_check;
+
+ALTER TABLE working_day_first.reverse_index
+ADD CONSTRAINT reverse_index_entity_type_check
+CHECK (entity_type IN ('employees', 'tasks', 'projects'));
+
+ALTER TABLE working_day_first.notifications
+ADD COLUMN IF NOT EXISTS task_id TEXT;
+
+ALTER TABLE working_day_first.notifications
+ADD CONSTRAINT notifications_task_id_fkey
+FOREIGN KEY (task_id)
+REFERENCES working_day_first.tracker_tasks(task_id)
+ON DELETE CASCADE;
+
+CREATE INDEX idx_actions_user_id_end_date
+ON working_day_first.actions (user_id, end_date);

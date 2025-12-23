@@ -57,6 +57,9 @@
 #include "views/v1/superuser/company/add/view.hpp"
 #include "views/v1/tracker/projects/add/view.hpp"
 #include "views/v1/tracker/projects/list/view.hpp"
+#include "views/v1/tracker/projects/media/upload/view.hpp"
+#include "views/v1/tracker/projects/info/view.hpp"
+#include "views/v1/tracker/projects/edit/view.hpp"
 #include "views/v1/tracker/tasks/add/view.hpp"
 #include "views/v1/tracker/tasks/list/view.hpp"
 #include "views/v1/tracker/tasks/info/view.hpp"
@@ -134,6 +137,9 @@ int main(int argc, char* argv[]) {
   views::v1::messenger::recent_messages::AppendRecentMessages(component_list);
   views::v1::tracker::projects::add::AppendTrackerProjectsAdd(component_list);
   views::v1::tracker::projects::list::AppendTrackerProjectsList(component_list);
+  views::v1::tracker::projects::media::upload::AppendTrackerProjectsMediaUpload(component_list);
+  views::v1::tracker::projects::info::AppendTrackerProjectsInfo(component_list);
+  views::v1::tracker::projects::edit::AppendTrackerProjectsEdit(component_list);
   views::v1::tracker::tasks::add::AppendTrackerTasksAdd(component_list);
   views::v1::tracker::tasks::list::AppendTrackerTasksList(component_list);
   views::v1::tracker::tasks::info::AppendTrackerTasksInfo(component_list);

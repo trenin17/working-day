@@ -50,6 +50,7 @@ REPLACEMENTS = {
     "maternity_work_during": "Р",
     "personal_data_change": "",
 
+    "tracker_task_deadline": "ТД",
 }
 
 WORKING_DAYS = (

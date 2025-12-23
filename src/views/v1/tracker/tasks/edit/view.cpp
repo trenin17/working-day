@@ -27,6 +27,13 @@ namespace views::v1::tracker::tasks::edit {
 
 namespace {
 
+struct TaskValuesRow {
+  std::optional<std::string> assignee;
+  std::string title;
+  std::string project_id;
+  std::optional<std::string> action_id;
+};
+
 core::reverse_index::ReverseIndexResponse AddTaskToReverseIndexFunc(
     userver::storages::postgres::ClusterPtr cluster,
     core::reverse_index::TrackerTasksAllData data) {
@@ -87,7 +94,7 @@ core::reverse_index::TrackerTasksAllData FetchOldTaskData(
       "FROM working_day_" +
           data.company_id +
           ".tracker_tasks "
-          "WHERE id = $1; ",
+          "WHERE task_id = $1; ",
       data.task_id, data.title);
 
   auto old_values = grab_result.AsSingleRow<EditTaskValuesRow>(
@@ -125,7 +132,7 @@ core::reverse_index::ReverseIndexResponse EditTaskReverseIndexFunc(
         filter += fmt::format("{}${}", separator, parameters.Size());
       }
       if (parameters.Size() > 1) {
-        auto result = 
+        auto result =
           cluster->Execute(userver::storages::postgres::ClusterHostType::kMaster,
                             "UPDATE working_day_" + old_data.company_id +
                                 ".reverse_index "
@@ -176,19 +183,20 @@ class TrackerTasksEditHandler : public userver::server::handlers::HttpHandlerBas
 
     auto check_result = pg_cluster_->Execute(
       userver::storages::postgres::ClusterHostType::kMaster,
-      "SELECT 1 FROM working_day_" + company_id + ".tracker_tasks WHERE id = $1",
+      "SELECT assignee, title, project_id, action_id FROM working_day_" + company_id +
+      ".tracker_tasks WHERE task_id = $1",
       task_id);
 
     if (check_result.IsEmpty()) {
-        request.GetHttpResponse().SetStatus(userver::server::http::HttpStatus::kNotFound);
-        return ErrorMessage{"Task not found"}.ToJsonString();
+      request.GetHttpResponse().SetStatus(userver::server::http::HttpStatus::kNotFound);
+      return ErrorMessage{"Task not found"}.ToJsonString();
     }
+    auto task_value = check_result.AsSingleRow<TaskValuesRow>(userver::storages::postgres::kRowTag);
 
     TrackerTasksEditRequest request_body;
     request_body.ParseRegisteredFields(request.RequestBody());
 
-    core::reverse_index::TrackerTasksAllData data_new{task_id,
-                                                      request_body.title};
+    core::reverse_index::TrackerTasksAllData data_new{task_id, request_body.title};
     data_new.company_id = company_id;
 
     core::reverse_index::TrackerTasksAllData data_old =
@@ -203,20 +211,185 @@ class TrackerTasksEditHandler : public userver::server::handlers::HttpHandlerBas
 
     core::reverse_index::ReverseIndexHandler(r_index_request);
 
-    auto result = pg_cluster_->Execute(
+    // проверка, что наблюдатели валидны
+    if (request_body.observers.has_value()) {
+      auto check = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kMaster,
-        "UPDATE working_day_" + company_id +
-            ".tracker_tasks "
-            "SET title = case when $2 is null then title else $2 end, "
-            "description = case when $3 is null then description else $3 end, "
-            "project_name = case when $4 is null then project_name else $4 end, "
-            "assignee = case when $5 is null then assignee else $5 end, "
-            "status = case when $6 is null then status else $6 end, "
-            "deadline = case when $7 is null then deadline else $7 end "
-            "WHERE id = $1",
-        task_id, request_body.title, request_body.description, request_body.project_name,
-        request_body.assignee, request_body.status, request_body.deadline);
+          "SELECT id FROM working_day_" + company_id +
+          ".employees WHERE id = ANY($1)",
+          *request_body.observers);
 
+      if (check.Size() != request_body.observers->size()) {
+        request.GetHttpResponse().SetStatus(
+            userver::server::http::HttpStatus::kBadRequest);
+        return ErrorMessage{
+            "Invalid observers: one or more employees not found"}
+            .ToJsonString();
+      }
+    }
+    // проверка, что связанные задачи валидны
+    if (request_body.related_tasks_ids) {
+      auto check = pg_cluster_->Execute(
+        userver::storages::postgres::ClusterHostType::kMaster,
+          "SELECT task_id FROM working_day_" + company_id +
+          ".tracker_tasks WHERE task_id = ANY($1)",
+          *request_body.related_tasks_ids);
+
+      if (check.Size() != request_body.related_tasks_ids->size()) {
+        request.GetHttpResponse().SetStatus(
+            userver::server::http::HttpStatus::kBadRequest);
+        return ErrorMessage{
+            "Invalid related_tasks_ids: one or more tasks not found"}
+            .ToJsonString();
+      }
+    }
+
+    auto trx = pg_cluster_->Begin(
+        "tracker_tasks_edit",
+        userver::storages::postgres::ClusterHostType::kMaster, {});
+
+    // название проекта
+    auto new_project_title = trx.Execute(
+      "SELECT title FROM working_day_" + company_id +
+      ".tracker_projects WHERE project_id = $1",
+      request_body.project_id.value_or(task_value.project_id));
+
+    if (new_project_title.IsEmpty()) {
+      request.GetHttpResponse().SetStatus(userver::server::http::HttpStatus::kNotFound);
+      return ErrorMessage{"Project not found"}.ToJsonString();
+    }
+    std::string project_title = new_project_title.AsSingleRow<std::string>();
+
+    trx.Execute(
+      "UPDATE working_day_" + company_id +
+        ".tracker_tasks "
+        "SET title = case when $2 is null then title else $2 end, "
+        "description = case when $3 is null then description else $3 end, "
+        "project_id = case when $4 is null then project_id else $4 end, "
+        "assignee = case when $5 is null then assignee else $5 end, "
+        "status = case when $6 is null then status else $6 end, "
+        "deadline = case when $7 is null then deadline else $7 end, "
+        "priority = case when $8 is null then priority else $8 end, "
+        "last_updated_ts = NOW() "
+        "WHERE task_id = $1",
+      task_id, request_body.title, request_body.description, request_body.project_id,
+      request_body.assignee, request_body.status, request_body.deadline, request_body.priority);
+
+    trx.Execute(
+        "UPDATE working_day_" + company_id +".tracker_projects "
+          "SET last_updated_ts = NOW() "
+          "WHERE project_id = $1",
+          request_body.project_id.value_or(task_value.project_id));
+
+    // наблюдатели
+    if (request_body.observers) {
+        trx.Execute(
+            "DELETE FROM working_day_" + company_id + ".tracker_task_observers "
+            "WHERE task_id = $1",
+            task_id
+        );
+
+        for (const auto& employee_id : *request_body.observers) {
+            trx.Execute(
+                "INSERT INTO working_day_" + company_id + ".tracker_task_observers "
+                "(task_id, employee_id) "
+                "VALUES ($1, $2) "
+                "ON CONFLICT DO NOTHING",
+                task_id, employee_id
+            );
+        }
+    }
+
+    // связанные задачи
+    if (request_body.related_tasks_ids) {
+      trx.Execute(
+        "DELETE FROM working_day_" + company_id + ".tracker_task_related_tasks "
+        "WHERE task_id = $1",
+        task_id
+      );
+
+      for (const auto& task_id_related : *request_body.related_tasks_ids) {
+        trx.Execute(
+          "DELETE FROM working_day_" + company_id + ".tracker_task_related_tasks "
+          "WHERE task_id = $1 and task_id_related = $2",
+          task_id_related,
+          task_id
+        );
+        trx.Execute(
+          "INSERT INTO working_day_" + company_id +
+              ".tracker_task_related_tasks (task_id, task_id_related) "
+              "VALUES ($1, $2), ($2, $1)  ON CONFLICT DO NOTHING",
+          task_id,
+          task_id_related
+        );
+      }
+    }
+
+    // уведомления
+    if (task_value.assignee.has_value() or request_body.assignee.has_value()) {
+      auto assignee = request_body.assignee.value_or(task_value.assignee.value());
+
+      std::string notification_text;
+      if (assignee != task_value.assignee.value()) {
+        notification_text =
+          "Вам назначена новая задача \"" + request_body.title.value_or(task_value.title) +
+          "\" в проекте \"" + project_title + "\".";
+
+      if (task_value.action_id.has_value()) {
+        trx.Execute(
+          "UPDATE working_day_" + company_id +
+            ".actions "
+            "SET user_id = $1 "
+            "WHERE action_id = $2",
+          assignee, task_value.action_id.value());
+      }
+    } else {
+      notification_text = "Изменена информация о задаче \"" + request_body.title.value_or(task_value.title) +
+      "\" в проекте \"" + project_title + "\".";
+    }
+
+
+    auto notification_id = userver::utils::generators::GenerateUuid();
+    trx.Execute(
+      "INSERT INTO working_day_" + company_id +
+          ".notifications(id, type, text, sender_id, user_id, task_id) "
+          "VALUES ($1, $2, $3, $4, $5, $6) "
+          "ON CONFLICT (id) DO NOTHING",
+      notification_id, "generic", notification_text, user_id, assignee, task_id);
+
+    // обновляем календарь
+
+    // если раньше не было в календаре и добавили дедлайн
+    if (!task_value.action_id.has_value() and request_body.deadline.has_value()) {
+      auto action_id = userver::utils::generators::GenerateUuid();
+      trx.Execute("INSERT INTO working_day_" + company_id +
+                  ".actions(id, type, attendance_type, user_id, start_date, "
+                  "end_date) "
+                  "VALUES($1, $2, $3, $4, $5, $6) "
+                  "ON CONFLICT (id) "
+                  "DO NOTHING",
+              action_id, "attendance", "tracker_task_deadline", assignee,
+              request_body.deadline.value(), request_body.deadline.value());
+
+      trx.Execute(
+        "UPDATE working_day_" + company_id +
+          ".tracker_tasks "
+          "SET action_id = $1 "
+          "WHERE task_id = $2",
+        action_id, task_id);
+    }
+    // если обновили дедлайн
+    else if (request_body.deadline.has_value()) {
+      trx.Execute(
+        "UPDATE working_day_" + company_id +
+          ".actions "
+          "SET start_date = $1, end_date = $1"
+          "WHERE action_id = $2",
+        request_body.deadline, task_value.action_id.value());
+      }
+    }
+
+    trx.Commit();
     return "Task was changed";
   }
 

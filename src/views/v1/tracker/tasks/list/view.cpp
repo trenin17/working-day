@@ -45,13 +45,11 @@ class TrackerTasksListHandler final
 
     auto result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kMaster,
-        "SELECT title, project_name, id, creator, assignee "
-        "FROM working_day_" + 
-            company_id + 
-            ".tracker_tasks");
+        "SELECT title, project_id, task_id, creator, assignee "
+        "FROM working_day_" + company_id + ".tracker_tasks");
 
     TrackerTasksListResponse response;
-    response.tasks = result.AsContainer<std::vector<TrackerTasksListItem>>(
+    response.tasks = result.AsContainer<std::vector<TrackerTasksItemResponseShort>>(
         userver::storages::postgres::kRowTag);
 
     return response.ToJsonString();
