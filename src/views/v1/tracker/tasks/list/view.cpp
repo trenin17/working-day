@@ -42,11 +42,26 @@ class TrackerTasksListHandler final
         static_cast<std::string>("Access-Control-Allow-Headers"), "*");
 
     const auto& company_id = ctx.GetData<std::string>("company_id");
+    const auto& user_id = ctx.GetData<std::string>("user_id");
 
     auto result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kMaster,
-        "SELECT title, project_id, task_id, creator, assignee "
-        "FROM working_day_" + company_id + ".tracker_tasks");
+        R"(
+        SELECT DISTINCT
+            t.title,
+            t.project_id,
+            t.task_id,
+            t.creator,
+            t.assignee
+        FROM working_day_)" + company_id + R"(.tracker_tasks t
+        LEFT JOIN working_day_)" + company_id + R"(.tracker_task_observers o
+              ON o.task_id = t.task_id
+        WHERE t.creator = $1
+          OR t.assignee = $1
+          OR o.employee_id = $1;
+        )",
+        user_id
+      );
 
     TrackerTasksListResponse response;
     response.tasks = result.AsContainer<std::vector<TrackerTasksItemResponseShort>>(

@@ -267,6 +267,12 @@ CREATE TABLE IF NOT EXISTS working_day_first.tracker_tasks (
     FOREIGN KEY (assignee) REFERENCES working_day_first.employees (id) ON DELETE CASCADE
 );
 
+CREATE INDEX idx_tracker_tasks_creator
+ON working_day_first.tracker_tasks (creator);
+
+CREATE INDEX idx_tracker_tasks_assignee
+ON working_day_first.tracker_tasks (assignee);
+
 CREATE TABLE IF NOT EXISTS working_day_first.tracker_task_observers (
     task_id TEXT NOT NULL,
     employee_id TEXT NOT NULL,

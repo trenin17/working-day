@@ -1260,10 +1260,10 @@ async def test_tracker_projects_add_list_and_info(service_client):
 
     response_data = json.loads(response.text)
 
-    assert len(response_data["projects"]) == 4
+    assert len(response_data["projects"]) == 3
 
-    assert response_data["projects"][3]["project_id"].startswith("new project2")
-    assert response_data["projects"][2]["project_id"].startswith("new project1")
+    assert response_data["projects"][2]["project_id"].startswith("new project2")
+    assert response_data["projects"][1]["project_id"].startswith("new project1")
 
     expected_projects = [
         {
@@ -1272,18 +1272,13 @@ async def test_tracker_projects_add_list_and_info(service_client):
             "title": "first project name",
         },
         {
-            "creator": 'second_id',
-            "project_id": "second",
-            "title": "second project name",
-        },
-        {
             "creator": 'first_id',
-            "project_id": response_data["projects"][2]["project_id"],
+            "project_id": response_data["projects"][1]["project_id"],
             "title": "new project1",
         },
         {
             "creator": 'first_id',
-            "project_id": response_data["projects"][3]["project_id"],
+            "project_id": response_data["projects"][2]["project_id"],
             "title": "new project2",
         },
     ]
@@ -1359,6 +1354,26 @@ async def test_tracker_projects_add_and_edit(service_client):
         }
     )
     assert response.status == 200
+    response = await service_client.get(
+        '/v1/tracker/projects/list',
+        headers={'Authorization': 'Bearer first_token'},
+    )
+    assert response.status == 200
+
+    response_data = json.loads(response.text)
+    expected_projects = [
+        {
+            "creator": 'first_id',
+            "project_id": "first",
+            "title": "first project name",
+        },
+        {
+            "creator": 'first_id',
+            "project_id": project_id,
+            "title": "edit_title",
+        }
+    ]
+    assert response_data["projects"] == expected_projects
 
     response = await service_client.get(
         '/v1/tracker/projects/info',
@@ -1523,7 +1538,6 @@ async def test_tracker_tasks_add_and_list(service_client):
         headers={'Authorization': 'Bearer first_token'},
     )
     assert response.status == 200
-
     data = response.json()
     expected_tasks = [
         {
@@ -1531,13 +1545,6 @@ async def test_tracker_tasks_add_and_list(service_client):
             "project_id": "first",
             "task_id": "first-1",
             "creator": "first_id",
-            "assignee": "stranger_id",
-        },
-        {
-            "title": "young task",
-            "project_id": "first",
-            "task_id": "first-2",
-            "creator": "second_id",
             "assignee": "stranger_id",
         },
         {
@@ -1563,11 +1570,34 @@ async def test_tracker_tasks_add_and_list(service_client):
     assert data["tasks"] == expected_tasks
 
     response = await service_client.get(
+        '/v1/tracker/tasks/list',
+        headers={'Authorization': 'Bearer second_token'},
+    )
+    assert response.status == 200
+    data = response.json()
+    expected_tasks = [
+        {
+            "title": "task 3",
+            "project_id": "second",
+            "task_id": "second-1",
+            "creator": "first_id",
+            "assignee": "second_id",
+        },
+        {
+            "title": "young task",
+            "project_id": "first",
+            "task_id": "first-2",
+            "creator": "second_id",
+            "assignee": "stranger_id",
+        },
+    ]
+    assert data["tasks"] == expected_tasks
+
+    response = await service_client.get(
         '/v1/tracker/projects/list',
         headers={'Authorization': 'Bearer first_token'},
     )
     assert response.status == 200
-
     response_data = json.loads(response.text)
     expected_projects = [
         {
@@ -1575,6 +1605,17 @@ async def test_tracker_tasks_add_and_list(service_client):
             "project_id": "first",
             "title": "first project name",
         },
+    ]
+    assert response_data["projects"] == expected_projects
+
+    response = await service_client.get(
+        '/v1/tracker/projects/list',
+        headers={'Authorization': 'Bearer second_token'},
+    )
+    assert response.status == 200
+
+    response_data = json.loads(response.text)
+    expected_projects = [
         {
             "creator": 'second_id',
             "project_id": "second",

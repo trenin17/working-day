@@ -22,6 +22,12 @@ CREATE TABLE IF NOT EXISTS ${SCHEMA}.tracker_tasks (
     FOREIGN KEY (assignee) REFERENCES ${SCHEMA}.employees (id) ON DELETE CASCADE
 );
 
+CREATE INDEX idx_tracker_tasks_creator
+ON ${SCHEMA}.tracker_tasks (creator);
+
+CREATE INDEX idx_tracker_tasks_assignee
+ON ${SCHEMA}.tracker_tasks (assignee);
+
 CREATE TABLE IF NOT EXISTS ${SCHEMA}.tracker_task_observers (
     task_id TEXT NOT NULL,
     employee_id TEXT NOT NULL,
