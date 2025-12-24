@@ -1262,14 +1262,14 @@ async def test_tracker_projects_add_list_and_info(service_client):
 
     assert len(response_data["projects"]) == 3
 
-    assert response_data["projects"][2]["project_id"].startswith("new project2")
+    assert response_data["projects"][0]["project_id"].startswith("new project2")
     assert response_data["projects"][1]["project_id"].startswith("new project1")
 
     expected_projects = [
         {
             "creator": 'first_id',
-            "project_id": "first",
-            "title": "first project name",
+            "project_id": response_data["projects"][0]["project_id"],
+            "title": "new project2",
         },
         {
             "creator": 'first_id',
@@ -1278,8 +1278,8 @@ async def test_tracker_projects_add_list_and_info(service_client):
         },
         {
             "creator": 'first_id',
-            "project_id": response_data["projects"][2]["project_id"],
-            "title": "new project2",
+            "project_id": "first",
+            "title": "first project name",
         },
     ]
     assert response_data["projects"] == expected_projects
@@ -1364,13 +1364,13 @@ async def test_tracker_projects_add_and_edit(service_client):
     expected_projects = [
         {
             "creator": 'first_id',
-            "project_id": "first",
-            "title": "first project name",
+            "project_id": project_id,
+            "title": "edit_title",
         },
         {
             "creator": 'first_id',
-            "project_id": project_id,
-            "title": "edit_title",
+            "project_id": "first",
+            "title": "first project name",
         }
     ]
     assert response_data["projects"] == expected_projects
@@ -1540,18 +1540,12 @@ async def test_tracker_tasks_add_and_list(service_client):
     assert response.status == 200
     data = response.json()
     expected_tasks = [
-        {
-            "title": "old task",
-            "project_id": "first",
-            "task_id": "first-1",
+         {
+            "title": "task 3",
+            "project_id": "second",
+            "task_id": "second-1",
             "creator": "first_id",
-            "assignee": "stranger_id",
-        },
-        {
-            "title": "task 1",
-            "project_id": "first",
-            "task_id": "first-3",
-            "creator": "first_id",
+            "assignee": "second_id",
         },
         {
             "title": "task 2",
@@ -1560,11 +1554,17 @@ async def test_tracker_tasks_add_and_list(service_client):
             "creator": "first_id",
         },
         {
-            "title": "task 3",
-            "project_id": "second",
-            "task_id": "second-1",
+            "title": "task 1",
+            "project_id": "first",
+            "task_id": "first-3",
             "creator": "first_id",
-            "assignee": "second_id",
+        },
+        {
+            "title": "old task",
+            "project_id": "first",
+            "task_id": "first-1",
+            "creator": "first_id",
+            "assignee": "stranger_id",
         },
     ]
     assert data["tasks"] == expected_tasks

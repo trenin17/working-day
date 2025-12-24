@@ -47,7 +47,7 @@ class TrackerTasksListHandler final
     auto result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kMaster,
         R"(
-        SELECT DISTINCT
+        SELECT
             t.title,
             t.project_id,
             t.task_id,
@@ -58,7 +58,8 @@ class TrackerTasksListHandler final
               ON o.task_id = t.task_id
         WHERE t.creator = $1
           OR t.assignee = $1
-          OR o.employee_id = $1;
+          OR o.employee_id = $1
+        ORDER BY t.created_ts DESC
         )",
         user_id
       );
