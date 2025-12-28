@@ -66,6 +66,8 @@
 #include "views/v1/tracker/tasks/assigned_to_user/view.hpp"
 #include "views/v1/tracker/tasks/edit/view.hpp"
 #include "views/v1/tracker/tasks/media/upload/view.hpp"
+#include "views/v1/tracker/tasks/documents/send/view.hpp"
+#include "views/v1/tracker/tasks/documents/remove/view.hpp"
 #include "views/v1/documents/chain/update/view.hpp"
 #include "views/v1/documents/chain/add/view.hpp"
 #include "views/v1/documents/remove/view.hpp"
@@ -146,6 +148,8 @@ int main(int argc, char* argv[]) {
   views::v1::tracker::tasks::assigned_to_user::AppendTrackerTasksAssignedToUser(component_list);
   views::v1::tracker::tasks::edit::AppendTrackerTasksEdit(component_list);
   views::v1::tracker::tasks::media::upload::AppendTrackerTasksMediaUpload(component_list);
+  views::v1::tracker::tasks::documents::send::AppendTrackerTasksDocumentsSend(component_list);
+  views::v1::tracker::tasks::documents::remove::AppendTrackerTasksDocumentsRemove(component_list);
   views::v1::documents::chain::update::AppendDocumentsChainUpdate(component_list);
   views::v1::documents::chain::add::AppendDocumentsChainAdd(component_list);
   views::v1::documents::remove::AppendDocumentsRemove(component_list);

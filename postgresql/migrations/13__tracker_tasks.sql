@@ -45,3 +45,14 @@ CREATE TABLE IF NOT EXISTS ${SCHEMA}.tracker_task_related_tasks (
     FOREIGN KEY (task_id) REFERENCES ${SCHEMA}.tracker_tasks (task_id) ON DELETE CASCADE,
     FOREIGN KEY (task_id_related) REFERENCES ${SCHEMA}.tracker_tasks (task_id) ON DELETE CASCADE
 );
+
+CREATE TABLE IF NOT EXISTS ${SCHEMA}.task_documents (
+    task_id TEXT NOT NULL,
+    document_id TEXT NOT NULL,
+    PRIMARY KEY (task_id, document_id),
+    FOREIGN KEY (task_id) REFERENCES ${SCHEMA}.tracker_tasks (task_id) ON DELETE CASCADE,
+    FOREIGN KEY (document_id) REFERENCES ${SCHEMA}.documents (id) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_task_documents_task_id ON ${SCHEMA}.task_documents (task_id);
+CREATE INDEX idx_task_documents_document_id ON ${SCHEMA}.task_documents (document_id);

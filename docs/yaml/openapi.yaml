@@ -1046,36 +1046,111 @@ paths:
                                 $ref: '#/components/schemas/ErrorMessage'
 
     /v1/tracker/tasks/edit:
-    post:
-        description: Edit task information
-        parameters:
-            - in: query
-              name: task_id
-              description: Id of the task to edit information for
-              schema:
-                  type: string
-            - in: header
-              name: Authorization
-              description: Token of session user
-              schema:
-                  type: string
-        requestBody:
-            required: true
-            content:
-                application/json:
-                    schema:
-                        $ref: '#/components/schemas/TrackerTasksEditRequest'
-        responses:
-            '200':
-                description: Information was updated
-            '400':
-                description: Bad request, missing parameters
+        post:
+            description: Edit task information
+            parameters:
+              - in: query
+                name: task_id
+                description: Id of the task to edit information for
+                schema:
+                    type: string
+              - in: header
+                name: Authorization
+                description: Token of session user
+                schema:
+                    type: string
+            requestBody:
+                required: true
                 content:
                     application/json:
                         schema:
-                            $ref: '#/components/schemas/ErrorMessage'
-            '404':
-                    description: Not found
+                            $ref: '#/components/schemas/TrackerTasksEditRequest'
+            responses:
+                '200':
+                    description: Information was updated
+                '400':
+                    description: Bad request, missing parameters
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+                '404':
+                        description: Not found
+                        content:
+                            application/json:
+                                schema:
+                                    $ref: '#/components/schemas/ErrorMessage'
+
+    # вызов /v1/documents/upload, а затем /v1/tracker/tasks/documents/send
+    /v1/tracker/tasks/documents/send:
+        post:
+            description: Attach uploaded document to the task
+            parameters:
+              - in: query
+                name: task_id
+                schema:
+                    type: string
+                description: ID of the task
+              - in: header
+                name: Authorization
+                description: Token of session user
+                schema:
+                    type: string
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/TrackerTasksDocumentItem'
+
+            responses:
+                '200':
+                    description: Document was attached to task successfully
+                '400':
+                    description: Bad request
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+                '404':
+                    description: Task not found
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+
+        /v1/tracker/tasks/documents/remove:
+        delete:
+            description: Remove document from the task
+            parameters:
+              - in: query
+                name: task_id
+                required: true
+                schema:
+                    type: string
+                description: ID of the task
+              - in: query
+                name: document_id
+                required: true
+                schema:
+                    type: string
+                description: ID of the document to remove
+              - in: header
+                name: Authorization
+                description: Token of session user
+                schema:
+                    type: string
+            responses:
+                '200':
+                    description: Document was removed from task successfully
+                '400':
+                    description: Bad request
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+                '404':
+                    description: Task or document not found
                     content:
                         application/json:
                             schema:
@@ -2088,6 +2163,25 @@ components:
                     items:
                         $ref: '#/components/schemas/DocumentItem'
 
+        TrackerTasksDocumentItem:
+            type: object
+            additionalProperties: false
+            required:
+              - document_id
+              - name
+            properties:
+                document_id:
+                    type: string
+                name:
+                    type: string
+                description:
+                    type: string
+                created_ts:
+                    $ref: '#/components/schemas/Timestamp'
+                visibility_status:
+                    description: Document visibility status (0 — visible, 1 — archived)
+                    type: int
+
         DocumentItem:
             type: object
             additionalProperties: false
@@ -2543,7 +2637,11 @@ components:
                           type: array
                           items:
                               type: string
-
+                      documents_ids:
+                          type: array
+                          items:
+                              type: string
+                          description: List of document ids attached to the task
 
 
         # -- комментарии (отдельно):

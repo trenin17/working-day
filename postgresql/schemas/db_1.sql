@@ -291,6 +291,17 @@ CREATE TABLE IF NOT EXISTS working_day_first.tracker_task_related_tasks (
     FOREIGN KEY (task_id_related) REFERENCES working_day_first.tracker_tasks (task_id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS working_day_first.task_documents (
+    task_id TEXT NOT NULL,
+    document_id TEXT NOT NULL,
+    PRIMARY KEY (task_id, document_id),
+    FOREIGN KEY (task_id) REFERENCES working_day_first.tracker_tasks (task_id) ON DELETE CASCADE,
+    FOREIGN KEY (document_id) REFERENCES working_day_first.documents (id) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_task_documents_task_id ON working_day_first.task_documents (task_id);
+CREATE INDEX idx_task_documents_document_id ON working_day_first.task_documents (document_id);
+
 CREATE TYPE wd_general.chain_metadata_item AS (
     employee_id TEXT,
     requires_signature BOOLEAN,

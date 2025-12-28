@@ -66,6 +66,10 @@ def userver_config_pyservice(mockserver_info):
             'pyservice-url'
         ] = mockserver_info.url('documents/generate-from-template')
 
+        components['handler-v1-tracker-tasks-documents-send'][
+            'pyservice-url'
+        ] = mockserver_info.url('tracker/tasks/documents/convert')
+
 
     return do_patch
     # /// [patch configs]
@@ -99,6 +103,12 @@ def mock_pyservice(mockserver) -> None:
         }
 
     @mockserver.json_handler('/documents/generate-from-template')
+    def mock(request):
+        return {
+            'response': 'OK'
+        }
+
+    @mockserver.json_handler('/tracker/tasks/documents/convert')
     def mock(request):
         return {
             'response': 'OK'

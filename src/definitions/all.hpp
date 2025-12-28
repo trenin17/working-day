@@ -263,6 +263,16 @@
 #define USE_ERROR_MESSAGE
 #endif
 
+#ifdef V1_TRACKER_TASKS_DOCUMENTS_SEND
+#define USE_TRACKER_TASKS_DOCUMENT_ITEM
+#define USE_PYSERVICE_DOCUMENT_SEND_REQUEST
+#define USE_ERROR_MESSAGE
+#endif
+
+#ifdef V1_TRACKER_TASKS_DOCUMENTS_REMOVE
+#define USE_ERROR_MESSAGE
+#endif
+
 #ifdef V1_DOCUMENTS_CHAIN_UPDATE
 #define USE_LIST_EMPLOYEE_WITH_SUBCOMPANY
 #define USE_PYSERVICE_DOCUMENT_SIGN_REQUEST
@@ -1009,7 +1019,7 @@ struct TrackerTasksItemResponse : public JsonCompatible {
   // Method for postgres initialization of non-trivial types
   auto Introspect() {
     return std::tie(task_id, title, project_id, description, creator, assignee, status,
-      priority, media_links, created_ts, last_updated_ts, deadline, action_id, observers, related_tasks_ids);
+      priority, media_links, created_ts, last_updated_ts, deadline, action_id, observers, related_tasks_ids, document_ids);
   }
 
   REGISTER_STRUCT_FIELD_OPTIONAL(task_id, std::string, "task_id");
@@ -1027,6 +1037,7 @@ struct TrackerTasksItemResponse : public JsonCompatible {
   REGISTER_STRUCT_FIELD_OPTIONAL(action_id, std::string, "action_id");
   REGISTER_STRUCT_FIELD_OPTIONAL(observers, std::vector<std::string>, "observers");
   REGISTER_STRUCT_FIELD_OPTIONAL(related_tasks_ids, std::vector<std::string>, "related_tasks_ids");
+  REGISTER_STRUCT_FIELD_OPTIONAL(document_ids, std::vector<std::string>, "document_ids");
 };
 #endif
 
@@ -1047,6 +1058,16 @@ struct TrackerTasksEditRequest : public JsonCompatible {
   REGISTER_STRUCT_FIELD_OPTIONAL(deadline, userver::storages::postgres::TimePoint, "deadline");
   REGISTER_STRUCT_FIELD_OPTIONAL(observers, std::vector<std::string>, "observers");
   REGISTER_STRUCT_FIELD_OPTIONAL(related_tasks_ids, std::vector<std::string>, "related_tasks_ids");
+};
+#endif
+
+#ifdef USE_TRACKER_TASKS_DOCUMENT_ITEM
+struct TrackerTasksDocumentItem : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(document_id, std::string, "document_id");
+  REGISTER_STRUCT_FIELD(name, std::string, "name");
+  REGISTER_STRUCT_FIELD_OPTIONAL(description, std::string, "description");
+  REGISTER_STRUCT_FIELD_OPTIONAL(created_ts, userver::storages::postgres::TimePoint, "created_ts");
+  REGISTER_STRUCT_FIELD_OPTIONAL(visibility_status, int, "visibility_status");
 };
 #endif
 

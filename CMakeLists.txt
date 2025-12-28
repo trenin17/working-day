@@ -80,6 +80,8 @@ add_library(${PROJECT_NAME}_objs OBJECT
 	src/views/v1/tracker/tasks/assigned_to_user/view.cpp
 	src/views/v1/tracker/tasks/edit/view.cpp
 	src/views/v1/tracker/tasks/media/upload/view.cpp
+	src/views/v1/tracker/tasks/documents/send/view.cpp
+	src/views/v1/tracker/tasks/documents/remove/view.cpp
 	src/views/v1/documents/chain/update/view.cpp
 	src/views/v1/documents/chain/add/view.cpp
 	src/views/v1/documents/remove/view.cpp

@@ -1751,6 +1751,7 @@ async def test_tracker_tasks_info_and_edit(service_client):
         "task_id":"first-1",
         "title":"old task",
         'related_tasks_ids': [],
+        'document_ids': [],
     }
     assert response_json == expected_json
 
@@ -1792,7 +1793,8 @@ async def test_tracker_tasks_info_and_edit(service_client):
         "status":"InProgress",
         "task_id":"first-1",
         "title":"not old task",
-        'related_tasks_ids': []
+        'related_tasks_ids': [],
+        'document_ids': [],
     }
     assert response_json == expected_json
 
@@ -2314,7 +2316,8 @@ async def test_tracker_tasks_add_with_extra_fields(service_client):
         "observers": ['second_id'],
         "priority": 'Low',
         "related_tasks_ids": ['first-1'],
-        'assignee': 'third_id'
+        'assignee': 'third_id',
+        'document_ids': [],
     }
     assert re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}",  response_data["created_ts"])
 
@@ -2345,7 +2348,8 @@ async def test_tracker_tasks_edit_deadline(service_client):
         'related_tasks_ids': [],
         "status":"Open",
         "task_id":"first-1",
-        "title":"old task"
+        "title":"old task",
+        'document_ids': [],
     }
     assert response_data == expected_response
 
@@ -2406,6 +2410,7 @@ async def test_tracker_tasks_edit_deadline(service_client):
         "task_id":"first-1",
         "title":"old task",
         "related_tasks_ids": ['first-2'],
+        'document_ids': [],
     }
     assert response_data == expected_response
     response = await service_client.get(
@@ -2417,6 +2422,64 @@ async def test_tracker_tasks_edit_deadline(service_client):
     response_data = json.loads(response.text)
     assert response_data['related_tasks_ids'] == ['first-1']
 
+@pytest.mark.pgsql('db_1', files=['initial_data.sql'])
+async def test_tracker_task_send_and_remove_docx_document(service_client):
+    response = await service_client.post(
+        '/v1/tracker/tasks/documents/send',
+        headers={'Authorization': 'Bearer first_token'},
+        params={'task_id': 'first-1'},
+        json={
+            'document_id': 'id1.docx',
+            'name': 'doc1',
+            'description': 'text1'
+        }
+    )
+    assert response.status == 200
+
+    response = await service_client.get(
+        '/v1/tracker/tasks/info',
+        params={'task_id': 'first-1'},
+        headers={'Authorization': 'Bearer first_token'}
+    )
+    assert response.status == 200
+    response_data = json.loads(response.text)
+    expected_response = {
+        "document_ids": ['id1.pdf'],
+        "related_tasks_ids": [],
+        "observers": [],
+        "priority": 'Low',
+        "project_id": "first",
+        "status": "Open",
+        "task_id": "first-1",
+        "title": "old task",
+        "last_updated_ts": response_data['last_updated_ts'],
+        "created_ts": response_data['created_ts'],
+        "description": "description for old task",
+        "media_links": ["s3 download test link", "s3 download test link"],
+        "deadline": "2025-04-12T10:00:00.000000",
+        "assignee": "stranger_id",
+        "creator": "first_id",
+    }
+    assert response_data == expected_response
+
+    response = await service_client.post(
+        '/v1/tracker/tasks/documents/remove',
+        headers={'Authorization': 'Bearer first_token'},
+        params={
+            'task_id': 'first-1',
+            'document_id': 'id1.pdf'
+        }
+    )
+    assert response.status == 200
+
+    response = await service_client.get(
+        '/v1/tracker/tasks/info',
+        params={'task_id': 'first-1'},
+        headers={'Authorization': 'Bearer first_token'}
+    )
+    assert response.status == 200
+    response_data = json.loads(response.text)
+    assert response_data['document_ids'] == []
 
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])
 async def test_send_docx_document(service_client):

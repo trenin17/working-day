@@ -359,6 +359,8 @@ class TrackerTasksEditHandler : public userver::server::handlers::HttpHandlerBas
 
     // обновляем календарь
 
+    // добавить ручку на документы
+
     // если раньше не было в календаре и добавили дедлайн
     if (!task_value.action_id.has_value() and request_body.deadline.has_value()) {
       auto action_id = userver::utils::generators::GenerateUuid();
