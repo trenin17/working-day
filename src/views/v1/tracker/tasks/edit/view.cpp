@@ -340,7 +340,7 @@ class TrackerTasksEditHandler : public userver::server::handlers::HttpHandlerBas
           "UPDATE working_day_" + company_id +
             ".actions "
             "SET user_id = $1 "
-            "WHERE action_id = $2",
+            "WHERE id = $2",
           assignee, task_value.action_id.value());
       }
     } else {
@@ -386,8 +386,8 @@ class TrackerTasksEditHandler : public userver::server::handlers::HttpHandlerBas
         "UPDATE working_day_" + company_id +
           ".actions "
           "SET start_date = $1, end_date = $1"
-          "WHERE action_id = $2",
-        request_body.deadline, task_value.action_id.value());
+          "WHERE id = $2",
+        request_body.deadline.value(), task_value.action_id.value());
       }
     }
 

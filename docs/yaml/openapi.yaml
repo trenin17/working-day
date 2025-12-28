@@ -1497,7 +1497,148 @@ paths:
                         schema:
                         $ref: '#/components/schemas/ErrorMessage'
 
+    /v1/comments/add:
+        post:
+            description: Add a new comment
+            parameters:
+              - in: header
+                name: Authorization
+                description: Token of session user
+                schema:
+                    type: string
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CommentAddRequest'
+            responses:
+                '200':
+                    description: Comment was added successfully
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CommentAddResponse'
+                '400':
+                    description: Bad request
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
 
+                '404':
+                    description: Task not found
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+
+
+    /v1/comments/edit:
+        post:
+            description: Edit an existing comment
+            parameters:
+              - in: header
+                name: Authorization
+                description: Token of session user
+                schema:
+                    type: string
+              - in: query
+                name: comment_id
+                description: Id of the comment
+                schema:
+                    type: string
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CommentEditRequest'
+            responses:
+                '200':
+                    description: Comment was edited successfully
+                '400':
+                    description: Bad request
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+                '403':
+                    description: Forbidden - insufficient rights
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+                '404':
+                    description: Comment not found
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+
+        /v1/comments/info:
+        get:
+            description: Get comment information
+            parameters:
+              - in: query
+                name: comment_id
+                required: true
+                schema:
+                    type: string
+                description: ID of the comment
+              - in: header
+                name: Authorization
+                description: Token of session user
+                schema:
+                    type: string
+            responses:
+                '200':
+                    description: Comment information
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CommentItem'
+                '400':
+                    description: Bad request
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+                '404':
+                    description: Comment not found
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+    /v1/comments/remove:
+        post:
+            description: Remove a comment
+            parameters:
+              - in: header
+                name: Authorization
+                description: Token of session user
+                schema:
+                    type: string
+              - in: query
+                name: comment_id
+                description: Id of the comment
+                schema:
+                    type: string
+            responses:
+                '200':
+                    description: Comment was removed successfully
+                '400':
+                    description: Bad request
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+                '404':
+                    description: Comment not found
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
 
 components:
     schemas:
@@ -2642,18 +2783,24 @@ components:
                           items:
                               type: string
                           description: List of document ids attached to the task
+                      comments_ids:
+                          type: array
+                          items:
+                              type: string
+                          description: List of comment ids attached to the task
 
 
         # -- комментарии (отдельно):
         #    comment_id
         #    author_id
         #    data: text
-        #    documents_ids: list[url]
+        #    documents_ids: list[string]
         #    created_at
         #    last_updated
         #    + add/delete/edit
         #    available_entity: document, task
         #    --- employee_id + documents
+
 
         TrackerTasksListResponse:
             type: object
@@ -2830,3 +2977,60 @@ components:
             properties:
                 download_link:
                     type: string
+
+        CommentAddRequest:
+            type: object
+            additionalProperties: false
+            required:
+              - data
+            properties:
+                data:
+                    type: string
+                    description: Comment text content
+                task_id:
+                    type: string
+                    description: ID of the task to attach the comment to
+
+        CommentAddResponse:
+            type: object
+            additionalProperties: false
+            required:
+              - comment_id
+            properties:
+                comment_id:
+                    type: string
+
+        CommentEditRequest:
+            type: object
+            additionalProperties: false
+            properties:
+                data:
+                    type: string
+                    description: Updated comment text content
+
+        CommentItem:
+            type: object
+            additionalProperties: false
+            required:
+              - comment_id
+              - author_id
+              - data
+              - created_ts
+              - last_updated_ts
+            properties:
+                comment_id:
+                    type: string
+                author_id:
+                    type: string
+                data:
+                    type: string
+                    description: Comment text content
+                documents_ids:
+                    type: array
+                    items:
+                        type: string
+                    description: List of document IDs attached to the comment
+                created_ts:
+                    $ref: '#/components/schemas/Timestamp'
+                last_updated_ts:
+                    $ref: '#/components/schemas/Timestamp'

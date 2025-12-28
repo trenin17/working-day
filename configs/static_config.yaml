@@ -706,3 +706,42 @@ components_manager:
                   - user
             pyservice-url: 'http://python-service:3000/document/generate-from-template'
 
+        handler-v1-comments-add:
+            path: /v1/comments/add
+            method: POST
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - user
+
+        handler-v1-comments-edit:
+            path: /v1/comments/edit
+            method: POST
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - user
+
+        handler-v1-comments-info:
+            path: /v1/comments/info
+            method: GET
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - user
+
+        handler-v1-comments-remove:
+            path: /v1/comments/remove
+            method: POST
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - user

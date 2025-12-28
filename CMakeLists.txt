@@ -90,6 +90,10 @@ add_library(${PROJECT_NAME}_objs OBJECT
 	src/views/v1/documents/generate_from_template/view.cpp
 	src/views/v1/employee/permissions/list/view.cpp
 	src/views/v1/employee/permissions/set/view.cpp
+	src/views/v1/comments/add/view.cpp
+	src/views/v1/comments/edit/view.cpp
+	src/views/v1/comments/info/view.cpp
+	src/views/v1/comments/remove/view.cpp
 )
 target_link_libraries(${PROJECT_NAME}_objs PUBLIC userver-postgresql)
 target_link_libraries(${PROJECT_NAME}_objs PRIVATE nlohmann_json::nlohmann_json)

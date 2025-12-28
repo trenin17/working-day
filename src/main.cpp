@@ -75,6 +75,10 @@
 #include "views/v1/documents/history/view.hpp"
 #include "views/v1/employee/permissions/list/view.hpp"
 #include "views/v1/employee/permissions/set/view.hpp"
+#include "views/v1/comments/add/view.hpp"
+#include "views/v1/comments/edit/view.hpp"
+#include "views/v1/comments/info/view.hpp"
+#include "views/v1/comments/remove/view.hpp"
 
 int main(int argc, char* argv[]) {
   Aws::SDKOptions options;
@@ -157,6 +161,10 @@ int main(int argc, char* argv[]) {
   views::v1::documents::history::AppendDocumentsHistory(component_list);
   views::v1::employee::permissions::list::AppendEmployeePermissionsList(component_list);
   views::v1::employee::permissions::set::AppendEmployeePermissionsSet(component_list);
+  views::v1::comments::add::AppendCommentsAdd(component_list);
+  views::v1::comments::edit::AppendCommentsEdit(component_list);
+  views::v1::comments::info::AppendCommentsInfo(component_list);
+  views::v1::comments::remove::AppendCommentsRemove(component_list);
 
   int err_code = userver::utils::DaemonMain(argc, argv, component_list);
 

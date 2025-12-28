@@ -329,6 +329,26 @@
 #define USE_EMPLOYEE_PERMISSIONS
 #endif
 
+#ifdef V1_COMMENTS_ADD
+#define USE_COMMENT_ADD_REQUEST
+#define USE_COMMENT_ADD_RESPONSE
+#define USE_ERROR_MESSAGE
+#endif
+
+#ifdef V1_COMMENTS_EDIT
+#define USE_COMMENT_EDIT_REQUEST
+#define USE_ERROR_MESSAGE
+#endif
+
+#ifdef V1_COMMENTS_INFO
+#define USE_COMMENT_ITEM
+#define USE_ERROR_MESSAGE
+#endif
+
+#ifdef V1_COMMENTS_REMOVE
+#define USE_ERROR_MESSAGE
+#endif
+
 #ifdef USE_LIST_EMPLOYEE
 struct ListEmployee : public JsonCompatible {
   // For postgres initialization type needs to be default constructible
@@ -1018,8 +1038,24 @@ struct TrackerTasksItemResponse : public JsonCompatible {
 
   // Method for postgres initialization of non-trivial types
   auto Introspect() {
-    return std::tie(task_id, title, project_id, description, creator, assignee, status,
-      priority, media_links, created_ts, last_updated_ts, deadline, action_id, observers, related_tasks_ids, document_ids);
+    return std::tie(
+      task_id,
+      title,
+      project_id,
+      description,
+      creator,
+      assignee,
+      status,
+      priority,
+      media_links,
+      created_ts,
+      last_updated_ts,
+      deadline,
+      action_id,
+      observers,
+      related_tasks_ids,
+      document_ids,
+      comments_ids);
   }
 
   REGISTER_STRUCT_FIELD_OPTIONAL(task_id, std::string, "task_id");
@@ -1038,6 +1074,7 @@ struct TrackerTasksItemResponse : public JsonCompatible {
   REGISTER_STRUCT_FIELD_OPTIONAL(observers, std::vector<std::string>, "observers");
   REGISTER_STRUCT_FIELD_OPTIONAL(related_tasks_ids, std::vector<std::string>, "related_tasks_ids");
   REGISTER_STRUCT_FIELD_OPTIONAL(document_ids, std::vector<std::string>, "document_ids");
+  REGISTER_STRUCT_FIELD_OPTIONAL(comments_ids, std::vector<std::string>, "comments_ids");
 };
 #endif
 
@@ -1208,71 +1245,48 @@ struct AbscenceVerdictResponse : public JsonCompatible {
 };
 #endif
 
-#ifdef USE_DOCUMENTS_REMOVE_RESTORE_ITEM
-struct DocumentsRemoveRestoreItem : public JsonCompatible {
-  REGISTER_STRUCT_FIELD(document_id, std::string, "document_id");
-  REGISTER_STRUCT_FIELD_OPTIONAL(comment, std::string, "comment");
+#ifdef USE_COMMENT_ADD_REQUEST
+struct CommentAddRequest : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(data, std::string, "data");
+  REGISTER_STRUCT_FIELD_OPTIONAL(task_id, std::string, "task_id");
 };
 #endif
 
-#ifdef USE_DOCUMENT_HISTORY_ITEM
-struct DocumentHistoryItem : public JsonCompatible {
-  // For postgres initialization type needs to be default constructible
-  DocumentHistoryItem() = default;
+#ifdef USE_COMMENT_ADD_RESPONSE
+struct CommentAddResponse : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(comment_id, std::string, "comment_id");
+};
+#endif
 
-  // Make sure to initialize parsing first for new structure
-  DocumentHistoryItem(DocumentHistoryItem&& other) { *this = std::move(other); }
+#ifdef USE_COMMENT_EDIT_REQUEST
+struct CommentEditRequest : public JsonCompatible {
+  REGISTER_STRUCT_FIELD_OPTIONAL(data, std::string, "data");
+};
+#endif
 
-  DocumentHistoryItem(const DocumentHistoryItem& other) { *this = other; }
 
-  DocumentHistoryItem& operator=(DocumentHistoryItem&& other) = default;
+#ifdef USE_COMMENT_ITEM
+struct CommentItem : public JsonCompatible {
+  CommentItem() = default;
 
-  DocumentHistoryItem& operator=(const DocumentHistoryItem& other) = default;
+  CommentItem(CommentItem&& other) { *this = std::move(other); }
 
-  // Method for postgres initialization of non-trivial types
+  CommentItem& operator=(CommentItem&& other) = default;
+
+  CommentItem(const CommentItem& other) { *this = other; }
+
+  CommentItem& operator=(const CommentItem& other) = default;
+
+
   auto Introspect() {
-    return std::tie(actor_id, action_type, comment, created_ts);
+    return std::tie(comment_id, author_id, data, documents_ids, created_ts, last_updated_ts);
   }
 
-  REGISTER_STRUCT_FIELD(actor_id, std::string, "actor_id");
-  REGISTER_STRUCT_FIELD(action_type, std::string, "action_type");
-  REGISTER_STRUCT_FIELD_OPTIONAL(comment, std::string, "comment");
+  REGISTER_STRUCT_FIELD(comment_id, std::string, "comment_id");
+  REGISTER_STRUCT_FIELD(author_id, std::string, "author_id");
+  REGISTER_STRUCT_FIELD(data, std::string, "data");
+  REGISTER_STRUCT_FIELD_OPTIONAL(documents_ids, std::vector<std::string>, "documents_ids");
   REGISTER_STRUCT_FIELD(created_ts, userver::storages::postgres::TimePoint, "created_ts");
-};
-#endif
-
-#ifdef USE_DOCUMENT_HISTORY_RESPONSE
-struct DocumentHistoryResponse : public JsonCompatible {
-  REGISTER_STRUCT_FIELD(history, std::vector<DocumentHistoryItem>, "history");
-};
-#endif
-
-#ifdef USE_EMPLOYEE_PERMISSIONS_ITEM
-struct EmployeePermissionsItem : public JsonCompatible {
-  // For postgres initialization type needs to be default constructible
-  EmployeePermissionsItem() = default;
-
-  // Make sure to initialize parsing first for new structure
-  EmployeePermissionsItem(EmployeePermissionsItem&& other) { *this = std::move(other); }
-
-  EmployeePermissionsItem(const EmployeePermissionsItem& other) { *this = other; }
-
-  EmployeePermissionsItem& operator=(EmployeePermissionsItem&& other) = default;
-
-  EmployeePermissionsItem& operator=(const EmployeePermissionsItem& other) = default;
-
-  // Method for postgres initialization of non-trivial types
-  auto Introspect() {
-    return std::tie(permission_type, permission_value);
-  }
-
-  REGISTER_STRUCT_ENUM_FIELD(permission_type, std::string, "permission_type", {"can_remove_documents", "can_edit_employee_permissions" /*, etc*/ });
-  REGISTER_STRUCT_FIELD(permission_value, int, "permission_value");
-};
-#endif
-
-#ifdef USE_EMPLOYEE_PERMISSIONS
-struct EmployeePermissions : public JsonCompatible {
-  REGISTER_STRUCT_FIELD(permissions, std::vector<EmployeePermissionsItem>, "permissions");
+  REGISTER_STRUCT_FIELD(last_updated_ts, userver::storages::postgres::TimePoint, "last_updated_ts");
 };
 #endif

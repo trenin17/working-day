@@ -1,4 +1,5 @@
 import asyncio
+from calendar import c
 from wsgiref import headers
 import pytest
 import json
@@ -1752,6 +1753,7 @@ async def test_tracker_tasks_info_and_edit(service_client):
         "title":"old task",
         'related_tasks_ids': [],
         'document_ids': [],
+        'comments_ids': [],
     }
     assert response_json == expected_json
 
@@ -1795,6 +1797,7 @@ async def test_tracker_tasks_info_and_edit(service_client):
         "title":"not old task",
         'related_tasks_ids': [],
         'document_ids': [],
+        'comments_ids': [],
     }
     assert response_json == expected_json
 
@@ -2318,6 +2321,7 @@ async def test_tracker_tasks_add_with_extra_fields(service_client):
         "related_tasks_ids": ['first-1'],
         'assignee': 'third_id',
         'document_ids': [],
+        'comments_ids': [],
     }
     assert re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}",  response_data["created_ts"])
 
@@ -2350,6 +2354,7 @@ async def test_tracker_tasks_edit_deadline(service_client):
         "task_id":"first-1",
         "title":"old task",
         'document_ids': [],
+        'comments_ids': [],
     }
     assert response_data == expected_response
 
@@ -2411,6 +2416,7 @@ async def test_tracker_tasks_edit_deadline(service_client):
         "title":"old task",
         "related_tasks_ids": ['first-2'],
         'document_ids': [],
+        'comments_ids': [],
     }
     assert response_data == expected_response
     response = await service_client.get(
@@ -2445,6 +2451,7 @@ async def test_tracker_task_send_and_remove_docx_document(service_client):
     response_data = json.loads(response.text)
     expected_response = {
         "document_ids": ['id1.pdf'],
+        'comments_ids': [],
         "related_tasks_ids": [],
         "observers": [],
         "priority": 'Low',
@@ -3008,6 +3015,97 @@ async def test_documents_archiving(service_client):
         json={'document_id': 'unknown'},
     )
     assert response.status == 404
+
+@pytest.mark.pgsql('db_1', files=['initial_data.sql'])
+async def test_comments_add_remove(service_client):
+    response = await service_client.post(
+        '/v1/comments/add',
+        headers={'Authorization': 'Bearer first_token'},
+        json={'data': 'test comment'},
+    )
+    assert response.status == 200
+    comments_id = response.json()['comment_id']
+    assert response.json() == {'comment_id': comments_id}
+
+    response = await service_client.post(
+        '/v1/comments/remove',
+        headers={'Authorization': 'Bearer first_token'},
+        params={'comment_id': comments_id},
+    )
+    assert response.status == 200
+
+    response = await service_client.get(
+        '/v1/comments/info',
+        params={'comment_id': comments_id},
+        headers={'Authorization': 'Bearer first_token'},
+    )
+    assert response.status == 404
+
+@pytest.mark.pgsql('db_1', files=['initial_data.sql'])
+async def test_comments_add_to_task(service_client):
+    response = await service_client.post(
+        '/v1/comments/add',
+        headers={'Authorization': 'Bearer first_token'},
+        json={'data': 'test comment', 'task_id': 'first-1'},
+    )
+    assert response.status == 200
+    comment_id = response.json()['comment_id']
+    assert response.json() == {'comment_id': comment_id}
+
+    response = await service_client.get(
+        '/v1/tracker/tasks/info',
+        params={'task_id': 'first-1'},
+        headers={'Authorization': 'Bearer first_token'},
+    )
+    assert response.status == 200
+    assert response.json()['comments_ids'] == [comment_id]
+
+    response = await service_client.post(
+        '/v1/comments/remove',
+        headers={'Authorization': 'Bearer first_token'},
+        params={'comment_id': comment_id},
+    )
+    assert response.status == 200
+
+    response = await service_client.get(
+        '/v1/tracker/tasks/info',
+        params={'task_id': 'first-1'},
+        headers={'Authorization': 'Bearer first_token'},
+    )
+    assert response.status == 200
+    assert response.json()['comments_ids'] == []
+
+    response = await service_client.get(
+        '/v1/comments/info',
+        params={'comment_id': comment_id},
+        headers={'Authorization': 'Bearer first_token'},
+    )
+    assert response.status == 404
+
+@pytest.mark.pgsql('db_1', files=['initial_data.sql'])
+async def test_comments_edit_info(service_client):
+    response = await service_client.post(
+        '/v1/comments/edit',
+        headers={'Authorization': 'Bearer first_token'},
+        params={'comment_id': 'comment1'},
+        json={'data': 'test comment 2'},
+    )
+    assert response.status == 200
+
+    response = await service_client.get(
+        '/v1/comments/info',
+        params={'comment_id': 'comment1'},
+        headers={'Authorization': 'Bearer first_token'},
+    )
+    assert response.status == 200
+    assert response.json() == {
+        'comment_id': 'comment1',
+        'author_id': 'first_id',
+        'data': 'test comment 2',
+        'created_ts': response.json()['created_ts'],
+        'last_updated_ts': response.json()['last_updated_ts'],
+        'documents_ids': [],
+    }
 
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])
 async def test_end(service_client):

@@ -74,7 +74,8 @@ class InfoTrackerTasksHandler final
         t.action_id,
         COALESCE(obs.observers, '{}') AS observers,
         COALESCE(rel.related_tasks_ids, '{}') AS related_tasks_ids,
-        COALESCE(docs.document_ids, '{}') AS document_ids
+        COALESCE(docs.document_ids, '{}') AS document_ids,
+        COALESCE(com.comments_ids, '{}') AS comments_ids
     FROM working_day_)" + company_id + R"(.tracker_tasks t
     LEFT JOIN (
         SELECT task_id, array_agg(employee_id) AS observers
@@ -91,6 +92,11 @@ class InfoTrackerTasksHandler final
         FROM working_day_)" + company_id + R"(.task_documents
         GROUP BY task_id
     ) docs ON docs.task_id = t.task_id
+    LEFT JOIN (
+        SELECT task_id, array_agg(comment_id) AS comments_ids
+        FROM working_day_)" + company_id + R"(.task_comments
+        GROUP BY task_id
+    ) com ON com.task_id = t.task_id
     WHERE t.task_id = $1
     )",
     task_id);

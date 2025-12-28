@@ -81,3 +81,7 @@ VALUES
   ('second_id', 'can_remove_documents', 0)
 ON CONFLICT (employee_id, permission_type)
 DO UPDATE SET permission_value = EXCLUDED.permission_value;
+
+INSERT INTO working_day_first.comments(comment_id, author_id, data)
+VALUES
+  ('comment1', 'first_id', 'test comment');
