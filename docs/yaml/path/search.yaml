@@ -1,0 +1,73 @@
+# /v1/search/basic
+SearchBasic:
+    post:
+        description: Get employees by key
+        parameters:
+          - in: header
+            name: Authorization
+            description: Token of session user
+            schema:
+                type: string
+        requestBody:
+            required: true
+            content:
+                application/json:
+                    schema:
+                        $ref: '../components/search-inventory.yaml#/SearchBasicRequest'
+        responses:
+            '200':
+                description: List of employees
+                content:
+                    application/json:
+                        schema:
+                            $ref: '../components/search-inventory.yaml#/SearchResponse'
+
+# /v1/search/full
+SearchMultiple:
+    post:
+        description: Get employees by multiple keys
+        parameters:
+          - in: header
+            name: Authorization
+            description: Token of session user
+            schema:
+                type: string
+        requestBody:
+            required: true
+            content:
+                application/json:
+                    schema:
+                        $ref: '../components/search-inventory.yaml#/SearchFullRequest'
+        responses:
+            '200':
+                description: List of employees
+                content:
+                    application/json:
+                        schema:
+                            $ref: '../components/search-inventory.yaml#/SearchResponse'
+
+# /v1/search/suggest
+SearchSuggest:
+    post:
+        description: Get employees suggestion by key
+        parameters:
+          - in: header
+            name: Authorization
+            description: Token of session user
+            schema:
+                type: string
+        requestBody:
+            required: true
+            content:
+                application/json:
+                    schema:
+                        $ref: '../components/search-inventory.yaml#/SearchSuggestRequest'
+        responses:
+            '200':
+                description: List of employees
+                content:
+                    application/json:
+                        schema:
+                            $ref: '../components/search-inventory.yaml#/SearchResponse'
+
+

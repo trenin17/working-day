@@ -1,0 +1,222 @@
+# /v1/tracker/projects/add:
+TrackerAddProject:
+    post:
+        description: Add new project
+        parameters:
+          - in: header
+            name: Authorization
+            description: Token of session user
+            schema:
+                type: string
+        requestBody:
+            required: true
+            content:
+                application/json:
+                    schema:
+                        $ref: '../components/tracker.yaml#/TrackerProjectsAddRequest'
+        responses:
+            '200':
+                description: Project item was added
+
+# /v1/tracker/projects/list
+TrackerProjectsList:
+    get:
+        description: Get list of all existing projects
+        parameters:
+          - in: header
+            name: Authorization
+            description: Token of session user
+            schema:
+                type: string
+        responses:
+            '200':
+                description: List of projects
+                content:
+                    application/json:
+                        schema:
+                            $ref: '../components/tracker.yaml#/TrackerProjectsListResponse'
+
+# /v1/tracker/tasks/add
+TrackerAddTask:
+    post:
+        description: Add new task
+        parameters:
+          - in: header
+            name: Authorization
+            description: Token of session user
+            schema:
+                type: string
+        requestBody:
+            required: true
+            content:
+                application/json:
+                    schema:
+                        $ref: '../components/tracker.yaml#/TrackerTasksAddRequest'
+        responses:
+            '200':
+                description: Task was added
+            '404':
+                description: Project not found
+                content:
+                    application/json:
+                        schema:
+                            $ref: '../components/common.yaml#/ErrorMessage'
+
+# /v1/tracker/tasks/list
+TrackerTasksList:
+    get:
+        description: Get list of all existing tasks
+        parameters:
+          - in: header
+            name: Authorization
+            description: Token of session user
+            schema:
+                type: string
+        responses:
+            '200':
+                description: List of tasks
+                content:
+                    application/json:
+                        schema:
+                            $ref: '../components/tracker.yaml#/TrackerTasksListResponse'
+
+# /v1/tracker/tasks/info
+TrackerTaskInfo:
+    get:
+        description: Get task info
+        parameters:
+          - in: query
+            name: task_id
+            description: Id of the task to check
+            schema:
+                type: string
+          - in: header
+            name: Authorization
+            description: Token of session user
+            schema:
+                type: string
+        responses:
+            '200':
+                description: Task information
+                content:
+                    application/json:
+                        schema:
+                            $ref: '../components/tracker.yaml#/TrackerTasksInfoItem'
+            '400':
+                description: Bad request
+                content:
+                    application/json:
+                        schema:
+                            $ref: '../components/common.yaml#/ErrorMessage'
+            '404':
+                description: Not found
+                content:
+                    application/json:
+                        schema:
+                            $ref: '../components/common.yaml#/ErrorMessage'
+
+# /v1/tracker/tasks/assigned-to-user
+TrackerAssignedTasks:
+    get:
+        description: Get all tasks assigned to the user
+        parameters:
+          - in: query
+            name: employee_id
+            description: Id of the employee to get tasks for
+            schema:
+                type: string
+          - in: header
+            name: Authorization
+            description: Token of session user
+            schema:
+                type: string
+        responses:
+            '200':
+                description: List of tasks assigned to the user
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            properties:
+                                tasks:
+                                    type: array
+                                    items:
+                                        $ref: '../components/tracker.yaml#/TrackerTasksListItem'
+            '400':
+                description: Bad request, missing parameters
+                content:
+                    application/json:
+                        schema:
+                            $ref: '../components/common.yaml#/ErrorMessage'
+            '404':
+                description: Not found
+                content:
+                    application/json:
+                        schema:
+                            $ref: '../components/common.yaml#/ErrorMessage'
+
+# /v1/tracker/tasks/edit
+TrackerEditTasks:
+    post:
+        description: Edit task information
+        parameters:
+          - in: query
+            name: task_id
+            description: Id of the task to edit information for
+            schema:
+                type: string
+          - in: header
+            name: Authorization
+            description: Token of session user
+            schema:
+                type: string
+        requestBody:
+            required: true
+            content:
+                application/json:
+                    schema:
+                        $ref: '../components/tracker.yaml#/TrackerTasksEditRequest'
+        responses:
+            '200':
+                description: Information was updated
+            '400':
+                description: Bad request, missing parameters
+                content:
+                    application/json:
+                        schema:
+                            $ref: '../components/common.yaml#/ErrorMessage'
+            '404':
+                    description: Not found
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '../components/common.yaml#/ErrorMessage'
+
+# /v1/tracker/tasks/media/upload
+TrackerUploadMedia:
+    post:
+        description: Upload media for the task
+        parameters:
+          - in: query
+            name: task_id
+            schema:
+                type: string
+          - in: header
+            name: Authorization
+            description: Token of session user
+            schema:
+                type: string
+        
+        responses:
+            '200':
+                description: Upload link
+                content:
+                    application/json:
+                        schema:
+                            $ref: '../components/tracker.yaml#/TrackerTasksMediaUploadResponse'
+            '400':
+                description: Bad request
+                content:
+                    application/json:
+                        schema:
+                            $ref: '../components/common.yaml#/ErrorMessage'         

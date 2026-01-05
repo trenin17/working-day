@@ -1,0 +1,103 @@
+NotificationsRequest:
+    type: object
+    additionalProperties: false
+    properties:
+        #Not supported yet
+        earlier_than:
+            $ref: './common.yaml#/Timestamp'
+NotificationsResponse:
+    type: object
+    additionalProperties: false
+    required:
+      - notifications
+    properties:
+        notifications:
+            type: array
+            items:
+                $ref: '#/Notification'
+
+Notification:
+    type: object
+    additionalProperties: false
+    required:
+      - id
+      - type
+      - is_read
+      - text
+      - created
+      - action_id
+    properties:
+        id:
+            type: string
+        type:
+            type: string
+            enum:
+              - vacation_request  # Vacation request from your employee
+              - vacation_approved # Head approved your vacation request
+              - vacation_denied   # Head denied your vacation request
+              - attendance_added  # Manager added your attendance
+              - generic           # Notification that doesn't require any action
+        is_read:
+            type: boolean
+        sender:
+            $ref: "./employee.yaml#/ListEmployee"
+        text:
+            type: string
+        action_id:
+            type: string
+        created:
+            type: string
+
+ActionsRequest:
+    type: object
+    additionalProperties: false
+    required:
+      - from
+      - to
+    properties:
+        from:
+            $ref: './common.yaml#/Timestamp'
+        to:
+            $ref: './common.yaml#/Timestamp'
+        employee_id:
+            type: string
+            description: If head wants to watch employee's actions
+
+ActionsResponse:
+    type: object
+    additionalProperties: false
+    required:
+      - actions
+    properties:
+        actions:
+            type: array
+            items:
+                $ref: '#/UserAction'
+
+UserAction:
+    type: object
+    additionalProperties: false
+    required:
+      - id
+      - type
+      - start_date
+      - end_date
+      - blocking_actions_ids
+    properties:
+        id:
+            type: string
+        type:
+            type: string
+            enum:
+              - vacation
+              - attendance
+        start_date:
+            $ref: './common.yaml#/Timestamp'
+        end_date:
+            $ref: './common.yaml#/Timestamp'
+        status:
+            type: string
+        blocking_actions_ids:
+            type: array
+            items:
+                type: string

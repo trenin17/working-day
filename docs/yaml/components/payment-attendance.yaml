@@ -1,0 +1,183 @@
+AbscenceRequestRequest:
+    type: object
+    additionalProperties: false
+    required:
+      - start_date
+      - end_date
+      - type
+    properties:
+        start_date:
+            $ref: './common.yaml#/Timestamp'
+        end_date:
+            $ref: './common.yaml#/Timestamp'
+        type:
+            $ref: '#/AbscenceType'
+
+AbscenceType:
+    type: string
+    enum:
+        - vacation
+        - sick_leave
+        - unpaid_vacation
+        - business_trip
+        - overtime
+
+AbscenceRequestResponse:
+    type: object
+    additionalProperties: false
+    required:
+      - action_id
+    properties:
+        action_id:
+            type: string
+
+AbscenceVerdictRequest:
+    type: object
+    additionalProperties: false
+    required:
+      - action_id
+      - approve
+    properties:
+        action_id:
+            type: string
+        notification_id:
+            type: string
+        approve:
+            type: boolean
+
+AttendanceAddRequest:
+    type: object
+    additionalProperties: false
+    required:
+      - start_date
+      - end_date
+    properties:
+        start_date:
+            $ref: './common.yaml#/Timestamp'
+        end_date:
+            $ref: './common.yaml#/Timestamp'
+
+AbscenceSplitRequest:
+    type: object
+    additionalProperties: false
+    required:
+      - action_id
+      - split_date
+    properties:
+        action_id:
+            type: string
+        split_date:
+            $ref: './common.yaml#/Timestamp'
+
+AbscenceSplitResponse:
+    type: object
+    additionalProperties: false
+    required:
+      - first_action_id
+      - second_action_id
+    properties:
+        first_action_id:
+            type: string
+        second_action_id:
+            type: string
+
+AbscenceRescheduleRequest:
+    type: object
+    additionalProperties: false
+    required:
+      - action_id
+      - reschedule_date
+    properties:
+        action_id:
+            type: string
+        reschedule_date:
+            $ref: './common.yaml#/Timestamp'
+
+AbscenceRescheduleResponse:
+    type: object
+    additionalProperties: false
+    required:
+      - action_id
+    properties:
+        action_id:
+            type: string
+
+PaymentsAddBulkRequest:
+    type: object
+    additionalProperties: false
+    required:
+      - payments
+    properties:
+        payments:
+            type: array
+            items:
+                $ref: "#/Payment"
+
+Payment:
+    type: object
+    additionalProperties: false
+    required:
+      - id
+      - user_id
+      - amount
+      - payroll_date
+    properties:
+        id:
+            type: string
+        user_id:
+            type: string
+        amount:
+            type: number
+        payroll_date:
+            $ref: './common.yaml#/Timestamp'
+
+PaymentsResponse:
+    type: object
+    additionalProperties: false
+    required:
+      - payments
+    properties:
+        payments:
+            type: array
+            items:
+                $ref: "#/Payment"
+
+AttendanceListAllRequest:
+    type: object
+    additionalProperties: false
+    required:
+        - from
+        - to
+    properties:
+        from:
+            $ref: './common.yaml#/Timestamp'
+        to:
+            $ref: './common.yaml#/Timestamp'
+
+AttendanceListAllResponse:
+    type: object
+    additionalProperties: false
+    required:
+        - attendances
+    properties:
+        attendances:
+            type: array
+            items:
+                $ref: '#/AttendanceListItem'
+
+AttendanceListItem:
+    type: object
+    additionalProperties: false
+    required:
+        - employee
+    properties:
+        employee:
+            $ref: './employee.yaml#/ListEmployee'
+        start_date:
+            $ref: './common.yaml#/Timestamp'
+        end_date:
+            $ref: './common.yaml#/Timestamp'
+            description: start_date and end_date should be in the same day
+        abscence_type:
+            $ref: './payment-attendance.yaml#/AbscenceType'
+            description: If employee has an approved abscence for a given period

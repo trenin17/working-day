@@ -1,0 +1,128 @@
+# /vi/employees
+ListEmployees:
+    get:
+        description: Get list of employees
+        parameters:
+          - in: header
+            name: Authorization
+            description: Token of session user
+            schema:
+                type: string
+        responses:
+            '200':
+                description: Employee information
+                content:
+                    application/json:
+                        schema:
+                            $ref: '../components/employee.yaml#/EmployeesResponse'
+
+# /v1/employee/add
+AddEmployee:
+    post:
+        description: Add new employee
+        parameters:
+          - in: header
+            name: Authorization
+            description: Token of session user
+            schema:
+                type: string
+        requestBody:
+            required: true
+            content:
+                application/json:
+                    schema:
+                        $ref: '../components/employee.yaml#/EmployeeAddRequest'
+        responses:
+            '200':
+                description: Login information
+                content:
+                    application/json:
+                        schema:
+                            $ref: '../components/employee.yaml#/LoginInfo'
+
+# /v1/employee/add-head:
+AddHead:
+    post:
+        description: Add head of the employee
+        parameters:
+          - in: query
+            name: employee_id
+            description: Id of the employee to add head to
+            schema:
+                type: string
+          - in: header
+            name: Authorization
+            description: Token of session user
+            schema:
+                type: string
+        requestBody:
+            required: true
+            content:
+                application/json:
+                    schema:
+                        $ref: '../components/employee.yaml#/EmployeeAddHeadRequest'
+        responses:
+            '200':
+                description: Head was added
+
+# /v1/employee/remove
+RemoveEmployee:
+    post:
+        description: Remove new employee
+        parameters:
+          - in: query
+            name: employee_id
+            description: Id of the employee to remove
+            schema:
+                type: string
+          - in: header
+            name: Authorization
+            description: Token of session user
+            schema:
+                type: string
+        responses:
+            '200':
+                description: Employee was removed
+
+# /v1/employee/info
+EmployeeInfo:
+    get:
+        description: Get employee info
+        parameters:
+          - in: query
+            name: employee_id
+            description: Id of the employee to check
+            schema:
+                type: string
+          - in: header
+            name: Authorization
+            description: Token of session user
+            schema:
+                type: string
+        responses:
+            '200':
+                description: Employee information
+                content:
+                    application/json:
+                        schema:
+                            $ref: '../components/employee.yaml#/Employee'
+            # Applies for all handlers with authorization header
+            '401':
+                description: Unauthorized
+                content:
+                    application/json:
+                        schema:
+                            $ref: '../components/common.yaml#/ErrorMessage'
+            # Applies for all handlers with authorization header
+            '403':
+                description: Wrong authorization token
+                content:
+                    application/json:
+                        schema:
+                            $ref: '../components/common.yaml#/ErrorMessage'
+            '404':
+                description: Not found
+                content:
+                    application/json:
+                        schema:
+                            $ref: '../components/common.yaml#/ErrorMessage'

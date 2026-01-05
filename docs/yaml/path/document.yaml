@@ -1,0 +1,273 @@
+# /v1/documents/vacation
+GenerateVacationDocument:
+    get:
+        description: Generate vacation document
+        parameters:
+          - in: header
+            name: Authorization
+            description: Token of session user
+            schema:
+                type: string
+          - in: query
+            name: action_id
+            description: Id of vacation action
+            schema:
+                type: string
+          - in: query
+            name: request_type
+            description: Vacation request type
+            schema:
+                type: string
+                enum:
+                  - create
+                  - split
+        responses:
+            '200':
+                description: Generated document download link
+                content:
+                    application/json:
+                        schema:
+                            $ref: '../components/document.yaml#/DocumentsVacationResponse'
+            '400':
+                description: Action type is not vacation
+                content:
+                    application/json:
+                        schema:
+                            $ref: '../components/common.yaml#/ErrorMessage'
+
+# /v1/documents/upload
+DocumentUpload:
+    post:
+        description: Upload document
+        parameters:
+          - in: header
+            name: Authorization
+            description: Token of session user, available for managers only
+            schema:
+                type: string
+        requestBody:
+            required: false
+            content:
+                application/json:
+                    schema:
+                        $ref: '../components/document.yaml#/DocumentsUploadRequest'
+        responses:
+            '200':
+                description: Upload link
+                content:
+                    application/json:
+                        schema:
+                            $ref: '../components/document.yaml#/UploadDocumentResponse'
+
+# /v1/documents/send
+SendDocument:
+    post:
+        description: Send document
+        parameters:
+          - in: header
+            name: Authorization
+            description: Token of session user, available for managers only
+            schema:
+                type: string
+        requestBody:
+            required: true
+            content:
+                application/json:
+                    schema:
+                        $ref: '../components/document.yaml#/DocumentSendRequest'
+        responses:
+            '200':
+                description: Document was sent
+            '500':
+                description: Document sending failed, need to retry
+
+# /v1/documents/list
+DocumentsList:
+    get:
+        description: Get list of documents
+        parameters:
+          - in: header
+            name: Authorization
+            description: Token of session user
+            schema:
+                type: string
+        responses:
+            '200':
+                description: List of documents
+                content:
+                    application/json:
+                        schema:
+                            $ref: '../components/document.yaml#/DocumentsListResponse'
+
+# /v1/documents/download
+DownloadDocument:
+    get:
+        description: Download document
+        parameters:
+          - in: header
+            name: Authorization
+            description: Token of session user
+            schema:
+                type: string
+          - in: query
+            name: id
+            description: Id of the document
+            schema:
+                type: string
+        responses:
+            '200':
+                description: Download link
+                content:
+                    application/json:
+                        schema:
+                            $ref: '../components/document.yaml#/DownloadDocumentResponse'
+
+# /v1/documents/list-all
+DocumentsAllList:
+    get:
+        description: Get list of all existing documents
+        parameters:
+          - in: header
+            name: Authorization
+            description: Token of session user, available for managers only
+            schema:
+                type: string
+        responses:
+            '200':
+                description: List of documents
+                content:
+                    application/json:
+                        schema:
+                            $ref: '../components/document.yaml#/DocumentsListAllResponse'
+
+# /v1/documents/get-signs
+EmployeesSignedDocoment:
+    get:
+        description: Get list of employees who signed the document
+        parameters:
+          - in: header
+            name: Authorization
+            description: Token of session user, available for managers only
+            schema:
+                type: string
+          - in: query
+            name: document_id
+            description: Id of the document
+            schema:
+                type: string
+        responses:
+            '200':
+                description: List of employees
+                content:
+                    application/json:
+                        schema:
+                            $ref: '../components/document.yaml#/DocumentsGetSignsResponse'
+
+# /v1/documents/sign
+SignDocument:
+    post:
+        description: Sign the document
+        parameters:
+          - in: header
+            name: Authorization
+            description: Token of session user
+            schema:
+                type: string
+          - in: query
+            name: document_id
+            description: Id of the document
+            schema:
+                type: string
+        responses:
+            '200':
+                description: Document was signed
+
+# /v1/documents/chain/update
+DocumentStatusUpdate:
+    post:
+        description: Update status of the document
+        parameters:
+          - in: header
+            name: Authorization
+            description: Token of session user
+            schema:
+                type: string
+          - in: query
+            name: document_id
+            description: Id of the document
+            schema:
+                type: string
+        requestBody:
+            required: true
+            content:
+                application/json:
+                    schema:
+                        $ref: '../components/document.yaml#/DocumentsChainUpdateRequest'
+        responses:
+            '200':
+                description: Document was signed
+                content:
+                    application/json:
+                        schema:
+                            $ref: '../components/document.yaml#/DocumentsChainUpdateResponse'
+            '404':
+                description: Not found
+                content:
+                    application/json:
+                        schema:
+                            $ref: '../components/common.yaml#/ErrorMessage'
+            '400':
+                description: Bad request
+                content:
+                    application/json:
+                        schema:
+                            $ref: '../components/common.yaml#/ErrorMessage'
+            '409':
+                description: Conflict
+                content:
+                    application/json:
+                        schema:
+                            $ref: '../components/common.yaml#/ErrorMessage'
+
+# /v1/documents/chain/add
+AddChainDocument:
+    post:
+        description: Add signature chain to the document
+        parameters:
+          - in: header
+            name: Authorization
+            description: Token of session user
+            schema:
+                type: string
+          - in: query
+            name: document_id
+            description: Id of the document
+            schema:
+                type: string
+        requestBody:
+            required: true
+            content:
+                application/json:
+                    schema:
+                        $ref: '../components/document.yaml#/DocumentsChainAddRequest'
+        responses:
+            '200':
+                description: Chain was added
+            '404':
+                description: Document not found
+                content:
+                    application/json:
+                        schema:
+                            $ref: '../components/common.yaml#/ErrorMessage'
+            '400':
+                description: Bad request
+                content:
+                    application/json:
+                        schema:
+                            $ref: '../components/common.yaml#/ErrorMessage'
+            '409':
+                description: Conflict (chain already exists)
+                content:
+                    application/json:
+                        schema:
+                            $ref: '../components/common.yaml#/ErrorMessage'

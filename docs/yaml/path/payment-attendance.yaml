@@ -1,0 +1,184 @@
+# /v1/abscence/request
+AbscenceRequest:
+    post:
+        description: Request an abscence
+        parameters:
+          - in: header
+            name: Authorization
+            description: Token of session user
+            schema:
+                type: string
+        requestBody:
+            required: true
+            content:
+                application/json:
+                    schema:
+                        $ref: '../components/payment-attendance.yaml#/AbscenceRequestRequest'
+        responses:
+            '200':
+                description: Abscence was requested
+                content:
+                    application/json:
+                        schema:
+                            $ref: '../components/payment-attendance.yaml#/AbscenceRequestResponse'
+
+# /v1/abscence/verdict
+AbscenceVerdict:
+    post:
+        description: Approve or deny an abscence
+        parameters:
+          - in: header
+            name: Authorization
+            description: Token of session user
+            schema:
+                type: string
+        requestBody:
+            required: true
+            content:
+                application/json:
+                    schema:
+                        $ref: '../components/payment-attendance.yaml#/AbscenceVerdictRequest'
+        responses:
+            '200':
+                description: Verdict was sent
+
+# /v1/abscence/split
+AbscenceSplit:
+    post:
+        description: Split an abscence
+        parameters:
+          - in: header
+            name: Authorization
+            description: Token of session user
+            schema:
+                type: string
+        requestBody:
+            required: true
+            content:
+                application/json:
+                    schema:
+                        $ref: '../components/payment-attendance.yaml#/AbscenceSplitRequest'
+        responses:
+            '200':
+                description: Abscence was split
+                content:
+                    application/json:
+                        schema:
+                            $ref: '../components/payment-attendance.yaml#/AbscenceSplitResponse'
+            '400':
+                description: Wrong split date
+                content:
+                    application/json:
+                        schema:
+                            $ref: '../components/common.yaml#/ErrorMessage'
+
+# /v1/abscence/reschedule
+AbscenceReschedule:
+    post:
+        description: Reschedule an abscence
+        parameters:
+          - in: header
+            name: Authorization
+            description: Token of session user
+            schema:
+                type: string
+        requestBody:
+            required: true
+            content:
+                application/json:
+                    schema:
+                        $ref: '../components/payment-attendance.yaml#/AbscenceRescheduleRequest'
+        responses:
+            '200':
+                description: Abscence was rescheduled
+                content:
+                    application/json:
+                        schema:
+                            $ref: '../components/payment-attendance.yaml#/AbscenceRescheduleResponse'
+
+# /v1/attendance/add
+AddAttendance:
+    post:
+        description: Add attendance hours for a certain employee
+        parameters:
+          - in: header
+            name: Authorization
+            description: Token of session user
+            schema:
+                type: string
+          - in: query
+            name: employee_id
+            description: Id of employee to add attendance for
+            schema:
+                type: string
+        requestBody:
+            required: true
+            content:
+                application/json:
+                    schema:
+                        $ref: '../components/payment-attendance.yaml#/AttendanceAddRequest'
+        responses:
+            '200':
+                description: Attendance was added successfully
+
+# /v1/payments/add-bulk
+AddBult:
+    post:
+        description: Add bulk payment updates
+        parameters:
+          - in: header
+            name: Authorization
+            description: Token of session user
+            schema:
+                type: string
+        requestBody:
+            required: true
+            content:
+                application/json:
+                    schema:
+                        $ref: '../components/payment-attendance.yaml#/PaymentsAddBulkRequest'
+        responses:
+            '200':
+                description: New payments were added successfully
+
+# /v1/payments
+GetPayment:
+    get:
+        description: Get employee's payments
+        parameters:
+          - in: header
+            name: Authorization
+            description: Token of session user
+            schema:
+                type: string
+        responses:
+            '200':
+                description: Payments for employee
+                content:
+                    application/json:
+                        schema:
+                            $ref: '../components/payment-attendance.yaml#/PaymentsResponse'
+
+# /v1/attendance/list-all
+AttendancesList:
+    post:
+        description: Get list of all employees' attendances for a given time period
+        parameters:
+          - in: header
+            name: Authorization
+            description: Token of session user
+            schema:
+                type: string
+        requestBody:
+            required: true
+            content:
+                application/json:
+                    schema:
+                        $ref: '../components/payment-attendance.yaml#/AttendanceListAllRequest'
+        responses:
+            '200':
+                description: List of attendances
+                content:
+                    application/json:
+                        schema:
+                            $ref: '../components/payment-attendance.yaml#/AttendanceListAllResponse'

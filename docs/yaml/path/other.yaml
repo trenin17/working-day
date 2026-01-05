@@ -1,0 +1,47 @@
+# /v1/superuser/company/add
+AddCompany:
+    post:
+        description: Add new company
+        parameters:
+          - in: header
+            name: Authorization
+            description: Token of session user, available for superuser only
+            schema:
+                type: string
+        requestBody:
+            required: true
+            content:
+                application/json:
+                    schema:
+                        $ref: '../components/common.yaml#/SuperuserCompanyAddRequest'
+        responses:
+            '200':
+                description: Company was added
+
+# /v1/inventory/add
+AddInventoryItem:
+    post:
+        description: Add new inventory item
+        parameters:
+          - in: header
+            name: Authorization
+            description: Token of session user, available for superuser only
+            schema:
+                type: string
+        requestBody:
+            required: true
+            content:
+                application/json:
+                    schema:
+                        $ref: '../components/search-inventory.yaml#/InventoryAddRequest'
+        responses:
+            '200':
+                description: Inventory item was added
+
+# /v1/clear-tasks
+ClearTasksQueue:
+    get:
+        description: Clear the tasks queue
+        responses:
+            '200':
+                description: Tasks were cleared

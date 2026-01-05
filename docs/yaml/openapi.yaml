@@ -9,2089 +9,410 @@ servers:
     description: production
 
 paths:
-    /v1/employees:
-        get:
-            description: Get list of employees
-            parameters:
-              - in: header
-                name: Authorization
-                description: Token of session user
-                schema:
-                    type: string
-            responses:
-                '200':
-                    description: Employee information
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/EmployeesResponse'
+# |--------------| AUTH-PROFILE |--------------|
 
-    /v1/employee/add:
-        post:
-            description: Add new employee
-            parameters:
-              - in: header
-                name: Authorization
-                description: Token of session user
-                schema:
-                    type: string
-            requestBody:
-                required: true
-                content:
-                    application/json:
-                        schema:
-                            $ref: '#/components/schemas/EmployeeAddRequest'
-            responses:
-                '200':
-                    description: Login information
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/LoginInfo'
-
-    /v1/employee/add-head:
-        post:
-            description: Add head of the employee
-            parameters:
-              - in: query
-                name: employee_id
-                description: Id of the employee to add head to
-                schema:
-                    type: string
-              - in: header
-                name: Authorization
-                description: Token of session user
-                schema:
-                    type: string
-            requestBody:
-                required: true
-                content:
-                    application/json:
-                        schema:
-                            $ref: '#/components/schemas/EmployeeAddHeadRequest'
-            responses:
-                '200':
-                    description: Head was added
-
-
-    /v1/employee/remove:
-        post:
-            description: Remove new employee
-            parameters:
-              - in: query
-                name: employee_id
-                description: Id of the employee to remove
-                schema:
-                    type: string
-              - in: header
-                name: Authorization
-                description: Token of session user
-                schema:
-                    type: string
-            responses:
-                '200':
-                    description: Employee was removed
-
-    /v1/employee/info:
-        get:
-            description: Get employee info
-            parameters:
-              - in: query
-                name: employee_id
-                description: Id of the employee to check
-                schema:
-                    type: string
-              - in: header
-                name: Authorization
-                description: Token of session user
-                schema:
-                    type: string
-            responses:
-                '200':
-                    description: Employee information
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/Employee'
-                # Applies for all handlers with authorization header
-                '401':
-                    description: Unauthorized
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/ErrorMessage'
-                # Applies for all handlers with authorization header
-                '403':
-                    description: Wrong authorization token
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/ErrorMessage'
-                '404':
-                    description: Not found
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/ErrorMessage'
 
     /v1/profile/upload-photo:
-        post:
-            description: Upload personal photo
-            parameters:
-              - in: header
-                name: Authorization
-                description: Token of session user
-                schema:
-                    type: string
-            responses:
-                '200':
-                    description: Upload link
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/UploadPhotoResponse'
+        $ref: "./path/auth-profile.yaml#/UploadPhoto"
 
     /v1/profile/edit:
-        post:
-            description: Edit personal information
-            parameters:
-              - in: header
-                name: Authorization
-                description: Token of session user
-                schema:
-                    type: string
-            requestBody:
-                required: true
-                content:
-                    application/json:
-                        schema:
-                            $ref: '#/components/schemas/ProfileEditRequest'
-            responses:
-                '200':
-                    description: Information was updated
+        $ref: "./path/auth-profile.yaml#/Edit"
 
     /v1/authorize:
-        post:
-            description: Authorize user
-            requestBody:
-                required: true
-                content:
-                    application/json:
-                        schema:
-                            $ref: '#/components/schemas/AuthorizeRequest'
-            responses:
-                '200':
-                    description: Authorized successfully
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/AuthorizeResponse'
-                '404':
-                    description: Not found
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/ErrorMessage'
+        $ref: "./path/auth-profile.yaml#/Auth"
 
-    /v1/notifications:
-        post:
-            description: Get list of notifications
-            parameters:
-              - in: header
-                name: Authorization
-                description: Token of session user
-                schema:
-                    type: string
-            requestBody:
-                required: true
-                content:
-                    application/json:
-                        schema:
-                            $ref: '#/components/schemas/NotificationsRequest'
-            responses:
-                '200':
-                    description: List of notifications
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/NotificationsResponse'
 
-    /v1/actions:
-        post:
-            description: Get list of user actions for a certain period
-            parameters:
-              - in: header
-                name: Authorization
-                description: Token of session user
-                schema:
-                    type: string
-            requestBody:
-                required: true
-                content:
-                    application/json:
-                        schema:
-                            $ref: '#/components/schemas/ActionsRequest'
-            responses:
-                '200':
-                    description: List of user actions
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/ActionsResponse'
+# |--------------| AUTH-PROFILE |--------------|
+# |--------------| DOCUMENT |--------------|
 
-    /v1/abscence/request:
-        post:
-            description: Request an abscence
-            parameters:
-              - in: header
-                name: Authorization
-                description: Token of session user
-                schema:
-                    type: string
-            requestBody:
-                required: true
-                content:
-                    application/json:
-                        schema:
-                            $ref: '#/components/schemas/AbscenceRequestRequest'
-            responses:
-                '200':
-                    description: Abscence was requested
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/AbscenceRequestResponse'
-
-    /v1/abscence/verdict:
-        post:
-            description: Approve or deny an abscence
-            parameters:
-              - in: header
-                name: Authorization
-                description: Token of session user
-                schema:
-                    type: string
-            requestBody:
-                required: true
-                content:
-                    application/json:
-                        schema:
-                            $ref: '#/components/schemas/AbscenceVerdictRequest'
-            responses:
-                '200':
-                    description: Verdict was sent
-
-    /v1/abscence/split:
-        post:
-            description: Split an abscence
-            parameters:
-              - in: header
-                name: Authorization
-                description: Token of session user
-                schema:
-                    type: string
-            requestBody:
-                required: true
-                content:
-                    application/json:
-                        schema:
-                            $ref: '#/components/schemas/AbscenceSplitRequest'
-            responses:
-                '200':
-                    description: Abscence was split
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/AbscenceSplitResponse'
-                '400':
-                    description: Wrong split date
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/ErrorMessage'
-
-    /v1/abscence/reschedule:
-        post:
-            description: Reschedule an abscence
-            parameters:
-              - in: header
-                name: Authorization
-                description: Token of session user
-                schema:
-                    type: string
-            requestBody:
-                required: true
-                content:
-                    application/json:
-                        schema:
-                            $ref: '#/components/schemas/AbscenceRescheduleRequest'
-            responses:
-                '200':
-                    description: Abscence was rescheduled
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/AbscenceRescheduleResponse'
 
     /v1/documents/vacation:
-        get:
-            description: Generate vacation document
-            parameters:
-              - in: header
-                name: Authorization
-                description: Token of session user
-                schema:
-                    type: string
-              - in: query
-                name: action_id
-                description: Id of vacation action
-                schema:
-                    type: string
-              - in: query
-                name: request_type
-                description: Vacation request type
-                schema:
-                    type: string
-                    enum:
-                      - create
-                      - split
-            responses:
-                '200':
-                    description: Generated document download link
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/DocumentsVacationResponse'
-                '400':
-                    description: Action type is not vacation
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/ErrorMessage'
-
-    /v1/attendance/add:
-        post:
-            description: Add attendance hours for a certain employee
-            parameters:
-              - in: header
-                name: Authorization
-                description: Token of session user
-                schema:
-                    type: string
-              - in: query
-                name: employee_id
-                description: Id of employee to add attendance for
-                schema:
-                    type: string
-            requestBody:
-                required: true
-                content:
-                    application/json:
-                        schema:
-                            $ref: '#/components/schemas/AttendanceAddRequest'
-            responses:
-                '200':
-                    description: Attendance was added successfully
-
-    /v1/payments/add-bulk:
-        post:
-            description: Add bulk payment updates
-            parameters:
-              - in: header
-                name: Authorization
-                description: Token of session user
-                schema:
-                    type: string
-            requestBody:
-                required: true
-                content:
-                    application/json:
-                        schema:
-                            $ref: '#/components/schemas/PaymentsAddBulkRequest'
-            responses:
-                '200':
-                    description: New payments were added successfully
-
-    /v1/payments:
-        get:
-            description: Get employee's payments
-            parameters:
-              - in: header
-                name: Authorization
-                description: Token of session user
-                schema:
-                    type: string
-            responses:
-                '200':
-                    description: Payments for employee
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/PaymentsResponse'
-
-    /v1/clear-tasks:
-        get:
-            description: Clear the tasks queue
-            responses:
-                '200':
-                    description: Tasks were cleared
-
-    /v1/search/basic:
-        post:
-            description: Get employees by key
-            parameters:
-              - in: header
-                name: Authorization
-                description: Token of session user
-                schema:
-                    type: string
-            requestBody:
-                required: true
-                content:
-                    application/json:
-                        schema:
-                            $ref: '#/components/schemas/SearchBasicRequest'
-            responses:
-                '200':
-                    description: List of employees
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/SearchResponse'
-
-    /v1/search/full:
-        post:
-            description: Get employees by multiple keys
-            parameters:
-              - in: header
-                name: Authorization
-                description: Token of session user
-                schema:
-                    type: string
-            requestBody:
-                required: true
-                content:
-                    application/json:
-                        schema:
-                            $ref: '#/components/schemas/SearchFullRequest'
-            responses:
-                '200':
-                    description: List of employees
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/SearchResponse'
-
-    /v1/search/suggest:
-        post:
-            description: Get employees suggestion by key
-            parameters:
-              - in: header
-                name: Authorization
-                description: Token of session user
-                schema:
-                    type: string
-            requestBody:
-                required: true
-                content:
-                    application/json:
-                        schema:
-                            $ref: '#/components/schemas/SearchSuggestRequest'
-            responses:
-                '200':
-                    description: List of employees
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/SearchResponse'
-
-    /v1/attendance/list-all:
-        post:
-            description: Get list of all employees' attendances for a given time period
-            parameters:
-              - in: header
-                name: Authorization
-                description: Token of session user
-                schema:
-                    type: string
-            requestBody:
-                required: true
-                content:
-                    application/json:
-                        schema:
-                            $ref: '#/components/schemas/AttendanceListAllRequest'
-            responses:
-                '200':
-                    description: List of attendances
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/AttendanceListAllResponse'
+        $ref: "./path/document.yaml#/GenerateVacationDocument"
 
     /v1/documents/upload:
-        post:
-            description: Upload document
-            parameters:
-              - in: header
-                name: Authorization
-                description: Token of session user, available for managers only
-                schema:
-                    type: string
-            requestBody:
-                required: false
-                content:
-                    application/json:
-                        schema:
-                            $ref: '#/components/schemas/DocumentsUploadRequest'
-            responses:
-                '200':
-                    description: Upload link
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/UploadDocumentResponse'
+        $ref: "./path/document.yaml#/DocumentUpload"
 
     /v1/documents/send:
-        post:
-            description: Send document
-            parameters:
-              - in: header
-                name: Authorization
-                description: Token of session user, available for managers only
-                schema:
-                    type: string
-            requestBody:
-                required: true
-                content:
-                    application/json:
-                        schema:
-                            $ref: '#/components/schemas/DocumentSendRequest'
-            responses:
-                '200':
-                    description: Document was sent
-                '500':
-                    description: Document sending failed, need to retry
+        $ref: "./path/document.yaml#/SendDocument"
 
     /v1/documents/list:
-        get:
-            description: Get list of documents
-            parameters:
-              - in: header
-                name: Authorization
-                description: Token of session user
-                schema:
-                    type: string
-            responses:
-                '200':
-                    description: List of documents
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/DocumentsListResponse'
+        $ref: "./path/document.yaml#/DocumentsList"
 
     /v1/documents/download:
-        get:
-            description: Download document
-            parameters:
-              - in: header
-                name: Authorization
-                description: Token of session user
-                schema:
-                    type: string
-              - in: query
-                name: id
-                description: Id of the document
-                schema:
-                    type: string
-            responses:
-                '200':
-                    description: Download link
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/DownloadDocumentResponse'
+        $ref: "./path/document.yaml#/DownloadDocument"
 
     /v1/documents/list-all:
-        get:
-            description: Get list of all existing documents
-            parameters:
-              - in: header
-                name: Authorization
-                description: Token of session user, available for managers only
-                schema:
-                    type: string
-            responses:
-                '200':
-                    description: List of documents
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/DocumentsListAllResponse'
+        $ref: "./path/document.yaml#/DocumentsAllList"
 
     /v1/documents/get-signs:
-        get:
-            description: Get list of employees who signed the document
-            parameters:
-              - in: header
-                name: Authorization
-                description: Token of session user, available for managers only
-                schema:
-                    type: string
-              - in: query
-                name: document_id
-                description: Id of the document
-                schema:
-                    type: string
-            responses:
-                '200':
-                    description: List of employees
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/DocumentsGetSignsResponse'
+        $ref: "./path/document.yaml#/EmployeesSignedDocoment"
 
     /v1/documents/sign:
-        post:
-            description: Sign the document
-            parameters:
-              - in: header
-                name: Authorization
-                description: Token of session user
-                schema:
-                    type: string
-              - in: query
-                name: document_id
-                description: Id of the document
-                schema:
-                    type: string
-            responses:
-                '200':
-                    description: Document was signed
-
-    /v1/superuser/company/add:
-        post:
-            description: Add new company
-            parameters:
-              - in: header
-                name: Authorization
-                description: Token of session user, available for superuser only
-                schema:
-                    type: string
-            requestBody:
-                required: true
-                content:
-                    application/json:
-                        schema:
-                            $ref: '#/components/schemas/SuperuserCompanyAddRequest'
-            responses:
-                '200':
-                    description: Company was added
-
-    /v1/inventory/add:
-        post:
-            description: Add new inventory item
-            parameters:
-              - in: header
-                name: Authorization
-                description: Token of session user, available for superuser only
-                schema:
-                    type: string
-            requestBody:
-                required: true
-                content:
-                    application/json:
-                        schema:
-                            $ref: '#/components/schemas/InventoryAddRequest'
-            responses:
-                '200':
-                    description: Inventory item was added
-    /v1/tracker/projects/add:
-        post:
-            description: Add new project
-            parameters:
-              - in: header
-                name: Authorization
-                description: Token of session user
-                schema:
-                    type: string
-            requestBody:
-                required: true
-                content:
-                    application/json:
-                        schema:
-                            $ref: '#/components/schemas/TrackerProjectsAddRequest'
-            responses:
-                '200':
-                    description: Project item was added
-
-    /v1/tracker/projects/list:
-        get:
-            description: Get list of all existing projects
-            parameters:
-              - in: header
-                name: Authorization
-                description: Token of session user
-                schema:
-                    type: string
-            responses:
-                '200':
-                    description: List of projects
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/TrackerProjectsListResponse'
-
-    /v1/tracker/tasks/add:
-        post:
-            description: Add new task
-            parameters:
-              - in: header
-                name: Authorization
-                description: Token of session user
-                schema:
-                    type: string
-            requestBody:
-                required: true
-                content:
-                    application/json:
-                        schema:
-                            $ref: '#/components/schemas/TrackerTasksAddRequest'
-            responses:
-                '200':
-                    description: Task was added
-                '404':
-                    description: Project not found
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/ErrorMessage'
-
-    /v1/tracker/tasks/list:
-        get:
-            description: Get list of all existing tasks
-            parameters:
-              - in: header
-                name: Authorization
-                description: Token of session user
-                schema:
-                    type: string
-            responses:
-                '200':
-                    description: List of tasks
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/TrackerTasksListResponse'
-
-    /v1/tracker/tasks/info:
-        get:
-            description: Get task info
-            parameters:
-              - in: query
-                name: task_id
-                description: Id of the task to check
-                schema:
-                    type: string
-              - in: header
-                name: Authorization
-                description: Token of session user
-                schema:
-                    type: string
-            responses:
-                '200':
-                    description: Task information
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/TrackerTasksInfoItem'
-                '400':
-                    description: Bad request
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/ErrorMessage'
-                '404':
-                    description: Not found
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/ErrorMessage'
-
-    /v1/tracker/tasks/assigned-to-user:
-        get:
-            description: Get all tasks assigned to the user
-            parameters:
-              - in: query
-                name: employee_id
-                description: Id of the employee to get tasks for
-                schema:
-                    type: string
-              - in: header
-                name: Authorization
-                description: Token of session user
-                schema:
-                    type: string
-            responses:
-                '200':
-                    description: List of tasks assigned to the user
-                    content:
-                        application/json:
-                            schema:
-                                type: object
-                                properties:
-                                    tasks:
-                                        type: array
-                                        items:
-                                            $ref: '#/components/schemas/TrackerTasksListItem'
-                '400':
-                    description: Bad request, missing parameters
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/ErrorMessage'
-                '404':
-                    description: Not found
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/ErrorMessage'
-
-    /v1/tracker/tasks/edit:
-        post:
-            description: Edit task information
-            parameters:
-              - in: query
-                name: task_id
-                description: Id of the task to edit information for
-                schema:
-                    type: string
-              - in: header
-                name: Authorization
-                description: Token of session user
-                schema:
-                    type: string
-            requestBody:
-                required: true
-                content:
-                    application/json:
-                        schema:
-                            $ref: '#/components/schemas/TrackerTasksEditRequest'
-            responses:
-                '200':
-                    description: Information was updated
-                '400':
-                    description: Bad request, missing parameters
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/ErrorMessage'
-                '404':
-                        description: Not found
-                        content:
-                            application/json:
-                                schema:
-                                    $ref: '#/components/schemas/ErrorMessage'
-
-    /v1/tracker/tasks/media/upload:
-        post:
-            description: Upload media for the task
-            parameters:
-              - in: query
-                name: task_id
-                schema:
-                    type: string
-              - in: header
-                name: Authorization
-                description: Token of session user
-                schema:
-                    type: string
-            
-            responses:
-                '200':
-                    description: Upload link
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/TrackerTasksMediaUploadResponse'
-                '400':
-                    description: Bad request
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/ErrorMessage'         
-
-    /v1/messenger/list-chats:
-        get:
-            description: Get a list of user's chats
-            parameters:
-              - in: header
-                name: Authorization
-                description: Token of session user
-                schema:
-                    type: string
-            responses:
-                '200':
-                    description: List of chats
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/MessengerListAllChats'
-
-    /v1/messenger/create-chat:
-        post:
-            description: Create new chat
-            parameters:
-              - in: header
-                name: Authorization
-                description: Token of session user
-                schema:
-                    type: string
-            requestBody:
-                required: true
-                content:
-                    application/json:
-                        schema:
-                            $ref: '#/components/schemas/CreateChatRequest'
-            responses:
-                '200':
-                    description: Chat created
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/CreateChatResponse'
-                '400':
-                    description: Error creating chat
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/ErrorMessage'
-
-    /v1/messenger/recent-messages:
-        get:
-            description: Get recent messages of a chat
-            parameters:
-              - in: header
-                name: Authorization
-                description: Token of session user
-                schema:
-                    type: string
-            requestBody:
-                required: true
-                content:
-                    application/json:
-                        schema:
-                            $ref: '#/components/schemas/LoadRecentMessagesRequest'
-            responses:
-                '200':
-                    description: List of recent messages
-                    content:
-                        application/json:  # Указываем медиа-тип
-                            schema:
-                                type: array
-                                items:
-                                    $ref: '#/components/schemas/MessengerMessage'
+        $ref: "./path/document.yaml#/SignDocument"
 
     /v1/documents/chain/update:
-        post:
-            description: Update status of the document
-            parameters:
-              - in: header
-                name: Authorization
-                description: Token of session user
-                schema:
-                    type: string
-              - in: query
-                name: document_id
-                description: Id of the document
-                schema:
-                    type: string
-            requestBody:
-                required: true
-                content:
-                    application/json:
-                        schema:
-                            $ref: '#/components/schemas/DocumentsChainUpdateRequest'
-            responses:
-                '200':
-                    description: Document was signed
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/DocumentsChainUpdateResponse'
-                '404':
-                    description: Not found
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/ErrorMessage'
-                '400':
-                    description: Bad request
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/ErrorMessage'
-                '409':
-                    description: Conflict
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/ErrorMessage'
+        $ref: "./path/document.yaml#/DocumentStatusUpdate"
 
     /v1/documents/chain/add:
-        post:
-            description: Add signature chain to the document
-            parameters:
-              - in: header
-                name: Authorization
-                description: Token of session user
-                schema:
-                    type: string
-              - in: query
-                name: document_id
-                description: Id of the document
-                schema:
-                    type: string
-            requestBody:
-                required: true
-                content:
-                    application/json:
-                        schema:
-                            $ref: '#/components/schemas/DocumentsChainAddRequest'
-            responses:
-                '200':
-                    description: Chain was added
-                '404':
-                    description: Document not found
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/ErrorMessage'
-                '400':
-                    description: Bad request
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/ErrorMessage'
-                '409':
-                    description: Conflict (chain already exists)
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/ErrorMessage'
+        $ref: "./path/document.yaml#/AddChainDocument"
+
+
+# |--------------| DOCUMENT |--------------|
+# |--------------| EMPLOYEE |--------------|
+
+
+    /v1/employees:
+        $ref: "./path/employee.yaml#/ListEmployees"
+
+    /v1/employee/add:
+        $ref: "./path/employee.yaml#/AddEmployee"
+
+    /v1/employee/add-head:
+        $ref: "./path/employee.yaml#/AddEmployee"
+
+    /v1/employee/remove:
+        $ref: "./path/employee.yaml#/RemoveEmployee"
+
+    /v1/employee/info:
+        $ref: "./path/employee.yaml#/EmployeeInfo"
+
+
+# |--------------| EMPLOYEE |--------------|
+# |--------------| MESSENGER |--------------|
+
+
+    /v1/messenger/list-chats:
+        $ref: "./path/messenger.yaml#/GetChatList"
+
+    /v1/messenger/create-chat:
+        $ref: "./path/messenger.yaml#/CreateChat"
+
+    /v1/messenger/recent-messages:
+        $ref: "./path/messenger.yaml#/GetRecentMessages"
+
+
+# |--------------| MESSENGER |--------------|
+# |--------------| NOTIFICATION |--------------|
+
+
+    /v1/notifications:
+        $ref: "./path/notification.yaml#/NotificationList"
+
+    /v1/actions:
+        $ref: "./path/notification.yaml#/ActionsList"
+
+
+# |--------------| NOTIFICATION |--------------|
+# |--------------| OTHER |--------------|
+
+
+    /v1/superuser/company/add:
+        $ref: "./path/other.yaml#/AddCompany"
+
+    /v1/inventory/add:
+        $ref: "./path/other.yaml#/AddInventoryItem"
+
+    /v1/clear-tasks:
+        $ref: "./path/other.yaml#/ClearTasksQueue"
+
+
+# |--------------| OTHER |--------------|
+# |--------------| PAYMENT-ATTENDANCE |--------------|
+
+
+    /v1/abscence/request:
+        $ref: "./path/payment-attendance.yaml#/AbscenceRequest"
+
+    /v1/abscence/verdict:
+        $ref: "./path/payment-attendance.yaml#/AbscenceVerdict"
+
+    /v1/abscence/split:
+        $ref: "./path/payment-attendance.yaml#/AbscenceSplit"
+
+    /v1/abscence/reschedule:
+        $ref: "./path/payment-attendance.yaml#/AbscenceReschedule"
+
+    /v1/attendance/add:
+        $ref: "./path/payment-attendance.yaml#/AddAttendance"
+
+    /v1/payments/add-bulk:
+        $ref: "./path/payment-attendance.yaml#/AddBult"
+
+    /v1/payments:
+        $ref: "./path/payment-attendance.yaml#/GetPayment"
+
+    /v1/attendance/list-all:
+        $ref: "./path/payment-attendance.yaml#/AttendancesList"
+
+
+# |--------------| PAYMENT-ATTENDANCE |--------------|
+# |--------------| SEARCH |--------------|
+
+
+    /v1/search/basic:
+        $ref: "./path/search.yaml#/SearchBasic"
+
+    /v1/search/full:
+        $ref: "./path/search.yaml#/SearchMultiple"
+
+    /v1/search/suggest:
+        $ref: "./path/search.yaml#/SearchSuggest"
+
+
+# |--------------| SEARCH |--------------|
+# |--------------| TRACKER |--------------|
+
+
+    /v1/tracker/projects/add:
+        $ref: "./path/tracker.yaml#/TrackerAddProject"
+
+    /v1/tracker/projects/list:
+        $ref: "./path/tracker.yaml#/TrackerProjectsList"
+
+    /v1/tracker/tasks/add:
+        $ref: "./path/tracker.yaml#/TrackerAddTask"
+
+    /v1/tracker/tasks/list:
+        $ref: "./path/tracker.yaml#/TrackerTasksList"
+
+    /v1/tracker/tasks/info:
+        $ref: "./path/tracker.yaml#/TrackerTaskInfo"
+
+    /v1/tracker/tasks/assigned-to-user:
+        $ref: "./path/tracker.yaml#/TrackerAssignedTasks"
+
+    /v1/tracker/tasks/edit:
+        $ref: "./path/tracker.yaml#/TrackerEditTasks"
+
+    /v1/tracker/tasks/media/upload:
+        $ref: "./path/tracker.yaml#/TrackerUploadMedia"
+
+
+    # |--------------| TRACKER |--------------|
 
 
 components:
-    schemas:
-        ErrorMessage:
-            type: object
-            additionalProperties: false
-            required:
-              - message
-            properties:
-                message:
-                    type: string
-
-        Timestamp:
-            type: string
-            description: Timestamp with the following format "%Y-%m-%dT%H:%M:%E6S" in UTC
-            format: date-time
-
-        ListEmployee:
-            type: object
-            additionalProperties: false
-            required:
-              - id
-              - name
-              - surname
-            properties:
-                id:
-                    type: string
-                name:
-                    type: string
-                surname:
-                    type: string
-                patronymic:
-                    type: string
-                photo_link:
-                    type: string
-                subcompany:
-                    type: string
-
-        EmployeesResponse:
-            type: object
-            additionalProperties: false
-            required:
-              - employees
-            properties:
-                employees:
-                    type: array
-                    items:
-                        $ref: '#/components/schemas/ListEmployee'
-
-        EmployeeAddRequest:
-            type: object
-            additionalProperties: false
-            required:
-              - name
-              - surname
-              - role
-              - job_position
-            properties:
-                name:
-                    type: string
-                surname:
-                    type: string
-                patronymic:
-                    type: string
-                role:
-                    $ref: '#/components/schemas/Role'
-                job_position:
-                    type: string
-                company_id:
-                    description: Company id of new employee. This field is available for superuser only
-                    type: string
-
-        LoginInfo:
-            type: object
-            additionalProperties: false
-            required:
-                - login
-                - password
-            properties:
-                login:
-                    type: string
-                password:
-                    type: string
-
-        EmployeeAddHeadRequest:
-            type: object
-            additionalProperties: false
-            required:
-              - head_id
-            properties:
-                head_id:
-                    type: string
-
-        Employee:
-            type: object
-            additionalProperties: false
-            required:
-              - id
-              - name
-              - surname
-            properties:
-                id:
-                    type: string
-                name:
-                    type: string
-                surname:
-                    type: string
-                patronymic:
-                    type: string
-                phones:
-                    type: array
-                    items:
-                        type: string
-                email:
-                    type: string
-                birthday:
-                    type: string
-                photo_link:
-                    type: string
-                password:
-                    type: string
-                head_id:
-                    type: string
-                telegram_id:
-                    type: string
-                vk_id:
-                    type: string
-                team:
-                    type: string
-                inventory:
-                    type: array
-                    items:
-                        $ref: '#/components/schemas/InventoryItem'
-                job_position:
-                    type: string
-
-        ProfileEditRequest:
-            type: object
-            additionalProperties: false
-            properties:
-                phones:
-                    type: array
-                    items:
-                        type: string
-                email:
-                    type: string
-                birthday:
-                    type: string
-                password:
-                    type: string
-                telegram_id:
-                    type: string
-                vk_id:
-                    type: string
-                team:
-                    type: string
-                job_position:
-                    type: string
-
-        AuthorizeRequest:
-            type: object
-            additionalProperties: false
-            required:
-              - login
-              - password
-              - company_id
-            properties:
-                login:
-                    type: string
-                password:
-                    type: string
-                company_id:
-                    type: string
-
-        AuthorizeResponse:
-            type: object
-            additionalProperties: false
-            required:
-              - token
-              - role
-            properties:
-                token:
-                    type: string
-                role:
-                    $ref: '#/components/schemas/Role'
-
-        NotificationsRequest:
-            type: object
-            additionalProperties: false
-            properties:
-                #Not supported yet
-                earlier_than:
-                    $ref: '#/components/schemas/Timestamp'
-        NotificationsResponse:
-            type: object
-            additionalProperties: false
-            required:
-              - notifications
-            properties:
-                notifications:
-                    type: array
-                    items:
-                        $ref: '#/components/schemas/Notification'
-
-        Notification:
-            type: object
-            additionalProperties: false
-            required:
-              - id
-              - type
-              - is_read
-              - text
-              - created
-              - action_id
-            properties:
-                id:
-                    type: string
-                type:
-                    type: string
-                    enum:
-                      - vacation_request  # Vacation request from your employee
-                      - vacation_approved # Head approved your vacation request
-                      - vacation_denied   # Head denied your vacation request
-                      - attendance_added  # Manager added your attendance
-                      - generic           # Notification that doesn't require any action
-                is_read:
-                    type: boolean
-                sender:
-                    $ref: "#/components/schemas/ListEmployee"
-                text:
-                    type: string
-                action_id:
-                    type: string
-                created:
-                    type: string
-
-        ActionsRequest:
-            type: object
-            additionalProperties: false
-            required:
-              - from
-              - to
-            properties:
-                from:
-                    $ref: '#/components/schemas/Timestamp'
-                to:
-                    $ref: '#/components/schemas/Timestamp'
-                employee_id:
-                    type: string
-                    description: If head wants to watch employee's actions
-
-        ActionsResponse:
-            type: object
-            additionalProperties: false
-            required:
-              - actions
-            properties:
-                actions:
-                    type: array
-                    items:
-                        $ref: '#/components/schemas/UserAction'
-
-        UserAction:
-            type: object
-            additionalProperties: false
-            required:
-              - id
-              - type
-              - start_date
-              - end_date
-              - blocking_actions_ids
-            properties:
-                id:
-                    type: string
-                type:
-                    type: string
-                    enum:
-                      - vacation
-                      - attendance
-                start_date:
-                    $ref: '#/components/schemas/Timestamp'
-                end_date:
-                    $ref: '#/components/schemas/Timestamp'
-                status:
-                    type: string
-                blocking_actions_ids:
-                    type: array
-                    items:
-                        type: string
-
-        AbscenceRequestRequest:
-            type: object
-            additionalProperties: false
-            required:
-              - start_date
-              - end_date
-              - type
-            properties:
-                start_date:
-                    $ref: '#/components/schemas/Timestamp'
-                end_date:
-                    $ref: '#/components/schemas/Timestamp'
-                type:
-                    $ref: '#/components/schemas/AbscenceType'
-
-        AbscenceType:
-            type: string
-            enum:
-                - vacation
-                - sick_leave
-                - unpaid_vacation
-                - business_trip
-                - overtime
-
-        AbscenceRequestResponse:
-            type: object
-            additionalProperties: false
-            required:
-              - action_id
-            properties:
-                action_id:
-                    type: string
-
-        AbscenceVerdictRequest:
-            type: object
-            additionalProperties: false
-            required:
-              - action_id
-              - approve
-            properties:
-                action_id:
-                    type: string
-                notification_id:
-                    type: string
-                approve:
-                    type: boolean
-
-        DocumentsVacationResponse:
-            type: object
-            additionalProperties: false
-            required:
-              - download_link
-            properties:
-                download_link:
-                    type: string
-
-        UploadPhotoResponse:
-            type: object
-            additionalProperties: false
-            required:
-              - url
-            properties:
-                url:
-                    type: string
-
-        Role:
-            type: string
-            enum:
-              - user
-              - admin
-              - manager
-              - robot
-
-        AttendanceAddRequest:
-            type: object
-            additionalProperties: false
-            required:
-              - start_date
-              - end_date
-            properties:
-                start_date:
-                    $ref: '#/components/schemas/Timestamp'
-                end_date:
-                    $ref: '#/components/schemas/Timestamp'
-
-        AbscenceSplitRequest:
-            type: object
-            additionalProperties: false
-            required:
-              - action_id
-              - split_date
-            properties:
-                action_id:
-                    type: string
-                split_date:
-                    $ref: '#/components/schemas/Timestamp'
-
-        AbscenceSplitResponse:
-            type: object
-            additionalProperties: false
-            required:
-              - first_action_id
-              - second_action_id
-            properties:
-                first_action_id:
-                    type: string
-                second_action_id:
-                    type: string
-
-        AbscenceRescheduleRequest:
-            type: object
-            additionalProperties: false
-            required:
-              - action_id
-              - reschedule_date
-            properties:
-                action_id:
-                    type: string
-                reschedule_date:
-                    $ref: '#/components/schemas/Timestamp'
-
-        AbscenceRescheduleResponse:
-            type: object
-            additionalProperties: false
-            required:
-              - action_id
-            properties:
-                action_id:
-                    type: string
-
-        PaymentsAddBulkRequest:
-            type: object
-            additionalProperties: false
-            required:
-              - payments
-            properties:
-                payments:
-                    type: array
-                    items:
-                        $ref: "#/components/schemas/Payment"
-
-        Payment:
-            type: object
-            additionalProperties: false
-            required:
-              - id
-              - user_id
-              - amount
-              - payroll_date
-            properties:
-                id:
-                    type: string
-                user_id:
-                    type: string
-                amount:
-                    type: number
-                payroll_date:
-                    $ref: '#/components/schemas/Timestamp'
-
-        PaymentsResponse:
-            type: object
-            additionalProperties: false
-            required:
-              - payments
-            properties:
-                payments:
-                    type: array
-                    items:
-                        $ref: "#/components/schemas/Payment"
-
-        SearchBasicRequest:
-            type: object
-            additionalProperties: false
-            required:
-              - search_key
-            properties:
-                search_key:
-                    type: string
-                tags:
-                    type: array
-                    items:
-                        type: string
-        SearchFullRequest:
-            type: object
-            additionalProperties: false
-            required:
-              - search_key
-              - limit
-            properties:
-                search_key:
-                    type: string
-                limit:
-                    type: integer
-                tags:
-                    type: array
-                    items:
-                        type: string
-        SearchSuggestRequest:
-            type: object
-            additionalProperties: false
-            required:
-              - search_key
-            properties:
-                search_key:
-                    type: string
-                limit:
-                    type: integer
-
-        SearchResponse:
-            type: object
-            additionalProperties: false
-            required:
-              - employees
-            properties:
-                employees:
-                    type: array
-                    items:
-                        $ref: '#/components/schemas/ListEmployee'
-                tasks:
-                    type: array
-                    items:
-                        $ref: '#/components/schemas/TrackerTasksListItem'
-
-        AttendanceListAllRequest:
-            type: object
-            additionalProperties: false
-            required:
-              - from
-              - to
-            properties:
-                from:
-                    $ref: '#/components/schemas/Timestamp'
-                to:
-                    $ref: '#/components/schemas/Timestamp'
-
-        AttendanceListAllResponse:
-            type: object
-            additionalProperties: false
-            required:
-              - attendances
-            properties:
-                attendances:
-                    type: array
-                    items:
-                        $ref: '#/components/schemas/AttendanceListItem'
-
-        AttendanceListItem:
-            type: object
-            additionalProperties: false
-            required:
-              - employee
-            properties:
-                employee:
-                    $ref: '#/components/schemas/ListEmployee'
-                start_date:
-                    $ref: '#/components/schemas/Timestamp'
-                end_date:
-                    $ref: '#/components/schemas/Timestamp'
-                    description: start_date and end_date should be in the same day
-                abscence_type:
-                    $ref: '#/components/schemas/AbscenceType'
-                    description: If employee has an approved abscence for a given period
-
-        UploadDocumentResponse:
-            type: object
-            additionalProperties: false
-            required:
-              - url
-              - id
-            properties:
-                url:
-                    type: string
-                id:
-                    type: string
-                    description: Id to access the document
-
-        DocumentSendRequest:
-            type: object
-            additionalProperties: false
-            required:
-              - document
-              - employee_ids
-            properties:
-                document:
-                    $ref: '#/components/schemas/DocumentItem'
-                employee_ids:
-                    description: List of employee ids to send the document to
-                    type: array
-                    items:
-                        type: string
-                is_salary_list:
-                    type: boolean
-                    description: True if document is salary list
-                    default: false
-
-        DocumentsListResponse:
-            type: object
-            additionalProperties: false
-            required:
-              - documents
-            properties:
-                documents:
-                    type: array
-                    items:
-                        $ref: '#/components/schemas/DocumentItem'
-
-        DocumentItem:
-            type: object
-            additionalProperties: false
-            required:
-              - id
-              - name
-            properties:
-                id:
-                    type: string
-                name:
-                    type: string
-                type:
-                    type: string
-                    enum:
-                      - employee_request
-                      - admin_request
-                sign_required:
-                    type: boolean
-                description:
-                    type: string
-                signed:
-                    description: This field only valid if requested by assignee of the document
-                    type: boolean
-                parent_id:
-                    description: Parent document Id
-                    type: string
-                created_ts:
-                    $ref: '#/components/schemas/Timestamp'
-                chain_metadata:
-                    description: Metadata information for chain of approvals
-                    type: array
-                    items:
-                        $ref: '#/components/schemas/DocumentsChainMetadataItem'
-
-        DownloadDocumentResponse:
-            type: object
-            additionalProperties: false
-            required:
-              - url
-            properties:
-                url:
-                    type: string
-
-        DocumentsListAllResponse:
-            type: object
-            additionalProperties: false
-            required:
-              - documents
-            properties:
-                documents:
-                    type: array
-                    items:
-                        $ref: '#/components/schemas/DocumentItem'
-
-        SignItem:
-            type: object
-            additionalProperties: false
-            required:
-                - employee
-                - signed
-            properties:
-                employee:
-                    $ref: '#/components/schemas/ListEmployee'
-                signed:
-                    type: boolean
-                document_id:
-                    type: string
-
-        DocumentsGetSignsResponse:
-            type: object
-            additionalProperties: false
-            required:
-              - signs
-            properties:
-                signs:
-                    type: array
-                    items:
-                        $ref: '#/components/schemas/SignItem'
-
-        SuperuserCompanyAddRequest:
-            type: object
-            additionalProperties: false
-            required:
-              - company_id
-              - company_name
-            properties:
-                company_id:
-                    type: string
-                company_name:
-                    type: string
-
-        DocumentsUploadRequest:
-            type: object
-            additionalProperties: false
-            properties:
-                extension:
-                    type: string
-                    description: File extension
-                    enum:
-                        - .pdf
-                        - .xlsx
-                    default: ".pdf"
-
-        InventoryItem:
-            type: object
-            additionalProperties: false
-            required:
-              - name
-            properties:
-                name:
-                    type: string
-                description:
-                    type: string
-                id:
-                    type: string
-
-        InventoryAddRequest:
-            type: object
-            additionalProperties: false
-            properties:
-                item:
-                    $ref: '#/components/schemas/InventoryItem'
-                employee_id:
-                    type: string
-
-        MessengerMessageContent:
-            type: object
-            additionalProperties: false
-            properties:
-                content:
-                    type: string # temporary
-
-        MessengerMessage:
-            type: object
-            additionalProperties: false
-            required:
-              - chat_id
-              - sender_id
-              - content
-              - timestamp
-            properties:
-                chat_id:
-                    type: string
-                sender_id:
-                    type: string
-                content:
-                    $ref: '#/components/schemas/MessengerMessageContent'
-                timestamp:
-                    $ref: '#/components/schemas/Timestamp'
-
-        MessengerListedChatInfo:
-            type: object
-            additionalProperties: false
-            required:
-              - chat_id
-              - chat_name
-            properties:
-                chat_id:
-                    type: string
-                chat_name:
-                    type: string
-                last_message:
-                    $ref: '#/components/schemas/MessengerMessage'
-
-        MessengerListAllChats:
-            type: object
-            additionalProperties: false
-            required:
-              - chats
-            properties:
-                chats:
-                    type: array
-                    items:
-                        $ref: '#/components/schemas/MessengerListedChatInfo'
-
-        CreateChatRequest:
-            type: object
-            additionalProperties: false
-            required:
-              - chat_name
-              - id_list
-            properties:
-                chat_name:
-                    type: string
-                id_list:
-                    type: array
-                    items:
-                        type: string
-
-        CreateChatResponse:
-            type: object
-            additionalProperties: false
-            required:
-              - chat_id
-            properties:
-                chat_id:
-                    type: string
-
-        LoadRecentMessagesRequest:
-            type: object
-            additionalProperties: false
-            required:
-              - chat_id
-            properties:
-                chat_id:
-                    type: string
-
-        TrackerProjectsAddRequest:
-            type: object
-            additionalProperties: false
-            required:
-              - project_name
-            properties:
-                project_name:
-                    type: string
-
-        TrackerProjectsListItem:
-            type: object
-            additionalProperties: false
-            required:
-              -  project_name
-            properties:
-                project_name:
-                    type: string
-                tasks_count:
-                    type: integer
-
-        TrackerProjectsListResponse:
-            type: object
-            additionalProperties: false
-            properties:
-                projects:
-                    type: array
-                    description: List of project items
-                    items:
-                        $ref: '#/components/schemas/TrackerProjectsListItem'
-
-        TrackerTasksAddRequest:
-            type: object
-            additionalProperties: false
-            required:
-              - title
-              - project_name
-              - creator
-            properties:
-                title:
-                    type: string 
-                    description: Name of the task
-                project_name:
-                    type: string
-                    description: Name of the parent project
-                description:
-                    type: string
-                    description: Description of the task
-                creator:
-                    type: string
-                    description: The creator of the task
-                assignee:
-                    type: string
-                    description: The assigned person for the task  
-                deadline:
-                    $ref: '#/components/schemas/Timestamp'
-
-        TrackerTasksInfoItem:
-            type: object
-            additionalProperties: false
-            required:
-              -  title
-              -  project_name
-              -  creator
-            properties:
-                title:
-                    type: string
-                id:
-                    type: string
-                project_name:
-                    type: string
-                description:
-                    type: string
-                creator:
-                    type: string
-                assignee:
-                    type: string
-                status:
-                    type: string
-                    enum:
-                      - Open
-                      - InProgress
-                      - Review
-                      - Done
-                media_links:
-                    type: array
-                    items:
-                        type: string
-                created_at:
-                    $ref: '#/components/schemas/Timestamp'
-                deadline:
-                    $ref: '#/components/schemas/Timestamp'
-        
-        TrackerTasksListItem:
-            type: object
-            additionalProperties: false
-            required:
-              -  title
-              -  project_name
-              -  creator
-            properties:
-                title:
-                    type: string
-                id:
-                    type: string
-                project_name:
-                    type: string
-                creator:
-                    type: string
-                assignee:
-                    type: string
-            
-        TrackerTasksListResponse:
-            type: object
-            additionalProperties: false
-            properties:
-                tasks:
-                    type: array
-                    description: List of tasks items
-                    items:
-                        $ref: '#/components/schemas/TrackerTasksListItem'
-
-        TrackerTasksEditRequest:
-            type: object
-            additionalProperties: false
-            properties:
-                title:
-                    type: string
-                description:
-                    type: string
-                project_name:
-                    type: string
-                assignee:
-                    type: string
-                status:
-                    type: string
-                    enum:
-                      - Open
-                      - InProgress
-                      - Review
-                      - Done
-                deadline:
-                    $ref: '#/components/schemas/Timestamp'
-
-        TrackerTasksMediaUploadResponse:
-            type: object
-            additionalProperties: false
-            required:
-              - url
-            properties:
-                url:
-                    type: string
-
-        DocumentsChainMetadataItem:
-            type: object
-            additionalProperties: false
-            required:
-              - employee_id
-              - requires_signature
-              - status
-            properties:
-                employee_id:
-                    type: string
-                requires_signature:
-                    type: integer
-                    enum: [0, 1, 2]
-                    description:
-                     0 - does not require a signature
-                     1 - requires a regular signature
-                     2 - requires an unqualified signature
-                status:
-                    type: integer
-                    enum: [0, 1, 2]
-                    description: 
-                     0 - not_reached
-                     1 - approved 
-                     2 - rejected
-
-        DocumentsChainUpdateRequest:
-            type: object
-            additionalProperties: false
-            required:
-              - approval_status
-            properties:
-                approval_status:
-                    type: integer
-                    enum: [0, 1, 2, 3]
-                    description: 
-                     0 - sign with regular signature and approve
-                     1 - sign with unqualified signature and approve
-                     2 - approve
-                     3 - reject
-
-        DocumentsChainUpdateResponse:
-            type: object
-            additionalProperties: false
-            required:
-              - chain_metadata
-            properties:
-                chain_metadata:
-                    type: array
-                    items:
-                        $ref: '#/components/schemas/DocumentsChainMetadataItem'
-
-        DocumentsChainAddRequest:
-            type: object
-            additionalProperties: false
-            required:
-              - chain_metadata
-            properties:
-                chain_metadata:
-                    type: array
-                    items:
-                        $ref: '#/components/schemas/DocumentsChainMetadataItem'
+  schemas:
+    # |--------------| COMMON |--------------|
+
+
+    ErrorMessage:
+        $ref: "./components/common.yaml#/ErrorMessage"
+    Timestamp:
+        $ref: "./components/common.yaml#/Timestamp"
+    Role:
+        $ref: "./components/common.yaml#/Role"
+    AuthorizeRequest:
+        $ref: "./components/common.yaml#/AuthorizeRequest"
+    AuthorizeResponse:
+        $ref: "./components/common.yaml#/AuthorizeResponse"
+    SuperuserCompanyAddRequest:
+        $ref: "./components/common.yaml#/SuperuserCompanyAddRequest"
+
+
+    # |--------------| COMMON |--------------|
+    # |--------------| DOCUMENT |--------------|
+
+
+    DocumentsVacationResponse:
+        $ref: "./components/document.yaml#/DocumentsVacationResponse"
+
+    DocumentSendRequest:
+        $ref: "./components/document.yaml#/DocumentSendRequest"
+
+    UploadDocumentResponse:
+        $ref: "./components/document.yaml#/UploadDocumentResponse"
+
+    DocumentsListResponse:
+        $ref: "./components/document.yaml#/DocumentsListResponse"
+
+    DocumentItem:
+        $ref: "./components/document.yaml#/DocumentItem"
+
+    DownloadDocumentResponse:
+        $ref: "./components/document.yaml#/DownloadDocumentResponse"
+
+    DocumentsListAllResponse:
+        $ref: "./components/document.yaml#/DocumentsListAllResponse"
+
+    SignItem:
+        $ref: "./components/document.yaml#/SignItem"
+
+    DocumentsGetSignsResponse:
+        $ref: "./components/document.yaml#/DocumentsGetSignsResponse"
+
+    DocumentsChainMetadataItem:
+        $ref: "./components/document.yaml#/DocumentsChainMetadataItem"
+
+    DocumentsChainUpdateRequest:
+        $ref: "./components/document.yaml#/DocumentsChainUpdateRequest"
+
+    DocumentsChainUpdateResponse:
+        $ref: "./components/document.yaml#/DocumentsChainUpdateResponse"
+
+    DocumentsChainAddRequest:
+        $ref: "./components/document.yaml#/DocumentsChainAddRequest"
+
+    UploadPhotoResponse:
+        $ref: "./components/document.yaml#/UploadPhotoResponse"
+
+    DocumentsUploadRequest:
+        $ref: "./components/document.yaml#/DocumentsUploadRequest"
+
+
+    # |--------------| DOCUMENT |--------------|
+    # |--------------| EMPLOYEE |--------------|
+
+
+    ListEmployee:
+        $ref: "./components/employee.yaml#/ListEmployee"
+    EmployeesResponse:
+        $ref: "./components/employee.yaml#/EmployeesResponse"
+    EmployeeAddRequest:
+        $ref: "./components/employee.yaml#/EmployeeAddRequest"
+    LoginInfo:
+        $ref: "./components/employee.yaml#/LoginInfo"
+    EmployeeAddHeadRequest:
+        $ref: "./components/employee.yaml#/EmployeeAddHeadRequest"
+    Employee:
+        $ref: "./components/employee.yaml#/Employee"
+    ProfileEditRequest:
+        $ref: "./components/employee.yaml#/ProfileEditRequest"
+
+
+    # |--------------| EMPLOYEE |--------------|
+    # |--------------| MESSENGER |--------------|
+
+
+    MessengerMessageContent:
+        $ref: "./components/messenger.yaml#/MessengerMessageContent"
+
+    MessengerMessage:
+        $ref: "./components/messenger.yaml#/MessengerMessage"
+
+    MessengerListedChatInfo:
+        $ref: "./components/messenger.yaml#/MessengerListedChatInfo"
+
+    MessengerListAllChats:
+        $ref: "./components/messenger.yaml#/MessengerListAllChats"
+
+    CreateChatRequest:
+        $ref: "./components/messenger.yaml#/CreateChatRequest"
+
+    CreateChatResponse:
+        $ref: "./components/messenger.yaml#/CreateChatResponse"
+
+    LoadRecentMessagesRequest:
+        $ref: "./components/messenger.yaml#/LoadRecentMessagesRequest"
+
+    # |--------------| MESSENGER |--------------|
+    # |--------------| NOTIFICATION |--------------|
+
+
+    NotificationsRequest:
+        $ref: "./components/notification.yaml#/NotificationsRequest"
+    NotificationsResponse:
+        $ref: "./components/notification.yaml#/NotificationsResponse"
+    Notification:
+        $ref: "./components/notification.yaml#/Notification"
+    ActionsRequest:
+        $ref: "./components/notification.yaml#/ActionsRequest"
+    ActionsResponse:
+        $ref: "./components/notification.yaml#/ActionsResponse"
+    UserAction:
+        $ref: "./components/notification.yaml#/UserAction"
+
+
+    # |--------------| NOTIFICATION |--------------|
+    # |--------------| PAYMENT & ATTENDANCE |--------------|
+
+
+    AbscenceType:
+        $ref: "./components/payment-attendance.yaml#/AbscenceType"
+    AbscenceRequestRequest:
+        $ref: "./components/payment-attendance.yaml#/AbscenceRequestRequest"
+    AbscenceRequestResponse:
+        $ref: "./components/payment-attendance.yaml#/AbscenceRequestResponse"
+    AbscenceVerdictRequest:
+        $ref: "./components/payment-attendance.yaml#/AbscenceVerdictRequest"
+    AbscenceSplitRequest:
+        $ref: "./components/payment-attendance.yaml#/AbscenceSplitRequest"
+    AbscenceSplitResponse:
+        $ref: "./components/payment-attendance.yaml#/AbscenceSplitResponse"
+    AbscenceRescheduleRequest:
+        $ref: "./components/payment-attendance.yaml#/AbscenceRescheduleRequest"
+    AbscenceRescheduleResponse:
+        $ref: "./components/payment-attendance.yaml#/AbscenceRescheduleResponse"
+    AttendanceAddRequest:
+        $ref: "./components/payment-attendance.yaml#/AttendanceAddRequest"
+    PaymentsAddBulkRequest:
+        $ref: "./components/payment-attendance.yaml#/PaymentsAddBulkRequest"
+    Payment:
+        $ref: "./components/payment-attendance.yaml#/Payment"
+    PaymentsResponse:
+        $ref: "./components/payment-attendance.yaml#/PaymentsResponse"
+    AttendanceListAllRequest:
+        $ref: "./components/payment-attendance.yaml#/AttendanceListAllRequest"
+    AttendanceListAllResponse:
+        $ref: "./components/payment-attendance.yaml#/AttendanceListAllResponse"
+    AttendanceListItem:
+        $ref: "./components/payment-attendance.yaml#/AttendanceListItem"
+
+
+    # |--------------| PAYMENT & ATTENDANCE |--------------|
+    # |--------------| SEARCH & INVENTORY |--------------|
+
+
+    SearchBasicRequest:
+        $ref: "./components/search-inventory.yaml#/SearchBasicRequest"
+
+    SearchFullRequest:
+        $ref: "./components/search-inventory.yaml#/SearchFullRequest"
+
+    SearchSuggestRequest:
+        $ref: "./components/search-inventory.yaml#/SearchSuggestRequest"
+
+    SearchResponse:
+        $ref: "./components/search-inventory.yaml#/SearchResponse"
+
+    InventoryItem:
+        $ref: "./components/search-inventory.yaml#/InventoryItem"
+
+    InventoryAddRequest:
+        $ref: "./components/search-inventory.yaml#/InventoryAddRequest"
+
+
+    # |--------------| SEARCH & INVENTORY |--------------|
+    # |--------------| TRACKER |--------------|
+
+
+    TrackerProjectsAddRequest:
+        $ref: "./components/tracker.yaml#/TrackerProjectsAddRequest"
+
+    TrackerProjectsListItem:
+        $ref: "./components/tracker.yaml#/TrackerProjectsListItem"
+
+    TrackerProjectsListResponse:
+        $ref: "./components/tracker.yaml#/TrackerProjectsListResponse"
+
+    TrackerTasksAddRequest:
+        $ref: "./components/tracker.yaml#/TrackerTasksAddRequest"
+
+    TrackerTasksInfoItem:
+        $ref: "./components/tracker.yaml#/TrackerTasksInfoItem"
+
+    TrackerTasksListItem:
+        $ref: "./components/tracker.yaml#/TrackerTasksListItem"
+
+    TrackerTasksListResponse:
+        $ref: "./components/tracker.yaml#/TrackerTasksListResponse"
+
+    TrackerTasksEditRequest:
+        $ref: "./components/tracker.yaml#/TrackerTasksEditRequest"
+
+    TrackerTasksMediaUploadResponse:
+        $ref: "./components/tracker.yaml#/TrackerTasksMediaUploadResponse"
+
+
+    # |--------------| TRACKER |--------------|
+# the end :(

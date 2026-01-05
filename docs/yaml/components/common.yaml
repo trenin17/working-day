@@ -1,0 +1,60 @@
+ErrorMessage:
+    type: object
+    additionalProperties: false
+    required:
+      - message
+    properties:
+        message:
+            type: string
+
+Timestamp:
+    type: string
+    description: Timestamp with the following format "%Y-%m-%dT%H:%M:%E6S" in UTC
+    format: date-time
+
+AuthorizeRequest:
+    type: object
+    additionalProperties: false
+    required:
+      - login
+      - password
+      - company_id
+    properties:
+        login:
+            type: string
+        password:
+            type: string
+        company_id:
+            type: string
+
+AuthorizeResponse:
+    type: object
+    additionalProperties: false
+    required:
+      - token
+      - role
+    properties:
+        token:
+            type: string
+        role:
+            $ref: '#/Role'
+
+Role:
+    type: string
+    enum:
+      - user
+      - admin
+      - manager
+      - robot
+
+SuperuserCompanyAddRequest:
+    type: object
+    additionalProperties: false
+    required:
+        - company_id
+        - company_name
+    properties:
+        company_id:
+            type: string
+        company_name:
+            type: string

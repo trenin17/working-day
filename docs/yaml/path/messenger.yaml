@@ -1,0 +1,73 @@
+# /v1/messenger/list-chats:
+GetChatList:
+    get:
+        description: Get a list of user's chats
+        parameters:
+          - in: header
+            name: Authorization
+            description: Token of session user
+            schema:
+                type: string
+        responses:
+            '200':
+                description: List of chats
+                content:
+                    application/json:
+                        schema:
+                            $ref: '../components/messenger.yaml#/MessengerListAllChats'
+
+# /v1/messenger/create-chat:
+CreateChat:
+    post:
+        description: Create new chat
+        parameters:
+          - in: header
+            name: Authorization
+            description: Token of session user
+            schema:
+                type: string
+        requestBody:
+            required: true
+            content:
+                application/json:
+                    schema:
+                        $ref: '../components/messenger.yaml#/CreateChatRequest'
+        responses:
+            '200':
+                description: Chat created
+                content:
+                    application/json:
+                        schema:
+                            $ref: '../components/messenger.yaml#/CreateChatResponse'
+            '400':
+                description: Error creating chat
+                content:
+                    application/json:
+                        schema:
+                            $ref: '../components/common.yaml#/ErrorMessage'
+
+# /v1/messenger/recent-messages:
+GetRecentMessages:
+    get:
+        description: Get recent messages of a chat
+        parameters:
+          - in: header
+            name: Authorization
+            description: Token of session user
+            schema:
+                type: string
+        requestBody:
+            required: true
+            content:
+                application/json:
+                    schema:
+                        $ref: '../components/messenger.yaml#/LoadRecentMessagesRequest'
+        responses:
+            '200':
+                description: List of recent messages
+                content:
+                    application/json:
+                        schema:
+                            type: array
+                            items:
+                                $ref: '../components/messenger.yaml#/MessengerMessage'

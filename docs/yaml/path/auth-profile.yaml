@@ -1,0 +1,62 @@
+# /v1/profile/upload-photo
+UploadPhoto:
+    post:
+        description: Upload personal photo
+        parameters:
+          - in: header
+            name: Authorization
+            description: Token of session user
+            schema:
+                type: string
+        responses:
+            '200':
+                description: Upload link
+                content:
+                    application/json:
+                        schema:
+                            $ref: '../components/document.yaml#/UploadPhotoResponse'
+
+# /v1/profile/edit
+Edit:
+    post:
+        description: Edit personal information
+        parameters:
+          - in: header
+            name: Authorization
+            description: Token of session user
+            schema:
+                type: string
+        requestBody:
+            required: true
+            content:
+                application/json:
+                    schema:
+                        $ref: '../components/employee.yaml#/ProfileEditRequest'
+        responses:
+            '200':
+                description: Information was updated
+
+# /v1/authorize
+Auth:
+    post:
+        description: Authorize user
+        requestBody:
+            required: true
+            content:
+                application/json:
+                    schema:
+                        $ref: '../components/common.yaml#/AuthorizeRequest'
+        responses:
+            '200':
+                description: Authorized successfully
+                content:
+                    application/json:
+                        schema:
+                            $ref: '../components/common.yaml#/AuthorizeResponse'
+            '404':
+                description: Not found
+                content:
+                    application/json:
+                        schema:
+                            $ref: '../components/common.yaml#/ErrorMessage'
+

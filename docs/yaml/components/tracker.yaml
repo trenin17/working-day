@@ -1,0 +1,151 @@
+TrackerProjectsAddRequest:
+    type: object
+    additionalProperties: false
+    required:
+        - project_name
+    properties:
+        project_name:
+            type: string
+
+TrackerProjectsListItem:
+    type: object
+    additionalProperties: false
+    required:
+        -  project_name
+    properties:
+        project_name:
+            type: string
+        tasks_count:
+            type: integer
+
+TrackerProjectsListResponse:
+    type: object
+    additionalProperties: false
+    properties:
+        projects:
+            type: array
+            description: List of project items
+            items:
+                $ref: '#/TrackerProjectsListItem'
+
+TrackerTasksAddRequest:
+    type: object
+    additionalProperties: false
+    required:
+        - title
+        - project_name
+        - creator
+    properties:
+        title:
+            type: string 
+            description: Name of the task
+        project_name:
+            type: string
+            description: Name of the parent project
+        description:
+            type: string
+            description: Description of the task
+        creator:
+            type: string
+            description: The creator of the task
+        assignee:
+            type: string
+            description: The assigned person for the task  
+        deadline:
+            $ref: './common.yaml#/Timestamp'
+
+TrackerTasksInfoItem:
+    type: object
+    additionalProperties: false
+    required:
+        -  title
+        -  project_name
+        -  creator
+    properties:
+        title:
+            type: string
+        id:
+            type: string
+        project_name:
+            type: string
+        description:
+            type: string
+        creator:
+            type: string
+        assignee:
+            type: string
+        status:
+            type: string
+            enum:
+                - Open
+                - InProgress
+                - Review
+                - Done
+        media_links:
+            type: array
+            items:
+                type: string
+        created_at:
+            $ref: './common.yaml#/Timestamp'
+        deadline:
+            $ref: './common.yaml#/Timestamp'
+
+TrackerTasksListItem:
+    type: object
+    additionalProperties: false
+    required:
+        -  title
+        -  project_name
+        -  creator
+    properties:
+        title:
+            type: string
+        id:
+            type: string
+        project_name:
+            type: string
+        creator:
+            type: string
+        assignee:
+            type: string
+    
+TrackerTasksListResponse:
+    type: object
+    additionalProperties: false
+    properties:
+        tasks:
+            type: array
+            description: List of tasks items
+            items:
+                $ref: '#/TrackerTasksListItem'
+
+TrackerTasksEditRequest:
+    type: object
+    additionalProperties: false
+    properties:
+        title:
+            type: string
+        description:
+            type: string
+        project_name:
+            type: string
+        assignee:
+            type: string
+        status:
+            type: string
+            enum:
+                - Open
+                - InProgress
+                - Review
+                - Done
+        deadline:
+            $ref: './common.yaml#/Timestamp'
+
+TrackerTasksMediaUploadResponse:
+    type: object
+    additionalProperties: false
+    required:
+        - url
+    properties:
+        url:
+            type: string

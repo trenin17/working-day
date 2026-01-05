@@ -1,0 +1,74 @@
+SearchBasicRequest:
+    type: object
+    additionalProperties: false
+    required:
+        - search_key
+    properties:
+        search_key:
+            type: string
+        tags:
+            type: array
+            items:
+                type: string
+SearchFullRequest:
+    type: object
+    additionalProperties: false
+    required:
+        - search_key
+        - limit
+    properties:
+        search_key:
+            type: string
+        limit:
+            type: integer
+        tags:
+            type: array
+            items:
+                type: string
+SearchSuggestRequest:
+    type: object
+    additionalProperties: false
+    required:
+        - search_key
+    properties:
+        search_key:
+            type: string
+        limit:
+            type: integer
+
+SearchResponse:
+    type: object
+    additionalProperties: false
+    required:
+        - employees
+    properties:
+        employees:
+            type: array
+            items:
+                $ref: './employee.yaml#/ListEmployee'
+        tasks:
+            type: array
+            items:
+                $ref: './tracker.yaml#/TrackerTasksListItem'
+
+InventoryItem:
+    type: object
+    additionalProperties: false
+    required:
+        - name
+    properties:
+        name:
+            type: string
+        description:
+            type: string
+        id:
+            type: string
+
+InventoryAddRequest:
+    type: object
+    additionalProperties: false
+    properties:
+        item:
+            $ref: '#/InventoryItem'
+        employee_id:
+            type: string

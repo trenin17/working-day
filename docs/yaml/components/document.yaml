@@ -1,0 +1,213 @@
+DocumentsVacationResponse:
+    type: object
+    additionalProperties: false
+    required:
+      - download_link
+    properties:
+        download_link:
+            type: string
+
+UploadPhotoResponse:
+    type: object
+    additionalProperties: false
+    required:
+      - url
+    properties:
+        url:
+            type: string
+
+UploadDocumentResponse:
+    type: object
+    additionalProperties: false
+    required:
+        - url
+        - id
+    properties:
+        url:
+            type: string
+        id:
+            type: string
+            description: Id to access the document
+
+DocumentSendRequest:
+    type: object
+    additionalProperties: false
+    required:
+        - document
+        - employee_ids
+    properties:
+        document:
+            $ref: '#/DocumentItem'
+        employee_ids:
+            description: List of employee ids to send the document to
+            type: array
+            items:
+                type: string
+        is_salary_list:
+            type: boolean
+            description: True if document is salary list
+            default: false
+
+DocumentsListResponse:
+    type: object
+    additionalProperties: false
+    required:
+        - documents
+    properties:
+        documents:
+            type: array
+            items:
+                $ref: '#/DocumentItem'
+
+DocumentItem:
+    type: object
+    additionalProperties: false
+    required:
+        - id
+        - name
+    properties:
+        id:
+            type: string
+        name:
+            type: string
+        type:
+            type: string
+            enum:
+                - employee_request
+                - admin_request
+        sign_required:
+            type: boolean
+        description:
+            type: string
+        signed:
+            description: This field only valid if requested by assignee of the document
+            type: boolean
+        parent_id:
+            description: Parent document Id
+            type: string
+        created_ts:
+            $ref: './common.yaml#/Timestamp'
+        chain_metadata:
+            description: Metadata information for chain of approvals
+            type: array
+            items:
+                $ref: '#/DocumentsChainMetadataItem'
+
+DownloadDocumentResponse:
+    type: object
+    additionalProperties: false
+    required:
+        - url
+    properties:
+        url:
+            type: string
+
+DocumentsListAllResponse:
+    type: object
+    additionalProperties: false
+    required:
+        - documents
+    properties:
+        documents:
+            type: array
+            items:
+                $ref: '#/DocumentItem'
+
+SignItem:
+    type: object
+    additionalProperties: false
+    required:
+        - employee
+        - signed
+    properties:
+        employee:
+            $ref: './employee.yaml#/ListEmployee'
+        signed:
+            type: boolean
+        document_id:
+            type: string
+
+DocumentsGetSignsResponse:
+    type: object
+    additionalProperties: false
+    required:
+        - signs
+    properties:
+        signs:
+            type: array
+            items:
+                $ref: '#/SignItem'
+
+DocumentsUploadRequest:
+    type: object
+    additionalProperties: false
+    properties:
+        extension:
+            type: string
+            description: File extension
+            enum:
+                - .pdf
+                - .xlsx
+            default: ".pdf"
+
+DocumentsChainMetadataItem:
+    type: object
+    additionalProperties: false
+    required:
+        - employee_id
+        - requires_signature
+        - status
+    properties:
+        employee_id:
+            type: string
+        requires_signature:
+            type: integer
+            enum: [0, 1, 2]
+            description:
+                0 - does not require a signature
+                1 - requires a regular signature
+                2 - requires an unqualified signature
+        status:
+            type: integer
+            enum: [0, 1, 2]
+            description: 
+                0 - not_reached
+                1 - approved 
+                2 - rejected
+
+DocumentsChainUpdateRequest:
+    type: object
+    additionalProperties: false
+    required:
+        - approval_status
+    properties:
+        approval_status:
+            type: integer
+            enum: [0, 1, 2, 3]
+            description: 
+                0 - sign with regular signature and approve
+                1 - sign with unqualified signature and approve
+                2 - approve
+                3 - reject
+
+DocumentsChainUpdateResponse:
+    type: object
+    additionalProperties: false
+    required:
+        - chain_metadata
+    properties:
+        chain_metadata:
+            type: array
+            items:
+                $ref: '#/DocumentsChainMetadataItem'
+
+DocumentsChainAddRequest:
+    type: object
+    additionalProperties: false
+    required:
+        - chain_metadata
+    properties:
+        chain_metadata:
+            type: array
+            items:
+                $ref: '#/DocumentsChainMetadataItem'

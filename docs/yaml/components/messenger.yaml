@@ -1,0 +1,81 @@
+MessengerMessageContent:
+    type: object
+    additionalProperties: false
+    properties:
+        content:
+            type: string # temporary
+
+MessengerMessage:
+    type: object
+    additionalProperties: false
+    required:
+        - chat_id
+        - sender_id
+        - content
+        - timestamp
+    properties:
+        chat_id:
+            type: string
+        sender_id:
+            type: string
+        content:
+            $ref: '#/MessengerMessageContent'
+        timestamp:
+            $ref: './common.yaml#/Timestamp'
+
+MessengerListedChatInfo:
+    type: object
+    additionalProperties: false
+    required:
+        - chat_id
+        - chat_name
+    properties:
+        chat_id:
+            type: string
+        chat_name:
+            type: string
+        last_message:
+            $ref: '#/MessengerMessage'
+
+MessengerListAllChats:
+    type: object
+    additionalProperties: false
+    required:
+        - chats
+    properties:
+        chats:
+            type: array
+            items:
+                $ref: '#/MessengerListedChatInfo'
+
+CreateChatRequest:
+    type: object
+    additionalProperties: false
+    required:
+        - chat_name
+        - id_list
+    properties:
+        chat_name:
+            type: string
+        id_list:
+            type: array
+            items:
+                type: string
+
+CreateChatResponse:
+    type: object
+    additionalProperties: false
+    required:
+        - chat_id
+    properties:
+        chat_id:
+            type: string
+
+LoadRecentMessagesRequest:
+    type: object
+    additionalProperties: false
+    required:
+        - chat_id
+    properties:
+        chat_id:
+            type: string

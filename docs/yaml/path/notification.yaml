@@ -1,0 +1,47 @@
+# /v1/notifications
+NotificationList:
+    post:
+        description: Get list of notifications
+        parameters:
+          - in: header
+            name: Authorization
+            description: Token of session user
+            schema:
+                type: string
+        requestBody:
+            required: true
+            content:
+                application/json:
+                    schema:
+                        $ref: '../components/notification.yaml#/NotificationsRequest'
+        responses:
+            '200':
+                description: List of notifications
+                content:
+                    application/json:
+                        schema:
+                            $ref: '../components/notification.yaml#/NotificationsResponse'
+
+# /v1/actions
+ActionsList:
+    post:
+        description: Get list of user actions for a certain period
+        parameters:
+          - in: header
+            name: Authorization
+            description: Token of session user
+            schema:
+                type: string
+        requestBody:
+            required: true
+            content:
+                application/json:
+                    schema:
+                        $ref: '../components/notification.yaml#/ActionsRequest'
+        responses:
+            '200':
+                description: List of user actions
+                content:
+                    application/json:
+                        schema:
+                            $ref: '../components/notification.yaml#/ActionsResponse'

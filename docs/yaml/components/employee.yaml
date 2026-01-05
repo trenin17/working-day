@@ -1,0 +1,141 @@
+ListEmployee:
+  type: object
+  additionalProperties: false
+  required:
+    - id
+    - name
+    - surname
+  properties:
+    id:
+      type: string
+    name:
+      type: string
+    surname:
+      type: string
+    patronymic:
+      type: string
+    photo_link:
+      type: string
+    subcompany:
+      type: string
+
+EmployeesResponse:
+  type: object
+  additionalProperties: false
+  required:
+    - employees
+  properties:
+    employees:
+      type: array
+      items:
+        $ref: '#/ListEmployee'
+
+EmployeeAddRequest:
+    type: object
+    additionalProperties: false
+    required:
+      - name
+      - surname
+      - role
+      - job_position
+    properties:
+        name:
+            type: string
+        surname:
+            type: string
+        patronymic:
+            type: string
+        role:
+            $ref: './common.yaml#/Role'
+        job_position:
+            type: string
+        company_id:
+            description: Company id of new employee. This field is available for superuser only
+            type: string
+
+LoginInfo:
+    type: object
+    additionalProperties: false
+    required:
+        - login
+        - password
+    properties:
+        login:
+            type: string
+        password:
+            type: string
+
+EmployeeAddHeadRequest:
+    type: object
+    additionalProperties: false
+    required:
+      - head_id
+    properties:
+        head_id:
+            type: string
+
+Employee:
+    type: object
+    additionalProperties: false
+    required:
+      - id
+      - name
+      - surname
+    properties:
+        id:
+            type: string
+        name:
+            type: string
+        surname:
+            type: string
+        patronymic:
+            type: string
+        phones:
+            type: array
+            items:
+                type: string
+        email:
+            type: string
+        birthday:
+            type: string
+        photo_link:
+            type: string
+        password:
+            type: string
+        head_id:
+            type: string
+        telegram_id:
+            type: string
+        vk_id:
+            type: string
+        team:
+            type: string
+        inventory:
+            type: array
+            items:
+                $ref: './search-inventory.yaml#/InventoryItem'
+        job_position:
+            type: string
+
+ProfileEditRequest:
+    type: object
+    additionalProperties: false
+    properties:
+        phones:
+            type: array
+            items:
+                type: string
+        email:
+            type: string
+        birthday:
+            type: string
+        password:
+            type: string
+        telegram_id:
+            type: string
+        vk_id:
+            type: string
+        team:
+            type: string
+        job_position:
+            type: string
