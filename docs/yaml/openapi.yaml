@@ -770,7 +770,7 @@ paths:
         get:
             description: Get list of all existing tasks
             parameters:
-                - in: header
+              - in: header
                 name: Authorization
                 description: Token of session user
                 schema:
@@ -844,11 +844,11 @@ paths:
                                         items:
                                             $ref: '#/components/schemas/TrackerTasksListItem'
                 '400':
-                description: Bad request, missing parameters
-                content:
-                    application/json:
-                        schema:
-                            $ref: '#/components/schemas/ErrorMessage'
+                    description: Bad request, missing parameters
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
                 '404':
                     description: Not found
                     content:
@@ -857,40 +857,40 @@ paths:
                                 $ref: '#/components/schemas/ErrorMessage'
 
     /v1/tracker/tasks/edit:
-    post:
-        description: Edit task information
-        parameters:
-            - in: query
+        post:
+            description: Edit task information
+            parameters:
+              - in: query
                 name: task_id
                 description: Id of the task to edit information for
                 schema:
                     type: string
-            - in: header
-            name: Authorization
-            description: Token of session user
-            schema:
-                type: string
-        requestBody:
-            required: true
-            content:
-                application/json:
-                    schema:
-                        $ref: '#/components/schemas/TrackerTasksEditRequest'
-        responses:
-            '200':
-                description: Information was updated
-            '400':
-                description: Bad request, missing parameters
+              - in: header
+                name: Authorization
+                description: Token of session user
+                schema:
+                    type: string
+            requestBody:
+                required: true
                 content:
                     application/json:
                         schema:
-                            $ref: '#/components/schemas/ErrorMessage'
-            '404':
-                    description: Not found
+                            $ref: '#/components/schemas/TrackerTasksEditRequest'
+            responses:
+                '200':
+                    description: Information was updated
+                '400':
+                    description: Bad request, missing parameters
                     content:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/ErrorMessage'
+                '404':
+                        description: Not found
+                        content:
+                            application/json:
+                                schema:
+                                    $ref: '#/components/schemas/ErrorMessage'
 
     /v1/tracker/tasks/media/upload:
         post:
@@ -957,8 +957,8 @@ paths:
                     description: Chat created
                     content:
                         application/json:
-                        schema:
-                            $ref: '#/components/schemas/CreateChatResponse'
+                            schema:
+                                $ref: '#/components/schemas/CreateChatResponse'
                 '400':
                     description: Error creating chat
                     content:
@@ -985,9 +985,11 @@ paths:
                 '200':
                     description: List of recent messages
                     content:
-                        type: array
-                        items:
-                            $ref: '#/components/schemas/MessengerMessage'
+                        application/json:  # Указываем медиа-тип
+                            schema:
+                                type: array
+                                items:
+                                    $ref: '#/components/schemas/MessengerMessage'
 
     /v1/documents/chain/update:
         post:
@@ -1234,6 +1236,7 @@ components:
                 team:
                     type: string
                 job_position:
+                    type: string
 
         AuthorizeRequest:
             type: object
@@ -2042,14 +2045,14 @@ components:
                 employee_id:
                     type: string
                 requires_signature:
-                    type: int
+                    type: integer
                     enum: [0, 1, 2]
                     description:
                      0 - does not require a signature
                      1 - requires a regular signature
                      2 - requires an unqualified signature
                 status:
-                    type: int
+                    type: integer
                     enum: [0, 1, 2]
                     description: 
                      0 - not_reached
@@ -2063,7 +2066,7 @@ components:
               - approval_status
             properties:
                 approval_status:
-                    type: int
+                    type: integer
                     enum: [0, 1, 2, 3]
                     description: 
                      0 - sign with regular signature and approve
