@@ -1,7 +1,0 @@
-ALTER TYPE wd_general.chain_metadata_item RENAME TO chain_metadata_item_old;
-
-CREATE TYPE wd_general.chain_metadata_item AS (
-    employee_id TEXT,
-    requires_signature INT,
-    status INT
-);

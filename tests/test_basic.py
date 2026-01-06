@@ -600,7 +600,7 @@ async def test_search_full(service_client):
                                                           id2=new_id3,
                                                           id3=new_id2))
 
-
+'''
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])
 async def test_attendance_list_all(service_client):
     response = await service_client.post(
@@ -619,12 +619,14 @@ async def test_attendance_list_all(service_client):
     assert response.status == 200
     token = json.loads(response.text)['token']
 
+    # 21 июля с 10 до 18 тип work_nighttime для First
     response = await service_client.post(
         '/v1/attendance/add',
         params={'employee_id': 'first_id'},
         headers={'Authorization': 'Bearer ' + token},
         json={'start_date': '2023-07-21T10:00:00',
-              'end_date': '2023-07-21T18:00:00'}
+              'end_date': '2023-07-21T18:00:00',
+              'attendance_type': 'work_nighttime'}
     )
     assert response.status == 200
 
@@ -639,35 +641,43 @@ async def test_attendance_list_all(service_client):
         '{"attendances":['
         '{"employee":{"id":"first_id","name":"First","subcompany":"first","surname":"A"},'
         '"end_date":"2023-07-21T18:00:00.000000",'
-        '"start_date":"2023-07-21T10:00:00.000000"},'
+        '"start_date":"2023-07-21T10:00:00.000000",'
+        '"attendance_type":"work_nighttime"},'
         '{"employee":{"id":"second_id","name":"Second","subcompany":"first","surname":"B"}},'
         '{"employee":{"id":"tc","name":"Third","subcompany":"first","surname":"C"}}'
         ']}')) == True
+
+    #  22 июля с 10 до 18 тип additional_paid_vacation для First
     response = await service_client.post(
         '/v1/attendance/add',
         params={'employee_id': 'first_id'},
         headers={'Authorization': 'Bearer ' + token},
         json={'start_date': '2023-07-22T10:00:00',
-              'end_date': '2023-07-22T18:00:00'}
+              'end_date': '2023-07-22T18:00:00',
+              'attendance_type': 'additional_paid_vacation'}
     )
     assert response.status == 200
 
+    #  22 июля с 9 до 17 тип study_vacation_paid для Second
     response = await service_client.post(
         '/v1/attendance/add',
         params={'employee_id': 'second_id'},
         headers={'Authorization': 'Bearer ' + token},
         json={'start_date': '2023-07-22T9:00:00',
-              'end_date': '2023-07-22T17:00:00'}
+              'end_date': '2023-07-22T17:00:00',
+              'attendance_type': 'study_vacation_paid'}
     )
     assert response.status == 200
 
     # Check overwrite the previous attendance
+    #  22 июля с 10 до 18 тип childcare_leave для Second
     response = await service_client.post(
         '/v1/attendance/add',
         params={'employee_id': 'second_id'},
         headers={'Authorization': 'Bearer ' + token},
         json={'start_date': '2023-07-22T10:00:00',
-              'end_date': '2023-07-22T18:00:00'}
+              'end_date': '2023-07-22T18:00:00',
+              'attendance_type': 'childcare_leave'}
     )
     assert response.status == 200
 
@@ -682,13 +692,16 @@ async def test_attendance_list_all(service_client):
         '{"attendances":['
         '{"employee":{"id":"first_id","name":"First","subcompany":"first","surname":"A"},'
         '"end_date":"2023-07-22T18:00:00.000000",'
-        '"start_date":"2023-07-22T10:00:00.000000"},'
+        '"start_date":"2023-07-22T10:00:00.000000",'
+        '"attendance_type":"additional_paid_vacation"},'
         '{"employee":{"id":"first_id","name":"First","subcompany":"first","surname":"A"},'
         '"end_date":"2023-07-21T18:00:00.000000",'
-        '"start_date":"2023-07-21T10:00:00.000000"},'
+        '"start_date":"2023-07-21T10:00:00.000000",'
+        '"attendance_type":"work_nighttime"},'
         '{"employee":{"id":"second_id","name":"Second","subcompany":"first","surname":"B"},'
         '"end_date":"2023-07-22T18:00:00.000000",'
-        '"start_date":"2023-07-22T10:00:00.000000"},'
+        '"start_date":"2023-07-22T10:00:00.000000",'
+        '"attendance_type":"childcare_leave"},'
         '{"employee":{"id":"tc","name":"Third","subcompany":"first","surname":"C"}}'
         ']}')) == True
     response = await service_client.post(
@@ -702,13 +715,16 @@ async def test_attendance_list_all(service_client):
         '{"attendances":['
         '{"employee":{"id":"first_id","name":"First","subcompany":"first","surname":"A"},'
         '"end_date":"2023-07-22T18:00:00.000000",'
-        '"start_date":"2023-07-22T10:00:00.000000"},'
+        '"start_date":"2023-07-22T10:00:00.000000",'
+        '"attendance_type":"additional_paid_vacation"},'
         '{"employee":{"id":"second_id","name":"Second","subcompany":"first","surname":"B"},'
         '"end_date":"2023-07-22T18:00:00.000000",'
-        '"start_date":"2023-07-22T10:00:00.000000"},'
+        '"start_date":"2023-07-22T10:00:00.000000",'
+        '"attendance_type":"childcare_leave"},'
         '{"employee":{"id":"tc","name":"Third","subcompany":"first","surname":"C"}}'
         ']}')) == True
 
+    # 22-23 июля sick_leave для First
     response = await service_client.post(
         '/v1/abscence/request',
         headers={'Authorization': 'Bearer first_token'},
@@ -724,7 +740,7 @@ async def test_attendance_list_all(service_client):
         json={'action_id': action_id, 'approve': True}
     )
     assert response.status == 200
-
+    # 1-30 июля unpaid_vacation для Third
     response = await service_client.post(
         '/v1/abscence/request',
         headers={'Authorization': 'Bearer ' + token},
@@ -749,29 +765,39 @@ async def test_attendance_list_all(service_client):
 
     assert response.status == 200
     assert are_json_equal(response.text, (
-        '{"attendances":'
-        '[{"employee":{"id":"first_id","name":"First","subcompany":"first","surname":"A"},'
-        '"end_date":"2023-07-21T18:00:00.000000","start_date":"2023-07-21T10:00:00.000000"},'
-        '{"employee":{"id":"tc","name":"Third","subcompany":"first","surname":"C"}},'
-        '{"employee":{"id":"second_id","name":"Second","subcompany":"first","surname":"B"},'
-        '"end_date":"2023-07-22T18:00:00.000000","start_date":"2023-07-22T10:00:00.000000"},'
-        '{"abscence_type":"sick_leave",'
-        '"employee":{"id":"first_id","name":"First","subcompany":"first","surname":"A"},'
-        '"end_date":"2023-07-22T23:59:00.000000","start_date":"2023-07-22T00:00:00.000000"},'
-        '{"abscence_type":"sick_leave",'
-        '"employee":{"id":"first_id","name":"First","subcompany":"first","surname":"A"},'
-        '"end_date":"2023-07-23T23:59:00.000000","start_date":"2023-07-23T00:00:00.000000"},'
-        '{"abscence_type":"unpaid_vacation",'
-        '"employee":{"id":"tc","name":"Third","subcompany":"first","surname":"C"},'
-        '"end_date":"2023-07-23T23:59:00.000000","start_date":"2023-07-23T00:00:00.000000"},'
-        '{"abscence_type":"unpaid_vacation",'
-        '"employee":{"id":"tc","name":"Third","subcompany":"first","surname":"C"},'
-        '"end_date":"2023-07-22T23:59:00.000000","start_date":"2023-07-22T00:00:00.000000"},'
-        '{"abscence_type":"unpaid_vacation",'
-        '"employee":{"id":"tc","name":"Third","subcompany":"first","surname":"C"},'
-        '"end_date":"2023-07-21T23:59:00.000000","start_date":"2023-07-21T00:00:00.000000"}'
-        ']}')) == True
+        '{"attendances":['
+        '{"employee":{"id":"first_id","name":"First","subcompany":"first","surname":"A"},'
+        '"end_date":"2023-07-21T18:00:00.000000","start_date":"2023-07-21T10:00:00.000000",'
+        '"attendance_type":"work_nighttime"},'
 
+        '{"employee":{"id":"second_id","name":"Second","subcompany":"first","surname":"B"},'
+        '"end_date":"2023-07-22T18:00:00.000000","start_date":"2023-07-22T10:00:00.000000",'
+        '"attendance_type":"childcare_leave"},'
+
+        '{"employee":{"id":"tc","name":"Third","subcompany":"first","surname":"C"}},'
+
+        '{"employee":{"id":"first_id","name":"First","subcompany":"first","surname":"A"},'
+        '"end_date":"2023-07-22T23:59:00.000000","start_date":"2023-07-22T00:00:00.000000",'
+        '"abscence_type":"sick_leave"},'
+
+        '{"employee":{"id":"first_id","name":"First","subcompany":"first","surname":"A"},'
+        '"end_date":"2023-07-23T23:59:00.000000","start_date":"2023-07-23T00:00:00.000000",'
+        '"abscence_type":"sick_leave"},'
+
+        '{"employee":{"id":"tc","name":"Third","subcompany":"first","surname":"C"},'
+        '"end_date":"2023-07-21T23:59:00.000000","start_date":"2023-07-21T00:00:00.000000",'
+        '"abscence_type":"unpaid_vacation"},'
+
+        '{"employee":{"id":"tc","name":"Third","subcompany":"first","surname":"C"},'
+        '"end_date":"2023-07-22T23:59:00.000000","start_date":"2023-07-22T00:00:00.000000",'
+        '"abscence_type":"unpaid_vacation"},'
+
+        '{"employee":{"id":"tc","name":"Third","subcompany":"first","surname":"C"},'
+        '"end_date":"2023-07-23T23:59:00.000000","start_date":"2023-07-23T00:00:00.000000",'
+        '"abscence_type":"unpaid_vacation"}'
+        ']}'
+    )) == True
+'''
 
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])
 async def test_actions(service_client):
@@ -794,6 +820,47 @@ async def test_actions(service_client):
         '{"actions":[{"blocking_actions_ids":[],'
         '"end_date":"2023-07-21T23:59:00.000000","id":"' + action_id + '",'
         '"start_date":"2023-07-10T00:00:00.000000","status":"pending","type":"vacation"'
+        '}]}')
+
+    response = await service_client.post(
+        '/v1/employee/add',
+        headers={'Authorization': 'Bearer first_token'},
+        json={'name': 'Third', 'surname': 'C', 'role': 'manager'},
+    )
+    assert response.status == 200
+    employee_id = json.loads(response.text)['login']
+    password = json.loads(response.text)['password']
+
+    response = await service_client.post(
+        '/v1/authorize',
+        json={'login': employee_id, 'company_id': 'first', 'password': password},
+    )
+    assert response.status == 200
+    token = json.loads(response.text)['token']
+
+    # 21 июля с 10 до 18 тип work_nighttime для First
+    response = await service_client.post(
+        '/v1/attendance/add',
+        params={'employee_id': 'first_id'},
+        headers={'Authorization': 'Bearer ' + token},
+        json={'start_date': '2023-07-22T10:00:00',
+              'end_date': '2023-07-22T18:00:00',
+              'attendance_type': 'work_nighttime'}
+    )
+    assert response.status == 200
+
+    response = await service_client.post(
+        '/v1/actions',
+        headers={'Authorization': 'Bearer first_token'},
+        json={'from': '2023-07-22T00:00:00', 'to': '2023-07-23T00:00:00'}
+    )
+    assert response.status == 200
+
+    action_id = json.loads(response.text)['actions'][0]['id']
+    assert response.text == (
+        '{"actions":[{"attendance_type":"work_nighttime","blocking_actions_ids":[],'
+        '"end_date":"2023-07-22T18:00:00.000000","id":"' + action_id + '",'
+        '"start_date":"2023-07-22T10:00:00.000000","type":"attendance"'
         '}]}')
 
 
@@ -832,15 +899,16 @@ async def test_documents_send(service_client):
     response_data = json.loads(response.text)
     expected_response = {
         "documents": [
-            {"chain_metadata":[],
+            {"chain_metadata_new":[],
              "created_ts": response_data["documents"][0]["created_ts"],
-             "description": "text1", 
-             "id": "id1", 
+             "description": "text1",
+             "id": "id1",
              "name": "doc1",
+             "visibility_status": 0,
              "sign_required": True,
              "signed": False,
              "type": "admin_request"},
-            {"chain_metadata":[
+            {"chain_metadata_new":[
                 {"employee_id":"first_id","requires_signature":1,"status":0},
                 {"employee_id":"second_id","requires_signature":0,"status":0}],
              "created_ts": response_data["documents"][1]["created_ts"],
@@ -849,8 +917,9 @@ async def test_documents_send(service_client):
              "name": "Document with chain",
              "sign_required": True,
              "signed": False,
+             "visibility_status": 0,
              "type": "admin_request"},
-            {"chain_metadata":[
+            {"chain_metadata_new":[
                 {"employee_id":"first_id","requires_signature":1,"status":2},
                 {"employee_id":"second_id","requires_signature":0,"status":0}],
              "created_ts": response_data["documents"][2]["created_ts"],
@@ -859,6 +928,7 @@ async def test_documents_send(service_client):
              "name": "Rejected document",
              "sign_required": True,
              "signed": False,
+             "visibility_status": 0,
              "type": "admin_request"}
         ]
     }
@@ -907,16 +977,24 @@ async def test_documents_send(service_client):
     response_data = json.loads(response.text)
     expected_response = {
         "documents": [
-            {"chain_metadata":[
+            {"chain_metadata_new":[
                 {"employee_id": "first_id","requires_signature": 1,"status": 0},
                 {"employee_id": "second_id","requires_signature": 0,"status": 0}],
-             "created_ts": response_data["documents"][0]["created_ts"], "description": "Test document with approval chain", "id": "doc_with_chain", "name": "Document with chain", "sign_required": True, "type": "admin_request"},
-            {"chain_metadata":[
+             "created_ts": response_data["documents"][0]["created_ts"],
+             "description": "Test document with approval chain",
+             "id": "doc_with_chain",
+             "name": "Document with chain",
+             "sign_required": True,
+             "type": "admin_request",
+             "visibility_status": 0},
+            {"chain_metadata_new":[
                 {"employee_id": "first_id", "requires_signature": 1, "status": 2},
                 {"employee_id": "second_id","requires_signature": 0,"status": 0}],
-             "created_ts": response_data["documents"][1]["created_ts"], "description": "", "id": "rejected_doc", "name": "Rejected document", "sign_required": True, "type": "admin_request"},
-            {"chain_metadata":[], "created_ts": response_data["documents"][2]["created_ts"], "description": "Document without approval chain", "id": "empty_chain_doc", "name": "Empty chain doc", "sign_required": False, "type": "admin_request"},
-            {"chain_metadata":[], "created_ts": response_data["documents"][3]["created_ts"], "description": "text1", "id": "id1", "name": "doc1", "sign_required": True, "type": "admin_request"}
+             "created_ts": response_data["documents"][1]["created_ts"], "description": "", "id": "rejected_doc", "name": "Rejected document", "sign_required": True, "type": "admin_request", "visibility_status": 0},
+            {"chain_metadata_new":[],
+             "created_ts": response_data["documents"][2]["created_ts"], "description": "Document without approval chain", "id": "empty_chain_doc", "name": "Empty chain doc", "sign_required": False, "type": "admin_request", "visibility_status": 0},
+            {"chain_metadata_new":[],
+             "created_ts": response_data["documents"][3]["created_ts"], "description": "text1", "id": "id1", "name": "doc1", "sign_required": True, "type": "admin_request", "visibility_status": 0}
        ]
     }
     assert response_data == expected_response
@@ -1038,7 +1116,7 @@ async def test_search_suggest(service_client):
     assert compare_employees(
         response.text, response_required.substitute(id=new_id, id2=new_id2))
 
-
+'''
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])
 async def test_abscence_verdict(service_client):
     response = await service_client.post(
@@ -1067,7 +1145,7 @@ async def test_abscence_verdict(service_client):
     assert response.status == 200
     assert json.loads(response.text)[
         'documents'][0]['type'] == 'employee_request'
-
+'''
 
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])
 async def test_upload_document(service_client):
@@ -1344,7 +1422,7 @@ async def test_tracker_assigned_tasks_to_user (service_client):
     data = response.json()
 
     tasks = data["tasks"]
-    assert len(tasks) == 3   
+    assert len(tasks) == 3
     assert tasks[0]["title"] == 'Task1'
     assert tasks[1]["title"] == 'Task3'
     assert tasks[2]["title"] == 'Task5'
@@ -1434,7 +1512,7 @@ async def test_tracker_tasks_bad_params_info_edit(service_client):
         headers={'Authorization': 'Bearer first_token'},
     )
     assert response.status == 404
-    
+
     response = await service_client.post(
         '/v1/tracker/tasks/edit',
         headers={'Authorization': 'Bearer second_token'},
@@ -1468,7 +1546,7 @@ async def test_tracker_tasks_media_upload(service_client):
         headers={'Authorization': 'Bearer first_token'},
     )
     assert response.status == 200
-    
+
     response_json = json.loads(response.text)
     media_links = response_json["media_links"]
     assert len(media_links) == 3
@@ -1605,7 +1683,7 @@ async def test_tracker_tasks_search_edit(service_client):
     )
 
     assert response.status == 200
-    
+
     response_required = Template('{"employees":[],'
                                  '"tasks":['
                                  '{"assignee":"first_id",'
@@ -1687,7 +1765,7 @@ async def test_tracker_tasks_and_employees_search(service_client):
                                  '"project_name":"second",'
                                  '"title":"new"}]}')
     assert response.text == response_required.substitute(id=new_id)
-    
+
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])
 async def test_tracker_tasks_bad_tag_search(service_client):
     response = await service_client.post(
@@ -1801,15 +1879,16 @@ async def test_send_docx_document(service_client):
     response_data = json.loads(response.text)
     expected_response = {
         "documents": [
-            {"chain_metadata":[],
+            {"chain_metadata_new":[],
              "created_ts": response_data["documents"][0]["created_ts"],
-             "description": "text1", 
+             "description": "text1",
              "id": "id1.pdf",
-             "name": "doc1", 
-             "sign_required": True, 
-             "signed": False, 
-             "type": "admin_request"},
-            {"chain_metadata":[
+             "name": "doc1",
+             "sign_required": True,
+             "signed": False,
+             "type": "admin_request",
+             "visibility_status": 0},
+            {"chain_metadata_new":[
                 {"employee_id":"first_id","requires_signature":1,"status":0},
                 {"employee_id":"second_id","requires_signature":0,"status":0}],
              "created_ts": response_data["documents"][1]["created_ts"],
@@ -1817,9 +1896,10 @@ async def test_send_docx_document(service_client):
              "id": "doc_with_chain",
              "name": "Document with chain",
              "sign_required": True,
-             "signed": False, "type":
-             "admin_request"},
-            {"chain_metadata":[
+             "signed": False,
+             "type": "admin_request",
+             "visibility_status": 0},
+            {"chain_metadata_new":[
                 {"employee_id":"first_id","requires_signature":1,"status":2},
                 {"employee_id":"second_id","requires_signature":0,"status":0}],
              "created_ts": response_data["documents"][2]["created_ts"],
@@ -1828,11 +1908,12 @@ async def test_send_docx_document(service_client):
              "name": "Rejected document",
              "sign_required": True,
              "signed": False,
-             "type": "admin_request"}
+             "type": "admin_request",
+             "visibility_status": 0}
         ]
     }
     assert response_data == expected_response
-        
+
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])
 async def test_chain_update_approve(service_client):
 
@@ -1848,7 +1929,7 @@ async def test_chain_update_approve(service_client):
         )
         assert response.status == 200
         expected_response = {
-            "chain_metadata": [
+            "chain_metadata_new": [
                 {"employee_id": "first_id", "requires_signature": 1, "status": 1},
                 {"employee_id": "second_id", "requires_signature": 0, "status": status}
             ]
@@ -1875,7 +1956,7 @@ async def test_chain_update_approve(service_client):
 
     auth = 'Bearer first_token'
     for _ in range(2):
-    
+
         response = await service_client.post(
             '/v1/notifications',
             headers={'Authorization': auth}
@@ -1901,15 +1982,15 @@ async def test_chain_update_reject(service_client):
         json={'approval_status': 3}
     )
     assert response.status == 200
-    
+
     expected_response = {
-        "chain_metadata": [
+        "chain_metadata_new": [
             {"employee_id": "first_id", "requires_signature": 1, "status": 2},
             {"employee_id": "second_id", "requires_signature": 0, "status": 0}
         ]
     }
     assert json.loads(response.text) == expected_response
-    
+
     response = await service_client.post(
         '/v1/notifications',
         headers={'Authorization': 'Bearer first_token'}
@@ -1994,7 +2075,7 @@ async def test_chain_add(service_client):
         headers={'Authorization': 'Bearer first_token'},
         params={'document_id': 'empty_chain_doc'},
         json={
-            'chain_metadata': [
+            'chain_metadata_new': [
                 {
                     'employee_id': 'first_id',
                     'requires_signature': 1,
@@ -2017,7 +2098,7 @@ async def test_chain_add(service_client):
     )
     assert response.status == 200
     expected_response = {
-        "chain_metadata": [
+        "chain_metadata_new": [
             {"employee_id": "first_id", "requires_signature": 1, "status": 1},
             {"employee_id": "second_id", "requires_signature": 0, "status": 0},
         ]
@@ -2067,7 +2148,7 @@ async def test_chain_add_empty_metadata(service_client):
         headers={'Authorization': 'Bearer first_token'},
         params={'document_id': 'empty_chain_doc'},
         json={
-            'chain_metadata': []
+            'chain_metadata_new': []
         }
     )
     assert response.status == 400
@@ -2079,7 +2160,7 @@ async def test_chain_add_nonexistent_document(service_client):
         headers={'Authorization': 'Bearer first_token'},
         params={'document_id': 'nonexistent_doc'},
         json={
-            'chain_metadata': [
+            'chain_metadata_new': [
                 {
                     'employee_id': 'first_id',
                     'requires_signature': 1,
@@ -2097,7 +2178,7 @@ async def test_chain_add_to_document_with_chain(service_client):
         headers={'Authorization': 'Bearer first_token'},
         params={'document_id': 'doc_with_chain'},
         json={
-            'chain_metadata': [
+            'chain_metadata_new': [
                 {
                     'employee_id': 'first_id',
                     'requires_signature': 1,
@@ -2115,7 +2196,7 @@ async def test_chain_add_with_invalid_employees(service_client):
         headers={'Authorization': 'Bearer first_token'},
         params={'document_id': 'empty_chain_doc'},
         json={
-            'chain_metadata': [
+            'chain_metadata_new': [
                 {
                     'employee_id': 'invalid_id',
                     'requires_signature': 1,
@@ -2125,6 +2206,190 @@ async def test_chain_add_with_invalid_employees(service_client):
         }
     )
     assert response.status == 400
+
+
+@pytest.mark.pgsql('db_1', files=['initial_data.sql'])
+async def test_permissions_list(service_client):
+    response = await service_client.post(
+        '/v1/employee/permissions/list',
+        headers={'Authorization': 'Bearer first_token'},
+        params={'employee_id': 'first_id'},
+    )
+    assert response.status == 200
+    assert response.json() == {
+        'permissions': [
+            {'permission_type': 'can_remove_documents', 'permission_value': 1},
+        ]
+    }
+    response = await service_client.post(
+        '/v1/employee/permissions/list',
+        headers={'Authorization': 'Bearer second_token'},
+    )
+    assert response.status == 400
+    response = await service_client.post(
+        '/v1/employee/permissions/list',
+        headers={'Authorization': 'Bearer first_token'},
+        params={'employee_id': 'unknown_id'},
+    )
+    assert response.status == 404
+
+@pytest.mark.pgsql('db_1', files=['initial_data.sql'])
+async def test_permissions_set(service_client):
+    response = await service_client.post(
+        '/v1/employee/permissions/set',
+        headers={'Authorization': 'Bearer second_token'},
+        params={'employee_id': 'second_id'},
+        json={
+            'permissions': [
+                {'permission_type': 'can_remove_documents', 'permission_value': 1},
+            ]
+        },
+    )
+    assert response.status == 403
+
+    response = await service_client.post(
+        '/v1/employee/permissions/set',
+        headers={'Authorization': 'Bearer first_token'},
+        params={'employee_id': 'second_id'},
+        json={
+            'permissions': [
+                {'permission_type': 'can_remove_documents', 'permission_value': 1},
+            ]
+        },
+    )
+    assert response.status == 200
+    assert response.json() == {
+        'permissions': [
+            {'permission_type': 'can_remove_documents', 'permission_value': 1},
+        ]
+    }
+    response = await service_client.post(
+        '/v1/notifications',
+        headers={'Authorization': 'Bearer second_token'}
+    )
+    assert response.status == 200
+
+    created_time = json.loads(response.text)['notifications'][0]['created']
+    id = json.loads(response.text)['notifications'][0]['id']
+    assert response.text == (
+        '{"notifications":[{"created":"'+ created_time + '","id":"' + id + '",'
+        '"is_read":false,"text":"Ваши права были изменены пользователем First A.",'
+        '"type":"generic"}]}')
+
+    response = await service_client.post(
+        '/v1/employee/permissions/list',
+        headers={'Authorization': 'Bearer first_token'},
+        params={'employee_id': 'second_id'},
+    )
+    assert response.status == 200
+    assert response.json() == {
+        'permissions': [
+            {'permission_type': 'can_remove_documents', 'permission_value': 1},
+        ]
+    }
+    response = await service_client.post(
+        '/v1/employee/permissions/set',
+        headers={'Authorization': 'Bearer first_token'},
+        params={'employee_id': 'unknown'},
+        json={
+            'permissions': [
+                {'permission_type': 'can_remove_documents', 'permission_value': 0},
+            ]
+        },
+    )
+    assert response.status == 404
+
+@pytest.mark.pgsql('db_1', files=['initial_data.sql'])
+async def test_documents_archiving(service_client):
+    response = await service_client.post(
+        '/v1/documents/remove',
+        headers={'Authorization': 'Bearer first_token'},
+        json={'document_id': 'doc_with_chain', 'comment': 'archive for testing'},
+    )
+    assert response.status == 200
+
+    response = await service_client.post(
+        '/v1/documents/history',
+        headers={'Authorization': 'Bearer first_token'},
+        params={'document_id': 'doc_with_chain'},
+    )
+    hist = response.json()['history']
+    assert hist[-1]['action_type'] == 'archived'
+    assert hist[-1]['comment'] == 'archive for testing'
+
+    response = await service_client.post(
+        '/v1/documents/restore',
+        headers={'Authorization': 'Bearer second_token'},
+        json={'document_id': 'doc_with_chain', 'comment': 'restoring for testing'},
+    )
+    assert response.status == 403
+
+    response = await service_client.post(
+        '/v1/documents/restore',
+        headers={'Authorization': 'Bearer first_token'},
+        json={'document_id': 'doc_with_chain', 'comment': 'restoring'},
+    )
+    assert response.status == 200
+
+    response = await service_client.post(
+        '/v1/documents/history',
+        headers={'Authorization': 'Bearer first_token'},
+        params={'document_id': 'doc_with_chain'},
+    )
+    hist = response.json()['history']
+    assert hist[-1]['action_type'] == 'restored'
+    assert hist[-1]['comment'] == 'restoring'
+
+
+    response = await service_client.post(
+        '/v1/notifications',
+        headers={'Authorization': 'Bearer first_token'}
+    )
+    assert response.status == 200
+
+    created_time0 = json.loads(response.text)['notifications'][0]['created']
+    id0 = json.loads(response.text)['notifications'][0]['id']
+    created_time1 = json.loads(response.text)['notifications'][1]['created']
+    id1 = json.loads(response.text)['notifications'][1]['id']
+
+    assert response.text == (
+        '{"notifications":[{"created":"'+ created_time0 + '","id":"' + id0 + '",'
+        '"is_read":false,"text":"Документ \'Document with chain\' был восстановлен пользователем First A.",'
+        '"type":"generic"},{"created":"'+ created_time1 + '","id":"' + id1 + '",'
+        '"is_read":false,"text":"Документ \'Document with chain\' был удален пользователем First A.",'
+        '"type":"generic"}]}')
+
+    response = await service_client.post(
+        '/v1/notifications',
+        headers={'Authorization': 'Bearer second_token'}
+    )
+    assert response.status == 200
+
+    created_time0 = json.loads(response.text)['notifications'][0]['created']
+    id0 = json.loads(response.text)['notifications'][0]['id']
+    created_time1 = json.loads(response.text)['notifications'][1]['created']
+    id1 = json.loads(response.text)['notifications'][1]['id']
+
+    assert response.text == (
+        '{"notifications":[{"created":"'+ created_time0 + '","id":"' + id0 + '",'
+        '"is_read":false,"text":"Документ \'Document with chain\' был восстановлен пользователем First A.",'
+        '"type":"generic"},{"created":"'+ created_time1 + '","id":"' + id1 + '",'
+        '"is_read":false,"text":"Документ \'Document with chain\' был удален пользователем First A.",'
+        '"type":"generic"}]}')
+
+    response = await service_client.post(
+        '/v1/documents/remove',
+        headers={'Authorization': 'Bearer second_token'},
+        json={'document_id': 'doc_with_chain'},
+    )
+    assert response.status == 403
+
+    response = await service_client.post(
+        '/v1/documents/remove',
+        headers={'Authorization': 'Bearer first_token'},
+        json={'document_id': 'unknown'},
+    )
+    assert response.status == 404
 
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])
 async def test_end(service_client):

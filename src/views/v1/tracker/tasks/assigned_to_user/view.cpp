@@ -51,8 +51,6 @@ class TrackerTasksAssignedToUserHandler final
       employee_id = user_id;
     }
 
-    LOG_INFO() << "employee_id: " << employee_id;
-
     auto result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kSlave,
         "SELECT tasks.title, tasks.project_name, tasks.id, "

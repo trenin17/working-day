@@ -50,6 +50,36 @@ components_manager:
                 POSTGRES_DEFAULT_COMMAND_CONTROL:
                     network_timeout_ms: 750
                     statement_timeout_ms: 500
+                USERVER_NO_LOG_SPANS:
+                    prefixes:
+                        [
+                            "pg_query"
+                        ]
+                    names:
+                        [
+                            "connection_pool_monitor",
+                            "pg_maintain",
+                            "file-resolver-reload",
+                            "http/handler-server-monitor",
+                            "connlimit_watchdog",
+                            "http_easy_reinit",
+                            "pg_connect",
+                            "load_secdist_from_file",
+                            "net-resolver-init",
+                            "all_components_loaded",
+                            "first-update/auth-pg-cache",
+                            "load_secdist_from_file",
+                            "component_stop",
+                            "on_all_components_are_stopping",
+                            "update-task/auth-pg-cache",
+                            "file-resolver-updater"
+                        ]
+
+
+        logging-configurator:
+          load-enabled: true
+          limited-logging-enable: true
+          limited-logging-interval: 2s
 
         testsuite-support: {}
 
@@ -214,6 +244,7 @@ components_manager:
                 types:
                   - bearer
                 scopes:
+                  - admin
                   - manager
 
         handler-v1-abscence-split:
@@ -434,9 +465,9 @@ components_manager:
                   - bearer
                 scopes:
                   - user
-        
+
         handler-v1-tracker-tasks-info:
-            path: /v1/tracker/tasks/info          
+            path: /v1/tracker/tasks/info
             method: GET
             task_processor: main-task-processor
             auth:
@@ -447,7 +478,7 @@ components_manager:
             is_testing: $is_testing
 
         handler-v1-tracker-tasks-assigned-to-user:
-            path: /v1/tracker/tasks/assigned-to-user           
+            path: /v1/tracker/tasks/assigned-to-user
             method: POST
             task_processor: main-task-processor
             auth:
@@ -550,3 +581,76 @@ components_manager:
                 scopes:
                   - user
             pyservice-url: 'http://python-service:3000/document/sign'
+
+        handler-v1-documents-remove:
+            path: /v1/documents/remove
+            method: POST
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - user
+
+        handler-v1-documents-restore:
+            path: /v1/documents/restore
+            method: POST
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - user
+
+        handler-v1-documents-history:
+            path: /v1/documents/history
+            method: POST
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - user
+
+        handler-v1-employee-permissions-list:
+            path: /v1/employee/permissions/list
+            method: POST
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - user
+
+        handler-v1-employee-permissions-set:
+            path: /v1/employee/permissions/set
+            method: POST
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - admin
+
+        handler-v1-attendance-export-to-excel:
+            path: /v1/attendance/export_to_excel
+            method: POST
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - user
+            pyservice-url: 'http://python-service:3000/attendance/export-to-excel'
+
+        handler-v1-documents-generate-from-template:
+            path: /v1/documents/generate_from_template
+            method: POST
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - user
+            pyservice-url: 'http://python-service:3000/document/generate-from-template'
+

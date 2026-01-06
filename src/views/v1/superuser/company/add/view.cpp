@@ -57,7 +57,6 @@ class SuperuserCompanyAddHandler final
     auto err_code = system(shell_command.c_str());
 
     if (err_code != 0) {
-      LOG_ERROR() << "Failed to setup company database";
       request.GetHttpResponse().SetStatus(
           userver::server::http::HttpStatus::kInternalServerError);
       return ErrorMessage{"Failed to set up database"}.ToJsonString();

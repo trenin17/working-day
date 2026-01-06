@@ -1,6 +1,6 @@
 FROM ghcr.io/userver-framework/ubuntu-22.04-userver-pg:latest
 
-RUN apt-get install -y wget git libcurl4-openssl-dev libssl-dev uuid-dev zlib1g-dev libpulse-dev vim logrotate
+RUN apt-get install -y wget git libcurl4-openssl-dev libssl-dev uuid-dev zlib1g-dev libpulse-dev vim cron logrotate
 
 RUN mkdir -p /app/src /app/configs /app/third_party /app/tests /app/scripts /app/postgresql/migrations
 
@@ -28,6 +28,7 @@ COPY scripts /app/scripts
 COPY postgresql/migrations /app/postgresql/migrations
 
 COPY configs/logrotate /etc/logrotate.d/working_day_log
+RUN sudo service cron start
 
 RUN make build-release
 

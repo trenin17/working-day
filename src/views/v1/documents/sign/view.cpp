@@ -133,32 +133,12 @@ properties:
         py_request.signed_file_key, document_info.name, document_info.type,
         true, document_info.description, document_id);
 
-    LOG_INFO() << "NEW ID " << py_request.signed_file_key;
-
-    result = pg_cluster_->Execute(
-        userver::storages::postgres::ClusterHostType::kMaster,
-        "SELECT id, name, type, sign_required, description "
-        "FROM working_day_" +
-            company_id +
-            ".documents "
-            "WHERE id = $1",
-        py_request.signed_file_key);
-
-    auto inserted_docs =
-        result.AsSingleRow<DocumentInfo>(userver::storages::postgres::kRowTag);
-    LOG_INFO() << "ROWS AFFECTED " << inserted_docs.id << " "
-               << inserted_docs.name << " " << inserted_docs.type << " "
-               << inserted_docs.sign_required << " "
-               << inserted_docs.description.value_or("") << " " << document_id;
-
     result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kMaster,
         "INSERT INTO working_day_" + company_id +
             ".employee_document (employee_id, document_id, signed) "
             "VALUES ($1, $2, $3)",
         user_id, py_request.signed_file_key, true);
-
-    LOG_INFO() << "&ROWS AFFECTED " << result.RowsAffected();
 
     return "";
   }

@@ -2,6 +2,8 @@ from aiohttp import web
 from generate_document.generate import generate_document
 from sign_document.sign import sign_document
 from convert_document.convert import convert_document
+from attendance_export_to_excel.export import generate_attendance_excel
+from generate_from_template.generate import generate_from_template
 import subprocess
 import logging
 
@@ -38,5 +40,7 @@ app = web.Application(middlewares=[error_logging_middleware])
 app.add_routes([web.post('/document/generate', generate_document)])
 app.add_routes([web.post('/document/sign', sign_document)])
 app.add_routes([web.post('/document/convert', convert_document)])
+app.add_routes([web.post('/attendance/export-to-excel', generate_attendance_excel)])
+app.add_routes([web.post('/document/generate-from-template', generate_from_template)])
 
 web.run_app(app, host='0.0.0.0', port=3000)

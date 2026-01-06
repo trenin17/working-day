@@ -12,3 +12,6 @@ Testing/
 nohup.out
 aws/
 *.pem
+python_service/.venv/
+configs/secdist.json
+deploy/deploy_docker.sh

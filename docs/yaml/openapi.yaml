@@ -280,6 +280,16 @@ paths:
             responses:
                 '200':
                     description: Verdict was sent
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/AbscenceVerdictResponse'
+                '404':
+                    description: Not found
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
 
     /v1/abscence/split:
         post:
@@ -368,6 +378,43 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/ErrorMessage'
+
+
+    /v1/documents/generate_from_template:
+        post:
+            description: Generate document from template with parameters
+            parameters:
+              - in: header
+                name: Authorization
+                description: Token of session user
+                schema:
+                    type: string
+              - in: query
+                name: action_id
+                description: Id of the action
+                schema:
+                    type: string
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/GenerateFromTemplateRequest'
+
+            responses:
+                '200':
+                    description: Generated document download link
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GenerateFromTemplateResponse'
+                '400':
+                    description: Invalid request
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+
 
     /v1/attendance/add:
         post:
@@ -528,6 +575,29 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/AttendanceListAllResponse'
 
+    /v1/attendance/export_to_excel:
+        post:
+            description: Export list of all employees' attendances for a given time period to excel format
+            parameters:
+              - in: header
+                name: Authorization
+                description: Token of session user
+                schema:
+                    type: string
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/AttendanceListAllRequest'
+            responses:
+                '200':
+                    description: Generated excel document download link
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ExcelAttendancesResponse'
+
     /v1/documents/upload:
         post:
             description: Upload document
@@ -667,6 +737,11 @@ paths:
             responses:
                 '200':
                     description: Document was signed
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/AbscenceVerdictResponse'
+
 
     /v1/superuser/company/add:
         post:
@@ -905,7 +980,7 @@ paths:
                 description: Token of session user
                 schema:
                     type: string
-            
+
             responses:
                 '200':
                     description: Upload link
@@ -918,7 +993,7 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/ErrorMessage'         
+                                $ref: '#/components/schemas/ErrorMessage'
 
     /v1/messenger/list-chats:
         get:
@@ -1076,6 +1151,164 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/ErrorMessage'
+
+    /v1/documents/remove:
+        post:
+            description: Archive the document (mark as deleted)
+            parameters:
+              - in: header
+                name: Authorization
+                description: Token of session user
+                schema:
+                    type: string
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/DocumentsRemoveRestoreItem'
+            responses:
+                '200':
+                    description: Document removed successfully
+                '404':
+                    description: Document not found
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+                '400':
+                    description: Bad request
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+                '403':
+                    description: The user has no rights
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+
+    /v1/documents/restore:
+        post:
+            description: Restore previously deleted document
+            parameters:
+              - in: header
+                name: Authorization
+                description: Token of session user
+                schema:
+                    type: string
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/DocumentsRemoveRestoreItem'
+            responses:
+                '200':
+                    description: Document restored successfully
+
+    /v1/documents/history:
+        post:
+            description: Get all log entries for a specific document
+            parameters:
+              - in: header
+                name: Authorization
+                description: Token of session user
+                schema:
+                    type: string
+              - in: query
+                name: document_id
+                description: Id of the document
+                schema:
+                    type: string
+            responses:
+                '200':
+                    description: Document history
+                    content:
+                        application/json:
+                        schema:
+                            $ref: '#/components/schemas/DocumentHistoryResponse'
+
+    /v1/employee/permissions/list:
+        post:
+            description: Get permissions of the user
+            parameters:
+              - in: header
+                name: Authorization
+                description: Token of session user
+                schema:
+                    type: string
+              - in: query
+                name: employee_id
+                schema:
+                    type: string
+            responses:
+                '200':
+                    description: User permissions
+                    content:
+                        application/json:
+                        schema:
+                            $ref: '#/components/schemas/EmployeePermissions'
+                '400':
+                    description: Bad request
+                    content:
+                    application/json:
+                        schema:
+                        $ref: '#/components/schemas/ErrorMessage'
+                '404':
+                    description: User not found
+                    content:
+                    application/json:
+                        schema:
+                        $ref: '#/components/schemas/ErrorMessage'
+
+
+    /v1/employee/permissions/set:
+        post:
+            description: Set permissions for an employee
+            parameters:
+              - in: header
+                name: Authorization
+                description: Token of session user
+                schema:
+                    type: string
+              - in: query
+                name: employee_id
+                schema:
+                    type: string
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/EmployeePermissions'
+            responses:
+                '200':
+                    description: New user permissions
+                    content:
+                        application/json:
+                        schema:
+                            $ref: '#/components/schemas/EmployeePermissions'
+                '400':
+                    description: Bad request
+                    content:
+                    application/json:
+                        schema:
+                        $ref: '#/components/schemas/ErrorMessage'
+                '403':
+                    description: Forbidden - insufficient rights
+                    content:
+                    application/json:
+                        schema:
+                        $ref: '#/components/schemas/ErrorMessage'
+                '404':
+                    description: User not found
+                    content:
+                    application/json:
+                        schema:
+                        $ref: '#/components/schemas/ErrorMessage'
+
 
 
 components:
@@ -1365,6 +1598,8 @@ components:
                     type: array
                     items:
                         type: string
+                attendance_type:
+                    $ref: '#/components/schemas/AttendanceType'
 
         AbscenceRequestRequest:
             type: object
@@ -1384,11 +1619,27 @@ components:
         AbscenceType:
             type: string
             enum:
-                - vacation
-                - sick_leave
-                - unpaid_vacation
-                - business_trip
-                - overtime
+                - vacation                              # 5 - ежегодный отпуск
+                - sick_leave                            # больничный
+                - unpaid_vacation                       # 18 - отпуск без сохранения ЗП
+                - business_trip                         # командировка
+                - overtime                              # 19 - сверхурочная работа / работа в выходной
+                - vacation_days_instead                 # 1 - дни в счёт ежегодного отпуска
+                - payout_birth                          # 2 - единовременная выплата при рождении ребёнка
+                - certificates_on_dismissal             # 3 - выдача справок при увольнении
+                - tax_deduction_children                # 6 - налоговый вычет на детей
+                - part_time                             # 7 - заявление на неполный рабочий день
+                - maternity_childcare_15                # 8 - отпуск по уходу за ребёнком до 1.5 лет
+                - maternity_childcare_3                 # 9 - отпуск по уходу за ребёнком до 3 лет
+                - maternity_pregnancy                   # 10 - отпуск по беременности и родам
+                - transfer                              # 11 - перевод на другую должность
+                - vacation_shift                        # 12 - перенос ежегодного отпуска
+                - maternity_work_during                 # 13 - работа в период декретного отпуска
+                - personal_data_change                  # 14 - смена персональных данных
+                - resignation                           # 15 - увольнение по собственному желанию
+                - maternity_early_exit                  # 16 - досрочный выход из отпуска по уходу
+                - unpaid_vacation_with_reason           # 17 - отпуск без сохранения ЗП
+
 
         AbscenceRequestResponse:
             type: object
@@ -1413,7 +1664,25 @@ components:
                 approve:
                     type: boolean
 
+        AbscenceVerdictResponse:
+            type: object
+            additionalProperties: false
+            required:
+              - signed_file_key
+            properties:
+                signed_file_key:
+                    type: string
+
         DocumentsVacationResponse:
+            type: object
+            additionalProperties: false
+            required:
+              - download_link
+            properties:
+                download_link:
+                    type: string
+
+        ExcelAttendancesResponse:
             type: object
             additionalProperties: false
             required:
@@ -1439,17 +1708,44 @@ components:
               - manager
               - robot
 
+        AttendanceType:
+            type: string
+            enum:
+                - work_daytime # Я
+                - work_nighttime # Н
+                - work_weekend_holiday # РВ
+                - overtime # C
+                - business_trip # K
+                - vacation # ОТ
+                - additional_paid_vacation # ОД
+                - study_vacation_paid # У
+                - study_vacation_unpaid # УД
+                - maternity_leave # Р
+                - childcare_leave # ОЖ
+                - unpaid_vacation # ДО
+                - sick_leave # Б
+                - shortened_work_time # ЛЧ
+                - absence_without_reason # ПР
+                - part_time_by_employer # НС
+                - weekend_holiday # В
+                - absence_unknown_reason # НН
+                - downtime_not_employer_fault # НП
+                - suspension_with_pay # НО
+
         AttendanceAddRequest:
             type: object
             additionalProperties: false
             required:
               - start_date
               - end_date
+              - attendance_type
             properties:
                 start_date:
                     $ref: '#/components/schemas/Timestamp'
                 end_date:
                     $ref: '#/components/schemas/Timestamp'
+                attendance_type:
+                    $ref: '#/components/schemas/AttendanceType'
 
         AbscenceSplitRequest:
             type: object
@@ -1628,6 +1924,8 @@ components:
                 abscence_type:
                     $ref: '#/components/schemas/AbscenceType'
                     description: If employee has an approved abscence for a given period
+                attendance_type:
+                    $ref: '#/components/schemas/AttendanceType'
 
         UploadDocumentResponse:
             type: object
@@ -1705,6 +2003,9 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/DocumentsChainMetadataItem'
+                visibility_status:
+                    description: Document visibility status (0 — visible, 1 — archived)
+                    type: int
 
         DownloadDocumentResponse:
             type: object
@@ -1918,7 +2219,7 @@ components:
               - creator
             properties:
                 title:
-                    type: string 
+                    type: string
                     description: Name of the task
                 project_name:
                     type: string
@@ -1931,7 +2232,7 @@ components:
                     description: The creator of the task
                 assignee:
                     type: string
-                    description: The assigned person for the task  
+                    description: The assigned person for the task
                 deadline:
                     $ref: '#/components/schemas/Timestamp'
 
@@ -1970,7 +2271,7 @@ components:
                     $ref: '#/components/schemas/Timestamp'
                 deadline:
                     $ref: '#/components/schemas/Timestamp'
-        
+
         TrackerTasksListItem:
             type: object
             additionalProperties: false
@@ -1989,7 +2290,7 @@ components:
                     type: string
                 assignee:
                     type: string
-            
+
         TrackerTasksListResponse:
             type: object
             additionalProperties: false
@@ -2051,9 +2352,9 @@ components:
                 status:
                     type: int
                     enum: [0, 1, 2]
-                    description: 
+                    description:
                      0 - not_reached
-                     1 - approved 
+                     1 - approved
                      2 - rejected
 
         DocumentsChainUpdateRequest:
@@ -2065,7 +2366,7 @@ components:
                 approval_status:
                     type: int
                     enum: [0, 1, 2, 3]
-                    description: 
+                    description:
                      0 - sign with regular signature and approve
                      1 - sign with unqualified signature and approve
                      2 - approve
@@ -2092,3 +2393,98 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/DocumentsChainMetadataItem'
+
+        DocumentsRemoveRestoreItem:
+            type: object
+            additionalProperties: false
+            required:
+              - document_id
+            properties:
+                document_id:
+                    type: string
+                    description: Id of the document
+                comment:
+                    type: string
+                    description: Reason or comment for deleting or restoring the document
+
+        DocumentHistoryItem:
+            type: object
+            additionalProperties: false
+            required:
+              - actor_id
+              - action_type
+              - created_ts
+            properties:
+                actor_id:
+                    type: string
+                    description: ID of the employee who performed the action
+                action_type:
+                    type: string
+                    enum:
+                      - archived
+                      - restored
+                      # - signed
+                      # etc.
+                    description: Type of action
+                comment:
+                    type: string
+                    description: Optional comment
+                created_ts:
+                    $ref: '#/components/schemas/Timestamp'
+                    description: Timestamp of the action
+
+        DocumentHistoryResponse:
+            type: object
+            additionalProperties: false
+            properties:
+                history:
+                    type: array
+                    description: List of actions items
+                    items:
+                        $ref: '#/components/schemas/DocumentHistoryItem'
+
+        EmployeePermissionsItem:
+            type: object
+            additionalProperties: false
+            required:
+              - permission_type
+              - permission_value
+            properties:
+                permission_type:
+                    type: string
+                    enum:
+                      - can_remove_documents
+                      # etc.
+                permission_value:
+                    type: int
+
+        EmployeePermissions:
+            type: object
+            additionalProperties: false
+            required:
+              - permissions
+            properties:
+                permissions:
+                    description: Permissions of employee
+                    type: array
+                    permissions:
+                        $ref: '#/components/schemas/EmployeePermissionsItem'
+
+        GenerateFromTemplateRequest:
+            type: object
+            additionalProperties: false
+            properties:
+                params:
+                    type: array
+                    description: Ordered list of parameters for placeholders
+                    items:
+                        type: string
+
+        GenerateFromTemplateResponse:
+            type: object
+            additionalProperties: false
+            required:
+              - download_link
+            properties:
+                download_link:
+                    type: string

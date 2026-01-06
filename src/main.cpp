@@ -10,6 +10,8 @@
 #include <userver/testsuite/testsuite_support.hpp>
 #include <userver/utils/daemon_run.hpp>
 
+#include <userver/components/logging_configurator.hpp>
+
 #include <aws/core/Aws.h>
 #include <aws/core/auth/AWSCredentialsProvider.h>
 
@@ -23,6 +25,7 @@
 #include "views/v1/actions/view.hpp"
 #include "views/v1/attendance/add/view.hpp"
 #include "views/v1/attendance/list_all/view.hpp"
+#include "views/v1/attendance/export_to_excel/view.hpp"
 #include "views/v1/authorize/view.hpp"
 #include "views/v1/clear-tasks/view.hpp"
 #include "views/v1/documents/download/view.hpp"
@@ -33,6 +36,7 @@
 #include "views/v1/documents/sign/view.hpp"
 #include "views/v1/documents/upload/view.hpp"
 #include "views/v1/documents/vacation/view.hpp"
+#include "views/v1/documents/generate_from_template/view.hpp"
 #include "views/v1/employee/add/view.hpp"
 #include "views/v1/employee/add_head/view.hpp"
 #include "views/v1/employee/info/view.hpp"
@@ -61,6 +65,11 @@
 #include "views/v1/tracker/tasks/media/upload/view.hpp"
 #include "views/v1/documents/chain/update/view.hpp"
 #include "views/v1/documents/chain/add/view.hpp"
+#include "views/v1/documents/remove/view.hpp"
+#include "views/v1/documents/restore/view.hpp"
+#include "views/v1/documents/history/view.hpp"
+#include "views/v1/employee/permissions/list/view.hpp"
+#include "views/v1/employee/permissions/set/view.hpp"
 
 int main(int argc, char* argv[]) {
   Aws::SDKOptions options;
@@ -83,7 +92,8 @@ int main(int argc, char* argv[]) {
           .Append<userver::components::Postgres>("key-value")
           .Append<userver::clients::dns::Component>()
           .Append<auth::AuthCache>()
-          .Append<utils::custom_implicit_options::CustomImplicitOptions>();
+          .Append<utils::custom_implicit_options::CustomImplicitOptions>()
+          .Append<userver::components::LoggingConfigurator>();
 
   views::v1::employee::add::AppendAddEmployee(component_list);
   views::v1::employee::add_head::AppendAddHeadEmployee(component_list);
@@ -108,6 +118,7 @@ int main(int argc, char* argv[]) {
   views::v1::search_full::AppendSearchFull(component_list);
   views::v1::search_suggest::AppendSearchSuggest(component_list);
   views::v1::attendance::list_all::AppendAttendanceListAll(component_list);
+  views::v1::attendance::export_to_excel::AppendAttendanceExportToExcel(component_list);
   views::v1::documents::upload::AppendDocumentsUpload(component_list);
   views::v1::documents::send::AppendDocumentsSend(component_list);
   views::v1::documents::list::AppendDocumentsList(component_list);
@@ -115,6 +126,7 @@ int main(int argc, char* argv[]) {
   views::v1::documents::sign::AppendDocumentsSign(component_list);
   views::v1::documents::list_all::AppendDocumentsListAll(component_list);
   views::v1::documents::get_signs::AppendDocumentsGetSigns(component_list);
+  views::v1::documents::generate_from_template::AppendDocumentsGenerateFromTemplate(component_list);
   views::v1::superuser::company::add::AppendSuperuserCompanyAdd(component_list);
   views::v1::inventory::add::AppendInventoryAdd(component_list);
   views::v1::messenger::create::AppendCreateChat(component_list);
@@ -130,7 +142,12 @@ int main(int argc, char* argv[]) {
   views::v1::tracker::tasks::media::upload::AppendTrackerTasksMediaUpload(component_list);
   views::v1::documents::chain::update::AppendDocumentsChainUpdate(component_list);
   views::v1::documents::chain::add::AppendDocumentsChainAdd(component_list);
-  
+  views::v1::documents::remove::AppendDocumentsRemove(component_list);
+  views::v1::documents::restore::AppendDocumentsRestore(component_list);
+  views::v1::documents::history::AppendDocumentsHistory(component_list);
+  views::v1::employee::permissions::list::AppendEmployeePermissionsList(component_list);
+  views::v1::employee::permissions::set::AppendEmployeePermissionsSet(component_list);
+
   int err_code = userver::utils::DaemonMain(argc, argv, component_list);
 
   Aws::ShutdownAPI(options);

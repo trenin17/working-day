@@ -37,12 +37,43 @@ std::optional<std::string> ActionTypeToName(const std::string& type) {
     return "неоплачиваемый отпуск";
   } else if (type == "overtime") {
     return "сверхурочное время";
+  } else if (type == "vacation_days_instead") {
+    return "дни в счёт ежегодного отпуска";
+  } else if (type == "payout_birth") {
+    return "единовременную выплату при рождении ребёнка";
+  } else if (type == "certificates_on_dismissal") {
+    return "выдачу справок при увольнении";
+  } else if (type == "tax_deduction_children") {
+    return "налоговый вычет на детей";
+  } else if (type == "part_time") {
+    return "неполный рабочий день";
+  } else if (type == "maternity_childcare_15") {
+    return "отпуск по уходу за ребёнком до 1.5 лет";
+  } else if (type == "maternity_childcare_3") {
+    return "отпуск по уходу за ребёнком до 3 лет";
+  } else if (type == "maternity_pregnancy") {
+    return "отпуск по беременности и родам";
+  } else if (type == "transfer") {
+    return "перевод на другую должность";
+  } else if (type == "vacation_shift") {
+    return "перенос ежегодного отпуска";
+  } else if (type == "maternity_work_during") {
+    return "работу в период декретного отпуска";
+  } else if (type == "personal_data_change") {
+    return "смену персональных данных";
+  } else if (type == "resignation") {
+    return "увольнение по собственному желанию";
+  } else if (type == "maternity_early_exit") {
+    return "досрочный выход из отпуска по уходу";
+  } else if (type == "unpaid_vacation_with_reason") {
+    return "отпуск без сохранения ЗП (с указанием причины)";
   }
   return std::nullopt;
 }
 
 struct ActionInfo {
   std::string employee_id, type;
+  std::optional<std::string> document_id;
   userver::storages::postgres::TimePoint start_date, end_date;
 };
 
@@ -77,7 +108,7 @@ void GenerateVacationDocument(
 
   auto action_info =
       trx.Execute(
-             "SELECT user_id, type, start_date, end_date "
+             "SELECT user_id, type, document_id, start_date, end_date "
              "FROM working_day_" +
                  company_id +
                  ".actions "
@@ -126,7 +157,9 @@ void GenerateVacationDocument(
   link_request.employee_position = employee_info.job_position;
   link_request.head_position = head_info.job_position;
 
-  auto file_key = userver::utils::generators::GenerateUuid();
+  auto file_key = action_info.document_id.value_or(".pdf");
+  file_key = file_key.substr(0, file_key.size() - 4);
+
   auto response = http_client.CreateRequest()
                       .post(pyservice_url + "?file_key=" + file_key)
                       .data(link_request.ToJsonString())
@@ -144,6 +177,8 @@ void GenerateVacationDocument(
                        " - " +
                        userver::utils::datetime::Timestring(
                            action_info.end_date, "UTC", "%d.%m.%Y");
+
+  auto file_key_signed = file_key + "_signed.pdf";
   file_key += ".pdf";
 
   pg_cluster->Execute(userver::storages::postgres::ClusterHostType::kMaster,
@@ -151,7 +186,18 @@ void GenerateVacationDocument(
                           ".documents(id, name, "
                           "sign_required, type) "
                           "VALUES($1, $2, $3, $4)",
-                      file_key, document_name, true, "employee_request");
+                      file_key_signed, document_name, true, "employee_request");
+
+  pg_cluster->Execute(userver::storages::postgres::ClusterHostType::kMaster,
+                      "DELETE FROM working_day_" + company_id + ".employee_document "
+                      "WHERE employee_id = $1 AND document_id = $2",
+                      action_info.employee_id, file_key);
+
+  pg_cluster->Execute(userver::storages::postgres::ClusterHostType::kMaster,
+                      "UPDATE working_day_" + company_id + ".documents "
+                      "SET parent_id = $2 "
+                      "WHERE id = $1",
+                      file_key, file_key_signed);
 
   pg_cluster->Execute(userver::storages::postgres::ClusterHostType::kMaster,
                       "INSERT INTO working_day_" + company_id +
@@ -159,8 +205,15 @@ void GenerateVacationDocument(
                           "(employee_id, document_id, signed) "
                           "VALUES ($1, $2, $3), ($4, $2, $3) "
                           "ON CONFLICT DO NOTHING",
-                      action_info.employee_id, file_key, true,
+                      action_info.employee_id, file_key_signed, true,
                       employee_info.head_id.value_or(action_info.employee_id));
+
+  pg_cluster->Execute(userver::storages::postgres::ClusterHostType::kMaster,
+                       "UPDATE working_day_" + company_id + ".documents "
+                          "SET sign_required = TRUE "
+                          "WHERE id = $1",
+                       action_info.document_id);
+
 }
 
 class AbscenceVerdictHandler final
@@ -201,13 +254,19 @@ class AbscenceVerdictHandler final
 
     auto action_info =
         trx.Execute(
-               "SELECT user_id, type, start_date, end_date "
+               "SELECT user_id, type, document_id, start_date, end_date "
                "FROM working_day_" +
                    company_id +
                    ".actions "
                    "WHERE id = $1",
                request_body.action_id)
             .AsSingleRow<ActionInfo>(userver::storages::postgres::kRowTag);
+
+    if (!action_info.document_id) {
+      request.GetHttpResponse().SetStatus(
+          userver::server::http::HttpStatus::kBadRequest);
+      return ErrorMessage{"Document doesn't exist"}.ToJsonString();
+    }
 
     auto action_name = ActionTypeToName(action_info.type);
     std::string notification_text =
@@ -225,6 +284,27 @@ class AbscenceVerdictHandler final
       notification_text += " был отклонен.";
     }
 
+
+    if (request_body.notification_id.has_value()) {
+      auto result = trx.Execute("DELETE FROM working_day_" + company_id +
+                                    ".notifications "
+                                    "WHERE id = $1 ",
+                                request_body.notification_id.value());
+    }
+
+    auto notification_id = userver::utils::generators::GenerateUuid();
+    std::optional<std::string> maybe_action_id = request_body.approve ? std::optional(request_body.action_id) : std::nullopt;
+    auto result =
+        trx.Execute("INSERT INTO working_day_" + company_id +
+                        ".notifications(id, type, text, user_id, "
+                        "sender_id, action_id) "
+                        "VALUES($1, $2, $3, $4, $5, $6) "
+                        "ON CONFLICT (id) "
+                        "DO NOTHING",
+                    notification_id, action_info.type + "_" + action_status,
+                    notification_text, action_info.employee_id, user_id,
+                    maybe_action_id);
+
     if (request_body.approve) {
       auto result = trx.Execute("UPDATE working_day_" + company_id +
                                     ".actions "
@@ -237,25 +317,6 @@ class AbscenceVerdictHandler final
                                     "WHERE id = $1 ",
                                 request_body.action_id);
     }
-
-    if (request_body.notification_id.has_value()) {
-      auto result = trx.Execute("DELETE FROM working_day_" + company_id +
-                                    ".notifications "
-                                    "WHERE id = $1 ",
-                                request_body.notification_id.value());
-    }
-
-    auto notification_id = userver::utils::generators::GenerateUuid();
-    auto result =
-        trx.Execute("INSERT INTO working_day_" + company_id +
-                        ".notifications(id, type, text, user_id, "
-                        "sender_id, action_id) "
-                        "VALUES($1, $2, $3, $4, $5, $6) "
-                        "ON CONFLICT (id) "
-                        "DO NOTHING",
-                    notification_id, action_info.type + "_" + action_status,
-                    notification_text, action_info.employee_id, user_id,
-                    request_body.action_id);
 
     trx.Commit();
 

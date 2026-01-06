@@ -93,10 +93,10 @@ CREATE TABLE IF NOT EXISTS working_day_first.reverse_index (
 ALTER TABLE working_day_first.reverse_index
 ADD COLUMN entity_type TEXT DEFAULT 'employees' CHECK (entity_type IN ('employees', 'tasks'));
 
-ALTER TABLE working_day_first.reverse_index 
+ALTER TABLE working_day_first.reverse_index
 DROP CONSTRAINT reverse_index_pkey;
 
-ALTER TABLE working_day_first.reverse_index 
+ALTER TABLE working_day_first.reverse_index
 ADD CONSTRAINT reverse_index_key_entity_uniq UNIQUE (key, entity_type);
 
 CREATE INDEX trgm_idx ON working_day_first.reverse_index USING GIST (key gist_trgm_ops);
@@ -176,13 +176,13 @@ ADD COLUMN job_position TEXT;
 DO $$
 BEGIN
     IF EXISTS (
-        SELECT 1 FROM information_schema.columns 
-        WHERE table_schema = 'working_day_first' 
-        AND table_name = 'employees' 
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'working_day_first'
+        AND table_name = 'employees'
         AND column_name = 'position'
     ) THEN
-        UPDATE working_day_first.employees 
-        SET job_position = position 
+        UPDATE working_day_first.employees
+        SET job_position = position
         WHERE job_position IS NULL;
     END IF;
 END $$;
@@ -249,16 +249,14 @@ CREATE TYPE wd_general.chain_metadata_item AS (
 ALTER TABLE working_day_first.documents
 ADD COLUMN chain_metadata wd_general.chain_metadata_item[] NOT NULL DEFAULT ARRAY[]::wd_general.chain_metadata_item[];
 
-ALTER TYPE wd_general.chain_metadata_item RENAME TO chain_metadata_item_old;
-
-CREATE TYPE wd_general.chain_metadata_item AS (
+CREATE TYPE wd_general.chain_metadata_item_new AS (
     employee_id TEXT,
     requires_signature INT,
     status INT
 );
 
 ALTER TABLE working_day_first.documents
-ADD COLUMN chain_metadata_new wd_general.chain_metadata_item[] NOT NULL DEFAULT ARRAY[]::wd_general.chain_metadata_item[];
+ADD COLUMN chain_metadata_new wd_general.chain_metadata_item_new[] NOT NULL DEFAULT ARRAY[]::wd_general.chain_metadata_item_new[];
 
 UPDATE working_day_first.documents
 SET chain_metadata_new = (
@@ -267,11 +265,53 @@ SET chain_metadata_new = (
             item.employee_id,
             CASE WHEN item.requires_signature THEN 1 ELSE 0 END,
             item.status
-        )::wd_general.chain_metadata_item
+        )::wd_general.chain_metadata_item_new
         FROM unnest(chain_metadata) AS item
     )
 );
 
 ALTER TABLE working_day_first.documents DROP COLUMN chain_metadata;
-ALTER TABLE working_day_first.documents RENAME COLUMN chain_metadata_new TO chain_metadata;
-DROP TYPE wd_general.chain_metadata_item_old;
+DROP TYPE IF EXISTS wd_general.chain_metadata_item CASCADE;
+
+ALTER TABLE working_day_first.documents
+ADD COLUMN IF NOT EXISTS visibility_status INT DEFAULT 0;
+
+DROP TABLE IF EXISTS working_day_first.documents_history;
+
+CREATE TABLE IF NOT EXISTS working_day_first.documents_history(
+    document_id TEXT NOT NULL,
+    actor_id TEXT NOT NULL,
+    action_type TEXT NOT NULL,
+    comment TEXT,
+    created_ts TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    FOREIGN KEY (document_id) REFERENCES working_day_first.documents (id) ON DELETE CASCADE,
+    FOREIGN KEY (actor_id) REFERENCES working_day_first.employees (id) ON DELETE CASCADE,
+    CHECK (action_type IN ('archived', 'restored'/*, 'signed', etc.*/)),
+    PRIMARY KEY (document_id, created_ts)
+);
+
+DROP TABLE IF EXISTS working_day_first.employee_permissions;
+
+CREATE TABLE IF NOT EXISTS working_day_first.employee_permissions (
+    employee_id TEXT,
+    permission_type TEXT NOT NULL,
+    permission_value INT DEFAULT 0,
+    FOREIGN KEY (employee_id) REFERENCES working_day_first.employees(id) ON DELETE CASCADE,
+    CHECK (permission_type IN ('can_remove_documents'/*, etc.*/)),
+    PRIMARY KEY (employee_id, permission_type)
+);
+
+ALTER TABLE working_day_first.actions
+ADD COLUMN IF NOT EXISTS attendance_type TEXT;
+
+ALTER TABLE wd_general.companies
+ADD COLUMN IF NOT EXISTS head_template TEXT;
+
+ALTER TABLE working_day_first.actions
+ADD COLUMN IF NOT EXISTS document_id TEXT;
+
+ALTER TABLE working_day_first.actions
+ADD CONSTRAINT actions_document_id_fkey
+FOREIGN KEY (document_id)
+REFERENCES working_day_first.documents(id)
+ON DELETE CASCADE;

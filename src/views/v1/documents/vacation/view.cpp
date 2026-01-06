@@ -106,8 +106,6 @@ class DocumentsVacationHandler final
       return ErrorMessage{"Wrong action type"}.ToJsonString();
     }
 
-    LOG_INFO() << "Employee id: (" << action_info.employee_id << ")";
-
     auto employee_info =
         trx.Execute(
                "SELECT name, surname, patronymic, head_id, job_position "
@@ -117,10 +115,6 @@ class DocumentsVacationHandler final
                    "WHERE id = $1 ",
                action_info.employee_id)
             .AsSingleRow<EmployeeInfo>(userver::storages::postgres::kRowTag);
-
-    LOG_INFO() << "Head id: ("
-               << employee_info.head_id.value_or(action_info.employee_id)
-               << ")";
 
     auto head_info =
         trx.Execute(

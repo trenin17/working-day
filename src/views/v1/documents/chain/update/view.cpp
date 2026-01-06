@@ -72,7 +72,7 @@ properties:
 
     auto result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kSlave,
-        "SELECT chain_metadata "
+        "SELECT chain_metadata_new "
         "FROM working_day_" +
             company_id +
             ".documents "
@@ -188,7 +188,7 @@ properties:
     result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kMaster,
         "UPDATE working_day_" + company_id + ".documents "
-        "SET chain_metadata[" + std::to_string(element_index + 1) + "] = $2 "
+        "SET chain_metadata_new[" + std::to_string(element_index + 1) + "] = $2 "
         "WHERE id = $1",
         document_id,
         DocumentsChainMetadataItemPg{
@@ -199,7 +199,7 @@ properties:
     );
     result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kSlave,
-        "SELECT chain_metadata "
+        "SELECT chain_metadata_new "
         "FROM working_day_" +
             company_id +
             ".documents "

@@ -56,6 +56,11 @@
 #define USE_ATTENDANCE_LIST_ALL_RESPONSE
 #endif
 
+#ifdef V1_ATTENDANCE_EXPORT_TO_EXCEL
+#define USE_ATTENDANCE_LIST_ALL_REQUEST
+#define USE_ATTENDANCE_LIST_ALL_RESPONSE
+#endif
+
 #ifdef USE_ATTENDANCE_LIST_ALL_RESPONSE
 #define USE_ATTENDANCE_LIST_ITEM
 #endif
@@ -142,11 +147,22 @@
 #ifdef V1_ABSCENCE_VERDICT
 #define USE_PYSERVICE_DOCUMENT_GENERATE_REQUEST
 #define USE_ABSCENCE_VERDICT_REQUEST
+#define USE_ABSCENCE_VERDICT_RESPONSE
+#define USE_PYSERVICE_DOCUMENT_SIGN_REQUEST
+#define USE_ERROR_MESSAGE
+#endif
+
+#ifdef V1_DOCUMENTS_GENERATE_FROM_TEMPLATE
+#define USE_PYSERVICE_DOCUMENT_GENERATE_REQUEST
+#define USE_GENERATE_FROM_TEMPLATE_REQUEST
+#define USE_GENERATE_FROM_TEMPLATE_RESPONSE
+#define USE_ERROR_MESSAGE
 #endif
 
 #ifdef V1_DOCUMENTS_SIGN
 #define USE_LIST_EMPLOYEE_WITH_SUBCOMPANY
 #define USE_PYSERVICE_DOCUMENT_SIGN_REQUEST
+#define USE_ABSCENCE_VERDICT_RESPONSE
 #define USE_ERROR_MESSAGE
 #endif
 
@@ -259,6 +275,36 @@
 
 #ifdef USE_LIST_EMPLOYEE_WITH_SUBCOMPANY
 #define USE_LIST_EMPLOYEE
+#endif
+
+#ifdef V1_DOCUMENTS_REMOVE
+#define USE_ERROR_MESSAGE
+#define USE_DOCUMENTS_REMOVE_RESTORE_ITEM
+#define USE_DOCUMENTS_CHAIN_METADATA_ITEM
+#endif
+
+#ifdef V1_DOCUMENTS_RESTORE
+#define USE_ERROR_MESSAGE
+#define USE_DOCUMENTS_REMOVE_RESTORE_ITEM
+#define USE_DOCUMENTS_CHAIN_METADATA_ITEM
+#endif
+
+#ifdef V1_DOCUMENTS_HISTORY
+#define USE_ERROR_MESSAGE
+#define USE_DOCUMENT_HISTORY_ITEM
+#define USE_DOCUMENT_HISTORY_RESPONSE
+#endif
+
+#ifdef V1_EMPLOYEE_PERMISSIONS_LIST
+#define USE_ERROR_MESSAGE
+#define USE_EMPLOYEE_PERMISSIONS_ITEM
+#define USE_EMPLOYEE_PERMISSIONS
+#endif
+
+#ifdef V1_EMPLOYEE_PERMISSIONS_SET
+#define USE_ERROR_MESSAGE
+#define USE_EMPLOYEE_PERMISSIONS_ITEM
+#define USE_EMPLOYEE_PERMISSIONS
 #endif
 
 #ifdef USE_LIST_EMPLOYEE
@@ -389,7 +435,7 @@ struct AttendanceListItem : public JsonCompatible {
   AttendanceListItem& operator=(AttendanceListItem&& other) = default;
 
   auto Introspect() {
-    return std::tie(start_date, end_date, abscence_type, employee);
+    return std::tie(start_date, end_date, abscence_type, attendance_type, employee);
   }
 
   REGISTER_STRUCT_FIELD_OPTIONAL(start_date,
@@ -398,8 +444,9 @@ struct AttendanceListItem : public JsonCompatible {
   REGISTER_STRUCT_FIELD_OPTIONAL(end_date,
                                  userver::storages::postgres::TimePoint,
                                  "end_date");
-  REGISTER_STRUCT_FIELD(employee, ListEmployeeWithSubcompany, "employee");
   REGISTER_STRUCT_FIELD_OPTIONAL(abscence_type, std::string, "abscence_type");
+  REGISTER_STRUCT_FIELD_OPTIONAL(attendance_type, std::string, "attendance_type");
+  REGISTER_STRUCT_FIELD(employee, ListEmployeeWithSubcompany, "employee");
   // REGISTER_STRUCT_FIELD_OPTIONAL(abscence_date,
   // userver::storages::postgres::TimePoint, "abscence_date");
 };
@@ -456,7 +503,7 @@ struct DocumentsChainMetadataItem : public JsonCompatible {
 
 template <>
 struct userver::storages::postgres::io::CppToUserPg<DocumentsChainMetadataItemPg> {
-  static constexpr DBTypeName postgres_name = "wd_general.chain_metadata_item";
+  static constexpr DBTypeName postgres_name = "wd_general.chain_metadata_item_new";
 };
 #endif
 
@@ -470,7 +517,7 @@ struct DocumentItem : public JsonCompatible {
 
   auto Introspect() {
     return std::tie(id, name, type, sign_required, description, is_signed,
-                    parent_id, created_ts, chain_metadata);
+                    parent_id, created_ts, chain_metadata, visibility_status);
   }
 
   REGISTER_STRUCT_FIELD(id, std::string, "id");
@@ -481,7 +528,9 @@ struct DocumentItem : public JsonCompatible {
   REGISTER_STRUCT_FIELD_OPTIONAL(is_signed, bool, "signed");
   REGISTER_STRUCT_FIELD_OPTIONAL(parent_id, std::string, "parent_id");
   REGISTER_STRUCT_FIELD_OPTIONAL(created_ts, userver::storages::postgres::TimePoint, "created_ts");
-  REGISTER_STRUCT_FIELD_OPTIONAL(chain_metadata, std::vector<DocumentsChainMetadataItem>, "chain_metadata");
+  REGISTER_STRUCT_FIELD_OPTIONAL(chain_metadata, std::vector<DocumentsChainMetadataItem>, "chain_metadata_new");
+  REGISTER_STRUCT_FIELD_OPTIONAL(visibility_status, int, "visibility_status");
+
 };
 #endif
 
@@ -542,7 +591,7 @@ struct UserAction : public JsonCompatible {
 
   auto Introspect() {
     return std::tie(id, type, start_date, end_date, status,
-                    blocking_actions_ids);
+                    blocking_actions_ids, attendance_type);
   }
 
   REGISTER_STRUCT_FIELD(id, std::string, "id");
@@ -554,6 +603,7 @@ struct UserAction : public JsonCompatible {
   REGISTER_STRUCT_FIELD_OPTIONAL(status, std::string, "status");
   REGISTER_STRUCT_FIELD(blocking_actions_ids, std::vector<std::string>,
                         "blocking_actions_ids");
+  REGISTER_STRUCT_FIELD_OPTIONAL(attendance_type, std::string, "attendance_type");
 };
 #endif
 
@@ -625,6 +675,10 @@ struct PyserviceDocumentGenerateRequest : public JsonCompatible {
                                  "second_start_date");
   REGISTER_STRUCT_FIELD_OPTIONAL(second_end_date, std::string,
                                  "second_end_date");
+  REGISTER_STRUCT_FIELD_OPTIONAL(params, std::vector<std::string>,
+                                 "params");
+  REGISTER_STRUCT_FIELD_OPTIONAL(head_template, std::string,
+                                 "head_template");
 };
 #endif
 
@@ -957,13 +1011,100 @@ struct DocumentsChainUpdateResponse : public JsonCompatible {
   auto Introspect() {
     return std::tie(chain_metadata);
   }
-  
-  REGISTER_STRUCT_FIELD(chain_metadata, std::vector<DocumentsChainMetadataItem>, "chain_metadata");
+
+  REGISTER_STRUCT_FIELD(chain_metadata, std::vector<DocumentsChainMetadataItem>, "chain_metadata_new");
 };
 #endif
 
 #ifdef USE_DOCUMENTS_CHAIN_ADD_REQUEST
 struct DocumentsChainAddRequest : public JsonCompatible {
-  REGISTER_STRUCT_FIELD(chain_metadata, std::vector<DocumentsChainMetadataItem>, "chain_metadata");
+  REGISTER_STRUCT_FIELD(chain_metadata, std::vector<DocumentsChainMetadataItem>, "chain_metadata_new");
+};
+#endif
+
+#ifdef USE_DOCUMENTS_REMOVE_RESTORE_ITEM
+struct DocumentsRemoveRestoreItem : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(document_id, std::string, "document_id");
+  REGISTER_STRUCT_FIELD_OPTIONAL(comment, std::string, "comment");
+};
+#endif
+
+#ifdef USE_DOCUMENT_HISTORY_ITEM
+struct DocumentHistoryItem : public JsonCompatible {
+  // For postgres initialization type needs to be default constructible
+  DocumentHistoryItem() = default;
+
+  // Make sure to initialize parsing first for new structure
+  DocumentHistoryItem(DocumentHistoryItem&& other) { *this = std::move(other); }
+
+  DocumentHistoryItem(const DocumentHistoryItem& other) { *this = other; }
+
+  DocumentHistoryItem& operator=(DocumentHistoryItem&& other) = default;
+
+  DocumentHistoryItem& operator=(const DocumentHistoryItem& other) = default;
+
+  // Method for postgres initialization of non-trivial types
+  auto Introspect() {
+    return std::tie(actor_id, action_type, comment, created_ts);
+  }
+
+  REGISTER_STRUCT_FIELD(actor_id, std::string, "actor_id");
+  REGISTER_STRUCT_FIELD(action_type, std::string, "action_type");
+  REGISTER_STRUCT_FIELD_OPTIONAL(comment, std::string, "comment");
+  REGISTER_STRUCT_FIELD(created_ts, userver::storages::postgres::TimePoint, "created_ts");
+};
+#endif
+
+#ifdef USE_DOCUMENT_HISTORY_RESPONSE
+struct DocumentHistoryResponse : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(history, std::vector<DocumentHistoryItem>, "history");
+};
+#endif
+
+#ifdef USE_EMPLOYEE_PERMISSIONS_ITEM
+struct EmployeePermissionsItem : public JsonCompatible {
+  // For postgres initialization type needs to be default constructible
+  EmployeePermissionsItem() = default;
+
+  // Make sure to initialize parsing first for new structure
+  EmployeePermissionsItem(EmployeePermissionsItem&& other) { *this = std::move(other); }
+
+  EmployeePermissionsItem(const EmployeePermissionsItem& other) { *this = other; }
+
+  EmployeePermissionsItem& operator=(EmployeePermissionsItem&& other) = default;
+
+  EmployeePermissionsItem& operator=(const EmployeePermissionsItem& other) = default;
+
+  // Method for postgres initialization of non-trivial types
+  auto Introspect() {
+    return std::tie(permission_type, permission_value);
+  }
+
+  REGISTER_STRUCT_ENUM_FIELD(permission_type, std::string, "permission_type", {"can_remove_documents" /*, etc*/ });
+  REGISTER_STRUCT_FIELD(permission_value, int, "permission_value");
+};
+#endif
+
+#ifdef USE_EMPLOYEE_PERMISSIONS
+struct EmployeePermissions : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(permissions, std::vector<EmployeePermissionsItem>, "permissions");
+};
+#endif
+
+#ifdef USE_GENERATE_FROM_TEMPLATE_REQUEST
+struct GenerateFromTemplateRequest : public JsonCompatible {
+  REGISTER_STRUCT_FIELD_OPTIONAL(params, std::vector<std::string>, "params");
+};
+#endif
+
+#ifdef USE_GENERATE_FROM_TEMPLATE_RESPONSE
+struct GenerateFromTemplateResponse : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(download_link, std::string, "download_link");
+};
+#endif
+
+#ifdef USE_ABSCENCE_VERDICT_RESPONSE
+struct AbscenceVerdictResponse : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(signed_file_key, std::string, "signed_file_key");
 };
 #endif

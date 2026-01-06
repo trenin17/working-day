@@ -27,9 +27,11 @@ class AttendanceAddRequest {
                                                       "%Y-%m-%dT%H:%M:%E6S");
     end_date = userver::utils::datetime::Stringtime(j["end_date"], "UTC",
                                                     "%Y-%m-%dT%H:%M:%E6S");
+    attendance_type = j["attendance_type"].get<std::string>();
   }
 
   userver::storages::postgres::TimePoint start_date, end_date;
+  std::string attendance_type;
 };
 
 class AttendanceAddResponse {
@@ -86,23 +88,23 @@ class AttendanceAddHandler final
 
     auto action_id = userver::utils::generators::GenerateUuid();
     result = trx.Execute("INSERT INTO working_day_" + company_id +
-                             ".actions(id, type, user_id, start_date, "
+                             ".actions(id, type, attendance_type, user_id, start_date, "
                              "end_date) "
-                             "VALUES($1, $2, $3, $4, $5) "
+                             "VALUES($1, $2, $3, $4, $5, $6) "
                              "ON CONFLICT (id) "
                              "DO NOTHING",
-                         action_id, "attendance", employee_id,
+                         action_id, "attendance", request_body.attendance_type, employee_id,
                          request_body.start_date, request_body.end_date);
 
     auto notification_id = userver::utils::generators::GenerateUuid();
     result = trx.Execute("INSERT INTO working_day_" + company_id +
                              ".notifications(id, type, text, user_id, "
-                             "sender_id) "
-                             "VALUES($1, $2, $3, $4, $5) "
+                             "sender_id, action_id) "
+                             "VALUES($1, $2, $3, $4, $5, $6) "
                              "ON CONFLICT (id) "
                              "DO NOTHING",
                          notification_id, "attendance_added", notification_text,
-                         employee_id, user_id);
+                         employee_id, user_id, action_id);
 
     trx.Commit();
 

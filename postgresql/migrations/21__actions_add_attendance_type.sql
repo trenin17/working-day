@@ -1,0 +1,2 @@
+ALTER TABLE ${SCHEMA}.actions
+ADD COLUMN IF NOT EXISTS attendance_type TEXT;
