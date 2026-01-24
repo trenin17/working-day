@@ -128,7 +128,7 @@ class TrackerTasksAddHandler final
     if (!project_count) {
         request.GetHttpResponse().SetStatus(
           userver::server::http::HttpStatus::kNotFound);
-        return ErrorMessage{"Wrong project task_id"}.ToJsonString();
+        return ErrorMessage{"Project not found"}.ToJsonString();
     }
     if (request_body.assignee.has_value()) {
         auto find_employee = pg_cluster_->Execute(

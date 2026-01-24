@@ -2544,10 +2544,15 @@ components:
             type: object
             additionalProperties: false
             required:
+                - project_key
                 - title
             properties:
+                project_key:
+                    type: string
+                    description: Unique key of the project. It will be used to identify the project in the system.
                 title:
                     type: string
+                    description: Name of the project
                 description:
                     type: string
                 status:
@@ -2584,26 +2589,27 @@ components:
                     type: string
 
         TrackerProjectsItemResponse:
-            allOf:
-                - $ref: '#/components/schemas/TrackerProjectsItemRequest'
-                - type: object
-                  additionalProperties: false
-                  required:
-                    - project_id
-                    - created_ts
-                    - last_updated_ts
-                    - tasks_count
-                  properties:
-                      project_id:
-                          type: string
-                      created_ts:
-                          $ref: '#/components/schemas/Timestamp'
-                      last_updated_ts:
-                          $ref: '#/components/schemas/Timestamp'
-                      tasks_count:
-                          type: integer
-                      image_url:
-                          type: string
+            type: object
+            additionalProperties: false
+            required:
+              - project_id
+              - title
+              - created_ts
+              - last_updated_ts
+              - tasks_count
+            properties:
+                project_id:
+                    type: string
+                title:
+                    type: string
+                created_ts:
+                    $ref: '#/components/schemas/Timestamp'
+                last_updated_ts:
+                    $ref: '#/components/schemas/Timestamp'
+                tasks_count:
+                    type: integer
+                image_url:
+                    type: string
 
         TrackerProjectsEditRequest:
             type: object

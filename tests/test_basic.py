@@ -1233,15 +1233,23 @@ async def test_tracker_projects_add_list_and_info(service_client):
         headers={'Authorization': 'Bearer first_token'},
         json={'title': 'new project1'},
     )
+    assert response.status == 500
+
+    response = await service_client.post(
+        '/v1/tracker/projects/add',
+        headers={'Authorization': 'Bearer first_token'},
+        json={'title': 'new project1', 'project_key': 'мой projecT 1'},
+    )
     assert response.status == 200
     response_data = json.loads(response.text)
-    assert response_data["project_id"].startswith('new project1')
+    assert response_data["project_id"] == 'MOI_PROJECT_1', f"Expected MOI_PROJECT_1, got {response_data['project_id']}"
 
 
     response = await service_client.post(
         '/v1/tracker/projects/add',
         headers={'Authorization': 'Bearer first_token'},
         json={
+            'project_key': 'мой projecT 2',
             'title': 'new project2',
             'status': 'Closed',
             'description': 'desc proj2'
@@ -1249,8 +1257,7 @@ async def test_tracker_projects_add_list_and_info(service_client):
     )
     assert response.status == 200
     response_data = json.loads(response.text)
-    project_id = response_data["project_id"]
-    assert project_id.startswith('new project2')
+    assert response_data["project_id"] == 'MOI_PROJECT_2', f"Expected MOI_PROJECT_2, got {response_data["project_id"]}"
 
 
     response = await service_client.get(
@@ -1262,24 +1269,20 @@ async def test_tracker_projects_add_list_and_info(service_client):
     response_data = json.loads(response.text)
 
     assert len(response_data["projects"]) == 3
-
-    assert response_data["projects"][0]["project_id"].startswith("new project2")
-    assert response_data["projects"][1]["project_id"].startswith("new project1")
-
     expected_projects = [
         {
             "creator": 'first_id',
-            "project_id": response_data["projects"][0]["project_id"],
+            "project_id": 'MOI_PROJECT_2',
             "title": "new project2",
         },
         {
             "creator": 'first_id',
-            "project_id": response_data["projects"][1]["project_id"],
+            "project_id": 'MOI_PROJECT_1',
             "title": "new project1",
         },
         {
             "creator": 'first_id',
-            "project_id": "first",
+            "project_id": "FIRST",
             "title": "first project name",
         },
     ]
@@ -1288,7 +1291,7 @@ async def test_tracker_projects_add_list_and_info(service_client):
     response = await service_client.get(
         '/v1/tracker/projects/info',
         headers={'Authorization': 'Bearer first_token'},
-        params={'project_id': project_id},
+        params={'project_id': 'MOI_PROJECT_2'},
     )
     assert response.status == 200
 
@@ -1296,7 +1299,7 @@ async def test_tracker_projects_add_list_and_info(service_client):
     expected_project = {
         "assigned_users_ids": [],
         "creator": 'first_id',
-        "project_id": response_data["project_id"],
+        "project_id": 'MOI_PROJECT_2',
         "title": "new project2",
         "description": "desc proj2",
         "tasks_count": 0,
@@ -1312,6 +1315,7 @@ async def test_tracker_projects_add_and_edit(service_client):
         '/v1/tracker/projects/add',
         headers={'Authorization': 'Bearer first_token'},
         json={
+            'project_key': 'мой projecT 1',
             'title': 'project1',
             'assigned_users_ids': ['first_id', 'stranger_id']
         },
@@ -1320,7 +1324,7 @@ async def test_tracker_projects_add_and_edit(service_client):
     response_data = json.loads(response.text)
 
     project_id = response_data["project_id"]
-    assert project_id.startswith('project1')
+    assert project_id == 'MOI_PROJECT_1', f"Expected MOI_PROJECT_1, got {project_id}"
 
     response = await service_client.get(
         '/v1/tracker/projects/info',
@@ -1370,7 +1374,7 @@ async def test_tracker_projects_add_and_edit(service_client):
         },
         {
             "creator": 'first_id',
-            "project_id": "first",
+            "project_id": "FIRST",
             "title": "first project name",
         }
     ]
@@ -1404,7 +1408,7 @@ async def test_tracker_projects_add_and_edit(service_client):
 async def test_tracker_projects_media_upload(service_client):
     response = await service_client.post(
         '/v1/tracker/projects/media/upload',
-        params={'project_id': 'first'},
+        params={'project_id': 'FIRST'},
         headers={'Authorization': 'Bearer first_token'},
     )
     assert response.status == 200
@@ -1414,7 +1418,7 @@ async def test_tracker_projects_media_upload(service_client):
 
     response = await service_client.get(
         '/v1/tracker/projects/info',
-        params={'project_id': 'first'},
+        params={'project_id': 'FIRST'},
         headers={'Authorization': 'Bearer first_token'},
     )
     assert response.status == 200
@@ -1435,12 +1439,12 @@ async def test_tracker_tasks_bad_add(service_client):
         },
     )
     assert response.status == 404
-    assert response.text ==  '{"message":"Wrong project task_id"}'
+    assert response.text ==  '{"message":"Project not found"}'
     response = await service_client.post(
         '/v1/tracker/tasks/add',
         headers={'Authorization': 'Bearer first_token'},
         json={'title': 'second task',
-              'project_id': 'first',
+              'project_id': 'FIRST',
               'description': 'description of the first task',
               'assignee': 'unknown_id'},
     )
@@ -1455,7 +1459,7 @@ async def test_tracker_tasks_add_and_list(service_client):
         headers={'Authorization': 'Bearer first_token'},
         json={
             'title': 'task 1',
-            'project_id': 'first',
+            'project_id': 'FIRST',
             'description': 'in first project',
         },
     )
@@ -1465,7 +1469,7 @@ async def test_tracker_tasks_add_and_list(service_client):
         '/v1/tracker/tasks/add',
         headers={'Authorization': 'Bearer first_token'},
         json={'title': 'task 2',
-              'project_id': 'first',
+              'project_id': 'FIRST',
               'observers': ['third_id']},
     )
     assert response.status == 200
@@ -1487,7 +1491,7 @@ async def test_tracker_tasks_add_and_list(service_client):
 
     expected_data = {
         "notifications": [{
-            "task_id": "first-4",
+            "task_id": "FIRST-4",
             "created": created_time0,
             "id": id0,
             "is_read":False,
@@ -1502,7 +1506,7 @@ async def test_tracker_tasks_add_and_list(service_client):
         '/v1/tracker/tasks/add',
         headers={'Authorization': 'Bearer first_token'},
         json={'title': 'task 3',
-              'project_id': 'second',
+              'project_id': 'SECOND',
               'assignee': 'second_id'},
     )
     assert response.status == 200
@@ -1523,7 +1527,7 @@ async def test_tracker_tasks_add_and_list(service_client):
     }
     expected_data = {
         "notifications": [{
-            "task_id": "second-1",
+            "task_id": "SECOND-1",
             "created": created_time0,
             "id": id0,
             "is_read":False,
@@ -1543,27 +1547,27 @@ async def test_tracker_tasks_add_and_list(service_client):
     expected_tasks = [
          {
             "title": "task 3",
-            "project_id": "second",
-            "task_id": "second-1",
+            "project_id": "SECOND",
+            "task_id": "SECOND-1",
             "creator": "first_id",
             "assignee": "second_id",
         },
         {
             "title": "task 2",
-            "project_id": "first",
-            "task_id": "first-4",
+            "project_id": "FIRST",
+            "task_id": "FIRST-4",
             "creator": "first_id",
         },
         {
             "title": "task 1",
-            "project_id": "first",
-            "task_id": "first-3",
+            "project_id": "FIRST",
+            "task_id": "FIRST-3",
             "creator": "first_id",
         },
         {
             "title": "old task",
-            "project_id": "first",
-            "task_id": "first-1",
+            "project_id": "FIRST",
+            "task_id": "FIRST-1",
             "creator": "first_id",
             "assignee": "stranger_id",
         },
@@ -1579,15 +1583,15 @@ async def test_tracker_tasks_add_and_list(service_client):
     expected_tasks = [
         {
             "title": "task 3",
-            "project_id": "second",
-            "task_id": "second-1",
+            "project_id": "SECOND",
+            "task_id": "SECOND-1",
             "creator": "first_id",
             "assignee": "second_id",
         },
         {
             "title": "young task",
-            "project_id": "first",
-            "task_id": "first-2",
+            "project_id": "FIRST",
+            "task_id": "FIRST-2",
             "creator": "second_id",
             "assignee": "stranger_id",
         },
@@ -1603,7 +1607,7 @@ async def test_tracker_tasks_add_and_list(service_client):
     expected_projects = [
         {
             "creator": 'first_id',
-            "project_id": "first",
+            "project_id": "FIRST",
             "title": "first project name",
         },
     ]
@@ -1619,7 +1623,7 @@ async def test_tracker_tasks_add_and_list(service_client):
     expected_projects = [
         {
             "creator": 'second_id',
-            "project_id": "second",
+            "project_id": "SECOND",
             "title": "second project name",
         },
     ]
@@ -1680,7 +1684,7 @@ async def test_tracker_assigned_tasks_to_user (service_client):
             json={
                 'title': f'Task{i}',
                 'description': f'Description for task {i}',
-                'project_id': 'second',
+                'project_id': 'SECOND',
                 'assignee': new_id,
             },
         )
@@ -1732,7 +1736,7 @@ async def test_tracker_tasks_info_and_edit(service_client):
 
     response = await service_client.get(
         '/v1/tracker/tasks/info',
-        params={'task_id': 'first-1'},
+        params={'task_id': 'FIRST-1'},
         headers={'Authorization': 'Bearer first_token'},
     )
     assert response.status == 200
@@ -1747,9 +1751,9 @@ async def test_tracker_tasks_info_and_edit(service_client):
         "last_updated_ts": response_json['last_updated_ts'],
         "observers":[],
         "priority":"Low",
-        "project_id":"first",
+        "project_id":"FIRST",
         "status":"Open",
-        "task_id":"first-1",
+        "task_id":"FIRST-1",
         "title":"old task",
         'related_tasks_ids': [],
         'document_ids': [],
@@ -1760,7 +1764,7 @@ async def test_tracker_tasks_info_and_edit(service_client):
     response = await service_client.post(
         '/v1/tracker/tasks/edit',
         headers={'Authorization': 'Bearer second_token'},
-        params={'task_id': 'first-1'},
+        params={'task_id': 'FIRST-1'},
         json={'description': 'new description for old task'},
     )
     assert response.status == 200
@@ -1768,14 +1772,14 @@ async def test_tracker_tasks_info_and_edit(service_client):
     response = await service_client.post(
         '/v1/tracker/tasks/edit',
         headers={'Authorization': 'Bearer second_token'},
-        params={'task_id': 'first-1'},
+        params={'task_id': 'FIRST-1'},
         json={'status':'InProgress', 'title':'not old task', 'observers': ['second_id']},
     )
     assert response.status == 200
 
     response = await service_client.get(
         '/v1/tracker/tasks/info',
-        params={'task_id': 'first-1'},
+        params={'task_id': 'FIRST-1'},
         headers={'Authorization': 'Bearer first_token'},
     )
     assert response.status == 200
@@ -1791,9 +1795,9 @@ async def test_tracker_tasks_info_and_edit(service_client):
         "last_updated_ts": response_json['last_updated_ts'],
         "observers":['second_id'],
         "priority":"Low",
-        "project_id":"first",
+        "project_id":"FIRST",
         "status":"InProgress",
-        "task_id":"first-1",
+        "task_id":"FIRST-1",
         "title":"not old task",
         'related_tasks_ids': [],
         'document_ids': [],
@@ -1813,7 +1817,7 @@ async def test_tracker_tasks_bad_params_info_edit(service_client):
 
     response = await service_client.get(
         '/v1/tracker/tasks/info',
-        params={'task_id': 'first-3'},
+        params={'task_id': 'FIRST-3'},
         headers={'Authorization': 'Bearer first_token'},
     )
     assert response.status == 404
@@ -1821,7 +1825,7 @@ async def test_tracker_tasks_bad_params_info_edit(service_client):
     response = await service_client.post(
         '/v1/tracker/tasks/edit',
         headers={'Authorization': 'Bearer second_token'},
-        params={'task_id': 'first-3'},
+        params={'task_id': 'FIRST-3'},
         json={'description': 'new description'},
     )
     assert response.status == 404
@@ -1838,13 +1842,13 @@ async def test_tracker_projects_search_edit(service_client):
     response = await service_client.post(
         '/v1/tracker/projects/add',
         headers={'Authorization': 'Bearer second_token'},
-        json={'title': 'Edit project'},
+        json={'title': 'Edit project', 'project_key': 'мой projecT 1'},
     )
     assert response.status == 200
     response_data = json.loads(response.text)
 
     project_id = response_data["project_id"]
-    assert project_id.startswith('Edit project')
+    assert project_id == 'MOI_PROJECT_1', f"Expected MOI_PROJECT_1, got {project_id}"
 
     response = await service_client.post(
         '/v1/search/full',
@@ -1876,7 +1880,7 @@ async def test_tracker_projects_search_edit(service_client):
         headers={'Authorization': 'Bearer second_token'},
         json={
                 'title': 'Updated task',
-                'project_id': 'second',
+                'project_id': 'SECOND',
                 'assignee': 'first_id',
              },
     )
@@ -1913,8 +1917,8 @@ async def test_tracker_projects_search_edit(service_client):
                                  '"tasks":['
                                  '{"assignee":"first_id",'
                                  '"creator":"second_id",'
-                                 '"project_id":"second",'
-                                 '"task_id":"second-1",'
+                                 '"project_id":"SECOND",'
+                                 '"task_id":"SECOND-1",'
                                  '"title":"Updated task"}'
                                  ']}')
     assert response.text == response_required.substitute(project_id=project_id)
@@ -1924,7 +1928,7 @@ async def test_tracker_projects_search_edit(service_client):
 async def test_tracker_tasks_media_upload(service_client):
     response = await service_client.post(
         '/v1/tracker/tasks/media/upload',
-        params={'task_id': 'first-1'},
+        params={'task_id': 'FIRST-1'},
         headers={'Authorization': 'Bearer first_token'},
     )
     assert response.status == 200
@@ -1934,7 +1938,7 @@ async def test_tracker_tasks_media_upload(service_client):
 
     response = await service_client.get(
         '/v1/tracker/tasks/info',
-        params={'task_id': 'first-1'},
+        params={'task_id': 'FIRST-1'},
         headers={'Authorization': 'Bearer first_token'},
     )
     assert response.status == 200
@@ -1952,7 +1956,7 @@ async def test_tracker_tasks_search_add(service_client):
         headers={'Authorization': 'Bearer first_token'},
         json={
                 'title': 'task for searching',
-                'project_id': 'first',
+                'project_id': 'FIRST',
                 'assignee': 'second_id',
              },
     )
@@ -1972,11 +1976,11 @@ async def test_tracker_tasks_search_add(service_client):
     response_required = Template('{"employees":[],"projects":[],"tasks":['
                                  '{"assignee":"second_id",'
                                  '"creator":"first_id",'
-                                 '"project_id":"first",'
-                                 '"task_id":"first-3",'
+                                 '"project_id":"FIRST",'
+                                 '"task_id":"FIRST-3",'
                                  '"title":"task for searching"}'
                                  ']}')
-    assert response.text == response_required.substitute(task_id='first-3')
+    assert response.text == response_required.substitute(task_id='FIRST-3')
 
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])
 async def test_tracker_tasks_search_edit(service_client):
@@ -1985,7 +1989,7 @@ async def test_tracker_tasks_search_edit(service_client):
         headers={'Authorization': 'Bearer second_token'},
         json={
                 'title': 'Edit task',
-                'project_id': 'second',
+                'project_id': 'SECOND',
                 'assignee': 'first_id',
              },
     )
@@ -2005,16 +2009,16 @@ async def test_tracker_tasks_search_edit(service_client):
     response_required = Template('{"employees":[],"projects":[],"tasks":['
                                  '{"assignee":"first_id",'
                                  '"creator":"second_id",'
-                                 '"project_id":"second",'
-                                 '"task_id":"second-1",'
+                                 '"project_id":"SECOND",'
+                                 '"task_id":"SECOND-1",'
                                  '"title":"Edit task"}'
                                  ']}')
-    assert response.text == response_required.substitute(task_id='second-1')
+    assert response.text == response_required.substitute(task_id='SECOND-1')
 
     response = await service_client.post(
         '/v1/tracker/tasks/edit',
         headers={'Authorization': 'Bearer second_token'},
-        params={'task_id': 'second-1'},
+        params={'task_id': 'SECOND-1'},
         json={'title': 'updated'},
     )
 
@@ -2039,7 +2043,7 @@ async def test_tracker_tasks_search_edit(service_client):
 
     expected_data = {
         "notifications": [{
-            "task_id": "second-1",
+            "task_id": "SECOND-1",
             "created": created_time0,
             "id": id0,
             "is_read":False,
@@ -2047,7 +2051,7 @@ async def test_tracker_tasks_search_edit(service_client):
             "text":"Изменена информация о задаче \"updated\" в проекте \"second project name\".",
             "type":"generic",
         },{
-            "task_id": "second-1",
+            "task_id": "SECOND-1",
             "created": created_time1,
             "id": id1,
             "is_read":False,
@@ -2086,18 +2090,18 @@ async def test_tracker_tasks_search_edit(service_client):
     response_required = Template('{"employees":[],"projects":[],"tasks":['
                                  '{"assignee":"first_id",'
                                  '"creator":"second_id",'
-                                 '"project_id":"second",'
-                                 '"task_id":"second-1",'
+                                 '"project_id":"SECOND",'
+                                 '"task_id":"SECOND-1",'
                                  '"title":"updated"}'
                                  ']}')
-    assert response.text == response_required.substitute(task_id='second-1')
+    assert response.text == response_required.substitute(task_id='SECOND-1')
 
     response = await service_client.post(
         '/v1/tracker/tasks/add',
         headers={'Authorization': 'Bearer second_token'},
         json={
                 'title': 'task',
-                'project_id': 'second',
+                'project_id': 'SECOND',
                 'assignee': 'first_id',
              },
     )
@@ -2119,17 +2123,17 @@ async def test_tracker_tasks_search_edit(service_client):
                                  '"tasks":['
                                  '{"assignee":"first_id",'
                                  '"creator":"second_id",'
-                                 '"project_id":"second",'
-                                 '"task_id":"second-2",'
+                                 '"project_id":"SECOND",'
+                                 '"task_id":"SECOND-2",'
                                  '"title":"task"},'
                                  ''
                                  '{"assignee":"first_id",'
                                  '"creator":"second_id",'
-                                 '"project_id":"second",'
-                                 '"task_id":"second-1",'
+                                 '"project_id":"SECOND",'
+                                 '"task_id":"SECOND-1",'
                                  '"title":"updated"}'
                                  ']}')
-    assert response.text == response_required.substitute(task_id='second-1')
+    assert response.text == response_required.substitute(task_id='SECOND-1')
 
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])
 async def test_tracker_tasks_and_employees_search(service_client):
@@ -2146,7 +2150,7 @@ async def test_tracker_tasks_and_employees_search(service_client):
         headers={'Authorization': 'Bearer first_token'},
         json={
                 'title': 'new',
-                'project_id': 'second',
+                'project_id': 'SECOND',
                 'assignee': 'second_id',
              },
     )
@@ -2164,8 +2168,8 @@ async def test_tracker_tasks_and_employees_search(service_client):
                                  '"tasks":[{'
                                  '"assignee":"second_id",'
                                  '"creator":"first_id",'
-                                 '"project_id":"second",'
-                                 '"task_id":"second-1",'
+                                 '"project_id":"SECOND",'
+                                 '"task_id":"SECOND-1",'
                                  '"title":"new"}]}')
     assert response.text == response_required.substitute()
     # basic search (employees)
@@ -2192,8 +2196,8 @@ async def test_tracker_tasks_and_employees_search(service_client):
                                  '"tasks":[{'
                                  '"assignee":"second_id",'
                                  '"creator":"first_id",'
-                                 '"project_id":"second",'
-                                 '"task_id":"second-1",'
+                                 '"project_id":"SECOND",'
+                                 '"task_id":"SECOND-1",'
                                  '"title":"new"}]}')
     assert response.text == response_required.substitute(id=new_id)
 
@@ -2218,10 +2222,10 @@ async def test_tracker_tasks_add_with_extra_fields(service_client):
         headers={'Authorization': 'Bearer first_token'},
         json={
             'title': 'task 1',
-            'project_id': 'first',
+            'project_id': 'FIRST',
             'deadline': '2025-08-24T14:00:00.000000',
             'observers': ['second_id'],
-            'related_tasks_ids': ['first-1'],
+            'related_tasks_ids': ['FIRST-1'],
             'assignee': 'third_id',
         },
     )
@@ -2260,7 +2264,7 @@ async def test_tracker_tasks_add_with_extra_fields(service_client):
 
     expected_data = {
         "notifications": [{
-            "task_id": "first-3",
+            "task_id": "FIRST-3",
             "created": created_time0,
             "id": id0,
             "is_read":False,
@@ -2288,7 +2292,7 @@ async def test_tracker_tasks_add_with_extra_fields(service_client):
 
     expected_data = {
         "notifications": [{
-            "task_id": "first-3",
+            "task_id": "FIRST-3",
             "created": created_time0,
             "id": id0,
             "is_read":False,
@@ -2301,7 +2305,7 @@ async def test_tracker_tasks_add_with_extra_fields(service_client):
 
     response = await service_client.get(
         '/v1/tracker/tasks/info',
-        params={'task_id': 'first-3'},
+        params={'task_id': 'FIRST-3'},
         headers={'Authorization': 'Bearer first_token'},
     )
     assert response.status == 200
@@ -2310,15 +2314,15 @@ async def test_tracker_tasks_add_with_extra_fields(service_client):
         "action_id": response_data["action_id"],
         "creator":"first_id",
         "deadline":"2025-08-24T14:00:00.000000",
-        "task_id":"first-3",
+        "task_id":"FIRST-3",
         "media_links":[],
-        "project_id":"first",
+        "project_id":"FIRST",
         "status":"Open",
         "title":"task 1",
         "last_updated_ts": response_data['last_updated_ts'],
         "observers": ['second_id'],
         "priority": 'Low',
-        "related_tasks_ids": ['first-1'],
+        "related_tasks_ids": ['FIRST-1'],
         'assignee': 'third_id',
         'document_ids': [],
         'comments_ids': [],
@@ -2333,7 +2337,7 @@ async def test_tracker_tasks_edit_deadline(service_client):
 
     response = await service_client.get(
         '/v1/tracker/tasks/info',
-        params={'task_id': 'first-1'},
+        params={'task_id': 'FIRST-1'},
         headers={'Authorization': 'Bearer first_token'},
     )
     assert response.status == 200
@@ -2348,10 +2352,10 @@ async def test_tracker_tasks_edit_deadline(service_client):
         "media_links":["s3 download test link","s3 download test link"],
         "observers":[],
         "priority": 'Low',
-        "project_id":"first",
+        "project_id":"FIRST",
         'related_tasks_ids': [],
         "status":"Open",
-        "task_id":"first-1",
+        "task_id":"FIRST-1",
         "title":"old task",
         'document_ids': [],
         'comments_ids': [],
@@ -2361,10 +2365,10 @@ async def test_tracker_tasks_edit_deadline(service_client):
     response = await service_client.post(
         '/v1/tracker/tasks/edit',
         headers={'Authorization': 'Bearer second_token'},
-        params={'task_id': 'first-1'},
+        params={'task_id': 'FIRST-1'},
         json={
             'deadline': '2025-09-24T14:00:00.000000',
-            "related_tasks_ids": ['first-2'],
+            "related_tasks_ids": ['FIRST-2'],
             'assignee': 'second_id'
         },
     )
@@ -2393,7 +2397,7 @@ async def test_tracker_tasks_edit_deadline(service_client):
 
     response = await service_client.get(
         '/v1/tracker/tasks/info',
-        params={'task_id': 'first-1'},
+        params={'task_id': 'FIRST-1'},
         headers={'Authorization': 'Bearer first_token'},
     )
     assert response.status == 200
@@ -2410,30 +2414,30 @@ async def test_tracker_tasks_edit_deadline(service_client):
         "media_links":["s3 download test link","s3 download test link"],
         "observers":[],
         "priority": 'Low',
-        "project_id":"first",
+        "project_id":"FIRST",
         "status":"Open",
-        "task_id":"first-1",
+        "task_id":"FIRST-1",
         "title":"old task",
-        "related_tasks_ids": ['first-2'],
+        "related_tasks_ids": ['FIRST-2'],
         'document_ids': [],
         'comments_ids': [],
     }
     assert response_data == expected_response
     response = await service_client.get(
         '/v1/tracker/tasks/info',
-        params={'task_id': 'first-2'},
+        params={'task_id': 'FIRST-2'},
         headers={'Authorization': 'Bearer first_token'},
     )
     assert response.status == 200
     response_data = json.loads(response.text)
-    assert response_data['related_tasks_ids'] == ['first-1']
+    assert response_data['related_tasks_ids'] == ['FIRST-1']
 
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])
 async def test_tracker_task_send_and_remove_docx_document(service_client):
     response = await service_client.post(
         '/v1/tracker/tasks/documents/send',
         headers={'Authorization': 'Bearer first_token'},
-        params={'task_id': 'first-1'},
+        params={'task_id': 'FIRST-1'},
         json={
             'document_id': 'id1.docx',
             'name': 'doc1',
@@ -2444,7 +2448,7 @@ async def test_tracker_task_send_and_remove_docx_document(service_client):
 
     response = await service_client.get(
         '/v1/tracker/tasks/info',
-        params={'task_id': 'first-1'},
+        params={'task_id': 'FIRST-1'},
         headers={'Authorization': 'Bearer first_token'}
     )
     assert response.status == 200
@@ -2455,9 +2459,9 @@ async def test_tracker_task_send_and_remove_docx_document(service_client):
         "related_tasks_ids": [],
         "observers": [],
         "priority": 'Low',
-        "project_id": "first",
+        "project_id": "FIRST",
         "status": "Open",
-        "task_id": "first-1",
+        "task_id": "FIRST-1",
         "title": "old task",
         "last_updated_ts": response_data['last_updated_ts'],
         "created_ts": response_data['created_ts'],
@@ -2473,7 +2477,7 @@ async def test_tracker_task_send_and_remove_docx_document(service_client):
         '/v1/tracker/tasks/documents/remove',
         headers={'Authorization': 'Bearer first_token'},
         params={
-            'task_id': 'first-1',
+            'task_id': 'FIRST-1',
             'document_id': 'id1.pdf'
         }
     )
@@ -2481,7 +2485,7 @@ async def test_tracker_task_send_and_remove_docx_document(service_client):
 
     response = await service_client.get(
         '/v1/tracker/tasks/info',
-        params={'task_id': 'first-1'},
+        params={'task_id': 'FIRST-1'},
         headers={'Authorization': 'Bearer first_token'}
     )
     assert response.status == 200
@@ -3046,7 +3050,7 @@ async def test_comments_add_to_task(service_client):
     response = await service_client.post(
         '/v1/comments/add',
         headers={'Authorization': 'Bearer first_token'},
-        json={'data': 'test comment', 'task_id': 'first-1'},
+        json={'data': 'test comment', 'task_id': 'FIRST-1'},
     )
     assert response.status == 200
     comment_id = response.json()['comment_id']
@@ -3054,7 +3058,7 @@ async def test_comments_add_to_task(service_client):
 
     response = await service_client.get(
         '/v1/tracker/tasks/info',
-        params={'task_id': 'first-1'},
+        params={'task_id': 'FIRST-1'},
         headers={'Authorization': 'Bearer first_token'},
     )
     assert response.status == 200
@@ -3069,7 +3073,7 @@ async def test_comments_add_to_task(service_client):
 
     response = await service_client.get(
         '/v1/tracker/tasks/info',
-        params={'task_id': 'first-1'},
+        params={'task_id': 'FIRST-1'},
         headers={'Authorization': 'Bearer first_token'},
     )
     assert response.status == 200

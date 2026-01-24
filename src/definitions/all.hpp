@@ -903,6 +903,7 @@ struct LoadRecentMessagesRequest : public JsonCompatible {
 
 #ifdef USE_TRACKER_PROJECTS_ADD_REQUEST
 struct TrackerProjectsItemRequest : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(project_key, std::string, "project_key");
   REGISTER_STRUCT_FIELD(title, std::string, "title");
   REGISTER_STRUCT_FIELD_OPTIONAL(description, std::string, "description");
   REGISTER_STRUCT_FIELD_OPTIONAL(assigned_users_ids, std::vector<std::string>, "assigned_users_ids");

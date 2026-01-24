@@ -11,6 +11,11 @@
 #include <userver/storages/postgres/cluster.hpp>
 #include <userver/storages/postgres/component.hpp>
 #include <userver/utils/uuid4.hpp>
+#include <userver/utils/text.hpp>
+#include <algorithm>
+#include <codecvt>
+#include <locale>
+#include <unordered_map>
 
 
 #include "definitions/all.hpp"
@@ -21,6 +26,43 @@
 namespace views::v1::tracker::projects::add {
 
 namespace {
+
+std::string Char32ToString(char32_t ch) {
+  std::wstring_convert<std::codecvt_utf8<char32_t>, char32_t> convert;
+  std::string result = convert.to_bytes(ch);
+  return result;
+}
+
+std::string Transliterate(const std::string& cyrillic) {
+  const std::unordered_map<std::string, std::string> translit_table = {
+      {"А", "a"},  {"Б", "b"},   {"В", "v"},  {"Г", "g"},  {"Д", "d"},
+      {"Е", "e"},  {"Ё", "e"},   {"Ж", "zh"}, {"З", "z"},  {"И", "i"},
+      {"Й", "i"},  {"К", "k"},   {"Л", "l"},  {"М", "m"},  {"Н", "n"},
+      {"О", "o"},  {"П", "p"},   {"Р", "r"},  {"С", "s"},  {"Т", "t"},
+      {"У", "u"},  {"Ф", "f"},   {"Х", "kh"}, {"Ц", "ts"}, {"Ч", "ch"},
+      {"Ш", "sh"}, {"Щ", "sch"}, {"Ъ", ""},   {"Ы", "y"},  {"Ь", ""},
+      {"Э", "e"},  {"Ю", "yu"},  {"Я", "ya"}, {"а", "a"},  {"б", "b"},
+      {"в", "v"},  {"г", "g"},   {"д", "d"},  {"е", "e"},  {"ё", "e"},
+      {"ж", "zh"}, {"з", "z"},   {"и", "i"},  {"й", "i"},  {"к", "k"},
+      {"л", "l"},  {"м", "m"},   {"н", "n"},  {"о", "o"},  {"п", "p"},
+      {"р", "r"},  {"с", "s"},   {"т", "t"},  {"у", "u"},  {"ф", "f"},
+      {"х", "kh"}, {"ц", "ts"},  {"ч", "ch"}, {"ш", "sh"}, {"щ", "sch"},
+      {"ъ", ""},   {"ы", "y"},   {"ь", ""},   {"э", "e"},  {"ю", "yu"},
+      {"я", "ya"}};
+  std::string result;
+  std::wstring_convert<std::codecvt_utf8<char32_t>, char32_t> convert;
+  auto u32string = convert.from_bytes(cyrillic);
+
+  for (char32_t ch : u32string) {
+    auto ch_str = Char32ToString(ch);
+    if (auto it = translit_table.find(ch_str); it != translit_table.end()) {
+      result += it->second;
+    } else {
+      result += std::tolower(ch);  // For latin symbols
+    }
+  }
+  return result;
+}
 
 
 core::reverse_index::ReverseIndexResponse AddProjectToReverseIndexFunc(
@@ -104,7 +146,14 @@ class TrackerProjectsAddHandler final
         "tracker_projects_add",
         userver::storages::postgres::ClusterHostType::kMaster, {});
 
-    std::string project_id = request_body.title + "-" + userver::utils::generators::GenerateUuid();
+
+    if (request_body.project_key.empty()) {
+      return ErrorMessage{"Project key is required"}.ToJsonString();
+    }
+    std::string project_id = Transliterate(request_body.project_key);
+    project_id = userver::utils::text::ToUpper(project_id);
+    std::replace(project_id.begin(), project_id.end(), ' ', '_');
+
 
     if (request_body.assigned_users_ids) {
       auto check = pg_cluster_->Execute(

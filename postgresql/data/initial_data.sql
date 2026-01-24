@@ -15,14 +15,14 @@ ON CONFLICT (token)
 DO NOTHING;
 
 INSERT INTO working_day_first.tracker_projects(project_id, title, creator, tasks_count, created_ts, last_updated_ts)
-VALUES ('first', 'first project name', 'first_id', 2, '2025-04-12 11:00:00+00', '2025-04-12 11:00:00+00'),
-       ('second', 'second project name', 'second_id', 0, '2025-04-12 12:00:00+00', '2025-04-12 12:00:00+00')
+VALUES ('FIRST', 'first project name', 'first_id', 2, '2025-04-12 11:00:00+00', '2025-04-12 11:00:00+00'),
+       ('SECOND', 'second project name', 'second_id', 0, '2025-04-12 12:00:00+00', '2025-04-12 12:00:00+00')
 ON CONFLICT (project_id)
 DO NOTHING;
 
 INSERT INTO working_day_first.tracker_tasks(task_id, title, description, project_id, creator, assignee, status, priority, media_links, created_ts, deadline)
-VALUES ('first-1', 'old task', 'description for old task', 'first', 'first_id', 'stranger_id', 'Open', 'Low', ARRAY ['link 1', 'link 2'], '2025-04-12 10:00:00+00', '2025-04-12 10:00:00+00'),
-       ('first-2', 'young task', 'description for young task', 'first', 'second_id', 'stranger_id', 'InProgress', 'Middle',  ARRAY ['link'], '2025-04-12 10:00:00+00', '2025-04-12 10:00:00+00')
+VALUES ('FIRST-1', 'old task', 'description for old task', 'FIRST', 'first_id', 'stranger_id', 'Open', 'Low', ARRAY ['link 1', 'link 2'], '2025-04-12 10:00:00+00', '2025-04-12 10:00:00+00'),
+       ('FIRST-2', 'young task', 'description for young task', 'FIRST', 'second_id', 'stranger_id', 'InProgress', 'Middle',  ARRAY ['link'], '2025-04-12 10:00:00+00', '2025-04-12 10:00:00+00')
 ON CONFLICT (task_id)
 DO NOTHING;
 
