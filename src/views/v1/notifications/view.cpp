@@ -51,6 +51,10 @@ class Notification {
     if (sender) {
       j["sender"] = sender.value().ToJSONObject();
     }
+    if (user_photo_link) {
+      j["user_photo_url"] = utils::s3_presigned_links::GeneratePhotoPresignedLink(
+          user_photo_link.value(), utils::s3_presigned_links::LinkType::Download);
+    }
     if (action_id) {
       j["action_id"] = action_id.value();
     }
@@ -66,6 +70,7 @@ class Notification {
   std::string id, type, text;
   bool is_read;
   std::optional<ListEmployee> sender;
+  std::optional<std::string> user_photo_link;
   std::optional<std::string> action_id;
   std::optional<std::string> task_id;
   userver::storages::postgres::TimePoint created;
@@ -122,19 +127,22 @@ class NotificationsHandler final
             CASE
                 WHEN n.sender_id IS NULL THEN NULL
                 ELSE ROW(
-                    e.id,
-                    e.name,
-                    e.surname,
-                    e.patronymic,
-                    e.photo_link
+                    e_sender.id,
+                    e_sender.name,
+                    e_sender.surname,
+                    e_sender.patronymic,
+                    e_sender.photo_link
                 )
             END,
+            e_user.photo_link,
             n.action_id,
             n.task_id,
             n.created
         FROM working_day_)" + company_id + R"(.notifications n
-        LEFT JOIN working_day_)" + company_id + R"(.employees e
-            ON e.id = n.sender_id
+        LEFT JOIN working_day_)" + company_id + R"(.employees e_sender
+            ON e_sender.id = n.sender_id
+        LEFT JOIN working_day_)" + company_id + R"(.employees e_user
+            ON e_user.id = n.user_id
         WHERE n.user_id = $1
         ORDER BY n.created DESC
         LIMIT 100

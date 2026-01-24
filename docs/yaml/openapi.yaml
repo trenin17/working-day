@@ -1867,6 +1867,9 @@ components:
                     type: boolean
                 sender:
                     $ref: "#/components/schemas/ListEmployee"
+                user_photo_url:
+                    type: string
+                    description: Presigned URL to the photo of the user who receives the notification
                 text:
                     type: string
                 action_id:
@@ -2544,10 +2547,10 @@ components:
             type: object
             additionalProperties: false
             required:
-                - project_key
+                - project_id
                 - title
             properties:
-                project_key:
+                project_id:
                     type: string
                     description: Unique key of the project in uppercase Latin letters only. No spaces, numbers or underscores allowed. Example: MYPROJECT
                 title:
