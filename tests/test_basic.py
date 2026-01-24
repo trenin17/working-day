@@ -1238,18 +1238,26 @@ async def test_tracker_projects_add_list_and_info(service_client):
     response = await service_client.post(
         '/v1/tracker/projects/add',
         headers={'Authorization': 'Bearer first_token'},
-        json={'title': 'new project1', 'project_key': 'мой projecT 1'},
+        json={'title': 'new project1', 'project_key': 'MYPROJECTONE incorrect'},
+    )
+    assert response.status == 400
+    assert response.text == '{"message":"Project key must contain only uppercase Latin letters"}'
+
+    response = await service_client.post(
+        '/v1/tracker/projects/add',
+        headers={'Authorization': 'Bearer first_token'},
+        json={'title': 'new project1', 'project_key': 'MYPROJECTONE'},
     )
     assert response.status == 200
     response_data = json.loads(response.text)
-    assert response_data["project_id"] == 'MOI_PROJECT_1', f"Expected MOI_PROJECT_1, got {response_data['project_id']}"
+    assert response_data["project_id"] == 'MYPROJECTONE', f"Expected MYPROJECTONE, got {response_data['project_id']}"
 
 
     response = await service_client.post(
         '/v1/tracker/projects/add',
         headers={'Authorization': 'Bearer first_token'},
         json={
-            'project_key': 'мой projecT 2',
+            'project_key': 'MYPROJECTTWO',
             'title': 'new project2',
             'status': 'Closed',
             'description': 'desc proj2'
@@ -1257,7 +1265,7 @@ async def test_tracker_projects_add_list_and_info(service_client):
     )
     assert response.status == 200
     response_data = json.loads(response.text)
-    assert response_data["project_id"] == 'MOI_PROJECT_2', f"Expected MOI_PROJECT_2, got {response_data["project_id"]}"
+    assert response_data["project_id"] == 'MYPROJECTTWO', f"Expected MYPROJECTTWO, got {response_data["project_id"]}"
 
 
     response = await service_client.get(
@@ -1272,12 +1280,12 @@ async def test_tracker_projects_add_list_and_info(service_client):
     expected_projects = [
         {
             "creator": 'first_id',
-            "project_id": 'MOI_PROJECT_2',
+            "project_id": 'MYPROJECTTWO',
             "title": "new project2",
         },
         {
             "creator": 'first_id',
-            "project_id": 'MOI_PROJECT_1',
+            "project_id": 'MYPROJECTONE',
             "title": "new project1",
         },
         {
@@ -1291,7 +1299,7 @@ async def test_tracker_projects_add_list_and_info(service_client):
     response = await service_client.get(
         '/v1/tracker/projects/info',
         headers={'Authorization': 'Bearer first_token'},
-        params={'project_id': 'MOI_PROJECT_2'},
+        params={'project_id': 'MYPROJECTTWO'},
     )
     assert response.status == 200
 
@@ -1299,7 +1307,7 @@ async def test_tracker_projects_add_list_and_info(service_client):
     expected_project = {
         "assigned_users_ids": [],
         "creator": 'first_id',
-        "project_id": 'MOI_PROJECT_2',
+        "project_id": 'MYPROJECTTWO',
         "title": "new project2",
         "description": "desc proj2",
         "tasks_count": 0,
@@ -1315,7 +1323,7 @@ async def test_tracker_projects_add_and_edit(service_client):
         '/v1/tracker/projects/add',
         headers={'Authorization': 'Bearer first_token'},
         json={
-            'project_key': 'мой projecT 1',
+            'project_key': 'MYPROJECTONE',
             'title': 'project1',
             'assigned_users_ids': ['first_id', 'stranger_id']
         },
@@ -1324,7 +1332,7 @@ async def test_tracker_projects_add_and_edit(service_client):
     response_data = json.loads(response.text)
 
     project_id = response_data["project_id"]
-    assert project_id == 'MOI_PROJECT_1', f"Expected MOI_PROJECT_1, got {project_id}"
+    assert project_id == 'MYPROJECTONE', f"Expected MYPROJECTONE, got {project_id}"
 
     response = await service_client.get(
         '/v1/tracker/projects/info',
@@ -1842,13 +1850,13 @@ async def test_tracker_projects_search_edit(service_client):
     response = await service_client.post(
         '/v1/tracker/projects/add',
         headers={'Authorization': 'Bearer second_token'},
-        json={'title': 'Edit project', 'project_key': 'мой projecT 1'},
+        json={'title': 'Edit project', 'project_key': 'MYPROJECTONE'},
     )
     assert response.status == 200
     response_data = json.loads(response.text)
 
     project_id = response_data["project_id"]
-    assert project_id == 'MOI_PROJECT_1', f"Expected MOI_PROJECT_1, got {project_id}"
+    assert project_id == 'MYPROJECTONE', f"Expected MYPROJECTONE, got {project_id}"
 
     response = await service_client.post(
         '/v1/search/full',

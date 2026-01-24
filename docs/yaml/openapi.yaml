@@ -2549,7 +2549,7 @@ components:
             properties:
                 project_key:
                     type: string
-                    description: Unique key of the project. It will be used to identify the project in the system.
+                    description: Unique key of the project in uppercase Latin letters only. No spaces, numbers or underscores allowed. Example: MYPROJECT
                 title:
                     type: string
                     description: Name of the project
