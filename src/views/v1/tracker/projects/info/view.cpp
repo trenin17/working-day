@@ -99,7 +99,7 @@ class InfoTrackerProjectsHandler final
 
     if (response.image_url.has_value()) {
         response.image_url = utils::s3_presigned_links::GenerateTrackerProjectsMediaPresignedLink(
-            *response.image_url, utils::s3_presigned_links::Download, is_testing_);
+            response.image_url.value(), utils::s3_presigned_links::Download, is_testing_);
     }
 
     return response.ToJsonString();

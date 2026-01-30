@@ -14,6 +14,9 @@
 
 #include <definitions/all.hpp>
 
+#include "utils/s3_presigned_links.hpp"
+
+
 namespace views::v1::tracker::projects::list {
 
 namespace {
@@ -60,6 +63,13 @@ class TrackerProjectsListHandler final
     TrackerProjectsListResponse response;
     response.projects = result.AsContainer<std::vector<TrackerProjectsItemResponseShort>>(
         userver::storages::postgres::kRowTag);
+
+    for (auto& project : response.projects) {
+      if (project.image_url.has_value()) {
+        project.image_url = utils::s3_presigned_links::GenerateTrackerProjectsMediaPresignedLink(
+            project.image_url.value(), utils::s3_presigned_links::Download);
+      }
+    }
 
     return response.ToJsonString();
   }

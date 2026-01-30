@@ -1553,7 +1553,7 @@ async def test_tracker_tasks_add_and_list(service_client):
     assert response.status == 200
     data = response.json()
     expected_tasks = [
-         {
+        {
             "title": "task 3",
             "project_id": "SECOND",
             "task_id": "SECOND-1",
@@ -1579,6 +1579,13 @@ async def test_tracker_tasks_add_and_list(service_client):
             "creator": "first_id",
             "assignee": "stranger_id",
         },
+        {
+            "title": "young task",
+            "project_id": "FIRST",
+            "task_id": "FIRST-2",
+            "creator": "second_id",
+            "assignee": "stranger_id",
+        }
     ]
     assert data["tasks"] == expected_tasks
 
@@ -3118,6 +3125,282 @@ async def test_comments_edit_info(service_client):
         'last_updated_ts': response.json()['last_updated_ts'],
         'documents_ids': [],
     }
+
+@pytest.mark.pgsql('db_1', files=['initial_data.sql'])
+async def test_comments_access_author(service_client):
+    """Test that comment author can access their own comment"""
+    # Create a comment by first_id
+    response = await service_client.post(
+        '/v1/comments/add',
+        headers={'Authorization': 'Bearer first_token'},
+        json={'data': 'comment by first_id', 'task_id': 'FIRST-1'},
+    )
+    assert response.status == 200
+    comment_id = response.json()['comment_id']
+
+    # Author should be able to access the comment
+    response = await service_client.get(
+        '/v1/comments/info',
+        params={'comment_id': comment_id},
+        headers={'Authorization': 'Bearer first_token'},
+    )
+    assert response.status == 200
+    assert response.json()['author_id'] == 'first_id'
+    assert response.json()['data'] == 'comment by first_id'
+
+@pytest.mark.pgsql('db_1', files=['initial_data.sql'])
+async def test_comments_access_assigned_user(service_client):
+    """Test that assigned user can access comments in project tasks"""
+    # Create a project with assigned user
+    response = await service_client.post(
+        '/v1/tracker/projects/add',
+        headers={'Authorization': 'Bearer first_token'},
+        json={
+            'project_key': 'TESTPROJ',
+            'title': 'Test Project',
+            'assigned_users_ids': ['second_id']
+        },
+    )
+    assert response.status == 200
+    project_id = response.json()['project_id']
+
+    # Create a task in this project
+    response = await service_client.post(
+        '/v1/tracker/tasks/add',
+        headers={'Authorization': 'Bearer first_token'},
+        json={
+            'title': 'Test Task',
+            'project_id': project_id,
+        },
+    )
+    assert response.status == 200
+    task_id = response.json()['task_id']
+
+    # Create a comment by first_id (not second_id)
+    response = await service_client.post(
+        '/v1/comments/add',
+        headers={'Authorization': 'Bearer first_token'},
+        json={'data': 'comment in assigned project', 'task_id': task_id},
+    )
+    assert response.status == 200
+    comment_id = response.json()['comment_id']
+
+    # Assigned user (second_id) should be able to access the comment
+    response = await service_client.get(
+        '/v1/comments/info',
+        params={'comment_id': comment_id},
+        headers={'Authorization': 'Bearer second_token'},
+    )
+    assert response.status == 200
+    assert response.json()['comment_id'] == comment_id
+
+@pytest.mark.pgsql('db_1', files=['initial_data.sql'])
+async def test_comments_access_project_creator(service_client):
+    """Test that project creator can access comments in project tasks"""
+    # Create a project (first_id is creator)
+    response = await service_client.post(
+        '/v1/tracker/projects/add',
+        headers={'Authorization': 'Bearer first_token'},
+        json={
+            'project_key': 'CREATORPROJ',
+            'title': 'Creator Project',
+        },
+    )
+    assert response.status == 200
+    project_id = response.json()['project_id']
+
+    # Create a task in this project
+    response = await service_client.post(
+        '/v1/tracker/tasks/add',
+        headers={'Authorization': 'Bearer second_token'},
+        json={
+            'title': 'Task by second',
+            'project_id': project_id,
+        },
+    )
+    assert response.status == 200
+    task_id = response.json()['task_id']
+
+    # Create a comment by second_id
+    response = await service_client.post(
+        '/v1/comments/add',
+        headers={'Authorization': 'Bearer second_token'},
+        json={'data': 'comment by second', 'task_id': task_id},
+    )
+    assert response.status == 200
+    comment_id = response.json()['comment_id']
+
+    # Project creator (first_id) should be able to access the comment
+    response = await service_client.get(
+        '/v1/comments/info',
+        params={'comment_id': comment_id},
+        headers={'Authorization': 'Bearer first_token'},
+    )
+    assert response.status == 200
+    assert response.json()['comment_id'] == comment_id
+
+@pytest.mark.pgsql('db_1', files=['initial_data.sql'])
+async def test_comments_access_denied(service_client):
+    """Test that user without access cannot see comments"""
+    # Create a project without third_id in assigned_users
+    response = await service_client.post(
+        '/v1/tracker/projects/add',
+        headers={'Authorization': 'Bearer first_token'},
+        json={
+            'project_key': 'PRIVATEPROJ',
+            'title': 'Private Project',
+        },
+    )
+    assert response.status == 200
+    project_id = response.json()['project_id']
+
+    # Create a task in this project
+    response = await service_client.post(
+        '/v1/tracker/tasks/add',
+        headers={'Authorization': 'Bearer first_token'},
+        json={
+            'title': 'Private Task',
+            'project_id': project_id,
+        },
+    )
+    assert response.status == 200
+    task_id = response.json()['task_id']
+
+    # Create a comment by first_id
+    response = await service_client.post(
+        '/v1/comments/add',
+        headers={'Authorization': 'Bearer first_token'},
+        json={'data': 'private comment', 'task_id': task_id},
+    )
+    assert response.status == 200
+    comment_id = response.json()['comment_id']
+
+    # third_id (not creator, not assigned, not author) should NOT be able to access
+    response = await service_client.get(
+        '/v1/comments/info',
+        params={'comment_id': comment_id},
+        headers={'Authorization': 'Bearer third_token'},
+    )
+    assert response.status == 404
+
+@pytest.mark.pgsql('db_1', files=['initial_data.sql'])
+async def test_tasks_access_within_project(service_client):
+    """Test that users can access all tasks within their project"""
+    # Create a project with assigned user
+    response = await service_client.post(
+        '/v1/tracker/projects/add',
+        headers={'Authorization': 'Bearer first_token'},
+        json={
+            'project_key': 'TASKPROJ',
+            'title': 'Task Project',
+            'assigned_users_ids': ['second_id']
+        },
+    )
+    assert response.status == 200
+    project_id = response.json()['project_id']
+
+    # Create task 1 by first_id (creator)
+    response = await service_client.post(
+        '/v1/tracker/tasks/add',
+        headers={'Authorization': 'Bearer first_token'},
+        json={
+            'title': 'Task 1',
+            'project_id': project_id,
+        },
+    )
+    assert response.status == 200
+    task1_id = response.json()['task_id']
+
+    # Create task 2 by second_id (assigned user)
+    response = await service_client.post(
+        '/v1/tracker/tasks/add',
+        headers={'Authorization': 'Bearer second_token'},
+        json={
+            'title': 'Task 2',
+            'project_id': project_id,
+        },
+    )
+    assert response.status == 200
+    task2_id = response.json()['task_id']
+
+    # Create task 3 by third_id (not assigned, not creator)
+    response = await service_client.post(
+        '/v1/tracker/tasks/add',
+        headers={'Authorization': 'Bearer third_token'},
+        json={
+            'title': 'Task 3',
+            'project_id': project_id,
+        },
+    )
+    assert response.status == 200
+    task3_id = response.json()['task_id']
+
+    # Project creator (first_id) should see all tasks
+    response = await service_client.get(
+        '/v1/tracker/tasks/info',
+        params={'task_id': task1_id},
+        headers={'Authorization': 'Bearer first_token'},
+    )
+    assert response.status == 200
+
+    response = await service_client.get(
+        '/v1/tracker/tasks/info',
+        params={'task_id': task2_id},
+        headers={'Authorization': 'Bearer first_token'},
+    )
+    assert response.status == 200
+
+    response = await service_client.get(
+        '/v1/tracker/tasks/info',
+        params={'task_id': task3_id},
+        headers={'Authorization': 'Bearer first_token'},
+    )
+    assert response.status == 200
+
+    # Assigned user (second_id) should see all tasks
+    response = await service_client.get(
+        '/v1/tracker/tasks/info',
+        params={'task_id': task1_id},
+        headers={'Authorization': 'Bearer second_token'},
+    )
+    assert response.status == 200
+
+    response = await service_client.get(
+        '/v1/tracker/tasks/info',
+        params={'task_id': task2_id},
+        headers={'Authorization': 'Bearer second_token'},
+    )
+    assert response.status == 200
+
+    response = await service_client.get(
+        '/v1/tracker/tasks/info',
+        params={'task_id': task3_id},
+        headers={'Authorization': 'Bearer second_token'},
+    )
+    assert response.status == 200
+
+    # third_id (not assigned, not creator) should NOT see tasks they didn't create
+    response = await service_client.get(
+        '/v1/tracker/tasks/info',
+        params={'task_id': task1_id},
+        headers={'Authorization': 'Bearer third_token'},
+    )
+    assert response.status == 404
+
+    response = await service_client.get(
+        '/v1/tracker/tasks/info',
+        params={'task_id': task2_id},
+        headers={'Authorization': 'Bearer third_token'},
+    )
+    assert response.status == 404
+
+    # But third_id should see their own task
+    response = await service_client.get(
+        '/v1/tracker/tasks/info',
+        params={'task_id': task3_id},
+        headers={'Authorization': 'Bearer third_token'},
+    )
+    assert response.status == 200
 
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])
 async def test_end(service_client):

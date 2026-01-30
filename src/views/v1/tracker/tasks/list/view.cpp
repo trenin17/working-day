@@ -54,11 +54,20 @@ class TrackerTasksListHandler final
             t.creator,
             t.assignee
         FROM working_day_)" + company_id + R"(.tracker_tasks t
-        LEFT JOIN working_day_)" + company_id + R"(.tracker_task_observers o
-              ON o.task_id = t.task_id
         WHERE t.creator = $1
           OR t.assignee = $1
-          OR o.employee_id = $1
+          OR EXISTS (
+              SELECT 1 FROM working_day_)" + company_id + R"(.tracker_task_observers o
+              WHERE o.task_id = t.task_id AND o.employee_id = $1
+          )
+          OR EXISTS (
+              SELECT 1 FROM working_day_)" + company_id + R"(.tracker_projects p
+              WHERE p.project_id = t.project_id AND p.creator = $1
+          )
+          OR EXISTS (
+              SELECT 1 FROM working_day_)" + company_id + R"(.tracker_project_assigned_users pau
+              WHERE pau.project_id = t.project_id AND pau.employee_id = $1
+          )
         ORDER BY t.created_ts DESC
         )",
         user_id

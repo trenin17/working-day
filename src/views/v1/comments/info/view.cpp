@@ -36,6 +36,7 @@ class CommentsInfoHandler final
     request.GetHttpResponse().SetHeader(
         static_cast<std::string>("Access-Control-Allow-Headers"), "*");
 
+    const auto& user_id = ctx.GetData<std::string>("user_id");
     const auto& company_id = ctx.GetData<std::string>("company_id");
     auto comment_id = request.GetArg("comment_id");
 
@@ -45,12 +46,45 @@ class CommentsInfoHandler final
       return ErrorMessage{"Missing comment_id parameter"}.ToJsonString();
     }
 
+    // Check if comment exists and user has access to it
+    // User has access if:
+    // 1. User is the author of the comment
+    // 2. Comment is linked to a task and user has access to that task
+    //    (user is creator/assignee/observer of task OR user is in assigned_users_ids of project)
     auto result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kSlave,
-        "SELECT comment_id, author_id, data, documents_ids, created_ts, last_updated_ts "
-        "FROM working_day_" + company_id + ".comments "
-        "WHERE comment_id = $1",
-        comment_id);
+        R"(
+        SELECT c.comment_id, c.author_id, c.data, c.documents_ids, c.created_ts, c.last_updated_ts
+        FROM working_day_)" + company_id + R"(.comments c
+        LEFT JOIN working_day_)" + company_id + R"(.task_comments tc
+            ON tc.comment_id = c.comment_id
+        LEFT JOIN working_day_)" + company_id + R"(.tracker_tasks t
+            ON t.task_id = tc.task_id
+        WHERE c.comment_id = $1
+          AND (
+            c.author_id = $2
+            OR (
+              tc.task_id IS NOT NULL
+              AND (
+                t.creator = $2
+                OR t.assignee = $2
+                OR EXISTS (
+                    SELECT 1 FROM working_day_)" + company_id + R"(.tracker_task_observers o
+                    WHERE o.task_id = t.task_id AND o.employee_id = $2
+                )
+                OR EXISTS (
+                    SELECT 1 FROM working_day_)" + company_id + R"(.tracker_projects p
+                    WHERE p.project_id = t.project_id AND p.creator = $2
+                )
+                OR EXISTS (
+                    SELECT 1 FROM working_day_)" + company_id + R"(.tracker_project_assigned_users pau
+                    WHERE pau.project_id = t.project_id AND pau.employee_id = $2
+                )
+              )
+            )
+          )
+        )",
+        comment_id, user_id);
 
     if (result.IsEmpty()) {
       request.GetHttpResponse().SetStatus(

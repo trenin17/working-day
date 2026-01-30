@@ -98,8 +98,24 @@ class InfoTrackerTasksHandler final
         GROUP BY task_id
     ) com ON com.task_id = t.task_id
     WHERE t.task_id = $1
+      AND (
+        t.creator = $2
+        OR t.assignee = $2
+        OR EXISTS (
+            SELECT 1 FROM working_day_)" + company_id + R"(.tracker_task_observers o
+            WHERE o.task_id = t.task_id AND o.employee_id = $2
+        )
+        OR EXISTS (
+            SELECT 1 FROM working_day_)" + company_id + R"(.tracker_projects p
+            WHERE p.project_id = t.project_id AND p.creator = $2
+        )
+        OR EXISTS (
+            SELECT 1 FROM working_day_)" + company_id + R"(.tracker_project_assigned_users pau
+            WHERE pau.project_id = t.project_id AND pau.employee_id = $2
+        )
+      )
     )",
-    task_id);
+    task_id, user_id);
 
 
     if (result.IsEmpty()) {
@@ -111,7 +127,7 @@ class InfoTrackerTasksHandler final
     TrackerTasksItemResponse response{result.AsSingleRow<TrackerTasksItemResponse>(userver::storages::postgres::kRowTag)};
 
     if (response.media_links.has_value()) {
-      for (auto& link : response.media_links.value()) {
+      for (auto& link : *response.media_links) {
           link = utils::s3_presigned_links::GenerateTrackerTasksMediaPresignedLink(
               link, utils::s3_presigned_links::Download, is_testing_);
       }
