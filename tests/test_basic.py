@@ -1413,6 +1413,72 @@ async def test_tracker_projects_add_and_edit(service_client):
 
 
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])
+async def test_tracker_projects_list_no_duplicates_with_multiple_assigned_users(service_client):
+    """Test that a project with multiple assigned users appears only once in the list for each user."""
+    # Create a project with multiple assigned users
+    response = await service_client.post(
+        '/v1/tracker/projects/add',
+        headers={'Authorization': 'Bearer first_token'},
+        json={
+            'project_key': 'MULTIPROJ',
+            'title': 'Project with multiple assigned users',
+            'assigned_users_ids': ['second_id', 'stranger_id']
+        },
+    )
+    assert response.status == 200
+    response_data = json.loads(response.text)
+    project_id = response_data["project_id"]
+    assert project_id == 'MULTIPROJ'
+
+    # Verify project info shows both assigned users
+    response = await service_client.get(
+        '/v1/tracker/projects/info',
+        headers={'Authorization': 'Bearer first_token'},
+        params={'project_id': project_id}
+    )
+    assert response.status == 200
+    response_data = json.loads(response.text)
+    assert set(response_data["assigned_users_ids"]) == {'second_id', 'stranger_id'}
+
+    # Check list for creator (first_id) - should see project once
+    response = await service_client.get(
+        '/v1/tracker/projects/list',
+        headers={'Authorization': 'Bearer first_token'},
+    )
+    assert response.status == 200
+    response_data = json.loads(response.text)
+    
+    # Count occurrences of the project in the list
+    project_ids = [p["project_id"] for p in response_data["projects"]]
+    assert project_ids.count(project_id) == 1, f"Project {project_id} appears {project_ids.count(project_id)} times, expected 1"
+    
+    # Verify project is in the list
+    project_found = next((p for p in response_data["projects"] if p["project_id"] == project_id), None)
+    assert project_found is not None
+    assert project_found["title"] == "Project with multiple assigned users"
+    assert project_found["creator"] == "first_id"
+
+    # Check list for first assigned user (second_id) - should see project once
+    response = await service_client.get(
+        '/v1/tracker/projects/list',
+        headers={'Authorization': 'Bearer second_token'},
+    )
+    assert response.status == 200
+    response_data = json.loads(response.text)
+    
+    project_ids = [p["project_id"] for p in response_data["projects"]]
+    assert project_ids.count(project_id) == 1, f"Project {project_id} appears {project_ids.count(project_id)} times for second_id, expected 1"
+    
+    # Verify project is in the list for assigned user
+    project_found = next((p for p in response_data["projects"] if p["project_id"] == project_id), None)
+    assert project_found is not None
+    assert project_found["title"] == "Project with multiple assigned users"
+
+    # Note: stranger_id doesn't have a token in test data, so we only test with second_id
+    # Testing with one assigned user is sufficient to verify the fix for duplicate projects
+
+
+@pytest.mark.pgsql('db_1', files=['initial_data.sql'])
 async def test_tracker_projects_media_upload(service_client):
     response = await service_client.post(
         '/v1/tracker/projects/media/upload',

@@ -49,13 +49,13 @@ class TrackerProjectsListHandler final
 
     auto result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kMaster,
-        "SELECT  "
-        "  p.project_id, p.title, p.image_url, p.creator "
+        "SELECT p.project_id, p.title, p.image_url, p.creator "
         "FROM working_day_" + company_id + ".tracker_projects p "
-        "LEFT JOIN working_day_" + company_id + ".tracker_project_assigned_users au "
-        "  ON au.project_id = p.project_id "
         "WHERE p.creator = $1 "
-        "   OR au.employee_id = $1 "
+        "   OR EXISTS ("
+        "     SELECT 1 FROM working_day_" + company_id + ".tracker_project_assigned_users au "
+        "     WHERE au.project_id = p.project_id AND au.employee_id = $1"
+        "   ) "
         "ORDER BY p.created_ts DESC",
         user_id
     );
