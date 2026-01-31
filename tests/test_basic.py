@@ -1447,11 +1447,11 @@ async def test_tracker_projects_list_no_duplicates_with_multiple_assigned_users(
     )
     assert response.status == 200
     response_data = json.loads(response.text)
-    
+
     # Count occurrences of the project in the list
     project_ids = [p["project_id"] for p in response_data["projects"]]
     assert project_ids.count(project_id) == 1, f"Project {project_id} appears {project_ids.count(project_id)} times, expected 1"
-    
+
     # Verify project is in the list
     project_found = next((p for p in response_data["projects"] if p["project_id"] == project_id), None)
     assert project_found is not None
@@ -1465,10 +1465,10 @@ async def test_tracker_projects_list_no_duplicates_with_multiple_assigned_users(
     )
     assert response.status == 200
     response_data = json.loads(response.text)
-    
+
     project_ids = [p["project_id"] for p in response_data["projects"]]
     assert project_ids.count(project_id) == 1, f"Project {project_id} appears {project_ids.count(project_id)} times for second_id, expected 1"
-    
+
     # Verify project is in the list for assigned user
     project_found = next((p for p in response_data["projects"] if p["project_id"] == project_id), None)
     assert project_found is not None
@@ -1527,6 +1527,14 @@ async def test_tracker_tasks_bad_add(service_client):
 
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])
 async def test_tracker_tasks_add_and_list(service_client):
+    # Add third_id to FIRST project so they can be observer
+    response = await service_client.post(
+        '/v1/tracker/projects/edit',
+        headers={'Authorization': 'Bearer first_token'},
+        params={'project_id': 'FIRST'},
+        json={'assigned_users_ids': ['third_id']},
+    )
+    assert response.status == 200
 
     response = await service_client.post(
         '/v1/tracker/tasks/add',
@@ -1745,6 +1753,14 @@ async def test_load_recent_messages(service_client):
 
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])
 async def test_tracker_assigned_tasks_to_user (service_client):
+    # Add first_id to SECOND project so they can be assigned tasks
+    response = await service_client.post(
+        '/v1/tracker/projects/edit',
+        headers={'Authorization': 'Bearer second_token'},
+        params={'project_id': 'SECOND'},
+        json={'assigned_users_ids': ['first_id']},
+    )
+    assert response.status == 200
 
     response = await service_client.post(
         '/v1/tracker/tasks/assigned-tasks-to-user',
@@ -1847,6 +1863,15 @@ async def test_tracker_tasks_info_and_edit(service_client):
         headers={'Authorization': 'Bearer second_token'},
         params={'task_id': 'FIRST-1'},
         json={'description': 'new description for old task'},
+    )
+    assert response.status == 200
+
+    # Add second_id to FIRST project so they can be observer
+    response = await service_client.post(
+        '/v1/tracker/projects/edit',
+        headers={'Authorization': 'Bearer first_token'},
+        params={'project_id': 'FIRST'},
+        json={'assigned_users_ids': ['second_id']},
     )
     assert response.status == 200
 
@@ -1956,6 +1981,14 @@ async def test_tracker_projects_search_edit(service_client):
         json={'title': 'updated project'},
     )
     assert response.status == 200
+    # Add first_id to SECOND project so they can be assigned
+    response = await service_client.post(
+        '/v1/tracker/projects/edit',
+        headers={'Authorization': 'Bearer second_token'},
+        params={'project_id': 'SECOND'},
+        json={'assigned_users_ids': ['first_id']},
+    )
+    assert response.status == 200
     response = await service_client.post(
         '/v1/tracker/tasks/add',
         headers={'Authorization': 'Bearer second_token'},
@@ -2032,6 +2065,15 @@ async def test_tracker_tasks_media_upload(service_client):
 
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])
 async def test_tracker_tasks_search_add(service_client):
+    # Add second_id to FIRST project so they can be assigned
+    response = await service_client.post(
+        '/v1/tracker/projects/edit',
+        headers={'Authorization': 'Bearer first_token'},
+        params={'project_id': 'FIRST'},
+        json={'assigned_users_ids': ['second_id']},
+    )
+    assert response.status == 200
+
     response = await service_client.post(
         '/v1/tracker/tasks/add',
         headers={'Authorization': 'Bearer first_token'},
@@ -2065,6 +2107,15 @@ async def test_tracker_tasks_search_add(service_client):
 
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])
 async def test_tracker_tasks_search_edit(service_client):
+    # Add first_id to SECOND project so they can be assigned
+    response = await service_client.post(
+        '/v1/tracker/projects/edit',
+        headers={'Authorization': 'Bearer second_token'},
+        params={'project_id': 'SECOND'},
+        json={'assigned_users_ids': ['first_id']},
+    )
+    assert response.status == 200
+
     response = await service_client.post(
         '/v1/tracker/tasks/add',
         headers={'Authorization': 'Bearer second_token'},
@@ -2297,6 +2348,14 @@ async def test_tracker_tasks_bad_tag_search(service_client):
 
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])
 async def test_tracker_tasks_add_with_extra_fields(service_client):
+    # Add second_id and third_id to FIRST project so they can be assigned/observers
+    response = await service_client.post(
+        '/v1/tracker/projects/edit',
+        headers={'Authorization': 'Bearer first_token'},
+        params={'project_id': 'FIRST'},
+        json={'assigned_users_ids': ['second_id', 'third_id']},
+    )
+    assert response.status == 200
 
     response = await service_client.post(
         '/v1/tracker/tasks/add',
@@ -2442,6 +2501,15 @@ async def test_tracker_tasks_edit_deadline(service_client):
         'comments_ids': [],
     }
     assert response_data == expected_response
+
+    # Add second_id to FIRST project so they can be assigned
+    response = await service_client.post(
+        '/v1/tracker/projects/edit',
+        headers={'Authorization': 'Bearer first_token'},
+        params={'project_id': 'FIRST'},
+        json={'assigned_users_ids': ['second_id']},
+    )
+    assert response.status == 200
 
     response = await service_client.post(
         '/v1/tracker/tasks/edit',

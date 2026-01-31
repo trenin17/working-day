@@ -143,6 +143,26 @@ class TrackerTasksAddHandler final
                 userver::server::http::HttpStatus::kNotFound);
             return ErrorMessage{"Wrong assignee"}.ToJsonString();
         }
+
+        // Check if assignee has access to the project
+        auto check_project_access = pg_cluster_->Execute(
+            userver::storages::postgres::ClusterHostType::kMaster,
+            "SELECT COUNT(*) FROM working_day_" + company_id + ".tracker_projects p "
+            "WHERE p.project_id = $1 "
+            "  AND (p.creator = $2 "
+            "       OR EXISTS ("
+            "         SELECT 1 FROM working_day_" + company_id + ".tracker_project_assigned_users au "
+            "         WHERE au.project_id = p.project_id AND au.employee_id = $2"
+            "       ))"
+            "",
+            request_body.project_id, request_body.assignee.value());
+
+        int has_access = check_project_access.AsSingleRow<int>();
+        if (!has_access) {
+            request.GetHttpResponse().SetStatus(
+                userver::server::http::HttpStatus::kBadRequest);
+            return ErrorMessage{"Assignee does not have access to this project"}.ToJsonString();
+        }
     }
 
     auto find_tasks = pg_cluster_->Execute(
@@ -167,6 +187,28 @@ class TrackerTasksAddHandler final
         return ErrorMessage{
             "Invalid observers: one or more employees not found"}
             .ToJsonString();
+      }
+
+      // Check if all observers have access to the project
+      for (const auto& observer_id : *request_body.observers) {
+        auto check_project_access = pg_cluster_->Execute(
+            userver::storages::postgres::ClusterHostType::kMaster,
+            "SELECT COUNT(*) FROM working_day_" + company_id + ".tracker_projects p "
+            "WHERE p.project_id = $1 "
+            "  AND (p.creator = $2 "
+            "       OR EXISTS ("
+            "         SELECT 1 FROM working_day_" + company_id + ".tracker_project_assigned_users au "
+            "         WHERE au.project_id = p.project_id AND au.employee_id = $2"
+            "       ))"
+            "",
+            request_body.project_id, observer_id);
+
+        int has_access = check_project_access.AsSingleRow<int>();
+        if (!has_access) {
+            request.GetHttpResponse().SetStatus(
+                userver::server::http::HttpStatus::kBadRequest);
+            return ErrorMessage{"Observer " + observer_id + " does not have access to this project"}.ToJsonString();
+        }
       }
     }
     if (request_body.related_tasks_ids) {

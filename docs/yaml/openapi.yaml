@@ -810,7 +810,7 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/ErrorMessage'
 
-    /v1/tracker/project/info:
+    /v1/tracker/projects/info:
         get:
             description: Get project info
             parameters:
@@ -2597,22 +2597,33 @@ components:
             required:
               - project_id
               - title
+              - creator
+              - tasks_count
               - created_ts
               - last_updated_ts
-              - tasks_count
             properties:
                 project_id:
                     type: string
                 title:
                     type: string
+                description:
+                    type: string
+                image_url:
+                    type: string
+                creator:
+                    type: string
+                tasks_count:
+                    type: integer
+                status:
+                    $ref: '#/components/schemas/ProjectStatus'
                 created_ts:
                     $ref: '#/components/schemas/Timestamp'
                 last_updated_ts:
                     $ref: '#/components/schemas/Timestamp'
-                tasks_count:
-                    type: integer
-                image_url:
-                    type: string
+                assigned_users_ids:
+                    type: array
+                    items:
+                        type: string
 
         TrackerProjectsEditRequest:
             type: object

@@ -226,6 +226,29 @@ class TrackerTasksEditHandler : public userver::server::handlers::HttpHandlerBas
             "Invalid observers: one or more employees not found"}
             .ToJsonString();
       }
+
+      // Check if all observers have access to the project
+      std::string project_id_to_check = request_body.project_id.value_or(task_value.project_id);
+      for (const auto& observer_id : *request_body.observers) {
+        auto check_project_access = pg_cluster_->Execute(
+            userver::storages::postgres::ClusterHostType::kMaster,
+            "SELECT COUNT(*) FROM working_day_" + company_id + ".tracker_projects p "
+            "WHERE p.project_id = $1 "
+            "  AND (p.creator = $2 "
+            "       OR EXISTS ("
+            "         SELECT 1 FROM working_day_" + company_id + ".tracker_project_assigned_users au "
+            "         WHERE au.project_id = p.project_id AND au.employee_id = $2"
+            "       ))"
+            "",
+            project_id_to_check, observer_id);
+
+        int has_access = check_project_access.AsSingleRow<int>();
+        if (!has_access) {
+            request.GetHttpResponse().SetStatus(
+                userver::server::http::HttpStatus::kBadRequest);
+            return ErrorMessage{"Observer " + observer_id + " does not have access to this project"}.ToJsonString();
+        }
+      }
     }
     // проверка, что связанные задачи валидны
     if (request_body.related_tasks_ids) {
@@ -242,6 +265,49 @@ class TrackerTasksEditHandler : public userver::server::handlers::HttpHandlerBas
             "Invalid related_tasks_ids: one or more tasks not found"}
             .ToJsonString();
       }
+    }
+
+    // Check assignee access to project if assignee or project_id is being changed
+    std::string project_id_to_check = request_body.project_id.value_or(task_value.project_id);
+    if (request_body.assignee.has_value()) {
+        auto check_project_access = pg_cluster_->Execute(
+            userver::storages::postgres::ClusterHostType::kMaster,
+            "SELECT COUNT(*) FROM working_day_" + company_id + ".tracker_projects p "
+            "WHERE p.project_id = $1 "
+            "  AND (p.creator = $2 "
+            "       OR EXISTS ("
+            "         SELECT 1 FROM working_day_" + company_id + ".tracker_project_assigned_users au "
+            "         WHERE au.project_id = p.project_id AND au.employee_id = $2"
+            "       ))"
+            "",
+            project_id_to_check, request_body.assignee.value());
+
+        int has_access = check_project_access.AsSingleRow<int>();
+        if (!has_access) {
+            request.GetHttpResponse().SetStatus(
+                userver::server::http::HttpStatus::kBadRequest);
+            return ErrorMessage{"Assignee does not have access to this project"}.ToJsonString();
+        }
+    } else if (request_body.project_id.has_value() && task_value.assignee.has_value()) {
+        // If project_id changes but assignee stays the same, check access to new project
+        auto check_project_access = pg_cluster_->Execute(
+            userver::storages::postgres::ClusterHostType::kMaster,
+            "SELECT COUNT(*) FROM working_day_" + company_id + ".tracker_projects p "
+            "WHERE p.project_id = $1 "
+            "  AND (p.creator = $2 "
+            "       OR EXISTS ("
+            "         SELECT 1 FROM working_day_" + company_id + ".tracker_project_assigned_users au "
+            "         WHERE au.project_id = p.project_id AND au.employee_id = $2"
+            "       ))"
+            "",
+            project_id_to_check, task_value.assignee.value());
+
+        int has_access = check_project_access.AsSingleRow<int>();
+        if (!has_access) {
+            request.GetHttpResponse().SetStatus(
+                userver::server::http::HttpStatus::kBadRequest);
+            return ErrorMessage{"Current assignee does not have access to the new project"}.ToJsonString();
+        }
     }
 
     auto trx = pg_cluster_->Begin(
