@@ -393,68 +393,72 @@ class TrackerTasksEditHandler : public userver::server::handlers::HttpHandlerBas
 
     // уведомления
     if (task_value.assignee.has_value() or request_body.assignee.has_value()) {
-      auto assignee = request_body.assignee.value_or(task_value.assignee.value());
+      std::string assignee;
+      if (request_body.assignee.has_value()) {
+        assignee = request_body.assignee.value();
+      } else {
+        assignee = task_value.assignee.value();
+      }
 
       std::string notification_text;
-      if (assignee != task_value.assignee.value()) {
+      if (task_value.assignee.has_value() && assignee != task_value.assignee.value()) {
         notification_text =
           "Вам назначена новая задача \"" + request_body.title.value_or(task_value.title) +
           "\" в проекте \"" + project_title + "\".";
 
-      if (task_value.action_id.has_value()) {
+        if (task_value.action_id.has_value()) {
+          trx.Execute(
+            "UPDATE working_day_" + company_id +
+              ".actions "
+              "SET user_id = $1 "
+              "WHERE id = $2",
+            assignee, task_value.action_id.value());
+        }
+      } else {
+        notification_text = "Изменена информация о задаче \"" + request_body.title.value_or(task_value.title) +
+        "\" в проекте \"" + project_title + "\".";
+      }
+
+      auto notification_id = userver::utils::generators::GenerateUuid();
+      trx.Execute(
+        "INSERT INTO working_day_" + company_id +
+            ".notifications(id, type, text, sender_id, user_id, task_id) "
+            "VALUES ($1, $2, $3, $4, $5, $6) "
+            "ON CONFLICT (id) DO NOTHING",
+        notification_id, "generic", notification_text, user_id, assignee, task_id);
+    }
+
+
+    if (!task_value.action_id.has_value() and request_body.deadline.has_value()) {
+      std::string assignee_for_action = request_body.assignee.value_or(
+          task_value.assignee.value_or(""));
+      if (!assignee_for_action.empty()) {
+        auto action_id = userver::utils::generators::GenerateUuid();
+        trx.Execute("INSERT INTO working_day_" + company_id +
+                    ".actions(id, type, attendance_type, user_id, start_date, "
+                    "end_date) "
+                    "VALUES($1, $2, $3, $4, $5, $6) "
+                    "ON CONFLICT (id) "
+                    "DO NOTHING",
+                action_id, "attendance", "tracker_task_deadline", assignee_for_action,
+                request_body.deadline.value(), request_body.deadline.value());
+
         trx.Execute(
           "UPDATE working_day_" + company_id +
-            ".actions "
-            "SET user_id = $1 "
-            "WHERE id = $2",
-          assignee, task_value.action_id.value());
+            ".tracker_tasks "
+            "SET action_id = $1 "
+            "WHERE task_id = $2",
+          action_id, task_id);
       }
-    } else {
-      notification_text = "Изменена информация о задаче \"" + request_body.title.value_or(task_value.title) +
-      "\" в проекте \"" + project_title + "\".";
-    }
-
-
-    auto notification_id = userver::utils::generators::GenerateUuid();
-    trx.Execute(
-      "INSERT INTO working_day_" + company_id +
-          ".notifications(id, type, text, sender_id, user_id, task_id) "
-          "VALUES ($1, $2, $3, $4, $5, $6) "
-          "ON CONFLICT (id) DO NOTHING",
-      notification_id, "generic", notification_text, user_id, assignee, task_id);
-
-    // обновляем календарь
-
-    // добавить ручку на документы
-
-    // если раньше не было в календаре и добавили дедлайн
-    if (!task_value.action_id.has_value() and request_body.deadline.has_value()) {
-      auto action_id = userver::utils::generators::GenerateUuid();
-      trx.Execute("INSERT INTO working_day_" + company_id +
-                  ".actions(id, type, attendance_type, user_id, start_date, "
-                  "end_date) "
-                  "VALUES($1, $2, $3, $4, $5, $6) "
-                  "ON CONFLICT (id) "
-                  "DO NOTHING",
-              action_id, "attendance", "tracker_task_deadline", assignee,
-              request_body.deadline.value(), request_body.deadline.value());
-
-      trx.Execute(
-        "UPDATE working_day_" + company_id +
-          ".tracker_tasks "
-          "SET action_id = $1 "
-          "WHERE task_id = $2",
-        action_id, task_id);
     }
     // если обновили дедлайн
-    else if (request_body.deadline.has_value()) {
+    else if (request_body.deadline.has_value() && task_value.action_id.has_value()) {
       trx.Execute(
         "UPDATE working_day_" + company_id +
           ".actions "
           "SET start_date = $1, end_date = $1"
           "WHERE id = $2",
         request_body.deadline.value(), task_value.action_id.value());
-      }
     }
 
     trx.Commit();

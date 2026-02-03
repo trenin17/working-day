@@ -2657,7 +2657,7 @@ components:
                 - InProgress
                 - Review
                 - Done
-                - Canceled # (+comment)
+                - Cancelled # (+comment)
 
         TaskPriority:
             type: string

@@ -254,7 +254,7 @@ CREATE TABLE IF NOT EXISTS working_day_first.tracker_tasks (
     project_id TEXT NOT NULL,
     creator TEXT NOT NULL,
     assignee TEXT,
-    status TEXT NOT NULL CHECK (status IN ('Open', 'InProgress', 'Review', 'Done')),
+    status TEXT NOT NULL CHECK (status IN ('Open', 'InProgress', 'Review', 'Done', 'Cancelled')),
     priority TEXT NOT NULL CHECK (priority IN ('Low', 'Middle', 'High')),
     media_links TEXT[] DEFAULT ARRAY[]::TEXT[],
     created_ts TIMESTAMPTZ NOT NULL DEFAULT NOW(),

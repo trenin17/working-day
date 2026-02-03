@@ -985,7 +985,7 @@ struct TrackerTasksItemRequest : public JsonCompatible {
   REGISTER_STRUCT_FIELD_OPTIONAL(description, std::string, "description");
   REGISTER_STRUCT_FIELD_OPTIONAL(assignee, std::string, "assignee");
   REGISTER_STRUCT_FIELD_OPTIONAL(deadline, userver::storages::postgres::TimePoint, "deadline");
-  REGISTER_STRUCT_ENUM_FIELD_OPTIONAL(status, std::string, "status", std::vector<std::string>{"Open", "InProgress", "Review", "Done", "Canceled"});
+  REGISTER_STRUCT_ENUM_FIELD_OPTIONAL(status, std::string, "status", std::vector<std::string>{"Open", "InProgress", "Review", "Done", "Cancelled"});
   REGISTER_STRUCT_ENUM_FIELD_OPTIONAL(priority, std::string, "priority", std::vector<std::string>{"Low", "Middle", "High"});
   REGISTER_STRUCT_FIELD_OPTIONAL(observers, std::vector<std::string>, "observers");
   REGISTER_STRUCT_FIELD_OPTIONAL(related_tasks_ids, std::vector<std::string>, "related_tasks_ids");
@@ -1065,7 +1065,7 @@ struct TrackerTasksItemResponse : public JsonCompatible {
   REGISTER_STRUCT_FIELD_OPTIONAL(description, std::string, "description");
   REGISTER_STRUCT_FIELD(creator, std::string, "creator");
   REGISTER_STRUCT_FIELD_OPTIONAL(assignee, std::string, "assignee");
-  REGISTER_STRUCT_ENUM_FIELD(status, std::string, "status", {"Open", "InProgress", "Review", "Done", "Canceled"});
+  REGISTER_STRUCT_ENUM_FIELD(status, std::string, "status", {"Open", "InProgress", "Review", "Done", "Cancelled"});
   REGISTER_STRUCT_ENUM_FIELD(priority, std::string, "priority", std::vector<std::string>{"Low", "Middle", "High"});
   REGISTER_STRUCT_FIELD_OPTIONAL(media_links, std::vector<std::string>, "media_links");
   REGISTER_STRUCT_FIELD(created_ts, userver::storages::postgres::TimePoint, "created_ts");
@@ -1091,7 +1091,7 @@ struct TrackerTasksEditRequest : public JsonCompatible {
   REGISTER_STRUCT_FIELD_OPTIONAL(description, std::string, "description");
   REGISTER_STRUCT_FIELD_OPTIONAL(project_id, std::string, "project_id");
   REGISTER_STRUCT_FIELD_OPTIONAL(assignee, std::string, "assignee");
-  REGISTER_STRUCT_ENUM_FIELD_OPTIONAL(status, std::string, "status", {"Open", "InProgress", "Review", "Done"});
+  REGISTER_STRUCT_ENUM_FIELD_OPTIONAL(status, std::string, "status", {"Open", "InProgress", "Review", "Done", "Cancelled"});
   REGISTER_STRUCT_ENUM_FIELD_OPTIONAL(priority, std::string, "priority", {"Low", "Middle", "High"});
   REGISTER_STRUCT_FIELD_OPTIONAL(deadline, userver::storages::postgres::TimePoint, "deadline");
   REGISTER_STRUCT_FIELD_OPTIONAL(observers, std::vector<std::string>, "observers");
