@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS ${SCHEMA}.employees (
     vk_id TEXT,
     team TEXT, -- deprecated TODO: remove
     subcompany TEXT NOT NULL DEFAULT '${COMPANY_NAME}'
+    FOREIGN KEY (head_id) REFERENCES ${SCHEMA}.employees(id) ON DELETE SET NULL
 );
 
 CREATE INDEX idx_employee_by_head ON ${SCHEMA}.employees(head_id);
