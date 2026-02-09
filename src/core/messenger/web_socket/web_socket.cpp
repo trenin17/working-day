@@ -24,6 +24,11 @@ namespace {
     struct EmployeeId {
         std::string id;
     };
+
+    struct HandshakeData {
+        std::string user_id;
+        std::string company_id;
+    };
 }
 
 class WebsocketsHandler final : public userver::server::websocket::WebsocketHandlerBase {
@@ -43,10 +48,64 @@ public:
                   .FindComponent<userver::components::Postgres>("key-value")
                   .GetCluster()) {}
 
+    bool HandleHandshake(
+        const userver::server::http::HttpRequest& request,
+        userver::server::http::HttpResponse&,
+        userver::server::request::RequestContext& context) const override {
+
+        std::string token;
+
+        // Try Authorization header first
+        const auto& auth_value = request.GetHeader("Authorization");
+        if (!auth_value.empty()) {
+            const auto sep = auth_value.find(' ');
+            if (sep != std::string::npos &&
+                std::string_view{auth_value.data(), sep} == "Bearer") {
+                token = auth_value.substr(sep + 1);
+            }
+        }
+
+        // Fallback to query parameter (for browser WebSocket clients)
+        if (token.empty()) {
+            const auto& token_arg = request.GetArg("token");
+            if (!token_arg.empty()) {
+                token = token_arg;
+            }
+        }
+
+        if (token.empty()) {
+            LOG_WARNING() << "WebSocket rejected: no auth token provided";
+            return false;
+        }
+
+        // Validate token against database
+        auto result = pg_cluster_->Execute(
+            userver::storages::postgres::ClusterHostType::kMaster,
+            "SELECT user_id, company_id FROM wd_general.auth_tokens WHERE token = $1",
+            token);
+
+        if (result.IsEmpty()) {
+            LOG_WARNING() << "WebSocket rejected: invalid auth token";
+            return false;
+        }
+
+        auto row = result[0];
+        HandshakeData data;
+        data.user_id = row[0].As<std::string>();
+        data.company_id = row[1].As<std::string>();
+
+        LOG_INFO() << "WebSocket authenticated: user_id=" << data.user_id
+                   << " company_id=" << data.company_id;
+
+        context.SetUserData(std::move(data));
+        return true;
+    }
 
     void Handle(userver::server::websocket::WebSocketConnection& chat, userver::server::request::RequestContext& context) const override {
-        std::string company_id = "first";
-        std::string user_id;
+        // Get authenticated user info from handshake
+        const auto& auth = context.GetUserData<HandshakeData>();
+        const auto& user_id = auth.user_id;
+        const auto& company_id = auth.company_id;
 
         auto connection_queue = userver::concurrent::MpscQueue<userver::server::websocket::Message>::Create();
 
@@ -71,6 +130,9 @@ public:
             );
         }
 
+        // Register queue ONCE on connect (fixes ISSUE #8)
+        core::queue_manager::QueueManager::GetInstance().RegisterQueue(company_id, user_id, connection_queue);
+
         try {
             while (!userver::engine::current_task::ShouldCancel()) {
                 userver::server::websocket::Message incoming_message;
@@ -78,22 +140,24 @@ public:
 
                 if (incoming_message.close_status) break;
 
-                MessengerMessage protocol_message;
-                protocol_message.ParseRegisteredFields(incoming_message.data);
-
-                user_id = protocol_message.sender_id;
-
                 auto j = json::parse(incoming_message.data);
-                if (j["content"].contains("company_id")) {
-                    company_id = j["content"]["company_id"];
-                }
 
-                core::queue_manager::QueueManager::GetInstance().RegisterQueue(company_id, user_id, connection_queue);
+                MessengerMessage protocol_message;
+                protocol_message.chat_id = j.value("chat_id", "");
+                protocol_message.sender_id = user_id;
+                if (j.contains("content") && j["content"].contains("content")) {
+                    protocol_message.content = MessengerMessageContent(j["content"]["content"].get<std::string>());
+                }
 
                 PersistMessage(company_id, protocol_message);
 
-                BroadcastMessage(company_id, GetChatMembers(company_id, protocol_message.chat_id), incoming_message);
-                // BroadcastMessage(company_id, {EmployeeId("test_id1"), EmployeeId("test_id2")}, incoming_message);
+                // Reconstruct broadcast message with authenticated sender_id
+                j["sender_id"] = user_id;
+                userver::server::websocket::Message broadcast_msg;
+                broadcast_msg.data = j.dump();
+                broadcast_msg.is_text = incoming_message.is_text;
+
+                BroadcastMessage(company_id, GetChatMembers(company_id, protocol_message.chat_id), broadcast_msg);
             }
         } catch (const std::exception& ex) {
             LOG_ERROR() << "WebSocket error: " << ex.what();
@@ -104,9 +168,7 @@ public:
             send_task->Get();
         }
 
-        if (!user_id.empty()) {
-            core::queue_manager::QueueManager::GetInstance().UnregisterQueue(company_id, user_id);
-        }
+        core::queue_manager::QueueManager::GetInstance().UnregisterQueue(company_id, user_id);
     }
 
 private:

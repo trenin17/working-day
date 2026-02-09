@@ -78,6 +78,9 @@ INSERT INTO working_day_first.messenger_chats (chat_id, chat_name)
 VALUES
   ('chat1', 'Test Chat');
 
+INSERT INTO working_day_first.employee_chats (employee_id, chat_id)
+VALUES ('first_id', 'chat1'), ('second_id', 'chat1');
+
 INSERT INTO working_day_first.messages (chat_id, timestamp, sender_id, content)
 VALUES
   ('chat1', '2025-02-25 10:00:00+00', 'user1', 'Hello world!');
