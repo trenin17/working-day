@@ -79,7 +79,7 @@ class InfoEmployeeHandler final
 
     Employee response{
         result.AsSingleRow<Employee>(userver::storages::postgres::kRowTag)};
- 
+
     if (response.photo_link.has_value()) {
       response.photo_link =
           utils::s3_presigned_links::GeneratePhotoPresignedLink(

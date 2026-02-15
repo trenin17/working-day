@@ -422,3 +422,37 @@ CREATE TABLE IF NOT EXISTS working_day_first.task_comments (
 
 CREATE INDEX idx_task_comments_task_id ON working_day_first.task_comments (task_id);
 CREATE INDEX idx_task_comments_comment_id ON working_day_first.task_comments (comment_id);
+
+-- Таблица для хранения ключевых пар сотрудников
+DROP TABLE IF EXISTS working_day_first.employee_keys CASCADE;
+
+CREATE TABLE IF NOT EXISTS working_day_first.employee_keys (
+    employee_id TEXT PRIMARY KEY NOT NULL,
+    private_key TEXT NOT NULL,
+    public_key TEXT NOT NULL,
+    public_key_hash TEXT NOT NULL,
+    created_ts TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_ts TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    FOREIGN KEY (employee_id) REFERENCES working_day_first.employees (id) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_employee_keys_hash ON working_day_first.employee_keys(public_key_hash);
+
+-- Таблица для хранения подписей документов
+DROP TABLE IF EXISTS working_day_first.document_signatures CASCADE;
+
+CREATE TABLE IF NOT EXISTS working_day_first.document_signatures (
+    id TEXT PRIMARY KEY NOT NULL,
+    document_id TEXT NOT NULL,
+    employee_id TEXT NOT NULL,
+    signature_path TEXT NOT NULL,
+    signature_metadata JSONB NOT NULL,
+    public_key_hash TEXT NOT NULL,
+    created_ts TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    FOREIGN KEY (document_id) REFERENCES working_day_first.documents (id) ON DELETE CASCADE,
+    FOREIGN KEY (employee_id) REFERENCES working_day_first.employees (id) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_document_signatures_doc ON working_day_first.document_signatures(document_id);
+CREATE INDEX idx_document_signatures_emp ON working_day_first.document_signatures(employee_id);
+CREATE INDEX idx_document_signatures_created ON working_day_first.document_signatures(created_ts DESC);

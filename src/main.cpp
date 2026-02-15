@@ -79,6 +79,9 @@
 #include "views/v1/comments/edit/view.hpp"
 #include "views/v1/comments/info/view.hpp"
 #include "views/v1/comments/remove/view.hpp"
+#include "views/v1/employee/keys/generate/view.hpp"
+#include "views/v1/documents/nep_sign/view.hpp"
+#include "views/v1/documents/nep_verify/view.hpp"
 
 int main(int argc, char* argv[]) {
   Aws::SDKOptions options;
@@ -165,6 +168,9 @@ int main(int argc, char* argv[]) {
   views::v1::comments::edit::AppendCommentsEdit(component_list);
   views::v1::comments::info::AppendCommentsInfo(component_list);
   views::v1::comments::remove::AppendCommentsRemove(component_list);
+  views::v1::employee::keys::generate::AppendEmployeeKeysGenerate(component_list);
+  views::v1::documents::nep_sign::AppendDocumentsNepSign(component_list);
+  views::v1::documents::nep_verify::AppendDocumentsNepVerify(component_list);
 
   int err_code = userver::utils::DaemonMain(argc, argv, component_list);
 

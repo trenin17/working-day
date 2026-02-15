@@ -742,6 +742,96 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/AbscenceVerdictResponse'
 
+    /v1/employee/keys/generate:
+        post:
+            description: Generate NEP (Enhanced Unqualified Electronic Signature) keys for employee
+            parameters:
+              - in: header
+                name: Authorization
+                description: Token of session user
+                schema:
+                    type: string
+            responses:
+                '200':
+                    description: Keys were generated successfully
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/EmployeeKeysGenerateResponse'
+                '400':
+                    description: Keys already exist or bad request
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+
+    /v1/documents/nep-sign:
+        post:
+            description: Sign document with NEP (Enhanced Unqualified Electronic Signature)
+            parameters:
+              - in: header
+                name: Authorization
+                description: Token of session user
+                schema:
+                    type: string
+              - in: query
+                name: document_id
+                description: Id of the document to sign
+                schema:
+                    type: string
+            requestBody:
+                required: false
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/DocumentsNepSignRequest'
+            responses:
+                '200':
+                    description: Document was signed successfully with NEP
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/DocumentsNepSignResponse'
+                '400':
+                    description: Keys not found or bad request
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+                '404':
+                    description: Document not found
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+
+    /v1/documents/nep-verify:
+        get:
+            description: Verify NEP signature of document
+            parameters:
+              - in: header
+                name: Authorization
+                description: Token of session user
+                schema:
+                    type: string
+              - in: query
+                name: signature_id
+                description: Id of the signature to verify
+                schema:
+                    type: string
+            responses:
+                '200':
+                    description: Signature verification result
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/DocumentsNepVerifyResponse'
+                '404':
+                    description: Signature not found
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
 
     /v1/superuser/company/add:
         post:
@@ -3054,3 +3144,82 @@ components:
                     $ref: '#/components/schemas/Timestamp'
                 last_updated_ts:
                     $ref: '#/components/schemas/Timestamp'
+
+        EmployeeKeysGenerateResponse:
+            type: object
+            additionalProperties: false
+            required:
+              - public_key
+              - public_key_hash
+            properties:
+                public_key:
+                    type: string
+                    description: Public RSA-2048 key in PEM format
+                public_key_hash:
+                    type: string
+                    description: SHA-256 hash of the public key
+
+        DocumentsNepSignRequest:
+            type: object
+            additionalProperties: false
+            properties:
+                reason:
+                    type: string
+                    description: Optional reason for signing
+                location:
+                    type: string
+                    description: Optional location of signing
+
+        DocumentsNepSignResponse:
+            type: object
+            additionalProperties: false
+            required:
+              - signature_id
+              - signature_path
+              - timestamp
+              - public_key_hash
+            properties:
+                signature_id:
+                    type: string
+                    description: ID of the created signature
+                signature_path:
+                    type: string
+                    description: Path to the detached signature file (.p7s)
+                timestamp:
+                    type: string
+                    description: Timestamp of signing
+                public_key_hash:
+                    type: string
+                    description: Hash of the public key used for signing
+
+        DocumentsNepVerifyResponse:
+            type: object
+            additionalProperties: false
+            required:
+              - valid
+              - integrity_ok
+              - signature_ok
+              - message
+              - verified_at
+            properties:
+                valid:
+                    type: boolean
+                    description: Overall validity of the signature
+                integrity_ok:
+                    type: boolean
+                    description: Whether document integrity is intact
+                signature_ok:
+                    type: boolean
+                    description: Whether cryptographic signature is valid
+                message:
+                    type: string
+                    description: Human-readable verification result message
+                verified_at:
+                    type: string
+                    description: Timestamp of verification
+                signer_name:
+                    type: string
+                    description: Full name of the person who signed
+                signature_timestamp:
+                    type: string
+                    description: Timestamp when document was signed

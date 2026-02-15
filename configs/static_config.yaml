@@ -745,3 +745,35 @@ components_manager:
                   - bearer
                 scopes:
                   - user
+
+        handler-v1-employee-keys-generate:
+            path: /v1/employee/keys/generate
+            method: POST
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - user
+
+        handler-v1-documents-nep-sign:
+            path: /v1/documents/nep-sign
+            method: POST
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - user
+            pyservice-url: 'http://python-service:3000/document/nep-sign'
+
+        handler-v1-documents-nep-verify:
+            path: /v1/documents/nep-verify
+            method: GET
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - user
+            pyservice-url: 'http://python-service:3000/document/nep-verify'

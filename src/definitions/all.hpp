@@ -349,6 +349,25 @@
 #define USE_ERROR_MESSAGE
 #endif
 
+#ifdef V1_EMPLOYEE_KEYS_GENERATE
+#define USE_EMPLOYEE_KEYS_GENERATE_RESPONSE
+#define USE_ERROR_MESSAGE
+#endif
+
+#ifdef V1_DOCUMENTS_NEP_SIGN
+#define USE_DOCUMENTS_NEP_SIGN_REQUEST
+#define USE_PYSERVICE_NEP_SIGN_REQUEST
+#define USE_DOCUMENTS_NEP_SIGN_RESPONSE
+#define USE_ERROR_MESSAGE
+#endif
+
+#ifdef V1_DOCUMENTS_NEP_VERIFY
+#define USE_DOCUMENTS_NEP_VERIFY_REQUEST
+#define USE_PYSERVICE_NEP_VERIFY_REQUEST
+#define USE_DOCUMENTS_NEP_VERIFY_RESPONSE
+#define USE_ERROR_MESSAGE
+#endif
+
 #ifdef USE_LIST_EMPLOYEE
 struct ListEmployee : public JsonCompatible {
   // For postgres initialization type needs to be default constructible
@@ -1289,5 +1308,66 @@ struct CommentItem : public JsonCompatible {
   REGISTER_STRUCT_FIELD_OPTIONAL(documents_ids, std::vector<std::string>, "documents_ids");
   REGISTER_STRUCT_FIELD(created_ts, userver::storages::postgres::TimePoint, "created_ts");
   REGISTER_STRUCT_FIELD(last_updated_ts, userver::storages::postgres::TimePoint, "last_updated_ts");
+};
+#endif
+
+#ifdef USE_EMPLOYEE_KEYS_GENERATE_RESPONSE
+struct EmployeeKeysGenerateResponse : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(public_key, std::string, "public_key");
+  REGISTER_STRUCT_FIELD(public_key_hash, std::string, "public_key_hash");
+};
+#endif
+
+#ifdef USE_DOCUMENTS_NEP_SIGN_REQUEST
+struct DocumentsNepSignRequest : public JsonCompatible {
+  REGISTER_STRUCT_FIELD_OPTIONAL(reason, std::string, "reason");
+  REGISTER_STRUCT_FIELD_OPTIONAL(location, std::string, "location");
+};
+#endif
+
+#ifdef USE_PYSERVICE_NEP_SIGN_REQUEST
+struct PyserviceNepSignRequest : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(document_id, std::string, "document_id");
+  REGISTER_STRUCT_FIELD(employee_id, std::string, "employee_id");
+  REGISTER_STRUCT_FIELD(employee_name, std::string, "employee_name");
+  REGISTER_STRUCT_FIELD(private_key, std::string, "private_key");
+  REGISTER_STRUCT_FIELD(public_key, std::string, "public_key");
+  REGISTER_STRUCT_FIELD_OPTIONAL(reason, std::string, "reason");
+  REGISTER_STRUCT_FIELD_OPTIONAL(location, std::string, "location");
+};
+#endif
+
+#ifdef USE_DOCUMENTS_NEP_SIGN_RESPONSE
+struct DocumentsNepSignResponse : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(signature_id, std::string, "signature_id");
+  REGISTER_STRUCT_FIELD(signature_path, std::string, "signature_path");
+  REGISTER_STRUCT_FIELD(timestamp, std::string, "timestamp");
+  REGISTER_STRUCT_FIELD(public_key_hash, std::string, "public_key_hash");
+};
+#endif
+
+#ifdef USE_DOCUMENTS_NEP_VERIFY_REQUEST
+struct DocumentsNepVerifyRequest : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(signature_id, std::string, "signature_id");
+};
+#endif
+
+#ifdef USE_PYSERVICE_NEP_VERIFY_REQUEST
+struct PyserviceNepVerifyRequest : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(document_id, std::string, "document_id");
+  REGISTER_STRUCT_FIELD(signature_path, std::string, "signature_path");
+  REGISTER_STRUCT_FIELD(public_key, std::string, "public_key");
+};
+#endif
+
+#ifdef USE_DOCUMENTS_NEP_VERIFY_RESPONSE
+struct DocumentsNepVerifyResponse : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(valid, bool, "valid");
+  REGISTER_STRUCT_FIELD(integrity_ok, bool, "integrity_ok");
+  REGISTER_STRUCT_FIELD(signature_ok, bool, "signature_ok");
+  REGISTER_STRUCT_FIELD(message, std::string, "message");
+  REGISTER_STRUCT_FIELD(verified_at, std::string, "verified_at");
+  REGISTER_STRUCT_FIELD_OPTIONAL(signer_name, std::string, "signer_name");
+  REGISTER_STRUCT_FIELD_OPTIONAL(signature_timestamp, std::string, "signature_timestamp");
 };
 #endif
