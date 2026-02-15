@@ -560,6 +560,10 @@ struct DocumentsChainMetadataItem : public JsonCompatible {
   REGISTER_STRUCT_FIELD(employee_id, std::string, "employee_id");
   REGISTER_STRUCT_FIELD(requires_signature, int, "requires_signature", 0);
   REGISTER_STRUCT_FIELD(status, int, "status");
+  REGISTER_STRUCT_FIELD_OPTIONAL(employee_name, std::string, "employee_name");
+  REGISTER_STRUCT_FIELD_OPTIONAL(signature_id, std::string, "signature_id");
+  REGISTER_STRUCT_FIELD_OPTIONAL(signature_path, std::string, "signature_path");
+  REGISTER_STRUCT_FIELD_OPTIONAL(signed_at, std::string, "signed_at");
 };
 
 template <>

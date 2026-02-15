@@ -66,7 +66,7 @@ async def nep_sign_document(request):
             )
 
         # Путь для файла подписи
-        signature_local_path = f'/tmp/{document_id}.p7s'
+        signature_local_path = f'/tmp/{document_id}_{employee_id}.p7s'
 
         # Подписываем документ
         try:
@@ -84,7 +84,7 @@ async def nep_sign_document(request):
             )
 
         # Загружаем файл подписи в S3
-        signature_s3_key = f'{document_id}.p7s'
+        signature_s3_key = f'{document_id}_{employee_id}.p7s'
         try:
             upload_file(signature_local_path, signature_s3_key)
         except Exception as e:

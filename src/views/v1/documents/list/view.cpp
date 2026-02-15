@@ -2,6 +2,9 @@
 
 #include "view.hpp"
 
+#include <unordered_map>
+#include <unordered_set>
+
 #include <userver/clients/dns/component.hpp>
 #include <userver/components/component_config.hpp>
 #include <userver/components/component_context.hpp>
@@ -10,6 +13,7 @@
 #include <userver/storages/postgres/cluster.hpp>
 #include <userver/storages/postgres/component.hpp>
 #include <userver/utils/boost_uuid4.hpp>
+#include <userver/utils/datetime.hpp>
 #include <userver/utils/uuid4.hpp>
 
 #include <definitions/all.hpp>
@@ -64,6 +68,91 @@ class DocumentsListHandler final
     DocumentsListResponse response;
     response.documents = result.AsContainer<std::vector<DocumentItem>>(
         userver::storages::postgres::kRowTag);
+
+    // Collect document IDs and employee IDs from chain_metadata
+    std::vector<std::string> doc_ids;
+    std::unordered_set<std::string> employee_id_set;
+    for (const auto& doc : response.documents) {
+      doc_ids.push_back(doc.id);
+      if (doc.chain_metadata.has_value()) {
+        for (const auto& item : doc.chain_metadata.value()) {
+          employee_id_set.insert(item.employee_id);
+        }
+      }
+    }
+
+    // Query A: Fetch all signatures for the returned documents
+    struct SignatureRow {
+      std::string id;
+      std::string document_id;
+      std::string employee_id;
+      std::string signature_path;
+      userver::storages::postgres::TimePoint created_ts;
+    };
+
+    // signature key: (document_id, employee_id)
+    std::unordered_map<std::string, SignatureRow> sig_map;
+    if (!doc_ids.empty()) {
+      auto sig_result = pg_cluster_->Execute(
+          userver::storages::postgres::ClusterHostType::kMaster,
+          "SELECT ds.id, ds.document_id, ds.employee_id, ds.signature_path, ds.created_ts "
+          "FROM working_day_" + company_id + ".document_signatures ds "
+          "WHERE ds.document_id = ANY($1)",
+          doc_ids);
+
+      for (auto row : sig_result) {
+        auto [id, document_id, employee_id, signature_path, created_ts] =
+            row.As<std::string, std::string, std::string, std::string,
+                    userver::storages::postgres::TimePoint>();
+        std::string key = document_id + ":" + employee_id;
+        sig_map[key] = {id, document_id, employee_id, signature_path, created_ts};
+      }
+    }
+
+    // Query B: Fetch employee names
+    std::unordered_map<std::string, std::string> name_map;
+    std::vector<std::string> emp_ids(employee_id_set.begin(), employee_id_set.end());
+    if (!emp_ids.empty()) {
+      auto emp_result = pg_cluster_->Execute(
+          userver::storages::postgres::ClusterHostType::kMaster,
+          "SELECT id, name, surname, patronymic "
+          "FROM working_day_" + company_id + ".employees "
+          "WHERE id = ANY($1)",
+          emp_ids);
+
+      for (auto row : emp_result) {
+        auto [id, name, surname, patronymic] =
+            row.As<std::string, std::string, std::string,
+                    std::optional<std::string>>();
+        std::string full_name = surname + " " + name;
+        if (patronymic.has_value() && !patronymic.value().empty()) {
+          full_name += " " + patronymic.value();
+        }
+        name_map[id] = full_name;
+      }
+    }
+
+    // Post-processing: enrich chain_metadata items
+    for (auto& doc : response.documents) {
+      if (!doc.chain_metadata.has_value()) continue;
+      for (auto& item : doc.chain_metadata.value()) {
+        // Set employee_name
+        auto name_it = name_map.find(item.employee_id);
+        if (name_it != name_map.end()) {
+          item.employee_name = name_it->second;
+        }
+        // Set signature info if exists
+        std::string key = doc.id + ":" + item.employee_id;
+        auto sig_it = sig_map.find(key);
+        if (sig_it != sig_map.end()) {
+          item.signature_id = sig_it->second.id;
+          item.signature_path = sig_it->second.signature_path;
+          auto tp = sig_it->second.created_ts;
+          item.signed_at = userver::utils::datetime::Timestring(tp);
+        }
+      }
+    }
+
     return response.ToJsonString();
   }
 

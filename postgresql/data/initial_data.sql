@@ -64,6 +64,17 @@ VALUES
   ('second_id', 'rejected_doc', FALSE);
 
 
+INSERT INTO working_day_first.document_signatures(id, document_id, employee_id, signature_path, signature_metadata, public_key_hash, created_ts)
+VALUES (
+  'sig_1',
+  'doc_with_chain',
+  'first_id',
+  'doc_with_chain_first_id.p7s',
+  '{"timestamp": "2025-06-01T12:00:00Z", "reason": "approval"}',
+  'abc123hash',
+  '2025-06-01 12:00:00+00'
+);
+
 INSERT INTO working_day_first.teams(id, name) VALUES ('default_team', 'Default team'), ('stranger_team', 'Stranger team');
 INSERT INTO working_day_first.employee_team(employee_id, team_id) VALUES ('first_id', 'default_team'), ('second_id', 'default_team'), ('stranger_id', 'stranger_team');
 

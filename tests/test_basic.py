@@ -952,8 +952,8 @@ async def test_documents_send(service_client):
              "signed": False,
              "type": "admin_request"},
             {"chain_metadata_new":[
-                {"employee_id":"first_id","requires_signature":1,"status":0},
-                {"employee_id":"second_id","requires_signature":0,"status":0}],
+                {"employee_id":"first_id","employee_name":"A First","requires_signature":1,"signature_id":"sig_1","signature_path":"doc_with_chain_first_id.p7s","signed_at":response_data["documents"][1]["chain_metadata_new"][0].get("signed_at"),"status":0},
+                {"employee_id":"second_id","employee_name":"B Second","requires_signature":0,"status":0}],
              "created_ts": response_data["documents"][1]["created_ts"],
              "description": "Test document with approval chain",
              "id": "doc_with_chain",
@@ -963,8 +963,8 @@ async def test_documents_send(service_client):
              "visibility_status": 0,
              "type": "admin_request"},
             {"chain_metadata_new":[
-                {"employee_id":"first_id","requires_signature":1,"status":2},
-                {"employee_id":"second_id","requires_signature":0,"status":0}],
+                {"employee_id":"first_id","employee_name":"A First","requires_signature":1,"status":2},
+                {"employee_id":"second_id","employee_name":"B Second","requires_signature":0,"status":0}],
              "created_ts": response_data["documents"][2]["created_ts"],
              "description": "",
              "id": "rejected_doc",
@@ -1003,6 +1003,8 @@ async def test_documents_send(service_client):
     )
     assert response.status == 200
     response_data = json.loads(response.text)
+    # Update signed_at from the actual response for second user
+    expected_response["documents"][1]["chain_metadata_new"][0]["signed_at"] = response_data["documents"][1]["chain_metadata_new"][0].get("signed_at")
     assert response_data == expected_response
 
     response = await service_client.post(
@@ -2670,8 +2672,8 @@ async def test_send_docx_document(service_client):
              "type": "admin_request",
              "visibility_status": 0},
             {"chain_metadata_new":[
-                {"employee_id":"first_id","requires_signature":1,"status":0},
-                {"employee_id":"second_id","requires_signature":0,"status":0}],
+                {"employee_id":"first_id","employee_name":"A First","requires_signature":1,"signature_id":"sig_1","signature_path":"doc_with_chain_first_id.p7s","signed_at":response_data["documents"][1]["chain_metadata_new"][0].get("signed_at"),"status":0},
+                {"employee_id":"second_id","employee_name":"B Second","requires_signature":0,"status":0}],
              "created_ts": response_data["documents"][1]["created_ts"],
              "description": "Test document with approval chain",
              "id": "doc_with_chain",
@@ -2681,8 +2683,8 @@ async def test_send_docx_document(service_client):
              "type": "admin_request",
              "visibility_status": 0},
             {"chain_metadata_new":[
-                {"employee_id":"first_id","requires_signature":1,"status":2},
-                {"employee_id":"second_id","requires_signature":0,"status":0}],
+                {"employee_id":"first_id","employee_name":"A First","requires_signature":1,"status":2},
+                {"employee_id":"second_id","employee_name":"B Second","requires_signature":0,"status":0}],
              "created_ts": response_data["documents"][2]["created_ts"],
              "description": "",
              "id": "rejected_doc",
@@ -3535,6 +3537,47 @@ async def test_tasks_access_within_project(service_client):
         headers={'Authorization': 'Bearer third_token'},
     )
     assert response.status == 200
+
+@pytest.mark.pgsql('db_1', files=['initial_data.sql'])
+async def test_documents_list_signature_enrichment(service_client):
+    response = await service_client.get(
+        '/v1/documents/list',
+        headers={'Authorization': 'Bearer first_token'}
+    )
+    assert response.status == 200
+    response_data = json.loads(response.text)
+
+    # doc_with_chain has a signature for first_id
+    doc_with_chain = next(d for d in response_data["documents"] if d["id"] == "doc_with_chain")
+    chain = doc_with_chain["chain_metadata_new"]
+
+    # first_id has both employee_name and signature info
+    first_item = next(c for c in chain if c["employee_id"] == "first_id")
+    assert first_item["employee_name"] == "A First"
+    assert first_item["signature_id"] == "sig_1"
+    assert first_item["signature_path"] == "doc_with_chain_first_id.p7s"
+    assert "signed_at" in first_item
+
+    # second_id has employee_name but no signature
+    second_item = next(c for c in chain if c["employee_id"] == "second_id")
+    assert second_item["employee_name"] == "B Second"
+    assert "signature_id" not in second_item
+    assert "signature_path" not in second_item
+    assert "signed_at" not in second_item
+
+    # rejected_doc has employee_names but no signatures
+    rejected_doc = next(d for d in response_data["documents"] if d["id"] == "rejected_doc")
+    for item in rejected_doc["chain_metadata_new"]:
+        assert "employee_name" in item
+        assert "signature_id" not in item
+
+    # empty chain docs have no chain_metadata to enrich
+    for doc in response_data["documents"]:
+        if doc["chain_metadata_new"] == []:
+            continue
+        for item in doc["chain_metadata_new"]:
+            assert "employee_name" in item
+
 
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])
 async def test_end(service_client):
