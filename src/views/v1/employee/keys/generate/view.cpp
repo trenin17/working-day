@@ -8,6 +8,9 @@
 #include <openssl/rsa.h>
 #include <openssl/sha.h>
 
+#include <algorithm>
+#include <cctype>
+
 #include <userver/components/component_config.hpp>
 #include <userver/components/component_context.hpp>
 #include <userver/logging/log.hpp>
@@ -32,7 +35,7 @@ struct KeyPair {
   std::string public_key_hash;
 };
 
-KeyPair GenerateRSAKeyPair() {
+KeyPair GenerateRSAKeyPair(std::string_view signature_password) {
   KeyPair result;
 
   // Генерируем RSA ключ
@@ -56,9 +59,11 @@ KeyPair GenerateRSAKeyPair() {
 
   EVP_PKEY_CTX_free(ctx);
 
-  // Экспортируем приватный ключ в PEM
+  // Экспортируем приватный ключ в PEM с шифрованием signature_password
   BIO* private_bio = BIO_new(BIO_s_mem());
-  if (PEM_write_bio_PrivateKey(private_bio, pkey, nullptr, nullptr, 0,
+  const unsigned char* kstr = reinterpret_cast<const unsigned char*>(signature_password.data());
+  int klen = static_cast<int>(signature_password.size());
+  if (PEM_write_bio_PrivateKey(private_bio, pkey, EVP_aes_256_cbc(), kstr, klen,
                                 nullptr, nullptr) != 1) {
     BIO_free(private_bio);
     EVP_PKEY_free(pkey);
@@ -136,42 +141,63 @@ properties: {}
     const auto& user_id = ctx.GetData<std::string>("user_id");
     const auto& company_id = ctx.GetData<std::string>("company_id");
 
+    auto signature_password = request.GetArg("signature_password");
+    if (signature_password.empty()) {
+      request.GetHttpResponse().SetStatus(userver::server::http::HttpStatus::kBadRequest);
+      return ErrorMessage{"signature_password is required"}.ToJsonString();
+    }
+    if (signature_password.size() != 6 ||
+        !std::all_of(signature_password.begin(), signature_password.end(),
+                     [](unsigned char c) { return std::isdigit(c); })) {
+      request.GetHttpResponse().SetStatus(userver::server::http::HttpStatus::kBadRequest);
+      return ErrorMessage{"signature_password must be exactly 6 digits"}.ToJsonString();
+    }
+
     LOG_INFO() << "Generating NEP keys for user: " << user_id;
 
-    // Проверяем, не существуют ли уже ключи для этого пользователя
+    // Проверяем, не существуют ли уже ключи
     auto existing_keys =
         pg_cluster_->Execute(
             userver::storages::postgres::ClusterHostType::kSlave,
             "SELECT employee_id FROM working_day_" + company_id +
-                ".employee_keys "
-                "WHERE employee_id = $1",
+                ".employee_keys WHERE employee_id = $1",
             user_id);
-
     if (!existing_keys.IsEmpty()) {
-      // Ключи уже существуют, возвращаем ошибку
       request.GetHttpResponse().SetStatus(userver::server::http::HttpStatus::kBadRequest);
       return ErrorMessage{"Keys already exist. Please delete old keys first."}.ToJsonString();
     }
 
-    // Генерируем новую пару ключей
+    // Генерируем новую пару ключей (приватный ключ шифруется signature_password)
     KeyPair keys;
     try {
-      keys = GenerateRSAKeyPair();
+      keys = GenerateRSAKeyPair(signature_password);
     } catch (const std::exception& e) {
       LOG_ERROR() << "Failed to generate RSA keys: " << e.what();
       request.GetHttpResponse().SetStatus(userver::server::http::HttpStatus::kInternalServerError);
       return ErrorMessage{"Failed to generate RSA keys"}.ToJsonString();
     }
 
-    // Сохраняем ключи в базу данных
+    // Сохраняем ключи и пароль подписи в БД в одной транзакции
     try {
-      pg_cluster_->Execute(
-          userver::storages::postgres::ClusterHostType::kMaster,
+      auto trx = pg_cluster_->Begin(
+          "employee_keys_generate",
+          userver::storages::postgres::ClusterHostType::kMaster, {});
+
+      trx.Execute(
           "INSERT INTO working_day_" + company_id +
               ".employee_keys "
               "(employee_id, private_key, public_key, public_key_hash) "
               "VALUES ($1, $2, $3, $4)",
           user_id, keys.private_key, keys.public_key, keys.public_key_hash);
+
+      trx.Execute(
+          "INSERT INTO working_day_" + company_id +
+              ".employee_signature_passwords "
+              "(employee_id, signature_password) "
+              "VALUES ($1, $2)",
+          user_id, signature_password);
+
+      trx.Commit();
     } catch (const std::exception& e) {
       LOG_ERROR() << "Failed to save keys to database: " << e.what();
       request.GetHttpResponse().SetStatus(userver::server::http::HttpStatus::kInternalServerError);

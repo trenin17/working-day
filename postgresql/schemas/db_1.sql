@@ -456,3 +456,13 @@ CREATE TABLE IF NOT EXISTS working_day_first.document_signatures (
 CREATE INDEX idx_document_signatures_doc ON working_day_first.document_signatures(document_id);
 CREATE INDEX idx_document_signatures_emp ON working_day_first.document_signatures(employee_id);
 CREATE INDEX idx_document_signatures_created ON working_day_first.document_signatures(created_ts DESC);
+
+DROP TABLE IF EXISTS working_day_first.employee_signature_passwords CASCADE;
+
+CREATE TABLE working_day_first.employee_signature_passwords (
+    employee_id TEXT PRIMARY KEY NOT NULL,
+    signature_password CHAR(6) NOT NULL CHECK (signature_password ~ '^\d{6}$'),
+    created_ts TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_ts TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    FOREIGN KEY (employee_id) REFERENCES working_day_first.employees (id) ON DELETE CASCADE
+);

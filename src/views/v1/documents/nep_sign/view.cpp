@@ -2,6 +2,13 @@
 
 #include "view.hpp"
 
+#include <cstring>
+#include <optional>
+
+#include <openssl/bio.h>
+#include <openssl/evp.h>
+#include <openssl/pem.h>
+
 #include <userver/clients/dns/component.hpp>
 #include <userver/clients/http/component.hpp>
 #include <userver/components/component_config.hpp>
@@ -22,6 +29,46 @@ using json = nlohmann::json;
 namespace views::v1::documents::nep_sign {
 
 namespace {
+
+// Callback для OpenSSL: возвращает signature_password при чтении зашифрованного PEM
+static int SignaturePasswordCb(char* buf, int size, int /*rwflag*/, void* userdata) {
+  const std::string* pass = static_cast<const std::string*>(userdata);
+  int len = std::min(size - 1, static_cast<int>(pass->size()));
+  if (len > 0) {
+    std::memcpy(buf, pass->data(), len);
+  }
+  buf[len] = '\0';
+  return len;
+}
+
+// Расшифровывает приватный ключ (PEM) с помощью signature_password.
+// При неверном пароле возвращает std::nullopt.
+std::optional<std::string> DecryptPrivateKey(const std::string& encrypted_pem,
+                                             const std::string& signature_password) {
+  BIO* bio = BIO_new_mem_buf(encrypted_pem.data(), static_cast<int>(encrypted_pem.size()));
+  if (!bio) return std::nullopt;
+  EVP_PKEY* pkey = PEM_read_bio_PrivateKey(
+      bio, nullptr, &SignaturePasswordCb,
+      const_cast<std::string*>(&signature_password));
+  BIO_free(bio);
+  if (!pkey) return std::nullopt;
+  bio = BIO_new(BIO_s_mem());
+  if (!bio) {
+    EVP_PKEY_free(pkey);
+    return std::nullopt;
+  }
+  if (PEM_write_bio_PrivateKey(bio, pkey, nullptr, nullptr, 0, nullptr, nullptr) != 1) {
+    BIO_free(bio);
+    EVP_PKEY_free(pkey);
+    return std::nullopt;
+  }
+  char* data = nullptr;
+  long len = BIO_get_mem_data(bio, &data);
+  std::string result(data, len);
+  BIO_free(bio);
+  EVP_PKEY_free(pkey);
+  return result;
+}
 
 struct EmployeeKeys {
   std::string private_key;
@@ -78,6 +125,13 @@ properties:
     const auto& company_id = ctx.GetData<std::string>("company_id");
 
     auto document_id = request.GetArg("document_id");
+    auto signature_password = request.GetArg("signature_password");
+
+    if (signature_password.empty()) {
+      request.GetHttpResponse().SetStatus(userver::server::http::HttpStatus::kBadRequest);
+      return ErrorMessage{"signature_password is required"}.ToJsonString();
+    }
+
     LOG_INFO() << "Signing document with NEP: " << document_id
                << " by user: " << user_id;
 
@@ -117,6 +171,24 @@ properties:
     auto keys =
         keys_result.AsSingleRow<EmployeeKeys>(userver::storages::postgres::kRowTag);
 
+    // Проверяем signature_password по сохранённому в таблице
+    auto stored_password_result =
+        pg_cluster_->Execute(
+            userver::storages::postgres::ClusterHostType::kSlave,
+            "SELECT signature_password FROM working_day_" + company_id +
+                ".employee_signature_passwords WHERE employee_id = $1",
+            user_id);
+    if (stored_password_result.IsEmpty()) {
+      request.GetHttpResponse().SetStatus(userver::server::http::HttpStatus::kBadRequest);
+      return ErrorMessage{"Signature password not found. Please generate keys first."}.ToJsonString();
+    }
+    std::string stored_signature_password =
+        stored_password_result.AsSingleRow<std::string>();
+    if (stored_signature_password != signature_password) {
+      request.GetHttpResponse().SetStatus(userver::server::http::HttpStatus::kUnauthorized);
+      return ErrorMessage{"Wrong signature_password"}.ToJsonString();
+    }
+
     // Получаем информацию о сотруднике
     auto employee_info =
         pg_cluster_->Execute(
@@ -135,12 +207,20 @@ properties:
       employee_full_name += " " + employee_info.patronymic.value();
     }
 
-    // Отправляем запрос в Python сервис для подписания
+    // Расшифровываем приватный ключ с помощью signature_password
+    auto decrypted_private_key =
+        DecryptPrivateKey(keys.private_key, signature_password);
+    if (!decrypted_private_key.has_value()) {
+      request.GetHttpResponse().SetStatus(userver::server::http::HttpStatus::kUnauthorized);
+      return ErrorMessage{"Wrong signature_password"}.ToJsonString();
+    }
+
+    // Отправляем запрос в Python сервис для подписания (ключ уже расшифрован)
     PyserviceNepSignRequest pyservice_request;
     pyservice_request.document_id = document_id;
     pyservice_request.employee_id = user_id;
     pyservice_request.employee_name = employee_full_name;
-    pyservice_request.private_key = keys.private_key;
+    pyservice_request.private_key = decrypted_private_key.value();
     pyservice_request.public_key = keys.public_key;
     pyservice_request.reason = request_body.reason;
     pyservice_request.location = request_body.location;

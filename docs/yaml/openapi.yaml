@@ -751,6 +751,13 @@ paths:
                 description: Token of session user
                 schema:
                     type: string
+              - in: query
+                name: signature_password
+                required: true
+                description: Password for encrypting NEP private key (exactly 6 digits)
+                schema:
+                    type: string
+                    pattern: '^\d{6}$'
             responses:
                 '200':
                     description: Keys were generated successfully
@@ -779,6 +786,13 @@ paths:
                 description: Id of the document to sign
                 schema:
                     type: string
+              - in: query
+                name: signature_password
+                required: true
+                description: Password for NEP private key (exactly 6 digits, same as set at key generation)
+                schema:
+                    type: string
+                    pattern: '^\d{6}$'
             requestBody:
                 required: false
                 content:
@@ -794,6 +808,12 @@ paths:
                                 $ref: '#/components/schemas/DocumentsNepSignResponse'
                 '400':
                     description: Keys not found or bad request
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+                '401':
+                    description: Wrong signature_password
                     content:
                         application/json:
                             schema:
