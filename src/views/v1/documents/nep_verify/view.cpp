@@ -30,6 +30,7 @@ struct SignatureInfo {
   std::string signature_path;
   std::string signature_metadata;
   std::string public_key_hash;
+  std::string signature_type;
 };
 
 struct EmployeeKeys {
@@ -87,7 +88,7 @@ properties:
         pg_cluster_->Execute(
             userver::storages::postgres::ClusterHostType::kSlave,
             "SELECT id, document_id, employee_id, signature_path, "
-            "signature_metadata::text, public_key_hash "
+            "signature_metadata::text, public_key_hash, signature_type "
             "FROM working_day_" +
                 company_id +
                 ".document_signatures "
@@ -103,6 +104,11 @@ properties:
     auto signature =
         signature_result.AsSingleRow<SignatureInfo>(
             userver::storages::postgres::kRowTag);
+
+    if (signature.signature_type != "nep") {
+      request.GetHttpResponse().SetStatus(userver::server::http::HttpStatus::kBadRequest);
+      return ErrorMessage{"Signature type is not NEP"}.ToJsonString();
+    }
 
     // Получаем публичный ключ сотрудника, который подписал документ
     auto keys_result =

@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS ${SCHEMA}.document_signatures (
     employee_id TEXT NOT NULL,           -- ID сотрудника, который подписал
     signature_path TEXT NOT NULL,        -- Путь к файлу отсоединенной подписи (.p7s)
     signature_metadata JSONB NOT NULL,   -- Метаданные подписи (timestamp, reason, location, etc)
-    public_key_hash TEXT NOT NULL,       -- Хеш публичного ключа на момент подписания
+    public_key_hash TEXT,       -- Хеш публичного ключа на момент подписания. Может быть null для КЭП.
     created_ts TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     FOREIGN KEY (document_id) REFERENCES ${SCHEMA}.documents (id) ON DELETE CASCADE,
     FOREIGN KEY (employee_id) REFERENCES ${SCHEMA}.employees (id) ON DELETE CASCADE

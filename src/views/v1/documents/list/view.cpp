@@ -88,6 +88,7 @@ class DocumentsListHandler final
       std::string employee_id;
       std::string signature_path;
       userver::storages::postgres::TimePoint created_ts;
+      std::string signature_type;
     };
 
     // signature key: (document_id, employee_id)
@@ -95,17 +96,17 @@ class DocumentsListHandler final
     if (!doc_ids.empty()) {
       auto sig_result = pg_cluster_->Execute(
           userver::storages::postgres::ClusterHostType::kMaster,
-          "SELECT ds.id, ds.document_id, ds.employee_id, ds.signature_path, ds.created_ts "
+          "SELECT ds.id, ds.document_id, ds.employee_id, ds.signature_path, ds.created_ts, ds.signature_type "
           "FROM working_day_" + company_id + ".document_signatures ds "
           "WHERE ds.document_id = ANY($1)",
           doc_ids);
 
       for (auto row : sig_result) {
-        auto [id, document_id, employee_id, signature_path, created_ts] =
+        auto [id, document_id, employee_id, signature_path, created_ts, signature_type] =
             row.As<std::string, std::string, std::string, std::string,
-                    userver::storages::postgres::TimePoint>();
+                    userver::storages::postgres::TimePoint, std::string>();
         std::string key = document_id + ":" + employee_id;
-        sig_map[key] = {id, document_id, employee_id, signature_path, created_ts};
+        sig_map[key] = {id, document_id, employee_id, signature_path, created_ts, signature_type};
       }
     }
 
@@ -149,6 +150,7 @@ class DocumentsListHandler final
           item.signature_path = sig_it->second.signature_path;
           auto tp = sig_it->second.created_ts;
           item.signed_at = userver::utils::datetime::Timestring(tp);
+          item.signature_type = sig_it->second.signature_type;
         }
       }
     }

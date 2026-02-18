@@ -96,6 +96,12 @@
 #define USE_DOWNLOAD_DOCUMENT_RESPONSE
 #endif
 
+#ifdef V1_DOCUMENTS_DOWNLOAD_WITH_SIGNATURES
+#define USE_DOWNLOAD_DOCUMENT_WITH_SIGNATURES_RESPONSE
+#define USE_DOWNLOAD_DOCUMENT_RESPONSE
+#define USE_ERROR_MESSAGE
+#endif
+
 #ifdef V1_DOCUMENTS_LIST_ALL
 #define USE_DOCUMENTS_LIST_ALL_RESPONSE
 #endif
@@ -368,6 +374,12 @@
 #define USE_ERROR_MESSAGE
 #endif
 
+#ifdef V1_DOCUMENTS_UPLOAD_SIGNATURE
+#define USE_UPLOAD_SIGNATURE_REQUEST
+#define USE_UPLOAD_SIGNATURE_RESPONSE
+#define USE_ERROR_MESSAGE
+#endif
+
 #ifdef USE_LIST_EMPLOYEE
 struct ListEmployee : public JsonCompatible {
   // For postgres initialization type needs to be default constructible
@@ -564,6 +576,7 @@ struct DocumentsChainMetadataItem : public JsonCompatible {
   REGISTER_STRUCT_FIELD_OPTIONAL(signature_id, std::string, "signature_id");
   REGISTER_STRUCT_FIELD_OPTIONAL(signature_path, std::string, "signature_path");
   REGISTER_STRUCT_FIELD_OPTIONAL(signed_at, std::string, "signed_at");
+  REGISTER_STRUCT_FIELD_OPTIONAL(signature_type, std::string, "signature_type");
 };
 
 template <>
@@ -615,6 +628,17 @@ struct DocumentsListResponse : public JsonCompatible {
 #ifdef USE_DOWNLOAD_DOCUMENT_RESPONSE
 struct DownloadDocumentResponse : public JsonCompatible {
   REGISTER_STRUCT_FIELD(url, std::string, "url");
+};
+#endif
+
+#ifdef USE_DOWNLOAD_DOCUMENT_WITH_SIGNATURES_RESPONSE
+struct DownloadDocumentWithSignaturesSignatureItem : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(signature_path, std::string, "signature_path");
+  REGISTER_STRUCT_FIELD(url, std::string, "url");
+};
+struct DownloadDocumentWithSignaturesResponse : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(document_url, std::string, "document_url");
+  REGISTER_STRUCT_FIELD(signatures, std::vector<DownloadDocumentWithSignaturesSignatureItem>, "signatures");
 };
 #endif
 
@@ -1240,7 +1264,7 @@ struct EmployeePermissionsItem : public JsonCompatible {
     return std::tie(permission_type, permission_value);
   }
 
-  REGISTER_STRUCT_ENUM_FIELD(permission_type, std::string, "permission_type", {"can_remove_documents" /*, etc*/ });
+  REGISTER_STRUCT_ENUM_FIELD(permission_type, std::string, "permission_type", {"can_remove_documents", "can_upload_kep_signature" /*, etc*/ });
   REGISTER_STRUCT_FIELD(permission_value, int, "permission_value");
 };
 #endif
@@ -1373,5 +1397,20 @@ struct DocumentsNepVerifyResponse : public JsonCompatible {
   REGISTER_STRUCT_FIELD(verified_at, std::string, "verified_at");
   REGISTER_STRUCT_FIELD_OPTIONAL(signer_name, std::string, "signer_name");
   REGISTER_STRUCT_FIELD_OPTIONAL(signature_timestamp, std::string, "signature_timestamp");
+};
+#endif
+
+#ifdef USE_UPLOAD_SIGNATURE_REQUEST
+struct DocumentsUploadSignatureRequest : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(document_id, std::string, "document_id");
+  REGISTER_STRUCT_FIELD(extension, std::string, "extension");
+  REGISTER_STRUCT_FIELD(signature_type, std::string, "signature_type");
+};
+#endif
+
+#ifdef USE_UPLOAD_SIGNATURE_RESPONSE
+struct DocumentsUploadSignatureResponse : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(signature_id, std::string, "signature_id");
+  REGISTER_STRUCT_FIELD(url, std::string, "url");
 };
 #endif

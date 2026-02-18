@@ -952,7 +952,7 @@ async def test_documents_send(service_client):
              "signed": False,
              "type": "admin_request"},
             {"chain_metadata_new":[
-                {"employee_id":"first_id","employee_name":"A First","requires_signature":1,"signature_id":"sig_1","signature_path":"doc_with_chain_first_id.p7s","signed_at":response_data["documents"][1]["chain_metadata_new"][0].get("signed_at"),"status":0},
+                {"employee_id":"first_id","employee_name":"A First","requires_signature":1,"signature_id":"sig_1","signature_path":"doc_with_chain_first_id.p7s","signature_type":"nep","signed_at":response_data["documents"][1]["chain_metadata_new"][0].get("signed_at"),"status":0},
                 {"employee_id":"second_id","employee_name":"B Second","requires_signature":0,"status":0}],
              "created_ts": response_data["documents"][1]["created_ts"],
              "description": "Test document with approval chain",
@@ -2672,7 +2672,7 @@ async def test_send_docx_document(service_client):
              "type": "admin_request",
              "visibility_status": 0},
             {"chain_metadata_new":[
-                {"employee_id":"first_id","employee_name":"A First","requires_signature":1,"signature_id":"sig_1","signature_path":"doc_with_chain_first_id.p7s","signed_at":response_data["documents"][1]["chain_metadata_new"][0].get("signed_at"),"status":0},
+                {"employee_id":"first_id","employee_name":"A First","requires_signature":1,"signature_id":"sig_1","signature_path":"doc_with_chain_first_id.p7s","signature_type":"nep","signed_at":response_data["documents"][1]["chain_metadata_new"][0].get("signed_at"),"status":0},
                 {"employee_id":"second_id","employee_name":"B Second","requires_signature":0,"status":0}],
              "created_ts": response_data["documents"][1]["created_ts"],
              "description": "Test document with approval chain",

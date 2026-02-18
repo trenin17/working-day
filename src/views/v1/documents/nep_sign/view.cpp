@@ -261,10 +261,10 @@ properties:
         "INSERT INTO working_day_" + company_id +
             ".document_signatures "
             "(id, document_id, employee_id, signature_path, "
-            "signature_metadata, public_key_hash) "
-            "VALUES ($1, $2, $3, $4, $5::jsonb, $6)",
+            "signature_metadata, public_key_hash, signature_type) "
+            "VALUES ($1, $2, $3, $4, $5::jsonb, $6, $7)",
         signature_id, document_id, user_id, signature_path,
-        metadata.dump(), public_key_hash);
+        metadata.dump(), public_key_hash, "nep");
 
     // Обновляем статус подписания в employee_document
     pg_cluster_->Execute(

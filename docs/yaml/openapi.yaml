@@ -620,6 +620,28 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/UploadDocumentResponse'
+    /v1/documents/upload-signature:
+        post:
+            description: Sign document with KEP (Qualified Electronic Signature)
+            parameters:
+              - in: header
+                name: Authorization
+                description: Token of session user
+                schema:
+                    type: string
+            requestBody:
+                required: false
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/DocumentsUploadSignatureRequest'
+            responses:
+                '200':
+                    description: Document was signed successfully with KEP
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/DocumentsUploadSignatureResponse'
 
     /v1/documents/send:
         post:
@@ -680,6 +702,29 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/DownloadDocumentResponse'
+
+    /v1/documents/download-with-signatures:
+        get:
+            description: Build archive (document + all signatures), upload to S3, return single download link
+            parameters:
+              - in: header
+                name: Authorization
+                schema:
+                    type: string
+              - in: query
+                name: id
+                description: Document id
+                schema:
+                    type: string
+            responses:
+                '200':
+                    description: Presigned URL to download the zip archive
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/DownloadDocumentResponse'
+                '404':
+                    description: Document not found or access denied
 
     /v1/documents/list-all:
         get:
@@ -2387,6 +2432,7 @@ components:
                     type: string
                     description: Id to access the document
 
+
         DocumentSendRequest:
             type: object
             additionalProperties: false
@@ -2541,6 +2587,7 @@ components:
                         - .pdf
                         - .xlsx
                     default: ".pdf"
+
 
         InventoryItem:
             type: object
@@ -2987,6 +3034,12 @@ components:
                 signed_at:
                     type: string
                     description: Timestamp when the NEP signature was created
+                signature_type:
+                    type: string
+                    enum: [nep, kep]
+                    description: Type of signature
+                      - nep - NEP signature
+                      - kep - KEP signature
 
         DocumentsChainUpdateRequest:
             type: object
@@ -3085,6 +3138,7 @@ components:
                     type: string
                     enum:
                       - can_remove_documents
+                      - can_upload_kep_signature
                       # etc.
                 permission_value:
                     type: int
@@ -3223,6 +3277,41 @@ components:
                 public_key_hash:
                     type: string
                     description: Hash of the public key used for signing
+
+        DocumentsUploadSignatureRequest:
+            type: object
+            additionalProperties: false
+            required:
+              - document_id
+              - extension
+              - signature_type
+            properties:
+                document_id:
+                    type: string
+                    description: Id of the document to sign
+                extension:
+                    type: string
+                    description: Extension of the document to sign
+                    enum: [.sig, .p7s]
+                    default: .sig
+                signature_type:
+                    type: string
+                    enum: [nep, kep]
+                    description: Type of signature
+                      - nep - NEP signature
+                      - kep - KEP signature
+
+        DocumentsUploadSignatureResponse:
+            type: object
+            additionalProperties: false
+            required:
+              - signature_id
+              - url
+            properties:
+                signature_id:
+                    type: string
+                url:
+                    type: string
 
         DocumentsNepVerifyResponse:
             type: object

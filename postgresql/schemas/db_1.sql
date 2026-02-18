@@ -430,7 +430,7 @@ CREATE TABLE IF NOT EXISTS working_day_first.employee_keys (
     employee_id TEXT PRIMARY KEY NOT NULL,
     private_key TEXT NOT NULL,
     public_key TEXT NOT NULL,
-    public_key_hash TEXT NOT NULL,
+    public_key_hash TEXT,
     created_ts TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_ts TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     FOREIGN KEY (employee_id) REFERENCES working_day_first.employees (id) ON DELETE CASCADE
@@ -466,3 +466,13 @@ CREATE TABLE working_day_first.employee_signature_passwords (
     updated_ts TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     FOREIGN KEY (employee_id) REFERENCES working_day_first.employees (id) ON DELETE CASCADE
 );
+
+ALTER TABLE working_day_first.document_signatures
+ADD COLUMN signature_type TEXT NOT NULL DEFAULT 'nep' CHECK (signature_type IN ('nep', 'kep'));
+
+ALTER TABLE working_day_first.employee_permissions
+DROP CONSTRAINT IF EXISTS employee_permissions_permission_type_check;
+
+ALTER TABLE working_day_first.employee_permissions
+ADD CONSTRAINT employee_permissions_permission_type_check
+CHECK (permission_type IN ('can_remove_documents', 'can_upload_kep_signature'));

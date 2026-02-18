@@ -64,7 +64,7 @@ VALUES
   ('second_id', 'rejected_doc', FALSE);
 
 
-INSERT INTO working_day_first.document_signatures(id, document_id, employee_id, signature_path, signature_metadata, public_key_hash, created_ts)
+INSERT INTO working_day_first.document_signatures(id, document_id, employee_id, signature_path, signature_metadata, public_key_hash, created_ts, signature_type)
 VALUES (
   'sig_1',
   'doc_with_chain',
@@ -72,7 +72,8 @@ VALUES (
   'doc_with_chain_first_id.p7s',
   '{"timestamp": "2025-06-01T12:00:00Z", "reason": "approval"}',
   'abc123hash',
-  '2025-06-01 12:00:00+00'
+  '2025-06-01 12:00:00+00',
+  'nep'
 );
 
 INSERT INTO working_day_first.teams(id, name) VALUES ('default_team', 'Default team'), ('stranger_team', 'Stranger team');

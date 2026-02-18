@@ -70,6 +70,9 @@ def userver_config_pyservice(mockserver_info):
             'pyservice-url'
         ] = mockserver_info.url('tracker/tasks/documents/convert')
 
+        components['handler-v1-documents-download-with-signatures'][
+            'pyservice-url'
+        ] = mockserver_info.url('document/build-archive')
 
     return do_patch
     # /// [patch configs]
@@ -113,4 +116,9 @@ def mock_pyservice(mockserver) -> None:
         return {
             'response': 'OK'
         }
+
+    @mockserver.json_handler('/document/build-archive')
+    def mock(request):
+        return {'url': 's3 download test link'}
+
     # /// [mockserver]

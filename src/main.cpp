@@ -29,6 +29,7 @@
 #include "views/v1/authorize/view.hpp"
 #include "views/v1/clear-tasks/view.hpp"
 #include "views/v1/documents/download/view.hpp"
+#include "views/v1/documents/download_with_signatures/view.hpp"
 #include "views/v1/documents/get_signs/view.hpp"
 #include "views/v1/documents/list/view.hpp"
 #include "views/v1/documents/list_all/view.hpp"
@@ -82,6 +83,7 @@
 #include "views/v1/employee/keys/generate/view.hpp"
 #include "views/v1/documents/nep_sign/view.hpp"
 #include "views/v1/documents/nep_verify/view.hpp"
+#include "views/v1/documents/upload_signature/view.hpp"
 
 int main(int argc, char* argv[]) {
   Aws::SDKOptions options;
@@ -135,6 +137,7 @@ int main(int argc, char* argv[]) {
   views::v1::documents::send::AppendDocumentsSend(component_list);
   views::v1::documents::list::AppendDocumentsList(component_list);
   views::v1::documents::download::AppendDocumentsDownload(component_list);
+  views::v1::documents::download_with_signatures::AppendDocumentsDownloadWithSignatures(component_list);
   views::v1::documents::sign::AppendDocumentsSign(component_list);
   views::v1::documents::list_all::AppendDocumentsListAll(component_list);
   views::v1::documents::get_signs::AppendDocumentsGetSigns(component_list);
@@ -171,6 +174,7 @@ int main(int argc, char* argv[]) {
   views::v1::employee::keys::generate::AppendEmployeeKeysGenerate(component_list);
   views::v1::documents::nep_sign::AppendDocumentsNepSign(component_list);
   views::v1::documents::nep_verify::AppendDocumentsNepVerify(component_list);
+  views::v1::documents::upload_signature::AppendDocumentsUploadSignatureView(component_list);
 
   int err_code = userver::utils::DaemonMain(argc, argv, component_list);
 
