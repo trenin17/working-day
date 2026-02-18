@@ -33,7 +33,6 @@ class AttendanceExportToExcelHandler final
     : public userver::server::handlers::HttpHandlerBase {
  public:
   static constexpr std::string_view kName = "handler-v1-attendance-export-to-excel";
-
   static userver::yaml_config::Schema GetStaticConfigSchema() {
     return userver::yaml_config::MergeSchemas<HandlerBase>(R"(
 type: object

@@ -49,6 +49,7 @@
 #ifdef USE_SEARCH_RESPONSE
 #define USE_TRACKER_TASKS_LIST_ITEM
 #define USE_LIST_EMPLOYEE
+#define USE_TRACKER_PROJECTS_LIST_ITEM
 #endif
 
 #ifdef V1_ATTENDANCE_LIST_ALL
@@ -209,6 +210,7 @@
 
 #ifdef V1_TRACKER_PROJECTS_ADD
 #define USE_TRACKER_PROJECTS_ADD_REQUEST
+#define USE_ERROR_MESSAGE
 #endif
 
 #ifdef V1_TRACKER_PROJECTS_LIST
@@ -218,10 +220,7 @@
 
 #ifdef V1_TRACKER_TASKS_ADD
 #define USE_REVERSE_INDEX
-#define USE_TRACKER_TASKS_ADD_REQUEST
-#endif
-
-#ifdef USE_TRACKER_TASKS_ADD_REQUEST
+#define USE_TRACKER_TASKS_ITEM_REQUEST
 #define USE_ERROR_MESSAGE
 #endif
 
@@ -247,7 +246,30 @@
 #define USE_ERROR_MESSAGE
 #endif
 
+#ifdef V1_TRACKER_PROJECTS_EDIT
+#define USE_REVERSE_INDEX
+#define USE_TRACKER_PROJECTS_EDIT_REQUEST
+#define USE_ERROR_MESSAGE
+#endif
+
+
+#ifdef V1_TRACKER_PROJECTS_INFO
+#define USE_TRACKER_PROJECTS_LIST_ITEM
+#define USE_ERROR_MESSAGE
+#endif
+
+
 #ifdef V1_TRACKER_TASKS_MEDIA_UPLOAD
+#define USE_ERROR_MESSAGE
+#endif
+
+#ifdef V1_TRACKER_TASKS_DOCUMENTS_SEND
+#define USE_TRACKER_TASKS_DOCUMENT_ITEM
+#define USE_PYSERVICE_DOCUMENT_SEND_REQUEST
+#define USE_ERROR_MESSAGE
+#endif
+
+#ifdef V1_TRACKER_TASKS_DOCUMENTS_REMOVE
 #define USE_ERROR_MESSAGE
 #endif
 
@@ -305,6 +327,26 @@
 #define USE_ERROR_MESSAGE
 #define USE_EMPLOYEE_PERMISSIONS_ITEM
 #define USE_EMPLOYEE_PERMISSIONS
+#endif
+
+#ifdef V1_COMMENTS_ADD
+#define USE_COMMENT_ADD_REQUEST
+#define USE_COMMENT_ADD_RESPONSE
+#define USE_ERROR_MESSAGE
+#endif
+
+#ifdef V1_COMMENTS_EDIT
+#define USE_COMMENT_EDIT_REQUEST
+#define USE_ERROR_MESSAGE
+#endif
+
+#ifdef V1_COMMENTS_INFO
+#define USE_COMMENT_ITEM
+#define USE_ERROR_MESSAGE
+#endif
+
+#ifdef V1_COMMENTS_REMOVE
+#define USE_ERROR_MESSAGE
 #endif
 
 #ifdef USE_LIST_EMPLOYEE
@@ -860,113 +902,186 @@ struct LoadRecentMessagesRequest : public JsonCompatible {
 #endif
 
 #ifdef USE_TRACKER_PROJECTS_ADD_REQUEST
-struct TrackerProjectsAddRequest : public JsonCompatible {
-  REGISTER_STRUCT_FIELD(project_name, std::string, "project_name");
+struct TrackerProjectsItemRequest : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(project_key, std::string, "project_key");
+  REGISTER_STRUCT_FIELD(title, std::string, "title");
+  REGISTER_STRUCT_FIELD_OPTIONAL(description, std::string, "description");
+  REGISTER_STRUCT_FIELD_OPTIONAL(assigned_users_ids, std::vector<std::string>, "assigned_users_ids");
+  REGISTER_STRUCT_ENUM_FIELD_OPTIONAL(status, std::string, "status", {"Open", "Pause", "Closed"});
+};
+
+struct TrackerProjectsAddResponse : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(project_id, std::string, "project_id");
 };
 #endif
 
 #ifdef USE_TRACKER_PROJECTS_LIST_ITEM
-struct TrackerProjectsListItem : public JsonCompatible {
+
+struct TrackerProjectsItemResponseShort : public JsonCompatible {
   // For postgres initialization type needs to be default constructible
-  TrackerProjectsListItem() = default;
+  TrackerProjectsItemResponseShort() = default;
 
   // Make sure to initialize parsing first for new structure
-  TrackerProjectsListItem(TrackerProjectsListItem&& other) { *this = std::move(other); }
+  TrackerProjectsItemResponseShort(TrackerProjectsItemResponseShort&& other) { *this = std::move(other); }
 
-  TrackerProjectsListItem(const TrackerProjectsListItem& other) { *this = other; }
+  TrackerProjectsItemResponseShort(const TrackerProjectsItemResponseShort& other) { *this = other; }
 
-  TrackerProjectsListItem& operator=(TrackerProjectsListItem&& other) = default;
+  TrackerProjectsItemResponseShort& operator=(TrackerProjectsItemResponseShort&& other) = default;
 
-  TrackerProjectsListItem& operator=(const TrackerProjectsListItem& other) = default;
+  TrackerProjectsItemResponseShort& operator=(const TrackerProjectsItemResponseShort& other) = default;
 
   // Method for postgres initialization of non-trivial types
   auto Introspect() {
-    return std::tie(project_name, tasks_count);
+    return std::tie(project_id, title, image_url, creator);
   }
 
-  REGISTER_STRUCT_FIELD(project_name, std::string, "project_name");
+  REGISTER_STRUCT_FIELD(project_id, std::string, "project_id");
+  REGISTER_STRUCT_FIELD(title, std::string, "title");
+  REGISTER_STRUCT_FIELD_OPTIONAL(image_url, std::string, "image_url");
+  REGISTER_STRUCT_FIELD(creator, std::string, "creator");
+};
+
+struct TrackerProjectsItemResponse : public JsonCompatible {
+  // For postgres initialization type needs to be default constructible
+  TrackerProjectsItemResponse() = default;
+
+  // Make sure to initialize parsing first for new structure
+  TrackerProjectsItemResponse(TrackerProjectsItemResponse&& other) { *this = std::move(other); }
+
+  TrackerProjectsItemResponse(const TrackerProjectsItemResponse& other) { *this = other; }
+
+  TrackerProjectsItemResponse& operator=(TrackerProjectsItemResponse&& other) = default;
+
+  TrackerProjectsItemResponse& operator=(const TrackerProjectsItemResponse& other) = default;
+
+  // Method for postgres initialization of non-trivial types
+  auto Introspect() {
+    return std::tie(project_id, title, description, image_url, creator, tasks_count, status, created_ts, last_updated_ts, assigned_users_ids);
+  }
+
+  REGISTER_STRUCT_FIELD(project_id, std::string, "project_id");
+  REGISTER_STRUCT_FIELD(title, std::string, "title");
+  REGISTER_STRUCT_FIELD_OPTIONAL(description, std::string, "description");
+  REGISTER_STRUCT_FIELD_OPTIONAL(image_url, std::string, "image_url");
+  REGISTER_STRUCT_FIELD(creator, std::string, "creator");
   REGISTER_STRUCT_FIELD(tasks_count, int, "tasks_count");
+  REGISTER_STRUCT_ENUM_FIELD_OPTIONAL(status, std::string, "status", std::vector<std::string>{"Open", "Pause", "Closed"});
+  REGISTER_STRUCT_FIELD(created_ts, userver::storages::postgres::TimePoint, "created_ts");
+  REGISTER_STRUCT_FIELD(last_updated_ts, userver::storages::postgres::TimePoint, "last_updated_ts");
+  REGISTER_STRUCT_FIELD_OPTIONAL(assigned_users_ids, std::vector<std::string>, "assigned_users_ids");
 };
 #endif
 
 #ifdef USE_TRACKER_PROJECTS_LIST_RESPONSE
 struct TrackerProjectsListResponse : public JsonCompatible {
-  REGISTER_STRUCT_FIELD(projects, std::vector<TrackerProjectsListItem>, "projects");
+  REGISTER_STRUCT_FIELD(projects, std::vector<TrackerProjectsItemResponseShort>, "projects");
 };
 #endif
 
-#ifdef USE_TRACKER_TASKS_ADD_REQUEST
-struct TrackerTasksAddRequest : public JsonCompatible {
+#ifdef USE_TRACKER_TASKS_ITEM_REQUEST
+struct TrackerTasksItemRequest : public JsonCompatible {
   REGISTER_STRUCT_FIELD(title, std::string, "title");
-  REGISTER_STRUCT_FIELD(project_name, std::string, "project_name");
+  REGISTER_STRUCT_FIELD(project_id, std::string, "project_id");
   REGISTER_STRUCT_FIELD_OPTIONAL(description, std::string, "description");
   REGISTER_STRUCT_FIELD_OPTIONAL(assignee, std::string, "assignee");
   REGISTER_STRUCT_FIELD_OPTIONAL(deadline, userver::storages::postgres::TimePoint, "deadline");
+  REGISTER_STRUCT_ENUM_FIELD_OPTIONAL(status, std::string, "status", std::vector<std::string>{"Open", "InProgress", "Review", "Done", "Cancelled"});
+  REGISTER_STRUCT_ENUM_FIELD_OPTIONAL(priority, std::string, "priority", std::vector<std::string>{"Low", "Middle", "High"});
+  REGISTER_STRUCT_FIELD_OPTIONAL(observers, std::vector<std::string>, "observers");
+  REGISTER_STRUCT_FIELD_OPTIONAL(related_tasks_ids, std::vector<std::string>, "related_tasks_ids");
+};
+
+struct TrackerTasksAddResponse : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(task_id, std::string, "task_id");
 };
 #endif
 
 #ifdef USE_TRACKER_TASKS_LIST_ITEM
-struct TrackerTasksListItem : public JsonCompatible {
+struct TrackerTasksItemResponseShort : public JsonCompatible {
   // For postgres initialization type needs to be default constructible
-  TrackerTasksListItem() = default;
+  TrackerTasksItemResponseShort() = default;
 
   // Make sure to initialize parsing first for new structure
-  TrackerTasksListItem(TrackerTasksListItem&& other) { *this = std::move(other); }
+  TrackerTasksItemResponseShort(TrackerTasksItemResponseShort&& other) { *this = std::move(other); }
 
-  TrackerTasksListItem(const TrackerTasksListItem& other) { *this = other; }
+  TrackerTasksItemResponseShort(const TrackerTasksItemResponseShort& other) { *this = other; }
 
-  TrackerTasksListItem& operator=(TrackerTasksListItem&& other) = default;
+  TrackerTasksItemResponseShort& operator=(TrackerTasksItemResponseShort&& other) = default;
 
-  TrackerTasksListItem& operator=(const TrackerTasksListItem& other) = default;
+  TrackerTasksItemResponseShort& operator=(const TrackerTasksItemResponseShort& other) = default;
 
   // Method for postgres initialization of non-trivial types
   auto Introspect() {
-    return std::tie(title, project_name, id, creator, assignee);
+    return std::tie(title, project_id, task_id, creator, assignee);
   }
 
   REGISTER_STRUCT_FIELD(title, std::string, "title");
-  REGISTER_STRUCT_FIELD(project_name, std::string, "project_name");
-  REGISTER_STRUCT_FIELD_OPTIONAL(id, std::string, "id");
+  REGISTER_STRUCT_FIELD(project_id, std::string, "project_id");
+  REGISTER_STRUCT_FIELD_OPTIONAL(task_id, std::string, "task_id");
   REGISTER_STRUCT_FIELD(creator, std::string, "creator");
   REGISTER_STRUCT_FIELD_OPTIONAL(assignee, std::string, "assignee");
 };
 #endif
 
 #ifdef USE_TRACKER_TASKS_INFO_ITEM
-struct TrackerTasksInfoItem : public JsonCompatible {
+struct TrackerTasksItemResponse : public JsonCompatible {
   // For postgres initialization type needs to be default constructible
-  TrackerTasksInfoItem() = default;
+  TrackerTasksItemResponse() = default;
 
   // Make sure to initialize parsing first for new structure
-  TrackerTasksInfoItem(TrackerTasksInfoItem&& other) { *this = std::move(other); }
+  TrackerTasksItemResponse(TrackerTasksItemResponse&& other) { *this = std::move(other); }
 
-  TrackerTasksInfoItem(const TrackerTasksInfoItem& other) { *this = other; }
+  TrackerTasksItemResponse(const TrackerTasksItemResponse& other) { *this = other; }
 
-  TrackerTasksInfoItem& operator=(TrackerTasksInfoItem&& other) = default;
+  TrackerTasksItemResponse& operator=(TrackerTasksItemResponse&& other) = default;
 
-  TrackerTasksInfoItem& operator=(const TrackerTasksInfoItem& other) = default;
+  TrackerTasksItemResponse& operator=(const TrackerTasksItemResponse& other) = default;
 
   // Method for postgres initialization of non-trivial types
   auto Introspect() {
-    return std::tie(title, project_name, description, id, creator, assignee, status, media_links, created_ts, deadline);
+    return std::tie(
+      task_id,
+      title,
+      project_id,
+      description,
+      creator,
+      assignee,
+      status,
+      priority,
+      media_links,
+      created_ts,
+      last_updated_ts,
+      deadline,
+      action_id,
+      observers,
+      related_tasks_ids,
+      document_ids,
+      comments_ids);
   }
 
+  REGISTER_STRUCT_FIELD_OPTIONAL(task_id, std::string, "task_id");
   REGISTER_STRUCT_FIELD(title, std::string, "title");
-  REGISTER_STRUCT_FIELD(project_name, std::string, "project_name");
+  REGISTER_STRUCT_FIELD(project_id, std::string, "project_id");
   REGISTER_STRUCT_FIELD_OPTIONAL(description, std::string, "description");
-  REGISTER_STRUCT_FIELD_OPTIONAL(id, std::string, "id");
   REGISTER_STRUCT_FIELD(creator, std::string, "creator");
   REGISTER_STRUCT_FIELD_OPTIONAL(assignee, std::string, "assignee");
-  REGISTER_STRUCT_ENUM_FIELD(status, std::string, "status", {"Open", "InProgress", "Review", "Done"});
+  REGISTER_STRUCT_ENUM_FIELD(status, std::string, "status", {"Open", "InProgress", "Review", "Done", "Cancelled"});
+  REGISTER_STRUCT_ENUM_FIELD(priority, std::string, "priority", std::vector<std::string>{"Low", "Middle", "High"});
   REGISTER_STRUCT_FIELD_OPTIONAL(media_links, std::vector<std::string>, "media_links");
   REGISTER_STRUCT_FIELD(created_ts, userver::storages::postgres::TimePoint, "created_ts");
+  REGISTER_STRUCT_FIELD(last_updated_ts, userver::storages::postgres::TimePoint, "last_updated_ts");
   REGISTER_STRUCT_FIELD_OPTIONAL(deadline, userver::storages::postgres::TimePoint, "deadline");
+  REGISTER_STRUCT_FIELD_OPTIONAL(action_id, std::string, "action_id");
+  REGISTER_STRUCT_FIELD_OPTIONAL(observers, std::vector<std::string>, "observers");
+  REGISTER_STRUCT_FIELD_OPTIONAL(related_tasks_ids, std::vector<std::string>, "related_tasks_ids");
+  REGISTER_STRUCT_FIELD_OPTIONAL(document_ids, std::vector<std::string>, "document_ids");
+  REGISTER_STRUCT_FIELD_OPTIONAL(comments_ids, std::vector<std::string>, "comments_ids");
 };
 #endif
 
 #ifdef USE_TRACKER_TASKS_LIST_RESPONSE
 struct TrackerTasksListResponse : public JsonCompatible {
-  REGISTER_STRUCT_FIELD(tasks, std::vector<TrackerTasksListItem>, "tasks");
+  REGISTER_STRUCT_FIELD(tasks, std::vector<TrackerTasksItemResponseShort>, "tasks");
 };
 #endif
 
@@ -974,17 +1089,40 @@ struct TrackerTasksListResponse : public JsonCompatible {
 struct TrackerTasksEditRequest : public JsonCompatible {
   REGISTER_STRUCT_FIELD_OPTIONAL(title, std::string, "title");
   REGISTER_STRUCT_FIELD_OPTIONAL(description, std::string, "description");
-  REGISTER_STRUCT_FIELD_OPTIONAL(project_name, std::string, "project_name");
+  REGISTER_STRUCT_FIELD_OPTIONAL(project_id, std::string, "project_id");
   REGISTER_STRUCT_FIELD_OPTIONAL(assignee, std::string, "assignee");
-  REGISTER_STRUCT_ENUM_FIELD_OPTIONAL(status, std::string, "status", {"Open", "InProgress", "Review", "Done"});
+  REGISTER_STRUCT_ENUM_FIELD_OPTIONAL(status, std::string, "status", {"Open", "InProgress", "Review", "Done", "Cancelled"});
+  REGISTER_STRUCT_ENUM_FIELD_OPTIONAL(priority, std::string, "priority", {"Low", "Middle", "High"});
   REGISTER_STRUCT_FIELD_OPTIONAL(deadline, userver::storages::postgres::TimePoint, "deadline");
+  REGISTER_STRUCT_FIELD_OPTIONAL(observers, std::vector<std::string>, "observers");
+  REGISTER_STRUCT_FIELD_OPTIONAL(related_tasks_ids, std::vector<std::string>, "related_tasks_ids");
+};
+#endif
+
+#ifdef USE_TRACKER_TASKS_DOCUMENT_ITEM
+struct TrackerTasksDocumentItem : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(document_id, std::string, "document_id");
+  REGISTER_STRUCT_FIELD(name, std::string, "name");
+  REGISTER_STRUCT_FIELD_OPTIONAL(description, std::string, "description");
+  REGISTER_STRUCT_FIELD_OPTIONAL(created_ts, userver::storages::postgres::TimePoint, "created_ts");
+  REGISTER_STRUCT_FIELD_OPTIONAL(visibility_status, int, "visibility_status");
+};
+#endif
+
+#ifdef USE_TRACKER_PROJECTS_EDIT_REQUEST
+struct TrackerProjectsEditRequest : public JsonCompatible {
+  REGISTER_STRUCT_FIELD_OPTIONAL(title, std::string, "title");
+  REGISTER_STRUCT_FIELD_OPTIONAL(description, std::string, "description");
+  REGISTER_STRUCT_ENUM_FIELD_OPTIONAL(status, std::string, "status", {"Open", "Pause", "Closed"});
+  REGISTER_STRUCT_FIELD_OPTIONAL(assigned_users_ids, std::vector<std::string>, "assigned_users_ids");
 };
 #endif
 
 #ifdef USE_SEARCH_RESPONSE
 struct SearchResponse : public JsonCompatible {
   REGISTER_STRUCT_FIELD(employees, std::vector<ListEmployee>, "employees");
-  REGISTER_STRUCT_FIELD(tasks, std::vector<TrackerTasksListItem>, "tasks");
+  REGISTER_STRUCT_FIELD(tasks, std::vector<TrackerTasksItemResponseShort>, "tasks");
+  REGISTER_STRUCT_FIELD(projects, std::vector<TrackerProjectsItemResponseShort>, "projects");
 };
 #endif
 
@@ -1011,7 +1149,6 @@ struct DocumentsChainUpdateResponse : public JsonCompatible {
   auto Introspect() {
     return std::tie(chain_metadata);
   }
-
   REGISTER_STRUCT_FIELD(chain_metadata, std::vector<DocumentsChainMetadataItem>, "chain_metadata_new");
 };
 #endif
@@ -1106,5 +1243,51 @@ struct GenerateFromTemplateResponse : public JsonCompatible {
 #ifdef USE_ABSCENCE_VERDICT_RESPONSE
 struct AbscenceVerdictResponse : public JsonCompatible {
   REGISTER_STRUCT_FIELD(signed_file_key, std::string, "signed_file_key");
+};
+#endif
+
+#ifdef USE_COMMENT_ADD_REQUEST
+struct CommentAddRequest : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(data, std::string, "data");
+  REGISTER_STRUCT_FIELD_OPTIONAL(task_id, std::string, "task_id");
+};
+#endif
+
+#ifdef USE_COMMENT_ADD_RESPONSE
+struct CommentAddResponse : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(comment_id, std::string, "comment_id");
+};
+#endif
+
+#ifdef USE_COMMENT_EDIT_REQUEST
+struct CommentEditRequest : public JsonCompatible {
+  REGISTER_STRUCT_FIELD_OPTIONAL(data, std::string, "data");
+};
+#endif
+
+
+#ifdef USE_COMMENT_ITEM
+struct CommentItem : public JsonCompatible {
+  CommentItem() = default;
+
+  CommentItem(CommentItem&& other) { *this = std::move(other); }
+
+  CommentItem& operator=(CommentItem&& other) = default;
+
+  CommentItem(const CommentItem& other) { *this = other; }
+
+  CommentItem& operator=(const CommentItem& other) = default;
+
+
+  auto Introspect() {
+    return std::tie(comment_id, author_id, data, documents_ids, created_ts, last_updated_ts);
+  }
+
+  REGISTER_STRUCT_FIELD(comment_id, std::string, "comment_id");
+  REGISTER_STRUCT_FIELD(author_id, std::string, "author_id");
+  REGISTER_STRUCT_FIELD(data, std::string, "data");
+  REGISTER_STRUCT_FIELD_OPTIONAL(documents_ids, std::vector<std::string>, "documents_ids");
+  REGISTER_STRUCT_FIELD(created_ts, userver::storages::postgres::TimePoint, "created_ts");
+  REGISTER_STRUCT_FIELD(last_updated_ts, userver::storages::postgres::TimePoint, "last_updated_ts");
 };
 #endif

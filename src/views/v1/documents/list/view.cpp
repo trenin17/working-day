@@ -64,7 +64,6 @@ class DocumentsListHandler final
     DocumentsListResponse response;
     response.documents = result.AsContainer<std::vector<DocumentItem>>(
         userver::storages::postgres::kRowTag);
-    
     return response.ToJsonString();
   }
 

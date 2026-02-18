@@ -20,7 +20,7 @@ std::string GeneratePresignedLink(const std::string& key, const LinkType type,
       case LinkType::Download:
         result = "s3 download test link";
         break;
-        
+
       default:
         break;
     }
@@ -47,7 +47,7 @@ std::string GeneratePresignedLink(const std::string& key, const LinkType type,
         break;
     }
   }
-  
+
   return result;
 }
 
@@ -69,6 +69,12 @@ std::string GenerateDocumentPresignedLink(const std::string& key,
 std::string GenerateTrackerTasksMediaPresignedLink(const std::string& key,
                                                    const LinkType type, bool is_testing) {
   // return GeneratePresignedLink(key, type, "working-day-tracker-tasks-media");
+  return GeneratePresignedLink(key, type, is_testing, "working-day-photos");
+}
+
+std::string GenerateTrackerProjectsMediaPresignedLink(const std::string& key,
+                                                   const LinkType type, bool is_testing) {
+  // return GeneratePresignedLink(key, type, "working-day-tracker-projects-media");
   return GeneratePresignedLink(key, type, is_testing, "working-day-photos");
 }
 

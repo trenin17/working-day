@@ -24,11 +24,17 @@ class EmployeeAllData {
   std::optional<std::vector<std::string>> phones;
 };
 
+class TrackerProjectsAllData {
+ public:
+  std::string project_id;
+  std::optional<std::string> title, description, image_url, creator, tasks_count, status;
+  std::string company_id;
+};
+
 class TrackerTasksAllData {
  public:
   std::string task_id;
-  std::optional<std::string> title, description, project_name, creator,
-      assignee, status;
+  std::optional<std::string> title, description, project_id, creator, assignee, status;
   std::string company_id;
 };
 

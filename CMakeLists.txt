@@ -71,12 +71,17 @@ add_library(${PROJECT_NAME}_objs OBJECT
 	src/views/v1/messenger/recent_messages/view.cpp
 	src/views/v1/tracker/projects/add/view.cpp
 	src/views/v1/tracker/projects/list/view.cpp
+	src/views/v1/tracker/projects/media/upload/view.cpp
+	src/views/v1/tracker/projects/info/view.cpp
+	src/views/v1/tracker/projects/edit/view.cpp
 	src/views/v1/tracker/tasks/add/view.cpp
 	src/views/v1/tracker/tasks/list/view.cpp
 	src/views/v1/tracker/tasks/info/view.cpp
 	src/views/v1/tracker/tasks/assigned_to_user/view.cpp
 	src/views/v1/tracker/tasks/edit/view.cpp
 	src/views/v1/tracker/tasks/media/upload/view.cpp
+	src/views/v1/tracker/tasks/documents/send/view.cpp
+	src/views/v1/tracker/tasks/documents/remove/view.cpp
 	src/views/v1/documents/chain/update/view.cpp
 	src/views/v1/documents/chain/add/view.cpp
 	src/views/v1/documents/remove/view.cpp
@@ -85,6 +90,10 @@ add_library(${PROJECT_NAME}_objs OBJECT
 	src/views/v1/documents/generate_from_template/view.cpp
 	src/views/v1/employee/permissions/list/view.cpp
 	src/views/v1/employee/permissions/set/view.cpp
+	src/views/v1/comments/add/view.cpp
+	src/views/v1/comments/edit/view.cpp
+	src/views/v1/comments/info/view.cpp
+	src/views/v1/comments/remove/view.cpp
 )
 target_link_libraries(${PROJECT_NAME}_objs PUBLIC userver-postgresql)
 target_link_libraries(${PROJECT_NAME}_objs PRIVATE nlohmann_json::nlohmann_json)

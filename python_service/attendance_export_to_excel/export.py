@@ -50,6 +50,7 @@ REPLACEMENTS = {
     "maternity_work_during": "Р",
     "personal_data_change": "",
 
+    "tracker_task_deadline": "ТД",
 }
 
 WORKING_DAYS = (
@@ -170,7 +171,6 @@ def transform_attendance(attendances: list[dict], date_from: str, date_to: str) 
 
 async def generate_attendance_excel(request):
     file_key = request.rel_url.query['file_key']
-
     from_date = request.rel_url.query['from_date']
     to_date = request.rel_url.query['to_date']
 

@@ -57,12 +57,17 @@
 #include "views/v1/superuser/company/add/view.hpp"
 #include "views/v1/tracker/projects/add/view.hpp"
 #include "views/v1/tracker/projects/list/view.hpp"
+#include "views/v1/tracker/projects/media/upload/view.hpp"
+#include "views/v1/tracker/projects/info/view.hpp"
+#include "views/v1/tracker/projects/edit/view.hpp"
 #include "views/v1/tracker/tasks/add/view.hpp"
 #include "views/v1/tracker/tasks/list/view.hpp"
 #include "views/v1/tracker/tasks/info/view.hpp"
 #include "views/v1/tracker/tasks/assigned_to_user/view.hpp"
 #include "views/v1/tracker/tasks/edit/view.hpp"
 #include "views/v1/tracker/tasks/media/upload/view.hpp"
+#include "views/v1/tracker/tasks/documents/send/view.hpp"
+#include "views/v1/tracker/tasks/documents/remove/view.hpp"
 #include "views/v1/documents/chain/update/view.hpp"
 #include "views/v1/documents/chain/add/view.hpp"
 #include "views/v1/documents/remove/view.hpp"
@@ -70,6 +75,10 @@
 #include "views/v1/documents/history/view.hpp"
 #include "views/v1/employee/permissions/list/view.hpp"
 #include "views/v1/employee/permissions/set/view.hpp"
+#include "views/v1/comments/add/view.hpp"
+#include "views/v1/comments/edit/view.hpp"
+#include "views/v1/comments/info/view.hpp"
+#include "views/v1/comments/remove/view.hpp"
 
 int main(int argc, char* argv[]) {
   Aws::SDKOptions options;
@@ -134,12 +143,17 @@ int main(int argc, char* argv[]) {
   views::v1::messenger::recent_messages::AppendRecentMessages(component_list);
   views::v1::tracker::projects::add::AppendTrackerProjectsAdd(component_list);
   views::v1::tracker::projects::list::AppendTrackerProjectsList(component_list);
+  views::v1::tracker::projects::media::upload::AppendTrackerProjectsMediaUpload(component_list);
+  views::v1::tracker::projects::info::AppendTrackerProjectsInfo(component_list);
+  views::v1::tracker::projects::edit::AppendTrackerProjectsEdit(component_list);
   views::v1::tracker::tasks::add::AppendTrackerTasksAdd(component_list);
   views::v1::tracker::tasks::list::AppendTrackerTasksList(component_list);
   views::v1::tracker::tasks::info::AppendTrackerTasksInfo(component_list);
   views::v1::tracker::tasks::assigned_to_user::AppendTrackerTasksAssignedToUser(component_list);
   views::v1::tracker::tasks::edit::AppendTrackerTasksEdit(component_list);
   views::v1::tracker::tasks::media::upload::AppendTrackerTasksMediaUpload(component_list);
+  views::v1::tracker::tasks::documents::send::AppendTrackerTasksDocumentsSend(component_list);
+  views::v1::tracker::tasks::documents::remove::AppendTrackerTasksDocumentsRemove(component_list);
   views::v1::documents::chain::update::AppendDocumentsChainUpdate(component_list);
   views::v1::documents::chain::add::AppendDocumentsChainAdd(component_list);
   views::v1::documents::remove::AppendDocumentsRemove(component_list);
@@ -147,6 +161,10 @@ int main(int argc, char* argv[]) {
   views::v1::documents::history::AppendDocumentsHistory(component_list);
   views::v1::employee::permissions::list::AppendEmployeePermissionsList(component_list);
   views::v1::employee::permissions::set::AppendEmployeePermissionsSet(component_list);
+  views::v1::comments::add::AppendCommentsAdd(component_list);
+  views::v1::comments::edit::AppendCommentsEdit(component_list);
+  views::v1::comments::info::AppendCommentsInfo(component_list);
+  views::v1::comments::remove::AppendCommentsRemove(component_list);
 
   int err_code = userver::utils::DaemonMain(argc, argv, component_list);
 

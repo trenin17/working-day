@@ -446,6 +446,38 @@ components_manager:
                 scopes:
                   - user
 
+        handler-v1-tracker-projects-media-upload:
+            path: /v1/tracker/projects/media/upload
+            method: POST
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - user
+            is_testing: $is_testing
+
+        handler-v1-tracker-projects-info:
+            path: /v1/tracker/projects/info
+            method: GET
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - user
+            is_testing: $is_testing
+
+        handler-v1-tracker-projects-edit:
+            path: /v1/tracker/projects/edit
+            method: POST
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - user
+
         handler-v1-tracker-tasks-add:
             path: /v1/tracker/tasks/add
             method: POST
@@ -507,6 +539,27 @@ components_manager:
                 scopes:
                   - user
             is_testing: $is_testing
+
+        handler-v1-tracker-tasks-documents-send:
+            path: /v1/tracker/tasks/documents/send
+            method: POST
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - user
+            pyservice-url: 'http://python-service:3000/document/convert'
+
+        handler-v1-tracker-tasks-documents-remove:
+            path: /v1/tracker/tasks/documents/remove
+            method: POST
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - user
 
         handler-v1-documents-chain-add:
             path: /v1/documents/chain/add
@@ -611,7 +664,6 @@ components_manager:
                   - bearer
                 scopes:
                   - user
-
         handler-v1-employee-permissions-list:
             path: /v1/employee/permissions/list
             method: POST
@@ -654,3 +706,42 @@ components_manager:
                   - user
             pyservice-url: 'http://python-service:3000/document/generate-from-template'
 
+        handler-v1-comments-add:
+            path: /v1/comments/add
+            method: POST
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - user
+
+        handler-v1-comments-edit:
+            path: /v1/comments/edit
+            method: POST
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - user
+
+        handler-v1-comments-info:
+            path: /v1/comments/info
+            method: GET
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - user
+
+        handler-v1-comments-remove:
+            path: /v1/comments/remove
+            method: POST
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - user

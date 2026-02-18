@@ -780,6 +780,7 @@ paths:
             responses:
                 '200':
                     description: Inventory item was added
+
     /v1/tracker/projects/add:
         post:
             description: Add new project
@@ -794,10 +795,54 @@ paths:
                 content:
                     application/json:
                         schema:
-                            $ref: '#/components/schemas/TrackerProjectsAddRequest'
+                            $ref: '#/components/schemas/TrackerProjectsItemRequest'
             responses:
                 '200':
                     description: Project item was added
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/TrackerProjectsAddResponse'
+                '400':
+                    description: Bad request, missing parameters or invalid assigned_users_ids
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+
+    /v1/tracker/projects/info:
+        get:
+            description: Get project info
+            parameters:
+              - in: query
+                name: project_id
+                description: ID of the project to check
+                schema:
+                    type: string
+              - in: header
+                name: Authorization
+                description: Token of session user
+                schema:
+                    type: string
+            responses:
+                '200':
+                    description: Project information
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/TrackerProjectsItemResponse'
+                '400':
+                    description: Bad request
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+                '404':
+                    description: Not found
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
 
     /v1/tracker/projects/list:
         get:
@@ -814,7 +859,76 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/TrackerProjectsListResponse'
+                                $ref: '#/components/schemas/TrackerProjectsItemResponseShort'
+
+    # TODO: /v1/tracker/project/available-to-user:
+    #        description: Get all projects available to the user
+
+    /v1/tracker/projects/edit:
+        post:
+            description: Edit project information
+            parameters:
+                - in: query
+                  name: project_id
+                  description: ID of the project to edit information for
+                  schema:
+                      type: string
+                - in: header
+                  name: Authorization
+                  description: Token of session user
+                  schema:
+                      type: string
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/TrackerProjectsEditRequest'
+            responses:
+                '200':
+                    description: Information was updated
+                '400':
+                description: Bad request, missing parameters or invalid assigned_users_ids
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/ErrorMessage'
+                '404':
+                    description: Not found
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+
+
+    /v1/tracker/projects/media/upload:
+        post:
+            description: Upload icon for the project
+            parameters:
+              - in: query
+                name: project_id
+                schema:
+                    type: string
+              - in: header
+                name: Authorization
+                description: Token of session user
+                schema:
+                    type: string
+
+            responses:
+                '200':
+                    description: Upload link
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/MediaUploadResponse'
+                '400':
+                    description: Bad request
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+
 
     /v1/tracker/tasks/add:
         post:
@@ -830,10 +944,15 @@ paths:
                 content:
                     application/json:
                         schema:
-                            $ref: '#/components/schemas/TrackerTasksAddRequest'
+                            $ref: '#/components/schemas/TrackerTasksItemRequest'
             responses:
                 '200':
-                    description: Task was added
+                    description: Task item was added
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/TrackerTasksAddResponse'
+
                 '404':
                     description: Project not found
                     content:
@@ -846,10 +965,10 @@ paths:
             description: Get list of all existing tasks
             parameters:
                 - in: header
-                name: Authorization
-                description: Token of session user
-                schema:
-                    type: string
+                  name: Authorization
+                  description: Token of session user
+                  schema:
+                      type: string
             responses:
                 '200':
                     description: List of tasks
@@ -878,7 +997,7 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/TrackerTasksInfoItem'
+                                $ref: '#/components/schemas/TrackerTasksItemResponse'
                 '400':
                     description: Bad request
                     content:
@@ -912,12 +1031,7 @@ paths:
                     content:
                         application/json:
                             schema:
-                                type: object
-                                properties:
-                                    tasks:
-                                        type: array
-                                        items:
-                                            $ref: '#/components/schemas/TrackerTasksListItem'
+                                $ref: '#/components/schemas/TrackerTasksListResponse'
                 '400':
                 description: Bad request, missing parameters
                 content:
@@ -932,36 +1046,111 @@ paths:
                                 $ref: '#/components/schemas/ErrorMessage'
 
     /v1/tracker/tasks/edit:
-    post:
-        description: Edit task information
-        parameters:
-            - in: query
+        post:
+            description: Edit task information
+            parameters:
+              - in: query
                 name: task_id
                 description: Id of the task to edit information for
                 schema:
                     type: string
-            - in: header
-            name: Authorization
-            description: Token of session user
-            schema:
-                type: string
-        requestBody:
-            required: true
-            content:
-                application/json:
-                    schema:
-                        $ref: '#/components/schemas/TrackerTasksEditRequest'
-        responses:
-            '200':
-                description: Information was updated
-            '400':
-                description: Bad request, missing parameters
+              - in: header
+                name: Authorization
+                description: Token of session user
+                schema:
+                    type: string
+            requestBody:
+                required: true
                 content:
                     application/json:
                         schema:
-                            $ref: '#/components/schemas/ErrorMessage'
-            '404':
-                    description: Not found
+                            $ref: '#/components/schemas/TrackerTasksEditRequest'
+            responses:
+                '200':
+                    description: Information was updated
+                '400':
+                    description: Bad request, missing parameters
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+                '404':
+                        description: Not found
+                        content:
+                            application/json:
+                                schema:
+                                    $ref: '#/components/schemas/ErrorMessage'
+
+    # вызов /v1/documents/upload, а затем /v1/tracker/tasks/documents/send
+    /v1/tracker/tasks/documents/send:
+        post:
+            description: Attach uploaded document to the task
+            parameters:
+              - in: query
+                name: task_id
+                schema:
+                    type: string
+                description: ID of the task
+              - in: header
+                name: Authorization
+                description: Token of session user
+                schema:
+                    type: string
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/TrackerTasksDocumentItem'
+
+            responses:
+                '200':
+                    description: Document was attached to task successfully
+                '400':
+                    description: Bad request
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+                '404':
+                    description: Task not found
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+
+        /v1/tracker/tasks/documents/remove:
+        delete:
+            description: Remove document from the task
+            parameters:
+              - in: query
+                name: task_id
+                required: true
+                schema:
+                    type: string
+                description: ID of the task
+              - in: query
+                name: document_id
+                required: true
+                schema:
+                    type: string
+                description: ID of the document to remove
+              - in: header
+                name: Authorization
+                description: Token of session user
+                schema:
+                    type: string
+            responses:
+                '200':
+                    description: Document was removed from task successfully
+                '400':
+                    description: Bad request
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+                '404':
+                    description: Task or document not found
                     content:
                         application/json:
                             schema:
@@ -987,7 +1176,7 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/TrackerTasksMediaUploadResponse'
+                                $ref: '#/components/schemas/MediaUploadResponse'
                 '400':
                     description: Bad request
                     content:
@@ -1263,7 +1452,6 @@ paths:
                         schema:
                         $ref: '#/components/schemas/ErrorMessage'
 
-
     /v1/employee/permissions/set:
         post:
             description: Set permissions for an employee
@@ -1309,7 +1497,148 @@ paths:
                         schema:
                         $ref: '#/components/schemas/ErrorMessage'
 
+    /v1/comments/add:
+        post:
+            description: Add a new comment
+            parameters:
+              - in: header
+                name: Authorization
+                description: Token of session user
+                schema:
+                    type: string
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CommentAddRequest'
+            responses:
+                '200':
+                    description: Comment was added successfully
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CommentAddResponse'
+                '400':
+                    description: Bad request
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
 
+                '404':
+                    description: Task not found
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+
+
+    /v1/comments/edit:
+        post:
+            description: Edit an existing comment
+            parameters:
+              - in: header
+                name: Authorization
+                description: Token of session user
+                schema:
+                    type: string
+              - in: query
+                name: comment_id
+                description: Id of the comment
+                schema:
+                    type: string
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CommentEditRequest'
+            responses:
+                '200':
+                    description: Comment was edited successfully
+                '400':
+                    description: Bad request
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+                '403':
+                    description: Forbidden - insufficient rights
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+                '404':
+                    description: Comment not found
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+
+        /v1/comments/info:
+        get:
+            description: Get comment information
+            parameters:
+              - in: query
+                name: comment_id
+                required: true
+                schema:
+                    type: string
+                description: ID of the comment
+              - in: header
+                name: Authorization
+                description: Token of session user
+                schema:
+                    type: string
+            responses:
+                '200':
+                    description: Comment information
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CommentItem'
+                '400':
+                    description: Bad request
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+                '404':
+                    description: Comment not found
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+    /v1/comments/remove:
+        post:
+            description: Remove a comment
+            parameters:
+              - in: header
+                name: Authorization
+                description: Token of session user
+                schema:
+                    type: string
+              - in: query
+                name: comment_id
+                description: Id of the comment
+                schema:
+                    type: string
+            responses:
+                '200':
+                    description: Comment was removed successfully
+                '400':
+                    description: Bad request
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+                '404':
+                    description: Comment not found
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
 
 components:
     schemas:
@@ -1538,6 +1867,9 @@ components:
                     type: boolean
                 sender:
                     $ref: "#/components/schemas/ListEmployee"
+                user_photo_url:
+                    type: string
+                    description: Presigned URL to the photo of the user who receives the notification
                 text:
                     type: string
                 action_id:
@@ -1731,6 +2063,7 @@ components:
                 - absence_unknown_reason # НН
                 - downtime_not_employer_fault # НП
                 - suspension_with_pay # НО
+                - tracker_task_deadline # ТД
 
         AttendanceAddRequest:
             type: object
@@ -1883,7 +2216,11 @@ components:
                 tasks:
                     type: array
                     items:
-                        $ref: '#/components/schemas/TrackerTasksListItem'
+                        $ref: '#/components/schemas/TrackerTasksItemResponseShort'
+                projects:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/TrackerProjectsItemResponseShort'
 
         AttendanceListAllRequest:
             type: object
@@ -1969,6 +2306,25 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/DocumentItem'
+
+        TrackerTasksDocumentItem:
+            type: object
+            additionalProperties: false
+            required:
+              - document_id
+              - name
+            properties:
+                document_id:
+                    type: string
+                name:
+                    type: string
+                description:
+                    type: string
+                created_ts:
+                    $ref: '#/components/schemas/Timestamp'
+                visibility_status:
+                    description: Document visibility status (0 — visible, 1 — archived)
+                    type: int
 
         DocumentItem:
             type: object
@@ -2180,25 +2536,109 @@ components:
                 chat_id:
                     type: string
 
-        TrackerProjectsAddRequest:
+        ProjectStatus:
+            type: string
+            enum:
+                - Open
+                - Pause
+                - Closed
+
+        TrackerProjectsItemRequest:
             type: object
             additionalProperties: false
             required:
-              - project_name
+                - project_id
+                - title
             properties:
-                project_name:
+                project_id:
+                    type: string
+                    description: Unique key of the project in uppercase Latin letters only. No spaces, numbers or underscores allowed. Example: MYPROJECT
+                title:
+                    type: string
+                    description: Name of the project
+                description:
+                    type: string
+                status:
+                    $ref: '#/components/schemas/ProjectStatus'
+                assigned_users_ids:
+                    type: array
+                    items:
+                        type: string
+
+        TrackerProjectsAddResponse:
+            type: object
+            additionalProperties: false
+            required:
+              - project_id
+            properties:
+                project_id:
                     type: string
 
-        TrackerProjectsListItem:
+        TrackerProjectsItemResponseShort:
             type: object
             additionalProperties: false
             required:
-              -  project_name
+              - project_id
+              - title
+              - creator
             properties:
-                project_name:
+                project_id:
+                    type: string
+                title:
+                    type: string
+                creator:
+                    type: string
+                image_url:
+                    type: string
+
+        TrackerProjectsItemResponse:
+            type: object
+            additionalProperties: false
+            required:
+              - project_id
+              - title
+              - creator
+              - tasks_count
+              - created_ts
+              - last_updated_ts
+            properties:
+                project_id:
+                    type: string
+                title:
+                    type: string
+                description:
+                    type: string
+                image_url:
+                    type: string
+                creator:
                     type: string
                 tasks_count:
                     type: integer
+                status:
+                    $ref: '#/components/schemas/ProjectStatus'
+                created_ts:
+                    $ref: '#/components/schemas/Timestamp'
+                last_updated_ts:
+                    $ref: '#/components/schemas/Timestamp'
+                assigned_users_ids:
+                    type: array
+                    items:
+                        type: string
+
+        TrackerProjectsEditRequest:
+            type: object
+            additionalProperties: false
+            properties:
+                title:
+                    type: string
+                description:
+                    type: string
+                status:
+                    $ref: '#/components/schemas/ProjectStatus'
+                assigned_users_ids:
+                    type: array
+                    items:
+                        type: string
 
         TrackerProjectsListResponse:
             type: object
@@ -2208,88 +2648,179 @@ components:
                     type: array
                     description: List of project items
                     items:
-                        $ref: '#/components/schemas/TrackerProjectsListItem'
+                        $ref: '#/components/schemas/TrackerProjectsItemResponseShort'
 
-        TrackerTasksAddRequest:
+        TaskStatus:
+            type: string
+            enum:
+                - Open
+                - InProgress
+                - Review
+                - Done
+                - Cancelled # (+comment)
+
+        TaskPriority:
+            type: string
+            enum:
+                - Low
+                - Middle
+                - High
+
+        TrackerTasksItemRequest:
             type: object
             additionalProperties: false
             required:
-              - title
-              - project_name
-              - creator
+                - title
+                - project_id
             properties:
                 title:
                     type: string
                     description: Name of the task
-                project_name:
+                project_id:
                     type: string
-                    description: Name of the parent project
+                    description: ID of the parent project
                 description:
                     type: string
                     description: Description of the task
-                creator:
-                    type: string
-                    description: The creator of the task
                 assignee:
                     type: string
                     description: The assigned person for the task
                 deadline:
                     $ref: '#/components/schemas/Timestamp'
-
-        TrackerTasksInfoItem:
-            type: object
-            additionalProperties: false
-            required:
-              -  title
-              -  project_name
-              -  creator
-            properties:
-                title:
-                    type: string
-                id:
-                    type: string
-                project_name:
-                    type: string
-                description:
-                    type: string
-                creator:
-                    type: string
-                assignee:
-                    type: string
                 status:
-                    type: string
-                    enum:
-                      - Open
-                      - InProgress
-                      - Review
-                      - Done
-                media_links:
+                    $ref: '#/components/schemas/TaskStatus'
+                priority:
+                    $ref: '#/components/schemas/TaskPriority'
+                observers:
                     type: array
                     items:
                         type: string
-                created_at:
-                    $ref: '#/components/schemas/Timestamp'
-                deadline:
-                    $ref: '#/components/schemas/Timestamp'
+                related_tasks_ids:
+                    type: array
+                    items:
+                        type: string
 
-        TrackerTasksListItem:
+        TrackerTasksEditRequest:
             type: object
             additionalProperties: false
-            required:
-              -  title
-              -  project_name
-              -  creator
             properties:
                 title:
                     type: string
-                id:
+                    description: Name of the task
+                project_id:
                     type: string
-                project_name:
+                    description: ID of the parent project
+                description:
+                    type: string
+                    description: Description of the task
+                assignee:
+                    type: string
+                    description: The assigned person for the task
+                deadline:
+                    $ref: '#/components/schemas/Timestamp'
+                status:
+                    $ref: '#/components/schemas/TaskStatus'
+                priority:
+                    $ref: '#/components/schemas/TaskPriority'
+                observers:
+                    type: array
+                    items:
+                        type: string
+                related_tasks_ids:
+                    type: array
+                    items:
+                        type: string
+
+        TrackerTasksAddResponse:
+            type: object
+            additionalProperties: false
+            required:
+              - task_id
+            properties:
+                task_id:
+                    type: string
+
+        TrackerTasksItemResponseShort:
+            type: object
+            additionalProperties: false
+            required:
+              - task_id
+              - project_id
+              - title
+              - creator
+            properties:
+                task_id:
+                    type: string
+                project_id:
+                    type: string
+                title:
                     type: string
                 creator:
                     type: string
                 assignee:
                     type: string
+
+        TrackerTasksItemResponse:
+            allOf:
+                - $ref: '#/components/schemas/TrackerTasksItemResponseShort'
+                - type: object
+                  additionalProperties: false
+                  required:
+                    - status
+                    - created_ts
+                    - last_updated_ts
+                    - priority
+                  properties:
+                      description:
+                          type: string
+                          description: Description of the task
+                      status:
+                          $ref: '#/components/schemas/TaskStatus'
+                      created_ts:
+                          $ref: '#/components/schemas/Timestamp'
+                      last_updated_ts:
+                          $ref: '#/components/schemas/Timestamp'
+                      media_links:
+                          type: array
+                          items:
+                              type: string
+                      deadline:
+                          $ref: '#/components/schemas/Timestamp'
+                      action_id:
+                          type: string
+                      priority:
+                          $ref: '#/components/schemas/TaskPriority'
+                      observers:
+                          type: array
+                          items:
+                              type: string
+                      related_tasks_ids:
+                          type: array
+                          items:
+                              type: string
+                      documents_ids:
+                          type: array
+                          items:
+                              type: string
+                          description: List of document ids attached to the task
+                      comments_ids:
+                          type: array
+                          items:
+                              type: string
+                          description: List of comment ids attached to the task
+
+
+        # -- комментарии (отдельно):
+        #    comment_id
+        #    author_id
+        #    data: text
+        #    documents_ids: list[string]
+        #    created_at
+        #    last_updated
+        #    + add/delete/edit
+        #    available_entity: document, task
+        #    --- employee_id + documents
+
 
         TrackerTasksListResponse:
             type: object
@@ -2299,31 +2830,9 @@ components:
                     type: array
                     description: List of tasks items
                     items:
-                        $ref: '#/components/schemas/TrackerTasksListItem'
+                        $ref: '#/components/schemas/TrackerTasksItemResponseShort'
 
-        TrackerTasksEditRequest:
-            type: object
-            additionalProperties: false
-            properties:
-                title:
-                    type: string
-                description:
-                    type: string
-                project_name:
-                    type: string
-                assignee:
-                    type: string
-                status:
-                    type: string
-                    enum:
-                      - Open
-                      - InProgress
-                      - Review
-                      - Done
-                deadline:
-                    $ref: '#/components/schemas/Timestamp'
-
-        TrackerTasksMediaUploadResponse:
+        MediaUploadResponse:
             type: object
             additionalProperties: false
             required:
@@ -2488,3 +2997,60 @@ components:
             properties:
                 download_link:
                     type: string
+
+        CommentAddRequest:
+            type: object
+            additionalProperties: false
+            required:
+              - data
+            properties:
+                data:
+                    type: string
+                    description: Comment text content
+                task_id:
+                    type: string
+                    description: ID of the task to attach the comment to
+
+        CommentAddResponse:
+            type: object
+            additionalProperties: false
+            required:
+              - comment_id
+            properties:
+                comment_id:
+                    type: string
+
+        CommentEditRequest:
+            type: object
+            additionalProperties: false
+            properties:
+                data:
+                    type: string
+                    description: Updated comment text content
+
+        CommentItem:
+            type: object
+            additionalProperties: false
+            required:
+              - comment_id
+              - author_id
+              - data
+              - created_ts
+              - last_updated_ts
+            properties:
+                comment_id:
+                    type: string
+                author_id:
+                    type: string
+                data:
+                    type: string
+                    description: Comment text content
+                documents_ids:
+                    type: array
+                    items:
+                        type: string
+                    description: List of document IDs attached to the comment
+                created_ts:
+                    $ref: '#/components/schemas/Timestamp'
+                last_updated_ts:
+                    $ref: '#/components/schemas/Timestamp'

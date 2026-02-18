@@ -25,7 +25,7 @@ namespace views::v1::tracker::tasks::media::upload {
 
 namespace {
 
-class TrackerTasksMediaUploadResponse {
+class MediaUploadResponse {
  public:
   std::string ToJSON() {
     json j;
@@ -69,22 +69,46 @@ class TrackerTasksMediaUploadHandler final
           userver::server::http::HttpStatus::kBadRequest);
       return ErrorMessage{"Missing task_id parametr"}.ToJsonString();
     }
-    
+
     const auto& company_id = ctx.GetData<std::string>("company_id");
 
     auto media_id = userver::utils::generators::GenerateUuid();
     auto upload_link = utils::s3_presigned_links::GenerateTrackerTasksMediaPresignedLink(
         media_id, utils::s3_presigned_links::Upload, is_testing_);
 
-    auto result = pg_cluster_->Execute(
-        userver::storages::postgres::ClusterHostType::kMaster,
-        "UPDATE working_day_" + company_id +
-            ".tracker_tasks "
-            "SET media_links = array_append(media_links, $2) "
-            "WHERE id = $1",
-        task_id, media_id);
+    auto trx = pg_cluster_->Begin(
+        "tracker_tasks_media_upload",
+        userver::storages::postgres::ClusterHostType::kMaster, {});
 
-    TrackerTasksMediaUploadResponse response{upload_link};
+    trx.Execute(
+      "UPDATE working_day_" + company_id +
+        ".tracker_tasks "
+        "SET media_links = array_append(media_links, $2), last_updated_ts = NOW() "
+        "WHERE task_id = $1",
+      task_id, media_id);
+
+    auto result = trx.Execute(
+        "SELECT project_id "
+        "FROM working_day_" + company_id + ".tracker_tasks "
+        "WHERE task_id = $1",
+        task_id);
+
+    if (result.IsEmpty()) {
+      throw std::runtime_error("Task not found");
+    }
+
+    const auto project_id =
+        result.AsSingleRow<std::string>();
+
+    trx.Execute(
+        "UPDATE working_day_" + company_id + ".tracker_projects "
+          "SET last_updated_ts = NOW() "
+          "WHERE project_id = $1",
+        project_id);
+
+    trx.Commit();
+
+    MediaUploadResponse response{upload_link};
     return response.ToJSON();
   }
 
