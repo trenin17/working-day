@@ -2,6 +2,13 @@
 
 #include "view.hpp"
 
+#include <cstring>
+#include <optional>
+
+#include <openssl/bio.h>
+#include <openssl/evp.h>
+#include <openssl/pem.h>
+
 #include <userver/clients/dns/component.hpp>
 #include <userver/clients/http/component.hpp>
 #include <userver/components/component_config.hpp>
@@ -16,6 +23,8 @@
 
 #include <definitions/all.hpp>
 
+using json = nlohmann::json;
+
 namespace views::v1::documents::chain::update {
 
 struct MetadataContainer {
@@ -23,6 +32,55 @@ struct MetadataContainer {
 };
 
 namespace {
+
+static int SignaturePasswordCb(char* buf, int size, int /*rwflag*/, void* userdata) {
+  const std::string* pass = static_cast<const std::string*>(userdata);
+  int len = std::min(size - 1, static_cast<int>(pass->size()));
+  if (len > 0) {
+    std::memcpy(buf, pass->data(), len);
+  }
+  buf[len] = '\0';
+  return len;
+}
+
+std::optional<std::string> DecryptPrivateKey(const std::string& encrypted_pem,
+                                             const std::string& signature_password) {
+  BIO* bio = BIO_new_mem_buf(encrypted_pem.data(), static_cast<int>(encrypted_pem.size()));
+  if (!bio) return std::nullopt;
+  EVP_PKEY* pkey = PEM_read_bio_PrivateKey(
+      bio, nullptr, &SignaturePasswordCb,
+      const_cast<std::string*>(&signature_password));
+  BIO_free(bio);
+  if (!pkey) return std::nullopt;
+  bio = BIO_new(BIO_s_mem());
+  if (!bio) {
+    EVP_PKEY_free(pkey);
+    return std::nullopt;
+  }
+  if (PEM_write_bio_PrivateKey(bio, pkey, nullptr, nullptr, 0, nullptr, nullptr) != 1) {
+    BIO_free(bio);
+    EVP_PKEY_free(pkey);
+    return std::nullopt;
+  }
+  char* data = nullptr;
+  long len = BIO_get_mem_data(bio, &data);
+  std::string result(data, len);
+  BIO_free(bio);
+  EVP_PKEY_free(pkey);
+  return result;
+}
+
+struct EmployeeKeysChain {
+  std::string private_key;
+  std::string public_key;
+  std::string public_key_hash;
+};
+
+struct EmployeeInfoChain {
+  std::string name;
+  std::string surname;
+  std::optional<std::string> patronymic;
+};
 
 class DocumentsChainUpdateHandler final
     : public userver::server::handlers::HttpHandlerBase {
@@ -32,12 +90,15 @@ class DocumentsChainUpdateHandler final
   static userver::yaml_config::Schema GetStaticConfigSchema() {
     return userver::yaml_config::MergeSchemas<HandlerBase>(R"(
 type: object
-description: Abscence verdict handler schema
+description: Chain update handler schema
 additionalProperties: false
 properties:
     pyservice-url:
         type: string
-        description: Url of python service
+        description: Url of python service for regular signature (document/sign)
+    pyservice-nep-sign-url:
+        type: string
+        description: Url of python service for NEP signature (document/nep-sign)
 )");
   }
 
@@ -52,7 +113,8 @@ properties:
         http_client_(
             component_context.FindComponent<userver::components::HttpClient>()
                 .GetHttpClient()),
-        pyservice_url_(config["pyservice-url"].As<std::string>()) {}
+        pyservice_url_(config["pyservice-url"].As<std::string>()),
+        pyservice_nep_sign_url_(config["pyservice-nep-sign-url"].As<std::string>()) {}
 
   std::string HandleRequestThrow(
       const userver::server::http::HttpRequest& request,
@@ -97,13 +159,13 @@ properties:
     }
 
     auto current_it = std::find_if(chain_metadata.begin(), chain_metadata.end(),
-        [](const auto& item) { 
-            return item.status == 0; 
+        [](const auto& item) {
+            return item.status == 0;
         });
 
     bool is_first_signature = !std::any_of(chain_metadata.begin(), current_it,
-        [](const auto& item) { 
-            return item.requires_signature && item.status == 1; 
+        [](const auto& item) {
+            return item.requires_signature && item.status == 1;
         });
 
     if (current_it == chain_metadata.end()) {
@@ -119,20 +181,20 @@ properties:
     if (request_body.approval_status == 3) { // REJECT
         current_it->status = 2;
         SendNotifications(company_id, document_id, user_id, chain_metadata, "rejected");
-    } 
+    }
     else if (request_body.approval_status == 2 && current_it->requires_signature) {
         request.SetResponseStatus(userver::server::http::HttpStatus::kBadRequest);
-        return ErrorMessage{"Document requires a signature"}.ToJsonString();  
+        return ErrorMessage{"Document requires a signature"}.ToJsonString();
 
     } else if ((!request_body.approval_status || request_body.approval_status == 1) && !current_it->requires_signature) {
         request.SetResponseStatus(userver::server::http::HttpStatus::kBadRequest);
-        return ErrorMessage{"Document doesn't require a signature"}.ToJsonString();  
-    } 
+        return ErrorMessage{"Document doesn't require a signature"}.ToJsonString();
+    }
     // approve a document that does not require a signature
     else if (!current_it->requires_signature && request_body.approval_status == 2) {
         current_it->status = 1;
         SendNotifications(company_id, document_id, user_id, chain_metadata, "approved");
-    } 
+    }
     // approve with regular signature
     else if (current_it->requires_signature == 1 && !request_body.approval_status) {
         result = pg_cluster_->Execute(
@@ -145,7 +207,7 @@ properties:
             user_id);
         auto employee_info = result.AsSingleRow<ListEmployeeWithSubcompany>(
             userver::storages::postgres::kRowTag);
-    
+
         PyserviceDocumentSignRequest py_request;
         py_request.employee_id = user_id;
         py_request.employee_name = employee_info.name;
@@ -155,7 +217,6 @@ properties:
         py_request.file_key = document_id;
         py_request.signed_file_key = document_id;
         py_request.is_first_signature = is_first_signature;
-    
         auto response = http_client_.CreateRequest()
                             .post(pyservice_url_)
                             .data(py_request.ToJsonString())
@@ -163,7 +224,7 @@ properties:
                             .timeout(std::chrono::milliseconds{5000})
                             .perform();  // start performing the request
         response->raise_for_status();
-    
+
         result = pg_cluster_->Execute(
             userver::storages::postgres::ClusterHostType::kMaster,
             "UPDATE working_day_" + company_id + ".employee_document "
@@ -173,12 +234,100 @@ properties:
 
         current_it->status = 1;
         SendNotifications(company_id, document_id, user_id, chain_metadata, "signed and approved");
-    } 
-    // approve with unqualified signature 
+    }
+    // approve with unqualified signature (NEP) — call document/nep-sign, same logic as nep_sign view
     else if (current_it->requires_signature == 2 && request_body.approval_status == 1) {
-        request.SetResponseStatus(userver::server::http::HttpStatus::kBadRequest);
-        return ErrorMessage{"Not implemented yet"}.ToJsonString();
+        if (!request_body.signature_password.has_value() || request_body.signature_password->empty()) {
+          request.SetResponseStatus(userver::server::http::HttpStatus::kBadRequest);
+          return ErrorMessage{"signature_password is required for NEP signing"}.ToJsonString();
+        }
+        const std::string& signature_password = request_body.signature_password.value();
 
+        auto keys_result = pg_cluster_->Execute(
+            userver::storages::postgres::ClusterHostType::kSlave,
+            "SELECT private_key, public_key, public_key_hash FROM working_day_" + company_id +
+                ".employee_keys WHERE employee_id = $1",
+            user_id);
+        if (keys_result.IsEmpty()) {
+          request.SetResponseStatus(userver::server::http::HttpStatus::kBadRequest);
+          return ErrorMessage{"Keys not found. Please generate keys first."}.ToJsonString();
+        }
+        auto keys = keys_result.AsSingleRow<EmployeeKeysChain>(userver::storages::postgres::kRowTag);
+
+        auto stored_password_result = pg_cluster_->Execute(
+            userver::storages::postgres::ClusterHostType::kSlave,
+            "SELECT signature_password FROM working_day_" + company_id +
+                ".employee_signature_passwords WHERE employee_id = $1",
+            user_id);
+        if (stored_password_result.IsEmpty()) {
+          request.SetResponseStatus(userver::server::http::HttpStatus::kBadRequest);
+          return ErrorMessage{"Signature password not found. Please generate keys first."}.ToJsonString();
+        }
+        if (stored_password_result.AsSingleRow<std::string>() != signature_password) {
+          request.SetResponseStatus(userver::server::http::HttpStatus::kUnauthorized);
+          return ErrorMessage{"Wrong signature_password"}.ToJsonString();
+        }
+
+        auto employee_info_result = pg_cluster_->Execute(
+            userver::storages::postgres::ClusterHostType::kSlave,
+            "SELECT name, surname, patronymic FROM working_day_" + company_id +
+                ".employees WHERE id = $1",
+            user_id);
+        auto employee_info = employee_info_result.AsSingleRow<EmployeeInfoChain>(userver::storages::postgres::kRowTag);
+        std::string employee_full_name = employee_info.surname + " " + employee_info.name;
+        if (employee_info.patronymic.has_value()) {
+          employee_full_name += " " + employee_info.patronymic.value();
+        }
+
+        auto decrypted_private_key = DecryptPrivateKey(keys.private_key, signature_password);
+        if (!decrypted_private_key.has_value()) {
+          request.SetResponseStatus(userver::server::http::HttpStatus::kUnauthorized);
+          return ErrorMessage{"Wrong signature_password"}.ToJsonString();
+        }
+
+        PyserviceNepSignRequest pyservice_request;
+        pyservice_request.document_id = document_id;
+        pyservice_request.employee_id = user_id;
+        pyservice_request.employee_name = employee_full_name;
+        pyservice_request.private_key = decrypted_private_key.value();
+        pyservice_request.public_key = keys.public_key;
+
+        auto resp = http_client_.CreateRequest()
+                        .post(pyservice_nep_sign_url_)
+                        .data(pyservice_request.ToJsonString())
+                        .retry(2)
+                        .timeout(std::chrono::milliseconds{10000})
+                        .perform();
+        resp->raise_for_status();
+
+        auto response_json = json::parse(resp->body());
+        std::string signature_path = response_json["signature_path"];
+        std::string timestamp = response_json["timestamp"];
+        std::string public_key_hash = response_json["public_key_hash"];
+
+        auto signature_id = userver::utils::generators::GenerateUuid();
+        json metadata;
+        metadata["timestamp"] = timestamp;
+        metadata["user_name"] = employee_full_name;
+        metadata["user_id"] = user_id;
+
+        pg_cluster_->Execute(
+            userver::storages::postgres::ClusterHostType::kMaster,
+            "INSERT INTO working_day_" + company_id + ".document_signatures "
+            "(id, document_id, employee_id, signature_path, signature_metadata, public_key_hash, signature_type) "
+            "VALUES ($1, $2, $3, $4, $5::jsonb, $6, $7)",
+            signature_id, document_id, user_id, signature_path,
+            metadata.dump(), public_key_hash, "nep");
+
+        pg_cluster_->Execute(
+            userver::storages::postgres::ClusterHostType::kMaster,
+            "UPDATE working_day_" + company_id + ".employee_document "
+            "SET signed = true, updated_ts = NOW() "
+            "WHERE employee_id = $1 AND document_id = $2",
+            user_id, document_id);
+
+        current_it->status = 1;
+        SendNotifications(company_id, document_id, user_id, chain_metadata, "signed and approved");
     } else {
         request.SetResponseStatus(userver::server::http::HttpStatus::kBadRequest);
         return ErrorMessage{"Bad request"}.ToJsonString();
@@ -214,6 +363,7 @@ properties:
   userver::storages::postgres::ClusterPtr pg_cluster_;
   userver::clients::http::Client& http_client_;
   std::string pyservice_url_;
+  std::string pyservice_nep_sign_url_;
 
   struct Employee {
     std::string name, surname;
@@ -236,7 +386,7 @@ properties:
         if (!doc_result.IsEmpty()) {
             doc_name = doc_result.AsSingleRow<std::string>();
         }
-    
+
         auto emp_result = pg_cluster_->Execute(
             userver::storages::postgres::ClusterHostType::kSlave,
             "SELECT name, surname FROM working_day_" + company_id + ".employees "
@@ -267,20 +417,20 @@ properties:
         for (const auto& participant : chain_metadata) {
             auto notification_id = userver::utils::generators::GenerateUuid();
 
-            filter += "($" + std::to_string(parameters.Size() + 1) + 
-                    ", $1, $2, $" + 
+            filter += "($" + std::to_string(parameters.Size() + 1) +
+                    ", $1, $2, $" +
                     std::to_string(parameters.Size() + 2) + "),";
 
             parameters.PushBack(notification_id);
             parameters.PushBack(participant.employee_id);
         }
-        
+
         if (!filter.empty()) {
             filter.pop_back();
 
             pg_cluster_->Execute(
                 userver::storages::postgres::ClusterHostType::kMaster,
-                "INSERT INTO working_day_" + company_id + 
+                "INSERT INTO working_day_" + company_id +
                 ".notifications(id, type, text, user_id) "
                 "VALUES " + filter + " ON CONFLICT (id) DO NOTHING",
                 parameters);

@@ -56,7 +56,10 @@ def userver_config_pyservice(mockserver_info):
 
         components['handler-v1-documents-chain-update'][
             'pyservice-url'
-        ] = mockserver_info.url('document/convert')
+        ] = mockserver_info.url('document/sign')
+        components['handler-v1-documents-chain-update'][
+            'pyservice-nep-sign-url'
+        ] = mockserver_info.url('document/nep-sign')
 
         components['handler-v1-attendance-export-to-excel'][
             'pyservice-url'
@@ -120,5 +123,13 @@ def mock_pyservice(mockserver) -> None:
     @mockserver.json_handler('/document/build-archive')
     def mock(request):
         return {'url': 's3 download test link'}
+
+    @mockserver.json_handler('/document/nep-sign')
+    def mock(request):
+        return {
+            'signature_path': 'test_signature.p7s',
+            'timestamp': '2026-01-01T00:00:00Z',
+            'public_key_hash': 'test_hash',
+        }
 
     # /// [mockserver]

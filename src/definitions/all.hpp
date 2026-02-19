@@ -282,6 +282,7 @@
 #ifdef V1_DOCUMENTS_CHAIN_UPDATE
 #define USE_LIST_EMPLOYEE_WITH_SUBCOMPANY
 #define USE_PYSERVICE_DOCUMENT_SIGN_REQUEST
+#define USE_PYSERVICE_NEP_SIGN_REQUEST
 #define USE_DOCUMENTS_CHAIN_UPDATE_REQUEST
 #define USE_DOCUMENTS_CHAIN_UPDATE_RESPONSE
 #define USE_ERROR_MESSAGE
@@ -1183,6 +1184,7 @@ struct PyserviceDocumentSendRequest : public JsonCompatible {
 #ifdef USE_DOCUMENTS_CHAIN_UPDATE_REQUEST
 struct DocumentsChainUpdateRequest : public JsonCompatible {
   REGISTER_STRUCT_FIELD(approval_status, int, "approval_status");
+  REGISTER_STRUCT_FIELD_OPTIONAL(signature_password, std::string, "signature_password");
 };
 #endif
 

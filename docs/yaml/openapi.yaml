@@ -3056,6 +3056,10 @@ components:
                      1 - sign with unqualified signature and approve
                      2 - approve
                      3 - reject
+                signature_password:
+                    type: string
+                    description: Password for signature (e.g. 6 digits for NEP), required when approving with signature (approval_status 0 or 1) if the step requires a signature
+                     
 
         DocumentsChainUpdateResponse:
             type: object

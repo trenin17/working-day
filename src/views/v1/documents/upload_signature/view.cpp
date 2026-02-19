@@ -127,7 +127,7 @@ class DocumentsUploadSignatureHandler final
             ".document_signatures "
             "(id, document_id, employee_id, signature_path, "
             "signature_metadata, signature_type) "
-            "VALUES ($1, $2, $3, $4, $5::jsonb, $6, $7)",
+            "VALUES ($1, $2, $3, $4, $5::jsonb, $6)",
         signature_id, request_body.document_id, user_id, signature_path,
         metadata.dump(), request_body.signature_type);
 
