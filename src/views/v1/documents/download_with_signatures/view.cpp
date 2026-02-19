@@ -98,9 +98,8 @@ properties:
     body["document_id"] = document_id;
     body["signature_paths"] = signature_paths;
 
-    std::string url_to_call = pyservice_url_ + "/document/build-archive";
     auto resp = http_client_.CreateRequest()
-                    .post(url_to_call)
+                    .post(pyservice_url_)
                     .data(body.dump())
                     .retry(1)
                     .timeout(std::chrono::milliseconds{60000})

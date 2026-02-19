@@ -137,7 +137,7 @@ properties:
     pyservice_request.public_key = keys.public_key;
 
     auto resp = http_client_.CreateRequest()
-                    .post("http://localhost:3000/document/nep-verify")
+                    .post(pyservice_url_)
                     .data(pyservice_request.ToJsonString())
                     .retry(2)
                     .timeout(std::chrono::milliseconds{10000})

@@ -620,6 +620,7 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/UploadDocumentResponse'
+
     /v1/documents/upload-signature:
         post:
             description: Sign document with KEP (Qualified Electronic Signature)

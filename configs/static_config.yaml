@@ -364,6 +364,17 @@ components_manager:
                 scopes:
                   - user
 
+        handler-v1-documents-download-with-signatures:
+            path: /v1/documents/download-with-signatures
+            method: GET
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - user
+            pyservice-url: 'http://python-service:3000/document/build-archive'
+
         handler-v1-search-full:
             path: /v1/search/full
             method: POST
@@ -384,6 +395,16 @@ components_manager:
                 scopes:
                   - user
             pyservice-url: 'http://python-service:3000/document/sign'
+
+        handler-v1-documents-upload-signature:
+            path: /v1/documents/upload-signature
+            method: POST
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - user
 
         handler-v1-documents-list-all:
             path: /v1/documents/list-all

@@ -226,7 +226,7 @@ properties:
     pyservice_request.location = request_body.location;
 
     auto resp = http_client_.CreateRequest()
-                    .post("http://localhost:3000/document/nep-sign")
+                    .post(pyservice_url_)
                     .data(pyservice_request.ToJsonString())
                     .retry(2)
                     .timeout(std::chrono::milliseconds{10000})
