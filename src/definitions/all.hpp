@@ -1185,6 +1185,7 @@ struct PyserviceDocumentSendRequest : public JsonCompatible {
 struct DocumentsChainUpdateRequest : public JsonCompatible {
   REGISTER_STRUCT_FIELD(approval_status, int, "approval_status");
   REGISTER_STRUCT_FIELD_OPTIONAL(signature_password, std::string, "signature_password");
+  REGISTER_STRUCT_FIELD_OPTIONAL(signature_id, std::string, "signature_id");
 };
 #endif
 

@@ -655,6 +655,7 @@ components_manager:
                 scopes:
                   - user
             pyservice-url: 'http://python-service:3000/document/sign'
+            pyservice-nep-sign-url: 'http://python-service:3000/document/nep-sign'
 
         handler-v1-documents-remove:
             path: /v1/documents/remove

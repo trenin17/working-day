@@ -195,35 +195,23 @@ properties:
         current_it->status = 1;
         SendNotifications(company_id, document_id, user_id, chain_metadata, "approved");
     }
-    // approve with regular signature
-    else if (current_it->requires_signature == 1 && !request_body.approval_status) {
-        result = pg_cluster_->Execute(
+    // approve with KEP signature (already uploaded via upload_signature, front sends signature_id)
+    else if (current_it->requires_signature == 1 && request_body.approval_status == 0) {
+        if (!request_body.signature_id.has_value()) {
+            request.SetResponseStatus(userver::server::http::HttpStatus::kBadRequest);
+            return ErrorMessage{"signature_id is required for KEP signing"}.ToJsonString();
+        }
+        const std::string& signature_id = request_body.signature_id.value();
+        auto sig_check = pg_cluster_->Execute(
             userver::storages::postgres::ClusterHostType::kSlave,
-            "SELECT id, name, surname, patronymic, photo_link, subcompany "
-            "FROM working_day_" +
-                company_id +
-                ".employees "
-                "WHERE id = $1",
-            user_id);
-        auto employee_info = result.AsSingleRow<ListEmployeeWithSubcompany>(
-            userver::storages::postgres::kRowTag);
-
-        PyserviceDocumentSignRequest py_request;
-        py_request.employee_id = user_id;
-        py_request.employee_name = employee_info.name;
-        py_request.employee_surname = employee_info.surname;
-        py_request.employee_patronymic = employee_info.patronymic;
-        py_request.subcompany = employee_info.subcompany;
-        py_request.file_key = document_id;
-        py_request.signed_file_key = document_id;
-        py_request.is_first_signature = is_first_signature;
-        auto response = http_client_.CreateRequest()
-                            .post(pyservice_url_)
-                            .data(py_request.ToJsonString())
-                            .retry(2)  // retry once in case of error
-                            .timeout(std::chrono::milliseconds{5000})
-                            .perform();  // start performing the request
-        response->raise_for_status();
+            "SELECT id FROM working_day_" + company_id +
+                ".document_signatures "
+                "WHERE id = $1 AND document_id = $2 AND employee_id = $3 AND signature_type = $4",
+            signature_id, document_id, user_id, "kep");
+        if (sig_check.IsEmpty()) {
+            request.SetResponseStatus(userver::server::http::HttpStatus::kBadRequest);
+            return ErrorMessage{"KEP signature not found or invalid. Upload signature via /v1/documents/upload_signature first."}.ToJsonString();
+        }
 
         result = pg_cluster_->Execute(
             userver::storages::postgres::ClusterHostType::kMaster,
@@ -330,7 +318,7 @@ properties:
         SendNotifications(company_id, document_id, user_id, chain_metadata, "signed and approved");
     } else {
         request.SetResponseStatus(userver::server::http::HttpStatus::kBadRequest);
-        return ErrorMessage{"Bad request"}.ToJsonString();
+        return ErrorMessage{"Bad request."}.ToJsonString();
     }
 
     size_t element_index = current_it - chain_metadata.begin();

@@ -3014,7 +3014,7 @@ components:
                     enum: [0, 1, 2]
                     description:
                      0 - does not require a signature
-                     1 - requires a regular signature
+                     1 - requires a qualified signature
                      2 - requires an unqualified signature
                 status:
                     type: int
@@ -3052,14 +3052,22 @@ components:
                     type: int
                     enum: [0, 1, 2, 3]
                     description:
-                     0 - sign with regular signature and approve
+                     0 - sign with qualified signature and approve
                      1 - sign with unqualified signature and approve
                      2 - approve
                      3 - reject
                 signature_password:
                     type: string
-                    description: Password for signature (e.g. 6 digits for NEP), required when approving with signature (approval_status 0 or 1) if the step requires a signature
-                     
+                    description: |
+                      Password for NEPsignature (6 digits).
+                      Required when approving with unqualified signature (approval_status == 1)
+                      and the step requires a unqualified signature(requires_signature == 2).
+                signature_id:
+                    type: string
+                    description: |
+                      ID of KEP signature from document_signatures.
+                      Required when approving with KEP signature (approval_status == 0)
+                      and the step requires a qualified signature(requires_signature == 1).
 
         DocumentsChainUpdateResponse:
             type: object
