@@ -476,3 +476,6 @@ DROP CONSTRAINT IF EXISTS employee_permissions_permission_type_check;
 ALTER TABLE working_day_first.employee_permissions
 ADD CONSTRAINT employee_permissions_permission_type_check
 CHECK (permission_type IN ('can_remove_documents', 'can_upload_kep_signature'));
+
+ALTER TABLE working_day_first.document_signatures
+ALTER COLUMN public_key_hash DROP NOT NULL;

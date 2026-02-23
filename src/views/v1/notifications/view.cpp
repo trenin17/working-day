@@ -1,6 +1,7 @@
 #include "view.hpp"
 
 #include <nlohmann/json.hpp>
+#include <unordered_map>
 
 #include <userver/clients/dns/component.hpp>
 #include <userver/components/component_config.hpp>
@@ -18,9 +19,23 @@ namespace views::v1::notifications {
 
 namespace {
 
+using PhotoLinkCache = std::unordered_map<std::string, std::string>;
+
+static std::string GetOrCreatePhotoUrl(const std::string& photo_link,
+                                       PhotoLinkCache& cache) {
+  auto it = cache.find(photo_link);
+  if (it != cache.end()) {
+    return it->second;
+  }
+  std::string url = utils::s3_presigned_links::GeneratePhotoPresignedLink(
+      photo_link, utils::s3_presigned_links::LinkType::Download);
+  cache[photo_link] = url;
+  return url;
+}
+
 class ListEmployee {
  public:
-  json ToJSONObject() const {
+  json ToJSONObject(PhotoLinkCache& photo_cache) const {
     json j;
     j["id"] = id;
     j["name"] = name;
@@ -29,8 +44,7 @@ class ListEmployee {
       j["patronymic"] = patronymic.value();
     }
     if (photo_link) {
-      j["photo_link"] = utils::s3_presigned_links::GeneratePhotoPresignedLink(
-          photo_link.value(), utils::s3_presigned_links::LinkType::Download);
+      j["photo_link"] = GetOrCreatePhotoUrl(photo_link.value(), photo_cache);
     }
 
     return j;
@@ -42,18 +56,18 @@ class ListEmployee {
 
 class Notification {
  public:
-  json ToJSONObject() const {
+  json ToJSONObject(PhotoLinkCache& photo_cache) const {
     json j;
     j["id"] = id;
     j["type"] = type;
     j["text"] = text;
     j["is_read"] = is_read;
     if (sender) {
-      j["sender"] = sender.value().ToJSONObject();
+      j["sender"] = sender.value().ToJSONObject(photo_cache);
     }
     if (user_photo_link) {
-      j["user_photo_url"] = utils::s3_presigned_links::GeneratePhotoPresignedLink(
-          user_photo_link.value(), utils::s3_presigned_links::LinkType::Download);
+      j["user_photo_url"] =
+          GetOrCreatePhotoUrl(user_photo_link.value(), photo_cache);
     }
     if (action_id) {
       j["action_id"] = action_id.value();
@@ -81,8 +95,9 @@ class NotificationsResponse {
   std::string ToJSON() const {
     json j;
     j["notifications"] = json::array();
+    PhotoLinkCache photo_cache;
     for (const auto& notification : notifications) {
-      j["notifications"].push_back(notification.ToJSONObject());
+      j["notifications"].push_back(notification.ToJSONObject(photo_cache));
     }
     return j.dump();
   }

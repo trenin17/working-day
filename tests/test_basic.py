@@ -952,7 +952,7 @@ async def test_documents_send(service_client):
              "signed": False,
              "type": "admin_request"},
             {"chain_metadata_new":[
-                {"employee_id":"first_id","employee_name":"A First","requires_signature":1,"signature_id":"sig_1","signature_path":"doc_with_chain_first_id.p7s","signature_type":"nep","signed_at":response_data["documents"][1]["chain_metadata_new"][0].get("signed_at"),"status":0},
+                {"employee_id":"first_id","employee_name":"A First","requires_signature":1,"signature_id":"sig_1","signature_path":"doc_with_chain_first_id_kep.p7s","signature_type":"kep","signed_at":response_data["documents"][1]["chain_metadata_new"][0].get("signed_at"),"status":0},
                 {"employee_id":"second_id","employee_name":"B Second","requires_signature":0,"status":0}],
              "created_ts": response_data["documents"][1]["created_ts"],
              "description": "Test document with approval chain",
@@ -2672,7 +2672,7 @@ async def test_send_docx_document(service_client):
              "type": "admin_request",
              "visibility_status": 0},
             {"chain_metadata_new":[
-                {"employee_id":"first_id","employee_name":"A First","requires_signature":1,"signature_id":"sig_1","signature_path":"doc_with_chain_first_id.p7s","signature_type":"nep","signed_at":response_data["documents"][1]["chain_metadata_new"][0].get("signed_at"),"status":0},
+                {"employee_id":"first_id","employee_name":"A First","requires_signature":1,"signature_id":"sig_1","signature_path":"doc_with_chain_first_id_kep.p7s","signature_type":"kep","signed_at":response_data["documents"][1]["chain_metadata_new"][0].get("signed_at"),"status":0},
                 {"employee_id":"second_id","employee_name":"B Second","requires_signature":0,"status":0}],
              "created_ts": response_data["documents"][1]["created_ts"],
              "description": "Test document with approval chain",
@@ -2704,11 +2704,17 @@ async def test_chain_update_approve(service_client):
     appr_status = 0
     status = 0
     for _ in range(2):
+        json_data = {
+            'approval_status': appr_status,
+        }
+        if appr_status == 0:
+            json_data['signature_id'] = 'sig_1'
+
         response = await service_client.post(
             '/v1/documents/chain/update',
             headers={'Authorization': auth},
             params={'document_id': 'doc_with_chain'},
-            json={'approval_status': appr_status}
+            json=json_data,
         )
         assert response.status == 200
         expected_response = {
@@ -2787,7 +2793,10 @@ async def test_chain_update_try_sign_non_signable(service_client):
         '/v1/documents/chain/update',
         headers={'Authorization': 'Bearer first_token'},
         params={'document_id': 'doc_with_chain'},
-        json={'approval_status': 0}
+        json={
+            'approval_status': 0,
+            'signature_id': 'sig_1',
+        }
     )
     assert response.status == 200
     response = await service_client.post(
@@ -2861,7 +2870,7 @@ async def test_chain_add(service_client):
             'chain_metadata_new': [
                 {
                     'employee_id': 'first_id',
-                    'requires_signature': 1,
+                    'requires_signature': 2,
                     'status': 0
                 },
                 {
@@ -2877,12 +2886,15 @@ async def test_chain_add(service_client):
         '/v1/documents/chain/update',
         headers={'Authorization': 'Bearer first_token'},
         params={'document_id': 'empty_chain_doc'},
-        json={'approval_status': 0}
+        json={
+            'approval_status': 1,
+            'signature_password': '123456',
+        }
     )
     assert response.status == 200
     expected_response = {
         "chain_metadata_new": [
-            {"employee_id": "first_id", "requires_signature": 1, "status": 1},
+            {"employee_id": "first_id", "requires_signature": 2, "status": 1},
             {"employee_id": "second_id", "requires_signature": 0, "status": 0},
         ]
     }
@@ -3555,7 +3567,7 @@ async def test_documents_list_signature_enrichment(service_client):
     first_item = next(c for c in chain if c["employee_id"] == "first_id")
     assert first_item["employee_name"] == "A First"
     assert first_item["signature_id"] == "sig_1"
-    assert first_item["signature_path"] == "doc_with_chain_first_id.p7s"
+    assert first_item["signature_path"] == "doc_with_chain_first_id_kep.p7s"
     assert "signed_at" in first_item
 
     # second_id has employee_name but no signature

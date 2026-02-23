@@ -58,11 +58,11 @@ class DocumentsSendHandler final
         PyserviceDocumentSendRequest py_request;
         py_request.file_key = request_body.document.id;
 
-        request_body.document.id = 
+        request_body.document.id =
             request_body.document.id.substr(0, request_body.document.id.size() - std::string(".docx").size()) + ".pdf";
         py_request.converted_file_key = request_body.document.id;
 
-    
+
         auto response = http_client_.CreateRequest()
                             .post(pyservice_url_)
                             .data(py_request.ToJsonString())

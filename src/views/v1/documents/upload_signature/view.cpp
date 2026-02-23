@@ -112,15 +112,12 @@ class DocumentsUploadSignatureHandler final
     metadata["user_id"] = user_id;
     // TODO: metadata["reason"] = request_body.reason;
     // TODO: metadata["location"] = request_body.location;
-    std::string signature_path = request_body.document_id + "_" + user_id + request_body.extension;
+    std::string signature_path = request_body.document_id + "_" + user_id + "_" + request_body.signature_type + request_body.extension;
     metadata["signature_path"] = signature_path;
     metadata["detached"] = true;
 
     // Генерируем ID для подписи
     auto signature_id = userver::utils::generators::GenerateUuid();
-
-
-
     pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kMaster,
         "INSERT INTO working_day_" + company_id +
