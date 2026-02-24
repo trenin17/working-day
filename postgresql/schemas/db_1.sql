@@ -485,3 +485,6 @@ ALTER COLUMN sign_required TYPE INT USING (CASE WHEN sign_required THEN 2 ELSE 0
 
 ALTER TABLE working_day_first.documents
 ALTER COLUMN sign_required SET DEFAULT 0;
+
+ALTER TABLE working_day_first.employee_document
+ADD COLUMN IF NOT EXISTS is_author BOOLEAN NOT NULL DEFAULT FALSE;

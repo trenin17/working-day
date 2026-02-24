@@ -60,7 +60,7 @@ class DocumentsGetSignsHandler final
             "JOIN working_day_" +
             company_id +
             ".documents d ON ed.document_id = d.id "
-            "WHERE d.parent_id = $1",
+            "WHERE d.parent_id = $1 AND ed.is_author = FALSE",
         document_id);
 
     DocumentsGetSignsResponse response;

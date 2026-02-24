@@ -934,6 +934,17 @@ async def test_documents_send(service_client):
     )
     assert response.status == 200
 
+    # Автор (tc) тоже видит отправленный документ в списке с is_author: true
+    response = await service_client.get(
+        '/v1/documents/list',
+        headers={'Authorization': 'Bearer ' + token},
+    )
+    assert response.status == 200
+    author_docs = json.loads(response.text)['documents']
+    doc_id1_for_author = next((d for d in author_docs if d['id'] == 'id1'), None)
+    assert doc_id1_for_author is not None, 'Автор должен видеть отправленный документ в списке'
+    assert doc_id1_for_author['is_author'] is True, 'У отправленного документа у автора is_author должен быть true'
+
     response = await service_client.get(
         '/v1/documents/list',
         headers={'Authorization': 'Bearer first_token'}
@@ -950,6 +961,7 @@ async def test_documents_send(service_client):
              "visibility_status": 0,
              "sign_required": 1,
              "signed": False,
+             "is_author": False,
              "type": "admin_request"},
             {"chain_metadata_new":[
                 {"employee_id":"first_id","employee_name":"A First","requires_signature":1,"signature_id":"sig_1","signature_path":"doc_with_chain_first_id_kep.p7s","signature_type":"kep","signed_at":response_data["documents"][1]["chain_metadata_new"][0].get("signed_at"),"status":0},
@@ -960,6 +972,7 @@ async def test_documents_send(service_client):
              "name": "Document with chain",
              "sign_required": 1,
              "signed": False,
+             "is_author": False,
              "visibility_status": 0,
              "type": "admin_request"},
             {"chain_metadata_new":[
@@ -971,6 +984,7 @@ async def test_documents_send(service_client):
              "name": "Rejected document",
              "sign_required": 1,
              "signed": False,
+             "is_author": False,
              "visibility_status": 0,
              "type": "admin_request"}
         ]
@@ -2669,6 +2683,7 @@ async def test_send_docx_document(service_client):
              "name": "doc1",
              "sign_required": 1,
              "signed": False,
+             "is_author": True,
              "type": "admin_request",
              "visibility_status": 0},
             {"chain_metadata_new":[
@@ -2680,6 +2695,7 @@ async def test_send_docx_document(service_client):
              "name": "Document with chain",
              "sign_required": 1,
              "signed": False,
+             "is_author": False,
              "type": "admin_request",
              "visibility_status": 0},
             {"chain_metadata_new":[
@@ -2691,6 +2707,7 @@ async def test_send_docx_document(service_client):
              "name": "Rejected document",
              "sign_required": 1,
              "signed": False,
+             "is_author": False,
              "type": "admin_request",
              "visibility_status": 0}
         ]

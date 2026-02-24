@@ -53,7 +53,7 @@ class DocumentsListHandler final
         "SELECT d.id, d.name, "
             "d.type, d.sign_required, "
             "d.description, "
-            "ed.signed, "
+            "ed.signed, ed.is_author, "
             "NULL::TEXT as parent_id, d.created_ts, d.chain_metadata_new, d.visibility_status "
             "FROM working_day_" +
             company_id +

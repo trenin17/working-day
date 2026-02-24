@@ -2511,6 +2511,9 @@ components:
                 signed:
                     description: This field only valid if requested by assignee of the document
                     type: boolean
+                is_author:
+                    description: true if the current user sent this document (author), false if received
+                    type: boolean
                 parent_id:
                     description: Parent document Id
                     type: string
