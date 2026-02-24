@@ -1895,6 +1895,7 @@ components:
               - id
               - name
               - surname
+              - has_nep
             properties:
                 id:
                     type: string
@@ -1930,6 +1931,9 @@ components:
                         $ref: '#/components/schemas/InventoryItem'
                 job_position:
                     type: string
+                has_nep:
+                    description: true if employee has NEP (unqualified e-signature) keys set in employee_keys
+                    type: boolean
 
         ProfileEditRequest:
             type: object

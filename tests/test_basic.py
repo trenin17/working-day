@@ -36,7 +36,7 @@ async def test_db_initial_data(service_client):
     )
 
     assert response.status == 200
-    assert response.text == ('{"id":"first_id","inventory":[],"name":"First",'
+    assert response.text == ('{"has_nep":true,"id":"first_id","inventory":[],"name":"First",'
                              '"phones":[],"surname":"A"}')
 
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])
@@ -80,9 +80,9 @@ async def test_employees(service_client):
     assert response.status == 200
     assert response.text == ('{"employees":['
                              '{"id":"first_id","name":"First","surname":"A"},'
+                             '{"id":"second_id","name":"Second","surname":"B"},'
                              '{"id":"third_id","name":"Third","surname":"C"},'
-                             '{"id":"stranger_id","name":"Stranger","surname":"S"},'
-                             '{"id":"second_id","name":"Second","surname":"B"}]}')
+                             '{"id":"stranger_id","name":"Stranger","surname":"S"}]}')
 
 
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])
@@ -130,7 +130,7 @@ async def test_add(service_client):
     )
 
     assert response.status == 200
-    assert response.text == ('{"id":"' + new_id + '","inventory":[],"job_position":"worker","name":"Third",'
+    assert response.text == ('{"has_nep":false,"id":"' + new_id + '","inventory":[],"job_position":"worker","name":"Third",'
                              '"password":"' + new_password + '",'
                              '"phones":[],"surname":"C"}')
 
@@ -1239,7 +1239,7 @@ async def test_inventory(service_client):
     )
     assert response.status == 200
     assert are_json_equal(response.text, (
-        '{"id":"first_id","inventory":[{"description":"desc1","id":"id1","name":"item1"}],"name":"First","phones":[],"surname":"A"}'
+        '{"has_nep":true,"id":"first_id","inventory":[{"description":"desc1","id":"id1","name":"item1"}],"name":"First","phones":[],"surname":"A"}'
     )) == True
 
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])
@@ -2683,7 +2683,7 @@ async def test_send_docx_document(service_client):
              "name": "doc1",
              "sign_required": 1,
              "signed": False,
-             "is_author": True,
+             "is_author": False,
              "type": "admin_request",
              "visibility_status": 0},
             {"chain_metadata_new":[

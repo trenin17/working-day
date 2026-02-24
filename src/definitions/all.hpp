@@ -862,7 +862,7 @@ struct Employee : public JsonCompatible {
   auto Introspect() {
     return std::tie(id, name, surname, patronymic, photo_link, phones, email,
                     birthday, password, head_id, telegram_id, vk_id, team,
-                    head_info, inventory, job_position);
+                    head_info, inventory, job_position, has_nep);
   }
 
   REGISTER_STRUCT_FIELD(id, std::string, "id");
@@ -882,6 +882,7 @@ struct Employee : public JsonCompatible {
   REGISTER_STRUCT_FIELD_OPTIONAL(inventory, std::vector<InventoryItem>,
                                  "inventory");
   REGISTER_STRUCT_FIELD_OPTIONAL(job_position, std::string, "job_position");
+  REGISTER_STRUCT_FIELD(has_nep, bool, "has_nep");
 };
 #endif
 
