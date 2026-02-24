@@ -30,7 +30,7 @@ INSERT INTO working_day_first.documents(id, name, sign_required, description, ch
 VALUES (
   'doc_with_chain',
   'Document with chain',
-  TRUE,
+  1,
   'Test document with approval chain',
   ARRAY[
     ('first_id', 1, 0)::wd_general.chain_metadata_item_new,
@@ -39,7 +39,7 @@ VALUES (
 ),(
   'rejected_doc',
   'Rejected document',
-  TRUE,
+  1,
   '',
   ARRAY[
     ('first_id', 1, 2)::wd_general.chain_metadata_item_new,
@@ -51,7 +51,7 @@ INSERT INTO working_day_first.documents(id, name, sign_required, description, ch
 VALUES (
   'empty_chain_doc',
   'Empty chain doc',
-  FALSE,
+  0,
   'Document without approval chain',
   ARRAY[]::wd_general.chain_metadata_item_new[]
 );

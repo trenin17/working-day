@@ -930,7 +930,7 @@ async def test_documents_send(service_client):
         headers={'Authorization': 'Bearer ' + token},
         json={'employee_ids': ['first_id', 'second_id'], 'document': {
             'id': 'id1', 'name': 'doc1',
-            'description': 'text1', 'sign_required': True}}
+            'description': 'text1', 'sign_required': 1}}
     )
     assert response.status == 200
 
@@ -948,7 +948,7 @@ async def test_documents_send(service_client):
              "id": "id1",
              "name": "doc1",
              "visibility_status": 0,
-             "sign_required": True,
+             "sign_required": 1,
              "signed": False,
              "type": "admin_request"},
             {"chain_metadata_new":[
@@ -958,7 +958,7 @@ async def test_documents_send(service_client):
              "description": "Test document with approval chain",
              "id": "doc_with_chain",
              "name": "Document with chain",
-             "sign_required": True,
+             "sign_required": 1,
              "signed": False,
              "visibility_status": 0,
              "type": "admin_request"},
@@ -969,7 +969,7 @@ async def test_documents_send(service_client):
              "description": "",
              "id": "rejected_doc",
              "name": "Rejected document",
-             "sign_required": True,
+             "sign_required": 1,
              "signed": False,
              "visibility_status": 0,
              "type": "admin_request"}
@@ -1029,17 +1029,17 @@ async def test_documents_send(service_client):
              "description": "Test document with approval chain",
              "id": "doc_with_chain",
              "name": "Document with chain",
-             "sign_required": True,
+             "sign_required": 1,
              "type": "admin_request",
              "visibility_status": 0},
             {"chain_metadata_new":[
                 {"employee_id": "first_id", "requires_signature": 1, "status": 2},
                 {"employee_id": "second_id","requires_signature": 0,"status": 0}],
-             "created_ts": response_data["documents"][1]["created_ts"], "description": "", "id": "rejected_doc", "name": "Rejected document", "sign_required": True, "type": "admin_request", "visibility_status": 0},
+             "created_ts": response_data["documents"][1]["created_ts"], "description": "", "id": "rejected_doc", "name": "Rejected document", "sign_required": 1, "type": "admin_request", "visibility_status": 0},
             {"chain_metadata_new":[],
-             "created_ts": response_data["documents"][2]["created_ts"], "description": "Document without approval chain", "id": "empty_chain_doc", "name": "Empty chain doc", "sign_required": False, "type": "admin_request", "visibility_status": 0},
+             "created_ts": response_data["documents"][2]["created_ts"], "description": "Document without approval chain", "id": "empty_chain_doc", "name": "Empty chain doc", "sign_required": 0, "type": "admin_request", "visibility_status": 0},
             {"chain_metadata_new":[],
-             "created_ts": response_data["documents"][3]["created_ts"], "description": "text1", "id": "id1", "name": "doc1", "sign_required": True, "type": "admin_request", "visibility_status": 0}
+             "created_ts": response_data["documents"][3]["created_ts"], "description": "text1", "id": "id1", "name": "doc1", "sign_required": 1, "type": "admin_request", "visibility_status": 0}
        ]
     }
     assert response_data == expected_response
@@ -2650,7 +2650,7 @@ async def test_send_docx_document(service_client):
         headers={'Authorization': 'Bearer first_token'},
         json={'employee_ids': ['first_id', 'second_id'], 'document': {
             'id': 'id1.docx', 'name': 'doc1',
-            'description': 'text1', 'sign_required': True}}
+            'description': 'text1', 'sign_required': 1}}
     )
     assert response.status == 200
 
@@ -2667,7 +2667,7 @@ async def test_send_docx_document(service_client):
              "description": "text1",
              "id": "id1.pdf",
              "name": "doc1",
-             "sign_required": True,
+             "sign_required": 1,
              "signed": False,
              "type": "admin_request",
              "visibility_status": 0},
@@ -2678,7 +2678,7 @@ async def test_send_docx_document(service_client):
              "description": "Test document with approval chain",
              "id": "doc_with_chain",
              "name": "Document with chain",
-             "sign_required": True,
+             "sign_required": 1,
              "signed": False,
              "type": "admin_request",
              "visibility_status": 0},
@@ -2689,7 +2689,7 @@ async def test_send_docx_document(service_client):
              "description": "",
              "id": "rejected_doc",
              "name": "Rejected document",
-             "sign_required": True,
+             "sign_required": 1,
              "signed": False,
              "type": "admin_request",
              "visibility_status": 0}

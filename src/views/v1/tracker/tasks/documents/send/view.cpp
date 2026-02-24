@@ -97,7 +97,7 @@ class TrackerTasksDocumentsSendHandler final
         request_body.document_id,
         request_body.name,
         request_body.description.value_or(""),
-        false);
+        0);
 
     // Create link between task and document
     auto trx = pg_cluster_->Begin(

@@ -479,3 +479,9 @@ CHECK (permission_type IN ('can_remove_documents', 'can_upload_kep_signature'));
 
 ALTER TABLE working_day_first.document_signatures
 ALTER COLUMN public_key_hash DROP NOT NULL;
+
+ALTER TABLE working_day_first.documents
+ALTER COLUMN sign_required TYPE INT USING (CASE WHEN sign_required THEN 2 ELSE 0 END);
+
+ALTER TABLE working_day_first.documents
+ALTER COLUMN sign_required SET DEFAULT 0;

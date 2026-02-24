@@ -203,7 +203,7 @@ class DocumentsVacationHandler final
                              ".documents(id, name, "
                              "sign_required, type) "
                              "VALUES($1, $2, $3, $4)",
-                         file_key, document_name, true, "employee_request");
+                         file_key, document_name, 1, "employee_request");
 
     pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kMaster,

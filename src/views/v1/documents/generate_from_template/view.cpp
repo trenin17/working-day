@@ -238,7 +238,7 @@ properties:
                              ".documents(id, name, "
                              "sign_required, type) "
                              "VALUES($1, $2, $3, $4)",
-                         file_key, document_name, false, "employee_request");
+                         file_key, document_name, 0, "employee_request");
 
     pg_cluster_->Execute(userver::storages::postgres::ClusterHostType::kMaster,
                          "UPDATE working_day_" + company_id + ".actions "

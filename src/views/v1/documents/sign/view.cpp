@@ -23,7 +23,7 @@ namespace {
 class DocumentInfo {
  public:
   std::string id, name, type;
-  bool sign_required;
+  int sign_required;
   std::optional<std::string> description;
 };
 
@@ -81,7 +81,7 @@ properties:
     auto document_info =
         result.AsSingleRow<DocumentInfo>(userver::storages::postgres::kRowTag);
 
-    if (!document_info.sign_required) {
+    if (document_info.sign_required == 0) {
       request.GetHttpResponse().SetStatus(
           userver::server::http::HttpStatus::kBadRequest);
       return ErrorMessage{"Document doesn't require sign"}.ToJsonString();
@@ -131,7 +131,7 @@ properties:
             "sign_required, description, parent_id) "
             "VALUES($1, $2, $3, $4, $5, $6)",
         py_request.signed_file_key, document_info.name, document_info.type,
-        true, document_info.description, document_id);
+        document_info.sign_required, document_info.description, document_id);
 
     result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kMaster,

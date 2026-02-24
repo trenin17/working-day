@@ -602,7 +602,7 @@ struct DocumentItem : public JsonCompatible {
   REGISTER_STRUCT_FIELD(id, std::string, "id");
   REGISTER_STRUCT_FIELD(name, std::string, "name");
   REGISTER_STRUCT_FIELD_OPTIONAL(type, std::string, "type");
-  REGISTER_STRUCT_FIELD(sign_required, bool, "sign_required", false);
+  REGISTER_STRUCT_FIELD(sign_required, int, "sign_required", 0);
   REGISTER_STRUCT_FIELD_OPTIONAL(description, std::string, "description");
   REGISTER_STRUCT_FIELD_OPTIONAL(is_signed, bool, "signed");
   REGISTER_STRUCT_FIELD_OPTIONAL(parent_id, std::string, "parent_id");

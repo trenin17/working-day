@@ -2500,7 +2500,12 @@ components:
                       - employee_request
                       - admin_request
                 sign_required:
-                    type: boolean
+                    type: int
+                    enum: [0, 1, 2]
+                    description:
+                     0 - does not require a signature
+                     1 - requires a qualified signature
+                     2 - requires an unqualified signature
                 description:
                     type: string
                 signed:
