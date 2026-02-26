@@ -201,9 +201,9 @@ class DocumentsVacationHandler final
     pg_cluster_->Execute(userver::storages::postgres::ClusterHostType::kMaster,
                          "INSERT INTO working_day_" + company_id +
                              ".documents(id, name, "
-                             "sign_required, type) "
-                             "VALUES($1, $2, $3, $4)",
-                         file_key, document_name, 1, "employee_request");
+                             "sign_required, type, author_id) "
+                             "VALUES($1, $2, $3, $4, $5)",
+                         file_key, document_name, 1, "employee_request", user_id);
 
     pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kMaster,

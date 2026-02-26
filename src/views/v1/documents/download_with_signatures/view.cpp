@@ -77,7 +77,15 @@ properties:
             ".employee_document ed ON d.id = ed.document_id "
             "WHERE d.id = $1 AND ed.employee_id = $2",
         document_id, user_id);
-    if (doc_check.IsEmpty()) {
+
+    auto doc_check_author = pg_cluster_->Execute(
+        userver::storages::postgres::ClusterHostType::kSlave,
+        "SELECT 1 FROM working_day_" + company_id +
+            ".documents d "
+            "WHERE d.id = $1 AND d.author_id = $2",
+        document_id, user_id);
+
+    if (doc_check.IsEmpty() && doc_check_author.IsEmpty()) {
       request.GetHttpResponse().SetStatus(
           userver::server::http::HttpStatus::kNotFound);
       return ErrorMessage{"Document not found or access denied"}.ToJsonString();
