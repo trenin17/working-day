@@ -128,10 +128,8 @@ class DocumentsUploadSignatureHandler final
         signature_id, request_body.document_id, user_id, signature_path,
         metadata.dump(), request_body.signature_type);
 
-    auto document_id =
-        userver::utils::generators::GenerateUuid() + request_body.extension;
     auto upload_link = utils::s3_presigned_links::GenerateDocumentPresignedLink(
-        document_id, utils::s3_presigned_links::Upload);
+        signature_path, utils::s3_presigned_links::Upload);
 
     DocumentsUploadSignatureResponse response;
     response.signature_id = signature_id;

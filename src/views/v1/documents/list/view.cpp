@@ -53,15 +53,14 @@ class DocumentsListHandler final
         "SELECT d.id, d.name, "
             "d.type, d.sign_required, "
             "d.description, "
-            "ed.signed, ed.is_author, "
+            "COALESCE(ed.signed, FALSE) AS signed, d.author_id, "
             "NULL::TEXT as parent_id, d.created_ts, d.chain_metadata_new, d.visibility_status "
             "FROM working_day_" +
             company_id +
             ".documents d "
-            "JOIN working_day_" +
-            company_id + ".employee_document ed ON d.id = "
-            "ed.document_id "
-            "WHERE ed.employee_id = $1 "
+            "LEFT JOIN working_day_" +
+            company_id + ".employee_document ed ON d.id = ed.document_id AND ed.employee_id = $1 "
+            "WHERE ed.employee_id = $1 OR d.author_id = $1 "
             "ORDER BY d.created_ts DESC",
         user_id);
 

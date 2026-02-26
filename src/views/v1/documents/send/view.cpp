@@ -75,12 +75,13 @@ class DocumentsSendHandler final
     pg_cluster_->Execute(userver::storages::postgres::ClusterHostType::kMaster,
                          "INSERT INTO working_day_" + company_id +
                              ".documents(id, name, "
-                             "sign_required, description, parent_id) "
-                             "VALUES($1, $2, $3, $4, $5) ON CONFLICT (id) DO NOTHING",
+                             "sign_required, description, parent_id, author_id) "
+                             "VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT (id) DO NOTHING",
                          request_body.document.id, request_body.document.name,
                          request_body.document.sign_required,
                          request_body.document.description,
-                         request_body.document.parent_id.value_or(""));
+                         request_body.document.parent_id.value_or(""),
+                         user_id);
 
     auto notification_text = "Вам отправлен новый документ \"" +
                              request_body.document.name +
@@ -94,7 +95,7 @@ class DocumentsSendHandler final
     parameters_notifications.PushBack(user_id);
     for (const auto& employee_id : request_body.employee_ids) {
       filter += "($" + std::to_string(parameters.Size() + 1) + ", $" +
-                std::to_string(parameters.Size() + 2) + ", FALSE),";
+                std::to_string(parameters.Size() + 2) + "),";
       parameters.PushBack(employee_id);
       parameters.PushBack(request_body.document.id);
 
@@ -114,20 +115,11 @@ class DocumentsSendHandler final
     pg_cluster_->Execute(userver::storages::postgres::ClusterHostType::kMaster,
                          "INSERT INTO working_day_" + company_id +
                              ".employee_document "
-                             "(employee_id, document_id, is_author) "
+                             "(employee_id, document_id) "
                              "VALUES " +
                              filter,
                          parameters);
 
-    // Добавить документ в список отправителя как автора (видит отправленные документы).
-    // ON CONFLICT DO NOTHING: если отправил себе, уже есть строка с is_author=FALSE —
-    // оставляем её, чтобы пользователь попадал в get-signs и мог подписать.
-    pg_cluster_->Execute(
-        userver::storages::postgres::ClusterHostType::kMaster,
-        "INSERT INTO working_day_" + company_id +
-            ".employee_document(employee_id, document_id, is_author) VALUES($1, $2, TRUE) "
-            "ON CONFLICT (employee_id, document_id) DO NOTHING",
-        user_id, request_body.document.id);
 
     pg_cluster_->Execute(userver::storages::postgres::ClusterHostType::kMaster,
                          "INSERT INTO working_day_" + company_id +
