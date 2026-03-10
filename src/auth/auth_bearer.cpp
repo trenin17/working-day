@@ -58,9 +58,19 @@ AuthCheckerBearer::AuthCheckResult AuthCheckerBearer::CheckAuth(
   }
   /// [auth checker definition 2]
 
-  /// [auth checker definition 3]
-  const userver::server::auth::UserAuthInfo::Ticket token{auth_value.data() +
-                                                          bearer_sep_pos + 1};
+  /// Trim leading/trailing whitespace and control chars from token (curl/paste can add newline)
+  std::string token_str(auth_value.data() + bearer_sep_pos + 1,
+                        auth_value.size() - (bearer_sep_pos + 1));
+  const auto start = token_str.find_first_not_of(" \t\r\n");
+  if (start == std::string::npos) {
+    return AuthCheckResult{
+        AuthCheckResult::Status::kTokenNotFound,
+        {},
+        "Empty token after 'Bearer '",
+        userver::server::handlers::HandlerErrorCode::kUnauthorized};
+  }
+  token_str = token_str.substr(start, token_str.find_last_not_of(" \t\r\n") - start + 1);
+  const userver::server::auth::UserAuthInfo::Ticket token{token_str};
   const auto cache_snapshot = auth_cache_.Get();
 
   auto it = cache_snapshot->find(token);

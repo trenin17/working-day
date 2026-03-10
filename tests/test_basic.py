@@ -1073,10 +1073,10 @@ async def test_documents_send(service_client):
         },
         "signed": False
     }
-    assert response_json["signs"][0] == expected_sign
-    assert response_json["signs"][1]["document_id"].endswith(".pdf")
+    assert response_json["signs"][1] == expected_sign
+    assert response_json["signs"][0]["document_id"].endswith(".pdf")
     expected_sign = {
-        "document_id": response_json["signs"][1]["document_id"],
+        "document_id": response_json["signs"][0]["document_id"],
         "employee": {
             "id": "first_id",
             "name": "First",
@@ -1084,7 +1084,7 @@ async def test_documents_send(service_client):
         },
         "signed": True
     }
-    assert response_json["signs"][1] == expected_sign
+    assert response_json["signs"][0] == expected_sign
 
 
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])

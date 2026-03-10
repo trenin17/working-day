@@ -481,6 +481,9 @@ ALTER TABLE working_day_first.document_signatures
 ALTER COLUMN public_key_hash DROP NOT NULL;
 
 ALTER TABLE working_day_first.documents
+ALTER COLUMN sign_required DROP DEFAULT;
+
+ALTER TABLE working_day_first.documents
 ALTER COLUMN sign_required TYPE INT USING (CASE WHEN sign_required THEN 2 ELSE 0 END);
 
 ALTER TABLE working_day_first.documents

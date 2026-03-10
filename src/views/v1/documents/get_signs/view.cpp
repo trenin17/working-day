@@ -47,7 +47,7 @@ class DocumentsGetSignsHandler final
 
     auto result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kMaster,
-        "SELECT ROW "
+        "SELECT DISTINCT ON (e.id) ROW "
         "(e.id, e.name, e.surname, e.patronymic, "
         "e.photo_link), ed.signed, ed.document_id "
         "FROM working_day_" +
@@ -60,7 +60,8 @@ class DocumentsGetSignsHandler final
             "JOIN working_day_" +
             company_id +
             ".documents d ON ed.document_id = d.id "
-            "WHERE d.parent_id = $1",
+            "WHERE d.parent_id = $1 "
+            "ORDER BY e.id, ed.signed DESC, ed.document_id",
         document_id);
 
     DocumentsGetSignsResponse response;
