@@ -2519,6 +2519,9 @@ components:
                 author_id:
                     description: ID of the user who sent/created this document
                     type: string
+                author_photo_url:
+                    description: URL of the author's photo
+                    type: string
                 parent_id:
                     description: Parent document Id
                     type: string

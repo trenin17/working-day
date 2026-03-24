@@ -18,6 +18,8 @@
 
 #include <definitions/all.hpp>
 
+#include "utils/s3_presigned_links.hpp"
+
 namespace views::v1::documents::list {
 
 namespace {
@@ -54,19 +56,30 @@ class DocumentsListHandler final
             "d.type, d.sign_required, "
             "d.description, "
             "COALESCE(ed.signed, FALSE) AS signed, d.author_id, "
+            "e.photo_link AS author_photo_url, "
             "NULL::TEXT as parent_id, d.created_ts, d.chain_metadata_new, d.visibility_status "
             "FROM working_day_" +
             company_id +
             ".documents d "
             "LEFT JOIN working_day_" +
             company_id + ".employee_document ed ON d.id = ed.document_id AND ed.employee_id = $1 "
+            "LEFT JOIN working_day_" +
+            company_id + ".employees e ON e.id = d.author_id "
             "WHERE ed.employee_id = $1 OR d.author_id = $1 "
-            "ORDER BY d.created_ts DESC",
+            "ORDER BY d.created_ts DESC, d.id ASC",
         user_id);
 
     DocumentsListResponse response;
     response.documents = result.AsContainer<std::vector<DocumentItem>>(
         userver::storages::postgres::kRowTag);
+
+    for (auto& doc : response.documents) {
+      if (doc.author_photo_url.has_value()) {
+        doc.author_photo_url =
+            utils::s3_presigned_links::GeneratePhotoPresignedLink(
+                doc.author_photo_url.value(), utils::s3_presigned_links::Download);
+      }
+    }
 
     // Collect document IDs and employee IDs from chain_metadata
     std::vector<std::string> doc_ids;

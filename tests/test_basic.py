@@ -1034,25 +1034,29 @@ async def test_documents_send(service_client):
     response_data = json.loads(response.text)
     expected_response = {
         "documents": [
-            {"chain_metadata_new":[
-                {"employee_id": "first_id","requires_signature": 1,"status": 0},
-                {"employee_id": "second_id","requires_signature": 0,"status": 0}],
+            {"author_id": "tc", "chain_metadata_new": [],
              "created_ts": response_data["documents"][0]["created_ts"],
-             "description": "Test document with approval chain",
-             "id": "doc_with_chain",
-             "name": "Document with chain",
-             "sign_required": 1,
-             "type": "admin_request",
+             "description": "text1", "id": "id1", "name": "doc1", "sign_required": 1,
+             "type": "admin_request", "visibility_status": 0},
+            {"chain_metadata_new": [
+                {"employee_id": "first_id", "requires_signature": 1, "status": 0},
+                {"employee_id": "second_id", "requires_signature": 0, "status": 0}],
+             "created_ts": response_data["documents"][1]["created_ts"],
+             "description": "Test document with approval chain", "id": "doc_with_chain",
+             "name": "Document with chain", "sign_required": 1, "type": "admin_request",
              "visibility_status": 0},
-            {"chain_metadata_new":[
+            {"chain_metadata_new": [],
+             "created_ts": response_data["documents"][2]["created_ts"],
+             "description": "Document without approval chain", "id": "empty_chain_doc",
+             "name": "Empty chain doc", "sign_required": 0, "type": "admin_request",
+             "visibility_status": 0},
+            {"chain_metadata_new": [
                 {"employee_id": "first_id", "requires_signature": 1, "status": 2},
-                {"employee_id": "second_id","requires_signature": 0,"status": 0}],
-             "created_ts": response_data["documents"][1]["created_ts"], "description": "", "id": "rejected_doc", "name": "Rejected document", "sign_required": 1, "type": "admin_request", "visibility_status": 0},
-            {"chain_metadata_new":[],
-             "created_ts": response_data["documents"][2]["created_ts"], "description": "Document without approval chain", "id": "empty_chain_doc", "name": "Empty chain doc", "sign_required": 0, "type": "admin_request", "visibility_status": 0},
-            {"author_id": "tc","chain_metadata_new":[],
-             "created_ts": response_data["documents"][3]["created_ts"], "description": "text1", "id": "id1", "name": "doc1", "sign_required": 1, "type": "admin_request", "visibility_status": 0}
-       ]
+                {"employee_id": "second_id", "requires_signature": 0, "status": 0}],
+             "created_ts": response_data["documents"][3]["created_ts"],
+             "description": "", "id": "rejected_doc", "name": "Rejected document",
+             "sign_required": 1, "type": "admin_request", "visibility_status": 0},
+        ]
     }
     assert response_data == expected_response
 
