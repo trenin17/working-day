@@ -331,7 +331,7 @@ components_manager:
                 types:
                   - bearer
                 scopes:
-                  - admin
+                  - user
 
         handler-v1-documents-send:
             path: /v1/documents/send
@@ -341,7 +341,7 @@ components_manager:
                 types:
                   - bearer
                 scopes:
-                  - admin
+                  - user
             pyservice-url: 'http://python-service:3000/document/convert'
 
         handler-v1-documents-list:
