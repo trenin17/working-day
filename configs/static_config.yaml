@@ -353,6 +353,7 @@ components_manager:
                   - bearer
                 scopes:
                   - user
+            is_testing: $is_testing
 
         handler-v1-documents-download:
             path: /v1/documents/download
@@ -415,6 +416,7 @@ components_manager:
                   - bearer
                 scopes:
                   - admin
+            is_testing: $is_testing
 
         handler-v1-documents-get-signs:
             path: /v1/documents/get-signs

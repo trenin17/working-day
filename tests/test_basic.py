@@ -1092,6 +1092,61 @@ async def test_documents_send(service_client):
 
 
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])
+async def test_documents_list_author_photo_url(service_client):
+    """photo_link автора → author_photo_url (presigned; в testsuite — заглушка S3)."""
+    response = await service_client.post(
+        '/v1/employee/add',
+        headers={'Authorization': 'Bearer first_token'},
+        json={'name': 'Third', 'surname': 'C', 'role': 'admin'},
+    )
+    assert response.status == 200
+    employee_id = json.loads(response.text)['login']
+    password = json.loads(response.text)['password']
+
+    response = await service_client.post(
+        '/v1/authorize',
+        json={'login': employee_id, 'company_id': 'first', 'password': password},
+    )
+    assert response.status == 200
+    token = json.loads(response.text)['token']
+
+    response = await service_client.post(
+        '/v1/documents/send',
+        headers={'Authorization': 'Bearer ' + token},
+        json={'employee_ids': ['first_id', 'second_id'], 'document': {
+            'id': 'id1', 'name': 'doc1',
+            'description': 'text1', 'sign_required': 1}}
+    )
+    assert response.status == 200
+
+    response = await service_client.post(
+        '/v1/profile/upload-photo',
+        headers={'Authorization': 'Bearer ' + token},
+    )
+    assert response.status == 200
+    assert 'url' in json.loads(response.text)
+
+    response = await service_client.get(
+        '/v1/documents/list',
+        headers={'Authorization': 'Bearer ' + token},
+    )
+    assert response.status == 200
+    docs = json.loads(response.text)['documents']
+    id1 = next(d for d in docs if d['id'] == 'id1')
+    assert id1['author_id'] == employee_id
+    assert id1['author_photo_url'] == 's3 download test link'
+
+    response = await service_client.get(
+        '/v1/documents/list-all',
+        headers={'Authorization': 'Bearer ' + token},
+    )
+    assert response.status == 200
+    docs = json.loads(response.text)['documents']
+    id1_all = next(d for d in docs if d['id'] == 'id1')
+    assert id1_all['author_photo_url'] == 's3 download test link'
+
+
+@pytest.mark.pgsql('db_1', files=['initial_data.sql'])
 async def test_search_suggest(service_client):
     response = await service_client.post(
         '/v1/employee/add',
