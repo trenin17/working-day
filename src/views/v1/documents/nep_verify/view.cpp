@@ -2,6 +2,8 @@
 
 #include "view.hpp"
 
+#include <optional>
+
 #include <userver/clients/dns/component.hpp>
 #include <userver/clients/http/component.hpp>
 #include <userver/components/component_config.hpp>
@@ -29,7 +31,7 @@ struct SignatureInfo {
   std::string employee_id;
   std::string signature_path;
   std::string signature_metadata;
-  std::string public_key_hash;
+  std::optional<std::string> public_key_hash;
   std::string signature_type;
 };
 
@@ -142,6 +144,12 @@ properties:
                     .retry(2)
                     .timeout(std::chrono::milliseconds{10000})
                     .perform();
+
+    if (resp->status_code() == userver::server::http::HttpStatus::kBadGateway) {
+      request.GetHttpResponse().SetStatus(
+          userver::server::http::HttpStatus::kBadGateway);
+      return ErrorMessage{"Bad gateway from verification service"}.ToJsonString();
+    }
 
     resp->raise_for_status();
 

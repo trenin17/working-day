@@ -870,6 +870,12 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/ErrorMessage'
+                '502':
+                    description: Storage (S3) or NEP signing service error (e.g. download/upload failed)
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
 
     /v1/documents/nep-verify:
         get:
@@ -894,6 +900,12 @@ paths:
                                 $ref: '#/components/schemas/DocumentsNepVerifyResponse'
                 '404':
                     description: Signature not found
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+                '502':
+                    description: Storage (S3) or NEP verify service error (e.g. failed to load document or signature)
                     content:
                         application/json:
                             schema:

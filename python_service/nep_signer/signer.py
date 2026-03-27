@@ -424,8 +424,6 @@ class NEPSigner:
             # Если PDF поврежден (например, после модификации), это тоже означает недействительность подписи
 
             error_msg = str(e) if str(e) else repr(e)
-            error_traceback = traceback.format_exc()
-
             if 'hex string' in error_msg.lower() or 'unexpected token' in error_msg.lower():
                 result = {
                     'valid': False,

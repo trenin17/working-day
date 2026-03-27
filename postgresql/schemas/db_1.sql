@@ -493,3 +493,41 @@ ALTER TABLE working_day_first.documents
 ADD COLUMN IF NOT EXISTS author_id TEXT REFERENCES working_day_first.employees (id) ON DELETE SET NULL;
 
 CREATE INDEX IF NOT EXISTS idx_documents_author_id ON working_day_first.documents (author_id);
+
+CREATE TABLE IF NOT EXISTS working_day_first.employee_signature_passwords_audit (
+    id BIGSERIAL PRIMARY KEY,
+    occurred_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    operation TEXT NOT NULL CHECK (operation IN ('INSERT', 'UPDATE', 'DELETE')),
+    employee_id TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_esp_audit_employee_occurred
+    ON working_day_first.employee_signature_passwords_audit (employee_id, occurred_at DESC);
+
+CREATE OR REPLACE FUNCTION working_day_first.log_employee_signature_passwords_change()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF TG_OP = 'DELETE' THEN
+        INSERT INTO working_day_first.employee_signature_passwords_audit (operation, employee_id)
+        VALUES ('DELETE', OLD.employee_id);
+        RETURN OLD;
+    ELSIF TG_OP = 'UPDATE' THEN
+        INSERT INTO working_day_first.employee_signature_passwords_audit (operation, employee_id)
+        VALUES ('UPDATE', NEW.employee_id);
+        RETURN NEW;
+    ELSIF TG_OP = 'INSERT' THEN
+        INSERT INTO working_day_first.employee_signature_passwords_audit (operation, employee_id)
+        VALUES ('INSERT', NEW.employee_id);
+        RETURN NEW;
+    END IF;
+    RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_employee_signature_passwords_audit
+    ON working_day_first.employee_signature_passwords;
+
+CREATE TRIGGER trg_employee_signature_passwords_audit
+    AFTER INSERT OR UPDATE OR DELETE ON working_day_first.employee_signature_passwords
+    FOR EACH ROW
+    EXECUTE FUNCTION working_day_first.log_employee_signature_passwords_change();

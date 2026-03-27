@@ -46,7 +46,7 @@ async def nep_sign_document(request):
             logging.error(f"Failed to download document {document_id}: {str(e)}")
             return web.json_response(
                 {'error': 'Failed to download document. Check logs for more details.'},
-                status=500
+                status=502,
             )
 
         # Создаем подписанта
@@ -92,7 +92,7 @@ async def nep_sign_document(request):
             logging.error(f"Failed to upload signature: {str(e)}")
             return web.json_response(
                 {'error': 'Failed to upload signature. Check logs for more details.'},
-                status=500
+                status=502,
             )
 
         # Возвращаем метаданные подписи

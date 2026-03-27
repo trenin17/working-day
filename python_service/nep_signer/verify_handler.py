@@ -41,7 +41,7 @@ async def nep_verify_document(request):
             logging.error(f"Failed to download document {document_id}: {str(e)}")
             return web.json_response(
                 {'error': 'Failed to download document. Check logs for more details.'},
-                status=500
+                status=502,
             )
 
         # Загружаем файл подписи из S3
@@ -52,7 +52,7 @@ async def nep_verify_document(request):
             logging.error(f"Failed to download signature {signature_path}: {str(e)}")
             return web.json_response(
                 {'error': 'Failed to download signature. Check logs for more details.'},
-                status=500
+                status=502,
             )
 
         # Создаем верификатор (имя не важно для проверки)

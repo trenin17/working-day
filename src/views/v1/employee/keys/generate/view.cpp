@@ -158,7 +158,7 @@ properties: {}
     // Проверяем, не существуют ли уже ключи
     auto existing_keys =
         pg_cluster_->Execute(
-            userver::storages::postgres::ClusterHostType::kSlave,
+            userver::storages::postgres::ClusterHostType::kMaster,
             "SELECT employee_id FROM working_day_" + company_id +
                 ".employee_keys WHERE employee_id = $1",
             user_id);
