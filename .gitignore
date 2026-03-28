@@ -15,3 +15,4 @@ aws/
 python_service/.venv/
 configs/secdist.json
 deploy/deploy_docker.sh
+.venv/

@@ -80,6 +80,8 @@
 #include "views/v1/comments/info/view.hpp"
 #include "views/v1/comments/remove/view.hpp"
 
+#include "middleware/request_capture_middleware.hpp"
+
 int main(int argc, char* argv[]) {
   Aws::SDKOptions options;
   Aws::InitAPI(options);
@@ -165,6 +167,8 @@ int main(int argc, char* argv[]) {
   views::v1::comments::edit::AppendCommentsEdit(component_list);
   views::v1::comments::info::AppendCommentsInfo(component_list);
   views::v1::comments::remove::AppendCommentsRemove(component_list);
+
+  middleware::middleware::AppendRequestCaptureMiddleware(component_list);
 
   int err_code = userver::utils::DaemonMain(argc, argv, component_list);
 

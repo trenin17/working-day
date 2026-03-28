@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS wd_general.auth_tokens (
     updated TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE EXTENSION pg_trgm;
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
 
 CREATE SCHEMA IF NOT EXISTS working_day_first;
 
@@ -39,8 +39,8 @@ CREATE TABLE IF NOT EXISTS working_day_first.employees (
     subcompany TEXT NOT NULL DEFAULT 'first'
 );
 
-CREATE INDEX idx_employee_by_head ON working_day_first.employees(head_id);
-DROP TABLE IF EXISTS working_day_first.notifications;
+CREATE INDEX IF NOT EXISTS idx_employee_by_head ON working_day_first.employees(head_id);
+DROP TABLE IF EXISTS working_day_first.notifications CASCADE;
 
 CREATE TABLE IF NOT EXISTS working_day_first.notifications (
     id TEXT PRIMARY KEY NOT NULL,
@@ -54,8 +54,8 @@ CREATE TABLE IF NOT EXISTS working_day_first.notifications (
     FOREIGN KEY (user_id) REFERENCES working_day_first.employees (id) ON DELETE CASCADE
 );
 
-CREATE INDEX idx_notifications_by_user_id ON working_day_first.notifications(user_id);
-DROP TABLE IF EXISTS working_day_first.actions;
+CREATE INDEX IF NOT EXISTS idx_notifications_by_user_id ON working_day_first.notifications(user_id);
+DROP TABLE IF EXISTS working_day_first.actions CASCADE;
 
 CREATE TABLE IF NOT EXISTS working_day_first.actions (
     id TEXT PRIMARY KEY NOT NULL,
@@ -69,12 +69,12 @@ CREATE TABLE IF NOT EXISTS working_day_first.actions (
     FOREIGN KEY (user_id) REFERENCES working_day_first.employees (id) ON DELETE CASCADE
 );
 
-CREATE INDEX idx_actions_by_user_id ON working_day_first.actions(user_id);
+CREATE INDEX IF NOT EXISTS idx_actions_by_user_id ON working_day_first.actions(user_id);
 
-CREATE INDEX idx_actions_by_user_id_start_date ON working_day_first.actions(user_id ASC, start_date ASC);
+CREATE INDEX IF NOT EXISTS idx_actions_by_user_id_start_date ON working_day_first.actions(user_id ASC, start_date ASC);
 
-CREATE INDEX idx_actions_by_user_id_end_date ON working_day_first.actions(user_id ASC, end_date ASC);
-DROP TABLE IF EXISTS working_day_first.payments;
+CREATE INDEX IF NOT EXISTS idx_actions_by_user_id_end_date ON working_day_first.actions(user_id ASC, end_date ASC);
+DROP TABLE IF EXISTS working_day_first.payments CASCADE;
 
 CREATE TABLE IF NOT EXISTS working_day_first.payments (
     id TEXT PRIMARY KEY NOT NULL,
@@ -84,7 +84,7 @@ CREATE TABLE IF NOT EXISTS working_day_first.payments (
     FOREIGN KEY (user_id) REFERENCES working_day_first.employees (id) ON DELETE CASCADE
 );
 
-CREATE INDEX idx_payments_by_user_id ON working_day_first.payments(user_id);
+CREATE INDEX IF NOT EXISTS idx_payments_by_user_id ON working_day_first.payments(user_id);
 CREATE TABLE IF NOT EXISTS working_day_first.reverse_index (
     key TEXT PRIMARY KEY,
     ids TEXT[]
@@ -99,10 +99,10 @@ DROP CONSTRAINT reverse_index_pkey;
 ALTER TABLE working_day_first.reverse_index
 ADD CONSTRAINT reverse_index_key_entity_uniq UNIQUE (key, entity_type);
 
-CREATE INDEX trgm_idx ON working_day_first.reverse_index USING GIST (key gist_trgm_ops);
+CREATE INDEX IF NOT EXISTS trgm_idx ON working_day_first.reverse_index USING GIST (key gist_trgm_ops);
 
 
-DROP TABLE IF EXISTS working_day_first.documents;
+DROP TABLE IF EXISTS working_day_first.documents CASCADE;
 
 CREATE TABLE IF NOT EXISTS working_day_first.documents (
     id TEXT PRIMARY KEY NOT NULL,
@@ -115,7 +115,7 @@ CREATE TABLE IF NOT EXISTS working_day_first.documents (
     FOREIGN KEY (parent_id) REFERENCES working_day_first.documents (id) ON DELETE CASCADE
 );
 
-CREATE INDEX idx_documents_by_parent_id ON working_day_first.documents(parent_id);
+CREATE INDEX IF NOT EXISTS idx_documents_by_parent_id ON working_day_first.documents(parent_id);
 
 CREATE OR REPLACE FUNCTION set_parent_id()
 RETURNS TRIGGER AS $$
@@ -132,7 +132,7 @@ BEFORE INSERT ON working_day_first.documents
 FOR EACH ROW
 EXECUTE FUNCTION set_parent_id();
 
-DROP TABLE IF EXISTS working_day_first.employee_document;
+DROP TABLE IF EXISTS working_day_first.employee_document CASCADE;
 
 CREATE TABLE IF NOT EXISTS working_day_first.employee_document (
   employee_id TEXT NOT NULL,
@@ -144,14 +144,14 @@ CREATE TABLE IF NOT EXISTS working_day_first.employee_document (
   FOREIGN KEY (document_id) REFERENCES working_day_first.documents (id) ON DELETE CASCADE
 );
 
-DROP TABLE IF EXISTS working_day_first.teams;
+DROP TABLE IF EXISTS working_day_first.teams CASCADE;
 
 CREATE TABLE IF NOT EXISTS working_day_first.teams (
     id TEXT PRIMARY KEY NOT NULL,
     name TEXT NOT NULL
 );
 
-DROP TABLE IF EXISTS working_day_first.employee_team;
+DROP TABLE IF EXISTS working_day_first.employee_team CASCADE;
 
 CREATE TABLE IF NOT EXISTS working_day_first.employee_team (
   employee_id TEXT NOT NULL,
@@ -189,14 +189,14 @@ END $$;
 
 ALTER TABLE working_day_first.employees DROP COLUMN IF EXISTS position;
 
-DROP TABLE IF EXISTS working_day_first.messenger_chats;
+DROP TABLE IF EXISTS working_day_first.messenger_chats CASCADE;
 
 CREATE TABLE IF NOT EXISTS working_day_first.messenger_chats (
     chat_id TEXT PRIMARY KEY,
     chat_name TEXT
 );
 
-DROP TABLE IF EXISTS working_day_first.messages;
+DROP TABLE IF EXISTS working_day_first.messages CASCADE;
 
 CREATE TABLE IF NOT EXISTS working_day_first.messages (
     chat_id TEXT,
@@ -207,10 +207,10 @@ CREATE TABLE IF NOT EXISTS working_day_first.messages (
     FOREIGN KEY (chat_id) REFERENCES working_day_first.messenger_chats (chat_id) ON DELETE CASCADE
 );
 
-CREATE INDEX idx_messages_chat_timestamp
+CREATE INDEX IF NOT EXISTS idx_messages_chat_timestamp
   ON working_day_first.messages (chat_id ASC, timestamp DESC);
 
-DROP TABLE IF EXISTS working_day_first.employee_chats;
+DROP TABLE IF EXISTS working_day_first.employee_chats CASCADE;
 
 CREATE TABLE IF NOT EXISTS working_day_first.employee_chats (
   employee_id TEXT NOT NULL,
@@ -220,8 +220,8 @@ CREATE TABLE IF NOT EXISTS working_day_first.employee_chats (
   FOREIGN KEY (chat_id) REFERENCES working_day_first.messenger_chats (chat_id) ON DELETE CASCADE
 );
 
-DROP TABLE IF EXISTS working_day_first.tracker_project_assigned_users;
-DROP TABLE IF EXISTS working_day_first.tracker_projects;
+DROP TABLE IF EXISTS working_day_first.tracker_project_assigned_users CASCADE;
+DROP TABLE IF EXISTS working_day_first.tracker_projects CASCADE;
 CREATE TABLE IF NOT EXISTS working_day_first.tracker_projects (
     project_id TEXT PRIMARY KEY NOT NULL,
     title TEXT NOT NULL,
@@ -241,12 +241,12 @@ CREATE TABLE IF NOT EXISTS working_day_first.tracker_project_assigned_users (
     FOREIGN KEY (project_id) REFERENCES working_day_first.tracker_projects (project_id) ON DELETE CASCADE,
     FOREIGN KEY (employee_id) REFERENCES working_day_first.employees (id) ON DELETE CASCADE
 );
-CREATE INDEX idx_tracker_project_assigned_users_employee
+CREATE INDEX IF NOT EXISTS idx_tracker_project_assigned_users_employee
 ON working_day_first.tracker_project_assigned_users (employee_id);
 
-DROP TABLE IF EXISTS working_day_first.tracker_task_observers;
-DROP TABLE IF EXISTS working_day_first.tracker_task_related_tasks;
-DROP TABLE IF EXISTS working_day_first.tracker_tasks;
+DROP TABLE IF EXISTS working_day_first.tracker_task_observers CASCADE;
+DROP TABLE IF EXISTS working_day_first.tracker_task_related_tasks CASCADE;
+DROP TABLE IF EXISTS working_day_first.tracker_tasks CASCADE;
 CREATE TABLE IF NOT EXISTS working_day_first.tracker_tasks (
     task_id TEXT PRIMARY KEY NOT NULL,
     title TEXT NOT NULL,
@@ -267,10 +267,10 @@ CREATE TABLE IF NOT EXISTS working_day_first.tracker_tasks (
     FOREIGN KEY (assignee) REFERENCES working_day_first.employees (id) ON DELETE CASCADE
 );
 
-CREATE INDEX idx_tracker_tasks_creator
+CREATE INDEX IF NOT EXISTS idx_tracker_tasks_creator
 ON working_day_first.tracker_tasks (creator);
 
-CREATE INDEX idx_tracker_tasks_assignee
+CREATE INDEX IF NOT EXISTS idx_tracker_tasks_assignee
 ON working_day_first.tracker_tasks (assignee);
 
 CREATE TABLE IF NOT EXISTS working_day_first.tracker_task_observers (
@@ -280,7 +280,7 @@ CREATE TABLE IF NOT EXISTS working_day_first.tracker_task_observers (
     FOREIGN KEY (task_id) REFERENCES working_day_first.tracker_tasks (task_id) ON DELETE CASCADE,
     FOREIGN KEY (employee_id) REFERENCES working_day_first.employees (id) ON DELETE CASCADE
 );
-CREATE INDEX idx_tracker_task_observers
+CREATE INDEX IF NOT EXISTS idx_tracker_task_observers
   ON working_day_first.tracker_task_observers (employee_id);
 
 CREATE TABLE IF NOT EXISTS working_day_first.tracker_task_related_tasks (
@@ -299,8 +299,8 @@ CREATE TABLE IF NOT EXISTS working_day_first.task_documents (
     FOREIGN KEY (document_id) REFERENCES working_day_first.documents (id) ON DELETE CASCADE
 );
 
-CREATE INDEX idx_task_documents_task_id ON working_day_first.task_documents (task_id);
-CREATE INDEX idx_task_documents_document_id ON working_day_first.task_documents (document_id);
+CREATE INDEX IF NOT EXISTS idx_task_documents_task_id ON working_day_first.task_documents (task_id);
+CREATE INDEX IF NOT EXISTS idx_task_documents_document_id ON working_day_first.task_documents (document_id);
 
 CREATE TYPE wd_general.chain_metadata_item AS (
     employee_id TEXT,
@@ -338,7 +338,7 @@ DROP TYPE IF EXISTS wd_general.chain_metadata_item CASCADE;
 ALTER TABLE working_day_first.documents
 ADD COLUMN IF NOT EXISTS visibility_status INT DEFAULT 0;
 
-DROP TABLE IF EXISTS working_day_first.documents_history;
+DROP TABLE IF EXISTS working_day_first.documents_history CASCADE;
 
 CREATE TABLE IF NOT EXISTS working_day_first.documents_history(
     document_id TEXT NOT NULL,
@@ -352,7 +352,7 @@ CREATE TABLE IF NOT EXISTS working_day_first.documents_history(
     PRIMARY KEY (document_id, created_ts)
 );
 
-DROP TABLE IF EXISTS working_day_first.employee_permissions;
+DROP TABLE IF EXISTS working_day_first.employee_permissions CASCADE;
 
 CREATE TABLE IF NOT EXISTS working_day_first.employee_permissions (
     employee_id TEXT,
@@ -394,7 +394,7 @@ FOREIGN KEY (task_id)
 REFERENCES working_day_first.tracker_tasks(task_id)
 ON DELETE CASCADE;
 
-CREATE INDEX idx_actions_user_id_end_date
+CREATE INDEX IF NOT EXISTS idx_actions_user_id_end_date
 ON working_day_first.actions (user_id, end_date);
 
 -- Create comments table
@@ -408,8 +408,8 @@ CREATE TABLE IF NOT EXISTS working_day_first.comments (
     FOREIGN KEY (author_id) REFERENCES working_day_first.employees (id) ON DELETE CASCADE
 );
 
-CREATE INDEX idx_comments_author_id ON working_day_first.comments (author_id);
-CREATE INDEX idx_comments_created_ts ON working_day_first.comments (created_ts);
+CREATE INDEX IF NOT EXISTS idx_comments_author_id ON working_day_first.comments (author_id);
+CREATE INDEX IF NOT EXISTS idx_comments_created_ts ON working_day_first.comments (created_ts);
 
 -- Create task_comments table for linking tasks with comments
 CREATE TABLE IF NOT EXISTS working_day_first.task_comments (
@@ -420,5 +420,19 @@ CREATE TABLE IF NOT EXISTS working_day_first.task_comments (
     FOREIGN KEY (comment_id) REFERENCES working_day_first.comments (comment_id) ON DELETE CASCADE
 );
 
-CREATE INDEX idx_task_comments_task_id ON working_day_first.task_comments (task_id);
-CREATE INDEX idx_task_comments_comment_id ON working_day_first.task_comments (comment_id);
+CREATE INDEX IF NOT EXISTS idx_task_comments_task_id ON working_day_first.task_comments (task_id);
+CREATE INDEX IF NOT EXISTS idx_task_comments_comment_id ON working_day_first.task_comments (comment_id);
+
+-- Create user's event context table
+CREATE TABLE IF NOT EXISTS working_day_first.request_cache (
+    id             BIGSERIAL PRIMARY KEY,
+
+    user_id        TEXT NOT NULL,
+    url            TEXT NOT NULL,
+    request_data   TEXT,
+    response_data  TEXT NOT NULL,
+    created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    -- FOREIGN KEY (user_id) REFERENCES working_day_first.employees(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_request_cache_user_time ON working_day_first.request_cache (user_id, created_at DESC);

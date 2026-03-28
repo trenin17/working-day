@@ -94,6 +94,9 @@ add_library(${PROJECT_NAME}_objs OBJECT
 	src/views/v1/comments/edit/view.cpp
 	src/views/v1/comments/info/view.cpp
 	src/views/v1/comments/remove/view.cpp
+	src/middleware/request_capture_middleware.cpp
+	src/middleware/containers/lru_request_cache.cpp
+	src/middleware/containers/request_collector.cpp
 )
 target_link_libraries(${PROJECT_NAME}_objs PUBLIC userver-postgresql)
 target_link_libraries(${PROJECT_NAME}_objs PRIVATE nlohmann_json::nlohmann_json)
@@ -125,7 +128,8 @@ add_google_tests(${PROJECT_NAME}_unittest)
 # Functional Tests
 #include(UserverTestsuite)
 
-userver_testsuite_add_simple()
+userver_testsuite_add_simple(
+)
 
 include(GNUInstallDirs)
 

@@ -745,3 +745,10 @@ components_manager:
                   - bearer
                 scopes:
                   - user
+
+        request-collector: {}
+        request-capture-middleware: {}
+        custom-handler-pipeline-builder: {}
+        default-server-middleware-pipeline-builder:  # Add this section
+          append:
+            - request-capture-middleware

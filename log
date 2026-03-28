@@ -1,0 +1,356 @@
+gmake[1]: Entering directory '/home/wday/project/iiworking-day/working-day/build_release'
+gmake[2]: Entering directory '/home/wday/project/iiworking-day/working-day/build_release'
+gmake[3]: Entering directory '/home/wday/project/iiworking-day/working-day/build_release'
+gmake[4]: Entering directory '/home/wday/project/iiworking-day/working-day/build_release'
+gmake[4]: Entering directory '/home/wday/project/iiworking-day/working-day/build_release'
+gmake[4]: Entering directory '/home/wday/project/iiworking-day/working-day/build_release'
+gmake[4]: Leaving directory '/home/wday/project/iiworking-day/working-day/build_release'
+gmake[4]: Leaving directory '/home/wday/project/iiworking-day/working-day/build_release'
+gmake[4]: Leaving directory '/home/wday/project/iiworking-day/working-day/build_release'
+[  0%] Built target userver-pq-extra
+gmake[4]: Entering directory '/home/wday/project/iiworking-day/working-day/build_release'
+[  0%] Built target fmt
+gmake[4]: Entering directory '/home/wday/project/iiworking-day/working-day/build_release'
+[  1%] Built target re2
+gmake[4]: Leaving directory '/home/wday/project/iiworking-day/working-day/build_release'
+gmake[4]: Leaving directory '/home/wday/project/iiworking-day/working-day/build_release'
+[  2%] Built target cctz
+[  3%] Built target userver-uboost-coro
+gmake[4]: Entering directory '/home/wday/project/iiworking-day/working-day/build_release'
+gmake[4]: Entering directory '/home/wday/project/iiworking-day/working-day/build_release'
+gmake[4]: Entering directory '/home/wday/project/iiworking-day/working-day/build_release'
+gmake[4]: Leaving directory '/home/wday/project/iiworking-day/working-day/build_release'
+gmake[4]: Leaving directory '/home/wday/project/iiworking-day/working-day/build_release'
+[  4%] Built target userver-librseq
+gmake[4]: Entering directory '/home/wday/project/iiworking-day/working-day/build_release'
+gmake[4]: Entering directory '/home/wday/project/iiworking-day/working-day/build_release'
+gmake[4]: Leaving directory '/home/wday/project/iiworking-day/working-day/build_release'
+[  9%] Built target c-ares
+gmake[4]: Entering directory '/home/wday/project/iiworking-day/working-day/build_release'
+gmake[4]: Leaving directory '/home/wday/project/iiworking-day/working-day/build_release'
+gmake[4]: Leaving directory '/home/wday/project/iiworking-day/working-day/build_release'
+[  9%] Built target userver-llhttp
+gmake[4]: Entering directory '/home/wday/project/iiworking-day/working-day/build_release'
+gmake[4]: Leaving directory '/home/wday/project/iiworking-day/working-day/build_release'
+gmake[4]: Leaving directory '/home/wday/project/iiworking-day/working-day/build_release'
+[  9%] Built target userver-http-parser
+gmake[4]: Entering directory '/home/wday/project/iiworking-day/working-day/build_release'
+[  9%] Built target userver-impl-libpq-version-generator
+gmake[4]: Leaving directory '/home/wday/project/iiworking-day/working-day/build_release'
+[  9%] Built target create-runtests-working_day
+[ 23%] Built target libcurl
+[ 37%] Built target cryptopp
+gmake[4]: Entering directory '/home/wday/project/iiworking-day/working-day/build_release'
+gmake[4]: Leaving directory '/home/wday/project/iiworking-day/working-day/build_release'
+[ 47%] Built target userver-universal
+gmake[4]: Entering directory '/home/wday/project/iiworking-day/working-day/build_release'
+gmake[4]: Leaving directory '/home/wday/project/iiworking-day/working-day/build_release'
+[ 48%] Built target userver-chaotic
+gmake[4]: Entering directory '/home/wday/project/iiworking-day/working-day/build_release'
+gmake[4]: Leaving directory '/home/wday/project/iiworking-day/working-day/build_release'
+[ 48%] Built target userver-core-static-config-dns-client
+gmake[4]: Entering directory '/home/wday/project/iiworking-day/working-day/build_release'
+gmake[4]: Leaving directory '/home/wday/project/iiworking-day/working-day/build_release'
+[ 52%] Built target userver-core-dynamic-configs
+gmake[4]: Entering directory '/home/wday/project/iiworking-day/working-day/build_release'
+gmake[4]: Leaving directory '/home/wday/project/iiworking-day/working-day/build_release'
+[ 87%] Built target userver-core
+gmake[4]: Entering directory '/home/wday/project/iiworking-day/working-day/build_release'
+gmake[4]: Leaving directory '/home/wday/project/iiworking-day/working-day/build_release'
+[ 89%] Built target userver-postgresql-dynamic-configs
+gmake[4]: Entering directory '/home/wday/project/iiworking-day/working-day/build_release'
+gmake[4]: Leaving directory '/home/wday/project/iiworking-day/working-day/build_release'
+[ 94%] Built target userver-postgresql
+gmake[4]: Entering directory '/home/wday/project/iiworking-day/working-day/build_release'
+gmake[4]: Leaving directory '/home/wday/project/iiworking-day/working-day/build_release'
+[100%] Built target working_day_objs
+gmake[4]: Entering directory '/home/wday/project/iiworking-day/working-day/build_release'
+gmake[4]: Leaving directory '/home/wday/project/iiworking-day/working-day/build_release'
+[100%] Built target working_day
+gmake[3]: Leaving directory '/home/wday/project/iiworking-day/working-day/build_release'
+gmake[2]: Leaving directory '/home/wday/project/iiworking-day/working-day/build_release'
+gmake[1]: Leaving directory '/home/wday/project/iiworking-day/working-day/build_release'
+gmake[1]: Entering directory '/home/wday/project/iiworking-day/working-day/build_release'
+gmake[2]: Entering directory '/home/wday/project/iiworking-day/working-day/build_release'
+gmake[3]: Entering directory '/home/wday/project/iiworking-day/working-day/build_release'
+gmake[4]: Entering directory '/home/wday/project/iiworking-day/working-day/build_release'
+gmake[4]: Entering directory '/home/wday/project/iiworking-day/working-day/build_release'
+gmake[4]: Entering directory '/home/wday/project/iiworking-day/working-day/build_release'
+gmake[4]: Leaving directory '/home/wday/project/iiworking-day/working-day/build_release'
+gmake[4]: Leaving directory '/home/wday/project/iiworking-day/working-day/build_release'
+gmake[4]: Leaving directory '/home/wday/project/iiworking-day/working-day/build_release'
+[  0%] Built target userver-pq-extra
+[  0%] Built target fmt
+[  1%] Built target re2
+gmake[4]: Entering directory '/home/wday/project/iiworking-day/working-day/build_release'
+gmake[4]: Entering directory '/home/wday/project/iiworking-day/working-day/build_release'
+gmake[4]: Entering directory '/home/wday/project/iiworking-day/working-day/build_release'
+gmake[4]: Entering directory '/home/wday/project/iiworking-day/working-day/build_release'
+gmake[4]: Leaving directory '/home/wday/project/iiworking-day/working-day/build_release'
+gmake[4]: Leaving directory '/home/wday/project/iiworking-day/working-day/build_release'
+gmake[4]: Leaving directory '/home/wday/project/iiworking-day/working-day/build_release'
+[  2%] Built target userver-uboost-coro
+[  3%] Built target cctz
+gmake[4]: Entering directory '/home/wday/project/iiworking-day/working-day/build_release'
+gmake[4]: Entering directory '/home/wday/project/iiworking-day/working-day/build_release'
+[  8%] Built target c-ares
+gmake[4]: Leaving directory '/home/wday/project/iiworking-day/working-day/build_release'
+gmake[4]: Leaving directory '/home/wday/project/iiworking-day/working-day/build_release'
+gmake[4]: Entering directory '/home/wday/project/iiworking-day/working-day/build_release'
+[  9%] Built target userver-librseq
+gmake[4]: Entering directory '/home/wday/project/iiworking-day/working-day/build_release'
+gmake[4]: Leaving directory '/home/wday/project/iiworking-day/working-day/build_release'
+gmake[4]: Leaving directory '/home/wday/project/iiworking-day/working-day/build_release'
+gmake[4]: Leaving directory '/home/wday/project/iiworking-day/working-day/build_release'
+[  9%] Built target userver-llhttp
+[  9%] Built target userver-http-parser
+gmake[4]: Entering directory '/home/wday/project/iiworking-day/working-day/build_release'
+gmake[4]: Entering directory '/home/wday/project/iiworking-day/working-day/build_release'
+gmake[4]: Leaving directory '/home/wday/project/iiworking-day/working-day/build_release'
+gmake[4]: Leaving directory '/home/wday/project/iiworking-day/working-day/build_release'
+[  9%] Built target gtest
+gmake[4]: Entering directory '/home/wday/project/iiworking-day/working-day/build_release'
+[  9%] Built target userver-impl-libpq-version-generator
+[ 23%] Built target cryptopp
+gmake[4]: Leaving directory '/home/wday/project/iiworking-day/working-day/build_release'
+[ 36%] Built target libcurl
+[ 36%] Built target gmock
+gmake[4]: Entering directory '/home/wday/project/iiworking-day/working-day/build_release'
+gmake[4]: Leaving directory '/home/wday/project/iiworking-day/working-day/build_release'
+[ 45%] Built target userver-universal
+gmake[4]: Entering directory '/home/wday/project/iiworking-day/working-day/build_release'
+gmake[4]: Entering directory '/home/wday/project/iiworking-day/working-day/build_release'
+gmake[4]: Leaving directory '/home/wday/project/iiworking-day/working-day/build_release'
+gmake[4]: Leaving directory '/home/wday/project/iiworking-day/working-day/build_release'
+[ 46%] Built target userver-chaotic
+[ 47%] Built target userver-universal-utest-base
+gmake[4]: Entering directory '/home/wday/project/iiworking-day/working-day/build_release'
+gmake[4]: Leaving directory '/home/wday/project/iiworking-day/working-day/build_release'
+[ 47%] Built target userver-core-static-config-dns-client
+gmake[4]: Entering directory '/home/wday/project/iiworking-day/working-day/build_release'
+gmake[4]: Leaving directory '/home/wday/project/iiworking-day/working-day/build_release'
+[ 52%] Built target userver-core-dynamic-configs
+gmake[4]: Entering directory '/home/wday/project/iiworking-day/working-day/build_release'
+gmake[4]: Leaving directory '/home/wday/project/iiworking-day/working-day/build_release'
+[ 85%] Built target userver-core
+gmake[4]: Entering directory '/home/wday/project/iiworking-day/working-day/build_release'
+gmake[4]: Entering directory '/home/wday/project/iiworking-day/working-day/build_release'
+gmake[4]: Leaving directory '/home/wday/project/iiworking-day/working-day/build_release'
+[ 85%] Built target userver-core-internal
+gmake[4]: Leaving directory '/home/wday/project/iiworking-day/working-day/build_release'
+gmake[4]: Entering directory '/home/wday/project/iiworking-day/working-day/build_release'
+gmake[4]: Leaving directory '/home/wday/project/iiworking-day/working-day/build_release'
+[ 87%] Built target userver-postgresql-dynamic-configs
+[ 88%] Built target userver-utest
+gmake[4]: Entering directory '/home/wday/project/iiworking-day/working-day/build_release'
+gmake[4]: Leaving directory '/home/wday/project/iiworking-day/working-day/build_release'
+[ 93%] Built target userver-postgresql
+gmake[4]: Entering directory '/home/wday/project/iiworking-day/working-day/build_release'
+gmake[4]: Leaving directory '/home/wday/project/iiworking-day/working-day/build_release'
+[ 98%] Built target working_day_objs
+gmake[4]: Entering directory '/home/wday/project/iiworking-day/working-day/build_release'
+gmake[4]: Leaving directory '/home/wday/project/iiworking-day/working-day/build_release'
+[100%] Built target working_day_unittest
+gmake[3]: Leaving directory '/home/wday/project/iiworking-day/working-day/build_release'
+gmake[2]: Leaving directory '/home/wday/project/iiworking-day/working-day/build_release'
+gmake[1]: Leaving directory '/home/wday/project/iiworking-day/working-day/build_release'
+# @cmake --build build_release -j 4 --target working_day_benchmark
+UpdateCTestConfiguration  from :/home/wday/project/iiworking-day/working-day/build_release/DartConfiguration.tcl
+Parse Config file:/home/wday/project/iiworking-day/working-day/build_release/DartConfiguration.tcl
+UpdateCTestConfiguration  from :/home/wday/project/iiworking-day/working-day/build_release/DartConfiguration.tcl
+Parse Config file:/home/wday/project/iiworking-day/working-day/build_release/DartConfiguration.tcl
+Test project /home/wday/project/iiworking-day/working-day/build_release
+Constructing a list of tests
+Done constructing a list of tests
+Updating test list for fixtures
+Added 0 tests to meet fixture requirements
+Checking test dependency graph...
+Checking test dependency graph end
+test 1
+    Start 1: working_day_unittest
+
+1: Test command: /home/wday/project/iiworking-day/working-day/build_release/working_day_unittest "--gtest_output=xml:/home/wday/project/iiworking-day/working-day/build_release/test-results/working_day_unittest.xml"
+1: Working Directory: /home/wday/project/iiworking-day/working-day/build_release
+1: Test timeout computed to be: 1500
+1: [==========] Running 1 test from 1 test suite.
+1: [----------] Global test environment set-up.
+1: [----------] 1 test from SayHelloTo
+1: [ RUN      ] SayHelloTo.Basic
+1: [       OK ] SayHelloTo.Basic (8 ms)
+1: [----------] 1 test from SayHelloTo (8 ms total)
+1: 
+1: [----------] Global test environment tear-down
+1: [==========] 1 test from 1 test suite ran. (8 ms total)
+1: [  PASSED  ] 1 test.
+1/2 Test #1: working_day_unittest .............   Passed    0.02 sec
+test 2
+    Start 2: testsuite-working_day
+
+2: Test command: /home/wday/project/iiworking-day/working-day/build_release/venv-userver-default/bin/python "/home/wday/project/iiworking-day/working-day/build_release/runtests-working_day" "--service-logs-pretty" "-vv"
+2: Working Directory: /home/wday/project/iiworking-day/working-day/build_release
+2: Test timeout computed to be: 1500
+2: ============================= test session starts ==============================
+2: platform linux -- Python 3.12.3, pytest-9.0.2, pluggy-1.6.0 -- /home/wday/project/iiworking-day/working-day/build_release/venv-userver-default/bin/python
+2: cachedir: .pytest_cache
+2: PostgreSQL: postgresql:///?host=localhost&port=15433&user=testsuite
+2: yandex-taxi-testsuite: version 0.3.9
+2: testsuite env: new, dir: /tmp/.yasuite-wday
+2: rootdir: /home/wday/project/iiworking-day/working-day/tests
+2: configfile: pytest.ini
+2: plugins: aiohttp-1.1.0, asyncio-0.21.2
+2: asyncio: mode=Mode.AUTO
+2: collecting ... collected 66 items
+2: 
+2: ../tests/test_basic.py::test_db_initial_data PASSED                      [  1%]
+2: ../tests/test_basic.py::test_add_company PASSED                          [  3%]
+2: ../tests/test_basic.py::test_employees PASSED                            [  4%]
+2: ../tests/test_basic.py::test_add_head PASSED                             [  6%]
+2: ../tests/test_basic.py::test_add PASSED                                  [  7%]
+2: ../tests/test_basic.py::test_remove PASSED                               [  9%]
+2: ../tests/test_basic.py::test_edit PASSED                                 [ 10%]
+2: ../tests/test_basic.py::test_authorize PASSED                            [ 12%]
+2: ../tests/test_basic.py::test_search_basic PASSED                         [ 13%]
+2: ../tests/test_basic.py::test_search_add PASSED                           [ 15%]
+2: ../tests/test_basic.py::test_search_remove PASSED                        [ 16%]
+2: ../tests/test_basic.py::test_search_edit PASSED                          [ 18%]
+2: ../tests/test_basic.py::test_search_full PASSED                          [ 19%]
+2: ../tests/test_basic.py::test_actions PASSED                              [ 21%]
+2: ../tests/test_basic.py::test_documents_send PASSED                       [ 22%]
+2: ../tests/test_basic.py::test_search_suggest PASSED                       [ 24%]
+2: ../tests/test_basic.py::test_upload_document PASSED                      [ 25%]
+2: ../tests/test_basic.py::test_inventory PASSED                            [ 27%]
+2: ../tests/test_basic.py::test_tracker_projects_add_list_and_info PASSED   [ 28%]
+2: ../tests/test_basic.py::test_tracker_projects_add_and_edit PASSED        [ 30%]
+2: ../tests/test_basic.py::test_tracker_projects_list_no_duplicates_with_multiple_assigned_users PASSED [ 31%]
+2: ../tests/test_basic.py::test_tracker_projects_media_upload PASSED        [ 33%]
+2: ../tests/test_basic.py::test_tracker_tasks_bad_add PASSED                [ 34%]
+2: ../tests/test_basic.py::test_tracker_tasks_add_and_list PASSED           [ 36%]
+2: ../tests/test_basic.py::test_chat_create_and_list PASSED                 [ 37%]
+2: ../tests/test_basic.py::test_load_recent_messages PASSED                 [ 39%]
+2: ../tests/test_basic.py::test_tracker_assigned_tasks_to_user PASSED       [ 40%]
+2: ../tests/test_basic.py::test_tracker_tasks_info_and_edit PASSED          [ 42%]
+2: ../tests/test_basic.py::test_tracker_tasks_bad_params_info_edit PASSED   [ 43%]
+2: ../tests/test_basic.py::test_tracker_projects_search_edit PASSED         [ 45%]
+2: ../tests/test_basic.py::test_tracker_tasks_media_upload PASSED           [ 46%]
+2: ../tests/test_basic.py::test_tracker_tasks_search_add PASSED             [ 48%]
+2: ../tests/test_basic.py::test_tracker_tasks_search_edit PASSED            [ 50%]
+2: ../tests/test_basic.py::test_tracker_tasks_and_employees_search PASSED   [ 51%]
+2: ../tests/test_basic.py::test_tracker_tasks_bad_tag_search PASSED         [ 53%]
+2: ../tests/test_basic.py::test_tracker_tasks_add_with_extra_fields PASSED  [ 54%]
+2: ../tests/test_basic.py::test_tracker_tasks_edit_deadline PASSED          [ 56%]
+2: ../tests/test_basic.py::test_tracker_task_send_and_remove_docx_document PASSED [ 57%]
+2: ../tests/test_basic.py::test_send_docx_document PASSED                   [ 59%]
+2: ../tests/test_basic.py::test_chain_update_approve PASSED                 [ 60%]
+2: ../tests/test_basic.py::test_chain_update_reject PASSED                  [ 62%]
+2: ../tests/test_basic.py::test_chain_update_try_sign_non_signable PASSED   [ 63%]
+2: ../tests/test_basic.py::test_chain_update_wrong_order PASSED             [ 65%]
+2: ../tests/test_basic.py::test_chain_update_already_rejected PASSED        [ 66%]
+2: ../tests/test_basic.py::test_chain_update_empty_chain PASSED             [ 68%]
+2: ../tests/test_basic.py::test_chain_update_nonexistent_document PASSED    [ 69%]
+2: ../tests/test_basic.py::test_chain_add PASSED                            [ 71%]
+2: ../tests/test_basic.py::test_chain_add_empty_metadata PASSED             [ 72%]
+2: ../tests/test_basic.py::test_chain_add_nonexistent_document PASSED       [ 74%]
+2: ../tests/test_basic.py::test_chain_add_to_document_with_chain PASSED     [ 75%]
+2: ../tests/test_basic.py::test_chain_add_with_invalid_employees PASSED     [ 77%]
+2: ../tests/test_basic.py::test_permissions_list PASSED                     [ 78%]
+2: ../tests/test_basic.py::test_permissions_set PASSED                      [ 80%]
+2: ../tests/test_basic.py::test_documents_archiving PASSED                  [ 81%]
+2: ../tests/test_basic.py::test_comments_add_remove PASSED                  [ 83%]
+2: ../tests/test_basic.py::test_comments_add_to_task PASSED                 [ 84%]
+2: ../tests/test_basic.py::test_comments_edit_info PASSED                   [ 86%]
+2: ../tests/test_basic.py::test_comments_access_author PASSED               [ 87%]
+2: ../tests/test_basic.py::test_comments_access_assigned_user PASSED        [ 89%]
+2: ../tests/test_basic.py::test_comments_access_project_creator PASSED      [ 90%]
+2: ../tests/test_basic.py::test_comments_access_denied PASSED               [ 92%]
+2: ../tests/test_basic.py::test_tasks_access_within_project PASSED          [ 93%]
+2: ../tests/test_basic.py::test_end PASSED                                  [ 95%]
+2: ../tests/test_basic.py::test_request_collector_high_load FAILED          [ 96%]
+2: ../tests/test_basic.py::test_request_collector_per_user_isolation FAILED [ 98%]
+2: ../tests/test_basic.py::test_request_collector_empty_user FAILED         [100%]
+2: 
+2: =================================== FAILURES ===================================
+2: _______________________ test_request_collector_high_load _______________________
+2: 
+2: service_client = <pytest_userver.client.Client object at 0x788dde3cf950>
+2: 
+2:     @pytest.mark.pgsql('db_1', files=['initial_data.sql'])
+2:     async def test_request_collector_high_load(service_client):
+2:         """Нагрузочный тест — 25 запросов от разных пользователей"""
+2:     
+2: >       collector = service_client.app.dependencies['request-collector']
+2:                     ^^^^^^^^^^^^^^^^^^
+2: E       AttributeError: 'Client' object has no attribute 'app'
+2: 
+2: ../tests/test_basic.py:3557: AttributeError
+2: ------------------------------ Captured log setup ------------------------------
+2: DEBUG    pytest_userver.plugins.service:service.py:225 userver fixture "auto_client_deps" resolved dependencies ['pgsql']
+2: -------------------------- Captured userver/log call ---------------------------
+2: DEBUG    <userver> Result checked
+2: INFO     <userver> Updated cache update_type=full name=auth-pg-cache
+2: INFO     [8a2d6e42eb513aa9a9659d1623874517] Response finished meta_code=200 response_body=null
+2: INFO     [POST /v1/clear-tasks] start handling POST /v1/clear-tasks
+2: INFO     [POST /v1/clear-tasks] Response finished meta_code=200
+2: DEBUG    <userver> Accepted connection #2/32768
+2: DEBUG    <userver> Incoming connection from ::1, fd 60
+2: INFO     [POST /tests/log_flush] start handling POST /tests/log_flush request_body={
+2:   "logger_name": null
+2: }
+2: __________________ test_request_collector_per_user_isolation ___________________
+2: 
+2: service_client = <pytest_userver.client.Client object at 0x788dde3d5250>
+2: 
+2:     @pytest.mark.pgsql('db_1', files=['initial_data.sql'])
+2:     async def test_request_collector_per_user_isolation(service_client):
+2:         """Проверка изоляции пользователей"""
+2:     
+2: >       collector = service_client.app.dependencies['request-collector']
+2:                     ^^^^^^^^^^^^^^^^^^
+2: E       AttributeError: 'Client' object has no attribute 'app'
+2: 
+2: ../tests/test_basic.py:3603: AttributeError
+2: ------------------------------ Captured log setup ------------------------------
+2: DEBUG    pytest_userver.plugins.service:service.py:225 userver fixture "auto_client_deps" resolved dependencies ['pgsql']
+2: -------------------------- Captured userver/log call ---------------------------
+2: INFO     [4e5379c89f2a5729a26a6a1560897315] Response finished meta_code=200 response_body=null
+2: DEBUG    <userver> Accepted connection #2/32768
+2: DEBUG    <userver> Incoming connection from ::1, fd 60
+2: INFO     [POST /tests/log_flush] start handling POST /tests/log_flush request_body={
+2:   "logger_name": null
+2: }
+2: ______________________ test_request_collector_empty_user _______________________
+2: 
+2: service_client = <pytest_userver.client.Client object at 0x788dde33a420>
+2: 
+2:     @pytest.mark.pgsql('db_1', files=['initial_data.sql'])
+2:     async def test_request_collector_empty_user(service_client):
+2:         """Проверка несуществующего пользователя"""
+2: >       collector = service_client.app.dependencies['request-collector']
+2:                     ^^^^^^^^^^^^^^^^^^
+2: E       AttributeError: 'Client' object has no attribute 'app'
+2: 
+2: ../tests/test_basic.py:3625: AttributeError
+2: ------------------------------ Captured log setup ------------------------------
+2: DEBUG    pytest_userver.plugins.service:service.py:225 userver fixture "auto_client_deps" resolved dependencies ['pgsql']
+2: -------------------------- Captured userver/log call ---------------------------
+2: INFO     [026b938cd02bd0b0d74f9f7e8261d442] Response finished meta_code=200 response_body=null
+2: DEBUG    <userver> Accepted connection #2/32768
+2: DEBUG    <userver> Incoming connection from ::1, fd 60
+2: INFO     [POST /tests/log_flush] start handling POST /tests/log_flush request_body={
+2:   "logger_name": null
+2: }
+2: ---------------------------- Captured log teardown -----------------------------
+2: INFO     testsuite.daemons.spawn:spawn.py:155 [128163] Trying to stop process with signal SIGINT
+2: DEBUG    asyncio:selector_events.py:64 Using selector: EpollSelector
+2: =========================== short test summary info ============================
+2: FAILED ../tests/test_basic.py::test_request_collector_high_load - AttributeError: 'Client' object has no attribute 'app'
+2: FAILED ../tests/test_basic.py::test_request_collector_per_user_isolation - AttributeError: 'Client' object has no attribute 'app'
+2: FAILED ../tests/test_basic.py::test_request_collector_empty_user - AttributeError: 'Client' object has no attribute 'app'
+2: ========================= 3 failed, 63 passed in 7.79s =========================
+2/2 Test #2: testsuite-working_day ............***Failed    8.53 sec
+
+50% tests passed, 1 tests failed out of 2
+
+Total Test time (real) =   8.55 sec
+
+The following tests FAILED:
+	  2 - testsuite-working_day (Failed)
