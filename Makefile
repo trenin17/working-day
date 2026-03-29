@@ -60,7 +60,7 @@ test-nep-unit:
 	@python_service/.venv/bin/pip install -q -r python_service/requirements-dev.txt
 	@cd python_service && .venv/bin/python -m pytest tests/ -v
 
-# Замер HTTP-ручек C++: scripts/bench_nep_handlers.sh (PG + опционально S3), см. docs/NEP_PERFORMANCE.md
+# Замер HTTP-ручек C++: scripts/bench_nep_handlers.sh (PG + опционально S3)
 .PHONY: bench-nep
 bench-nep:
 	@bash scripts/bench_nep_handlers.sh

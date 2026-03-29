@@ -1,8 +1,6 @@
 # НЭП: модель безопасности и проверки
 
-Документ фиксирует, что уже заложено в реализации и чем это подтверждается. Детальный анализ **хранения ключей и паролей в БД** намеренно отложен — см. [TODO](#todo).
-
-## Криптографическая стойкость
+## Криптографическая стойкость (тест)
 
 | Элемент | Реализация | Где в коде |
 |--------|------------|------------|
@@ -44,6 +42,9 @@
 Перечень сценариев см. в комментариях в начале `tests/test_nep_basic.py` и `python_service/tests/test_nep_handlers.py`.
 
 
-## TODO
+## Хранение ключей и пароля в БД
 
-- **Безопасность хранения ключей и пароля подписи**
+- **`employee_keys`** — закрытый ключ в PEM с шифрованием паролем подписи (AES-256-CBC внутри PEM); открытый ключ и `public_key_hash` (SHA-256). Миграция `postgresql/migrations/26__nep_signature.sql`.
+- **`employee_signature_passwords`** — пароль подписи (6 цифр) в отдельной таблице, одна запись на сотрудника. Миграция `postgresql/migrations/27__employee_signature_password.sql`.
+- **Аудит изменений пароля** — таблица `employee_signature_passwords_audit` и триггер `trg_employee_signature_passwords_audit` после `INSERT`/`UPDATE`/`DELETE` на `employee_signature_passwords` (в логе: тип операции, `employee_id`, время). Миграция `postgresql/migrations/34__employee_signature_passwords_audit.sql`.
+- **Внешний аудит на уровне БД** — расширение **pgAudit** в PostgreSQL (журналирование DDL помимо триггеров в схеме компании). Параметры задаются в инфраструктуре кластера.

@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 # Замер HTTP-ручек C++ (userver): генерация ключей, nep-sign, nep-verify.
-# См. docs/NEP_PERFORMANCE.md
 #
 # Переменные:
 #   NEP_BENCH_BASE_URL     — API (по умолчанию http://127.0.0.1:8080)

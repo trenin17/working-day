@@ -61,7 +61,7 @@ Authorization: Bearer <token>
 **Response 400:**
 ```json
 {
-  "message": "Ключи для этого сотрудника уже существуют"
+  "message": "Keys already exist. Please delete old keys first."
 }
 ```
 
@@ -98,14 +98,28 @@ Content-Type: application/json
 **Response 400:**
 ```json
 {
-  "message": "Ключи электронной подписи не найдены"
+  "message": "signature_password is required"
+}
+```
+
+**Response 400:**
+```json
+{
+  "message": "Signature password not found. Please generate keys first."
+}
+```
+
+**Response 401:**
+```json
+{
+  "message": "Wrong signature_password"
 }
 ```
 
 **Response 404:**
 ```json
 {
-  "message": "Документ не найден"
+  "message": "Document not found"
 }
 ```
 
@@ -136,7 +150,7 @@ Authorization: Bearer <token>
 **Response 404:**
 ```json
 {
-  "message": "Подпись не найдена"
+  "message": "Signature not found"
 }
 ```
 
@@ -171,9 +185,7 @@ Authorization: Bearer <token>
 
 ## Безопасность
 
-Сводка по криптографии, аутентификации, авторизации и тестам: **`docs/NEP_SECURITY.md`**.
-
-Вопросы модели хранения ключей и паролей в БД вынесены в **TODO** в том же файле (отдельное оформление позже).
+Сводка по криптографии, аутентификации, авторизации, хранением ключей и паролей и тестам: **`docs/NEP_SECURITY.md`**.
 
 ## Проверка целостности
 
@@ -202,16 +214,16 @@ Authorization: Bearer <token>
 ### Ограничения
 
 НЭП подходит для:
-- ✅ Внутреннего документооборота
-- ✅ Согласования документов внутри компании
-- ✅ Подтверждения ознакомления с документами
+- Внутреннего документооборота
+- Согласования документов внутри компании
+- Подтверждения ознакомления с документами
 
 НЭП НЕ подходит для:
-- ❌ Взаимодействия с государственными органами
-- ❌ Банковских операций
-- ❌ Сделок с юридической значимостью за пределами организации
+- Взаимодействия с государственными органами
+- Банковских операций
+- Сделок с юридической значимостью за пределами организации
 
-Для таких случаев требуется **квалифицированная электронная подпись (КЭП)**.
+Для таких случаев требуется **квалифицированная электронная подпись (КЭП)**. Платформа позволяет **подгрузить подпись, сформированную КЭП на стороне пользователя** (отсоединённый файл, после подписания PDF средствами СКЗИ/плагина с фронта): **`POST /v1/documents/upload-signature`** с типом подписи **`kep`** в теле запроса. Доступ к загрузке КЭП задаётся правом **`can_upload_kep_signature`** у сотрудника. НЭП и КЭП по одному документу могут сосуществовать как отдельные записи подписей.
 
 ## Устранение неполадок
 
@@ -267,16 +279,6 @@ cd python_service
 pip install -r requirements.txt
 ```
 
-## Компиляция C++ кода
-
-Проект использует CMake. Новые хендлеры автоматически включены в сборку:
-
-```bash
-mkdir build && cd build
-cmake ..
-make -j$(nproc)
-```
-
 ## Тестирование
 
 ### Ручное тестирование
@@ -292,8 +294,8 @@ make -j$(nproc)
 
 | Файл | Содержание |
 |------|------------|
-| `tests/test_nep_signer.py` | `NEPSigner`: sign/verify, все ветки сообщений, ошибки PKCS#7, мок `SignatureValidationError` / parse errors |
-| `tests/test_nep_handlers.py` | `nep_sign_document` / `nep_verify_document`: JSON, обязательные поля, ошибки S3 (моки), успешные сценарии |
+| `python_service/tests/test_nep_signer.py` | `NEPSigner`: sign/verify, все ветки сообщений, ошибки PKCS#7, мок `SignatureValidationError` / parse errors |
+| `python_service/tests/test_nep_handlers.py` | `nep_sign_document` / `nep_verify_document`: JSON, обязательные поля, ошибки S3 (моки), успешные сценарии |
 
 ```bash
 cd python_service
@@ -303,15 +305,5 @@ python3 -m pytest tests/ -v
 
 Из корня репозитория: `make test-nep-unit` (ставит `python_service/.venv` при необходимости).
 
-Интеграционные тесты API (C++ + Python) — по плану отдельно.
+**Интеграционные тесты API (userver testsuite):** `tests/test_nep_basic.py` — HTTP-вызовы C++-ручек `POST /v1/employee/keys/generate`, `POST /v1/documents/nep-sign`, `GET /v1/documents/nep-verify` против тестовой БД; ответы python_service для sign/verify **мокируются** в `tests/conftest.py` (полный контур с реальным aiohttp и S3 в этом наборе не поднимается). Дополнительные SQL-фикстуры: `postgresql/data/nep_*.sql`. Запуск — в общем потоке pytest testsuite проекта (как `tests/test_basic.py`).
 
-## Мониторинг
-
-Рекомендуется отслеживать через логи приложения:
-- Количество сгенерированных ключей
-- Количество подписанных документов
-- Ошибки при подписании/проверке
-
-## Контакты
-
-При возникновении вопросов обратитесь к разработчикам системы.
