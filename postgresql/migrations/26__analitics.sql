@@ -7,7 +7,9 @@
 --     request_data   TEXT,
 --     response_data  TEXT NOT NULL,
 --     created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-
+--     source          TEXT NOT NULL, -- back or front
+--     action_type     TEXT NOT NULL, -- api_call for back, extract from json else
+--     action          TEXT DEFAULT NULL, -- NULL for back
 
 --     -- FOREIGN KEY (user_id) REFERENCES working_day_first.employees(id) ON DELETE CASCADE
 -- );

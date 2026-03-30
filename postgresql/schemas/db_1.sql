@@ -424,6 +424,7 @@ CREATE INDEX IF NOT EXISTS idx_task_comments_task_id ON working_day_first.task_c
 CREATE INDEX IF NOT EXISTS idx_task_comments_comment_id ON working_day_first.task_comments (comment_id);
 
 -- Create user's event context table
+
 CREATE TABLE IF NOT EXISTS working_day_first.request_cache (
     id             BIGSERIAL PRIMARY KEY,
 
@@ -431,7 +432,11 @@ CREATE TABLE IF NOT EXISTS working_day_first.request_cache (
     url            TEXT NOT NULL,
     request_data   TEXT,
     response_data  TEXT NOT NULL,
-    created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    source          TEXT NOT NULL, -- back or front
+    action_type     TEXT NOT NULL, -- api_call for back, extract from json else
+    action          TEXT DEFAULT NULL -- NULL for back
+
     -- FOREIGN KEY (user_id) REFERENCES working_day_first.employees(id) ON DELETE CASCADE
 );
 

@@ -4,7 +4,7 @@
 #include <userver/yaml_config/merge_schemas.hpp>
 #include <userver/components/component_list.hpp>
 
-namespace middleware::middleware {
+namespace analitics::middleware {
 
 void AppendRequestCaptureMiddleware(userver::components::ComponentList& component_list);
 

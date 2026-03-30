@@ -745,10 +745,31 @@ components_manager:
                   - bearer
                 scopes:
                   - user
+        
+        request-collector:
+            # max_requests_per_user: 200
+            # max_lru_size: 1000
+            max_requests_per_user: 10
+            max_lru_size: 2
 
-        request-collector: {}
         request-capture-middleware: {}
         custom-handler-pipeline-builder: {}
-        default-server-middleware-pipeline-builder:  # Add this section
+        default-server-middleware-pipeline-builder:
           append:
             - request-capture-middleware
+
+        process-starter:
+              load-enabled: true
+
+        ml-process-manager:
+
+        ml-tcp-client:
+          ml_websocket_port: 65432
+
+        frontend-websocket-broadcaster:
+
+
+        frontend-websocket-handler:
+          path: /ws
+          method: GET
+          task_processor: main-task-processor

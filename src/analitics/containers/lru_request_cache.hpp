@@ -12,7 +12,7 @@
 #include "request_data.hpp"
 #include "userver/engine/shared_mutex.hpp"
 
-namespace middleware::containers {
+namespace analitics::containers {
 
 class LruRequestCache {
 public:

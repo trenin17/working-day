@@ -1,0 +1,1 @@
+/home/wday/project/iiworking-day/working-day/postgresql/migrations/26__analitics.sql

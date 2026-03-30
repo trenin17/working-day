@@ -12,7 +12,15 @@
 #include "userver/server/http/http_request.hpp"
 #include "userver/server/request/request_context.hpp"
 
-namespace middleware::containers {
+namespace analitics {
+
+namespace ml_client {
+
+    class MlClient;
+
+}
+
+namespace containers {
 
 class RequestCollector final : public userver::components::ComponentBase {
 public:
@@ -23,17 +31,23 @@ public:
     
     ~RequestCollector() override;
 
-    void Collect(const userver::server::http::HttpRequest& request,
+    void MiddlewareCollect(const userver::server::http::HttpRequest& request,
                  const userver::server::request::RequestContext& context);
 
-    std::vector<RequestResponseData> Get(const std::string& user_id);
+    void FrontendCollect(const std::string&);
+
+
+    std::string Get(const std::string& user_id);
     
     static userver::yaml_config::Schema GetStaticConfigSchema();
 private:
     std::unique_ptr<LruRequestCache> queue_;
     userver::storages::postgres::ClusterPtr pg_cluster_;
+    analitics::ml_client::MlClient& ml_client_;
     const int64_t max_requests_per_user_;
+
+    void PutRequest(const analitics::containers::RequestResponseData&);
 // int64_t instead of size_t cause Postgress does not give a fuck what is size_t lol
 };
 
-}  // namespace middleware
+}}

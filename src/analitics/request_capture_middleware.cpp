@@ -3,7 +3,7 @@
 #include <userver/components/component_context.hpp>
 #include <userver/server/middlewares/configuration.hpp>
 
-namespace middleware::middleware {
+namespace analitics::middleware {
 
 class RequestCaptureMiddleware final : public userver::server::middlewares::HttpMiddlewareBase {
   public:
@@ -74,7 +74,7 @@ void RequestCaptureMiddleware::HandleRequest(
     
     Next(request, context);
     
-    collector_.Collect(request, context);
+    collector_.MiddlewareCollect(request, context);
 }
 
 RequestCaptureMiddlewareFactory::RequestCaptureMiddlewareFactory(

@@ -5,7 +5,7 @@
 #include <shared_mutex>
 #include <vector>
 
-namespace middleware::containers {
+namespace analitics::containers {
 
 LruRequestCache::LruRequestCache( size_t max_lru_size, size_t max_requests_per_user)
     : max_lru_size_(max_lru_size)

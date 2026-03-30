@@ -15,6 +15,7 @@
 #include <aws/core/Aws.h>
 #include <aws/core/auth/AWSCredentialsProvider.h>
 
+#include "analitics/containers/request_collector.hpp"
 #include "auth/auth_bearer.hpp"
 #include "auth/user_info_cache.hpp"
 #include "utils/custom_implicit_options.hpp"
@@ -80,7 +81,12 @@
 #include "views/v1/comments/info/view.hpp"
 #include "views/v1/comments/remove/view.hpp"
 
-#include "middleware/request_capture_middleware.hpp"
+#include "analitics/request_capture_middleware.hpp"
+#include "analitics/frontend_websocket.hpp"
+#include "analitics/MLClient.hpp"
+
+#include <userver/components/process_starter.hpp>
+#include "ML/ml_process_manager.hpp"
 
 int main(int argc, char* argv[]) {
   Aws::SDKOptions options;
@@ -103,8 +109,13 @@ int main(int argc, char* argv[]) {
           .Append<userver::components::Postgres>("key-value")
           .Append<userver::clients::dns::Component>()
           .Append<auth::AuthCache>()
-          .Append<utils::custom_implicit_options::CustomImplicitOptions>()
-          .Append<userver::components::LoggingConfigurator>();
+          .Append<::utils::custom_implicit_options::CustomImplicitOptions>()
+          .Append<userver::components::LoggingConfigurator>()
+          .Append<analitics::ml_client::MlClient>()
+          .Append<analitics::MlProcessManager>()          // .Append<analitics::containers::RequestCollector>()
+          ;
+  
+  component_list.Append<userver::components::ProcessStarter>();
 
   views::v1::employee::add::AppendAddEmployee(component_list);
   views::v1::employee::add_head::AppendAddHeadEmployee(component_list);
@@ -168,7 +179,8 @@ int main(int argc, char* argv[]) {
   views::v1::comments::info::AppendCommentsInfo(component_list);
   views::v1::comments::remove::AppendCommentsRemove(component_list);
 
-  middleware::middleware::AppendRequestCaptureMiddleware(component_list);
+  analitics::middleware::AppendRequestCaptureMiddleware(component_list);
+  analitics::websocket::AppendRequestFrontendWebsockets(component_list);
 
   int err_code = userver::utils::DaemonMain(argc, argv, component_list);
 
