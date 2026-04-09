@@ -376,6 +376,7 @@ components_manager:
                 scopes:
                   - user
             pyservice-url: 'http://python-service:3000/document/build-archive'
+            is_testing: $is_testing
 
         handler-v1-search-full:
             path: /v1/search/full
