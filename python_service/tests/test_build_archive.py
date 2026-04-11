@@ -1,5 +1,8 @@
 """Структура zip при сборке выгрузки (без реального S3)."""
 import io
+import os
+import shutil
+import tempfile
 import zipfile
 from unittest.mock import patch
 
@@ -12,9 +15,9 @@ from build_archive.handler import (
 )
 
 
-@patch("build_archive.handler.upload_and_presign", return_value="https://example/presigned")
+@patch("build_archive.handler.upload_and_presign")
 @patch("build_archive.handler.download_file")
-def test_build_bundle_structure(mock_dl, _mock_upload):
+def test_build_bundle_structure(mock_dl, mock_upload):
     calls = []
 
     def fake_download(key, path):
@@ -23,6 +26,17 @@ def test_build_bundle_structure(mock_dl, _mock_upload):
             f.write(b"fake-bytes-for-" + key.encode())
 
     mock_dl.side_effect = fake_download
+
+    persistent_outer = None
+
+    def fake_upload(path, object_name):
+        nonlocal persistent_outer
+        fd, persistent_outer = tempfile.mkstemp(suffix=".zip")
+        os.close(fd)
+        shutil.copy2(path, persistent_outer)
+        return "https://example/presigned"
+
+    mock_upload.side_effect = fake_upload
 
     url = _build_bundle_sync(
         root_document_id="doc-root",
@@ -35,8 +49,8 @@ def test_build_bundle_structure(mock_dl, _mock_upload):
     )
     assert url == "https://example/presigned"
 
-    # upload_and_presign получает путь к внешнему zip
-    outer_local = _mock_upload.call_args[0][0]
+    # Копия архива: после возврата хендлера временная директория уже удалена.
+    outer_local = persistent_outer
     with zipfile.ZipFile(outer_local, "r") as z:
         names = set(z.namelist())
         assert "README.txt" in names
@@ -51,21 +65,42 @@ def test_build_bundle_structure(mock_dl, _mock_upload):
             assert any(n.startswith("подписи/01_nep_") for n in inner_names)
             assert any(n.startswith("подписи/02_kep_") for n in inner_names)
 
+    try:
+        os.unlink(persistent_outer)
+    except OSError:
+        pass
 
-@patch("build_archive.handler.upload_and_presign", return_value="https://example/pep.zip")
+
+@patch("build_archive.handler.upload_and_presign")
 @patch("build_archive.handler.download_file")
-def test_pep_pair_folder(mock_dl, _mock_upload):
+def test_pep_pair_folder(mock_dl, mock_upload):
     def fake_download(key, path):
         with open(path, "wb") as f:
             f.write(b"x-" + key.encode())
 
     mock_dl.side_effect = fake_download
 
+    persistent_outer = None
+
+    def fake_upload(path, object_name):
+        nonlocal persistent_outer
+        fd, persistent_outer = tempfile.mkstemp(suffix=".zip")
+        os.close(fd)
+        shutil.copy2(path, persistent_outer)
+        return "https://example/pep.zip"
+
+    mock_upload.side_effect = fake_upload
+
     url = _build_pep_pair_folder_sync("root", "Report.pdf", "stamped-id")
     assert url == "https://example/pep.zip"
 
-    outer_local = _mock_upload.call_args[0][0]
+    outer_local = persistent_outer
     with zipfile.ZipFile(outer_local, "r") as z:
         names = z.namelist()
         assert f"{PEP_FOLDER_NAME}/Report.pdf" in names
         assert f"{PEP_FOLDER_NAME}/Report_визуальная_копия.pdf" in names
+
+    try:
+        os.unlink(persistent_outer)
+    except OSError:
+        pass
