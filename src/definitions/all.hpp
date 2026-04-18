@@ -155,7 +155,6 @@
 #define USE_PYSERVICE_DOCUMENT_GENERATE_REQUEST
 #define USE_ABSCENCE_VERDICT_REQUEST
 #define USE_ABSCENCE_VERDICT_RESPONSE
-#define USE_PYSERVICE_DOCUMENT_SIGN_REQUEST
 #define USE_ERROR_MESSAGE
 #endif
 
@@ -167,8 +166,7 @@
 #endif
 
 #ifdef V1_DOCUMENTS_SIGN
-#define USE_LIST_EMPLOYEE_WITH_SUBCOMPANY
-#define USE_PYSERVICE_DOCUMENT_SIGN_REQUEST
+#define USE_PYSERVICE_CREATE_STAMP_FOR_NEP_REQUEST
 #define USE_ABSCENCE_VERDICT_RESPONSE
 #define USE_ERROR_MESSAGE
 #endif
@@ -281,7 +279,6 @@
 
 #ifdef V1_DOCUMENTS_CHAIN_UPDATE
 #define USE_LIST_EMPLOYEE_WITH_SUBCOMPANY
-#define USE_PYSERVICE_DOCUMENT_SIGN_REQUEST
 #define USE_PYSERVICE_NEP_SIGN_REQUEST
 #define USE_DOCUMENTS_CHAIN_UPDATE_REQUEST
 #define USE_DOCUMENTS_CHAIN_UPDATE_RESPONSE
@@ -783,17 +780,20 @@ struct AbscenceVerdictRequest : public JsonCompatible {
 };
 #endif
 
-#ifdef USE_PYSERVICE_DOCUMENT_SIGN_REQUEST
-struct PyserviceDocumentSignRequest : public JsonCompatible {
+#ifdef USE_PYSERVICE_CREATE_STAMP_FOR_NEP_REQUEST
+struct PyserviceNepStampSigner : public JsonCompatible {
   REGISTER_STRUCT_FIELD(employee_id, std::string, "employee_id");
-  REGISTER_STRUCT_FIELD(employee_name, std::string, "employee_name");
-  REGISTER_STRUCT_FIELD(employee_surname, std::string, "employee_surname");
-  REGISTER_STRUCT_FIELD_OPTIONAL(employee_patronymic, std::string,
-                                 "employee_patronymic");
-  REGISTER_STRUCT_FIELD(subcompany, std::string, "subcompany");
+  REGISTER_STRUCT_FIELD(name, std::string, "name");
+  REGISTER_STRUCT_FIELD(surname, std::string, "surname");
+  REGISTER_STRUCT_FIELD_OPTIONAL(patronymic, std::string, "patronymic");
+};
+
+struct PyserviceCreateStampForNepRequest : public JsonCompatible {
   REGISTER_STRUCT_FIELD(file_key, std::string, "file_key");
   REGISTER_STRUCT_FIELD(signed_file_key, std::string, "signed_file_key");
-  REGISTER_STRUCT_FIELD_OPTIONAL(is_first_signature, bool, "is_first_signature");
+  REGISTER_STRUCT_FIELD(signers, std::vector<PyserviceNepStampSigner>, "signers");
+  REGISTER_STRUCT_FIELD(organization, std::string, "organization");
+  REGISTER_STRUCT_FIELD(is_first_signature, bool, "is_first_signature");
 };
 #endif
 

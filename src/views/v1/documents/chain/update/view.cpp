@@ -95,7 +95,7 @@ additionalProperties: false
 properties:
     pyservice-url:
         type: string
-        description: Url of python service for regular signature (document/sign)
+        description: Url of python service for PDF stamp (document/create-stamp-for-nep); reserved
     pyservice-nep-sign-url:
         type: string
         description: Url of python service for NEP signature (document/nep-sign)

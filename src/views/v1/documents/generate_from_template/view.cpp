@@ -208,7 +208,7 @@ properties:
 
     auto resp = http_client_.CreateRequest()
                     .post(
-                        "http://python-service:3000/"
+                        "http://localhost:3000/"
                         "document/generate-from-template?file_key=" +
                         file_key
                     )

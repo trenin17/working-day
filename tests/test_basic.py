@@ -908,7 +908,7 @@ async def test_actions(service_client):
 
 
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])
-async def test_documents_send(service_client):
+async def test_documents_send(service_client, pgsql):
     response = await service_client.post(
         '/v1/employee/add',
         headers={'Authorization': 'Bearer first_token'},
@@ -1019,8 +1019,25 @@ async def test_documents_send(service_client):
     expected_response["documents"][1]["chain_metadata_new"][0]["signed_at"] = response_data["documents"][1]["chain_metadata_new"][0].get("signed_at")
     assert response_data == expected_response
 
+    # Штамп НЭП строится по строкам document_signatures (тип nep), а не по текущему пользователю
+    cursor = pgsql['db_1'].cursor()
+    cursor.execute(
+        """
+        INSERT INTO working_day_first.document_signatures(
+            id, document_id, employee_id, signature_path, signature_metadata, signature_type
+        ) VALUES (
+            'sig_test_id1_nep',
+            'id1',
+            'first_id',
+            'id1_first_nep_mock.p7s',
+            '{"timestamp": "2025-06-01T12:00:00Z", "user_id": "first_id"}'::jsonb,
+            'nep'
+        )
+        """
+    )
+
     response = await service_client.post(
-        '/v1/documents/sign',
+        '/v1/documents/create-stamp-for-nep',
         headers={'Authorization': 'Bearer first_token'},
         params={'document_id': 'id1'}
     )

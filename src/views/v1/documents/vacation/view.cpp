@@ -180,7 +180,7 @@ class DocumentsVacationHandler final
     auto file_key = userver::utils::generators::GenerateUuid();
     auto response = http_client_.CreateRequest()
                         .post(
-                            "http://python-service:3000/"
+                            "http://localhost:3000/"
                             "document/generate?file_key=" +
                             file_key)
                         .data(link_request.ToJsonString())
@@ -214,6 +214,11 @@ class DocumentsVacationHandler final
             "ON CONFLICT DO NOTHING",
         action_info.employee_id, file_key, true,
         employee_info.head_id.value_or(action_info.employee_id));
+
+    pg_cluster_->Execute(userver::storages::postgres::ClusterHostType::kMaster,
+                         "UPDATE working_day_" + company_id +
+                             ".actions SET document_id = $1 WHERE id = $2",
+                         file_key, action_id);
 
     return response->body();
   }

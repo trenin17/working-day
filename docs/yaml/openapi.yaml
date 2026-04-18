@@ -766,9 +766,11 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/DocumentsGetSignsResponse'
 
-    /v1/documents/sign:
+    /v1/documents/create-stamp-for-nep:
         post:
-            description: Sign the document
+            description: >
+              Add a visual PDF stamp for NEP (enhanced unqualified electronic signature)
+              based on existing NEP rows in document_signatures. Query parameter document_id only.
             parameters:
               - in: header
                 name: Authorization
@@ -782,7 +784,7 @@ paths:
                     type: string
             responses:
                 '200':
-                    description: Document was signed
+                    description: Stamped PDF version was created
                     content:
                         application/json:
                             schema:

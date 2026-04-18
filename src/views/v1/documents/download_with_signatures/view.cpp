@@ -96,7 +96,7 @@ additionalProperties: false
 properties:
     pyservice-url:
         type: string
-        description: Base URL of Python service (e.g. http://python-service:3000)
+        description: Base URL of Python service (e.g. http://localhost:3000)
     is_testing:
         type: boolean
         description: Use mock S3 presigned links in tests
@@ -134,14 +134,28 @@ properties:
     }
 
     const auto& user_id = ctx.GetData<std::string>("user_id");
+    // Доступ: прямой employee_document по id, либо по соседней версии в цепочке
+    // create-stamp-for-nep (child.parent_id = root): можно скачать и по корню, и по новому id.
     auto doc_check = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kSlave,
-        "SELECT 1 FROM working_day_" + company_id +
-            ".documents d "
-            "JOIN working_day_" +
-            company_id +
-            ".employee_document ed ON d.id = ed.document_id "
-            "WHERE d.id = $1 AND ed.employee_id = $2",
+        "SELECT 1 FROM working_day_" + company_id + ".documents d "
+        "WHERE d.id = $1 AND ("
+        "  EXISTS (SELECT 1 FROM working_day_" + company_id +
+        ".employee_document ed "
+        "   WHERE ed.document_id = d.id AND ed.employee_id = $2) "
+        "  OR EXISTS (SELECT 1 FROM working_day_" + company_id +
+        ".employee_document ed "
+        "   INNER JOIN working_day_" + company_id +
+        ".documents stamped ON stamped.id = ed.document_id "
+        "   WHERE ed.employee_id = $2 AND stamped.parent_id = d.id AND "
+        "         stamped.id <> stamped.parent_id) "
+        "  OR EXISTS (SELECT 1 FROM working_day_" + company_id +
+        ".employee_document ed "
+        "   INNER JOIN working_day_" + company_id +
+        ".documents req ON req.id = d.id "
+        "   WHERE ed.employee_id = $2 AND req.parent_id = ed.document_id AND "
+        "         req.id <> req.parent_id) "
+        ")",
         document_id, user_id);
 
     auto doc_check_author = pg_cluster_->Execute(

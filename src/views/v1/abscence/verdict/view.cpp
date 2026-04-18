@@ -20,8 +20,6 @@
 
 #include "definitions/all.hpp"
 
-using json = nlohmann::json;
-
 namespace views::v1::abscence::verdict {
 
 namespace {
@@ -88,7 +86,7 @@ struct HeadInfo {
 };
 
 struct VacationDocumentRequest {
-  std::string action_id, user_id, company_id;
+  std::string action_id, company_id;
 };
 
 void GenerateVacationDocument(
@@ -98,7 +96,6 @@ void GenerateVacationDocument(
     const std::string& pyservice_url) {
   auto action_id = request.action_id;
   auto request_type = "create";
-  auto user_id = request.user_id;
   const auto& company_id = request.company_id;
 
   auto trx =
@@ -115,6 +112,11 @@ void GenerateVacationDocument(
                  "WHERE id = $1",
              action_id)
           .AsSingleRow<ActionInfo>(userver::storages::postgres::kRowTag);
+
+  if (!action_info.document_id.has_value() ||
+      action_info.document_id.value().empty()) {
+    return;
+  }
 
   auto employee_info =
       trx.Execute(
@@ -168,52 +170,13 @@ void GenerateVacationDocument(
                       .perform();  // start performing the request
   response->raise_for_status();
 
-  auto action_name = ActionTypeToName(action_info.type);
-
-  auto document_name = "Запрос на " + action_name.value() + " " +
-                       employee_info.surname + " " + employee_info.name + " " +
-                       userver::utils::datetime::Timestring(
-                           action_info.start_date, "UTC", "%d.%m.%Y") +
-                       " - " +
-                       userver::utils::datetime::Timestring(
-                           action_info.end_date, "UTC", "%d.%m.%Y");
-
-  auto file_key_signed = file_key + "_signed.pdf";
   file_key += ".pdf";
 
   pg_cluster->Execute(userver::storages::postgres::ClusterHostType::kMaster,
-                      "INSERT INTO working_day_" + company_id +
-                          ".documents(id, name, "
-                          "sign_required, type, author_id) "
-                          "VALUES($1, $2, $3, $4, $5)",
-                      file_key_signed, document_name, 2, "employee_request", user_id);
-
-  pg_cluster->Execute(userver::storages::postgres::ClusterHostType::kMaster,
-                      "DELETE FROM working_day_" + company_id + ".employee_document "
-                      "WHERE employee_id = $1 AND document_id = $2",
-                      action_info.employee_id, file_key);
-
-  pg_cluster->Execute(userver::storages::postgres::ClusterHostType::kMaster,
                       "UPDATE working_day_" + company_id + ".documents "
-                      "SET parent_id = $2 "
+                      "SET sign_required = 2 "
                       "WHERE id = $1",
-                      file_key, file_key_signed);
-
-  pg_cluster->Execute(userver::storages::postgres::ClusterHostType::kMaster,
-                      "INSERT INTO working_day_" + company_id +
-                          ".employee_document "
-                          "(employee_id, document_id, signed) "
-                          "VALUES ($1, $2, $3), ($4, $2, $3) "
-                          "ON CONFLICT DO NOTHING",
-                      action_info.employee_id, file_key_signed, true,
-                      employee_info.head_id.value_or(action_info.employee_id));
-
-  pg_cluster->Execute(userver::storages::postgres::ClusterHostType::kMaster,
-                       "UPDATE working_day_" + company_id + ".documents "
-                          "SET sign_required = 2 "
-                          "WHERE id = $1",
-                       action_info.document_id);
-
+                      file_key);
 }
 
 class AbscenceVerdictHandler final
@@ -232,7 +195,7 @@ class AbscenceVerdictHandler final
         http_client_(
             component_context.FindComponent<userver::components::HttpClient>()
                 .GetHttpClient()),
-        pyservice_url(config["pyservice-url"].As<std::string>()) {}
+        pyservice_url_(config["pyservice-url"].As<std::string>()) {}
 
   std::string HandleRequestThrow(
       const userver::server::http::HttpRequest& request,
@@ -262,11 +225,8 @@ class AbscenceVerdictHandler final
                request_body.action_id)
             .AsSingleRow<ActionInfo>(userver::storages::postgres::kRowTag);
 
-    if (!action_info.document_id) {
-      request.GetHttpResponse().SetStatus(
-          userver::server::http::HttpStatus::kBadRequest);
-      return ErrorMessage{"Document doesn't exist"}.ToJsonString();
-    }
+    const bool has_action_document = action_info.document_id.has_value() &&
+                                     !action_info.document_id->empty();
 
     auto action_name = ActionTypeToName(action_info.type);
     std::string notification_text =
@@ -320,22 +280,21 @@ class AbscenceVerdictHandler final
 
     trx.Commit();
 
-    if (request_body.approve) {
+    if (request_body.approve && has_action_document) {
       auto tasks = tasks_.Lock();
       while (!tasks->empty() && tasks->front().IsFinished()) {
         tasks->pop();
       }
 
-      VacationDocumentRequest request{.action_id = request_body.action_id,
-                                      .user_id = user_id,
-                                      .company_id = company_id};
+      VacationDocumentRequest req{.action_id = request_body.action_id,
+                                  .company_id = company_id};
 
       tasks->push(userver::utils::AsyncBackground(
           "GenerateVacationDocument",
           userver::engine::current_task::GetTaskProcessor(),
-          [req = std::move(request), this]() mutable -> int {
+          [req = std::move(req), this]() mutable -> int {
             GenerateVacationDocument(std::move(req), this->pg_cluster_,
-                                     this->http_client_, this->pyservice_url);
+                                     this->http_client_, this->pyservice_url_);
             return 42;
           }));
     }
@@ -351,7 +310,7 @@ additionalProperties: false
 properties:
     pyservice-url:
         type: string
-        description: Url of python service
+        description: Url of python service (document/generate)
 )");
   }
 
@@ -361,7 +320,7 @@ properties:
   mutable userver::concurrent::Variable<
       std::queue<userver::engine::TaskWithResult<int>>>
       tasks_;
-  std::string pyservice_url;
+  std::string pyservice_url_;
 };
 
 }  // namespace

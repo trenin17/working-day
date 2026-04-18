@@ -47,9 +47,9 @@ def userver_config_pyservice(mockserver_info):
             'pyservice-url'
         ] = mockserver_info.url('document/generate')
 
-        components['handler-v1-documents-sign'][
+        components['handler-v1-documents-create-stamp-for-nep'][
             'pyservice-url'
-        ] = mockserver_info.url('document/sign')
+        ] = mockserver_info.url('document/create-stamp-for-nep')
 
         components['handler-v1-documents-send'][
             'pyservice-url'
@@ -57,7 +57,7 @@ def userver_config_pyservice(mockserver_info):
 
         components['handler-v1-documents-chain-update'][
             'pyservice-url'
-        ] = mockserver_info.url('document/sign')
+        ] = mockserver_info.url('document/create-stamp-for-nep')
         components['handler-v1-documents-chain-update'][
             'pyservice-nep-sign-url'
         ] = mockserver_info.url('document/nep-sign')
@@ -99,7 +99,7 @@ def mock_pyservice(mockserver) -> None:
             'response': 'OK'
         }
 
-    @mockserver.json_handler('/document/sign')
+    @mockserver.json_handler('/document/create-stamp-for-nep')
     def mock(request):
         return {
             'response': 'OK'

@@ -237,7 +237,7 @@ properties:
     auto file_key = userver::utils::generators::GenerateUuid();
     auto resp = http_client_.CreateRequest()
                     .post(
-                        "http://python-service:3000/"
+                        "http://localhost:3000/"
                         "attendance/export-to-excel?file_key=" +
                         file_key + "&from_date=" +
                         from_str + "&to_date=" +
