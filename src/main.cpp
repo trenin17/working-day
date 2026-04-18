@@ -34,7 +34,7 @@
 #include "views/v1/documents/list/view.hpp"
 #include "views/v1/documents/list_all/view.hpp"
 #include "views/v1/documents/send/view.hpp"
-#include "views/v1/documents/sign/view.hpp"
+#include "views/v1/documents/create_stamp_for_nep/view.hpp"
 #include "views/v1/documents/upload/view.hpp"
 #include "views/v1/documents/vacation/view.hpp"
 #include "views/v1/documents/generate_from_template/view.hpp"
@@ -138,7 +138,7 @@ int main(int argc, char* argv[]) {
   views::v1::documents::list::AppendDocumentsList(component_list);
   views::v1::documents::download::AppendDocumentsDownload(component_list);
   views::v1::documents::download_with_signatures::AppendDocumentsDownloadWithSignatures(component_list);
-  views::v1::documents::sign::AppendDocumentsSign(component_list);
+  views::v1::documents::create_stamp_for_nep::AppendDocumentsCreateStampForNep(component_list);
   views::v1::documents::list_all::AppendDocumentsListAll(component_list);
   views::v1::documents::get_signs::AppendDocumentsGetSigns(component_list);
   views::v1::documents::generate_from_template::AppendDocumentsGenerateFromTemplate(component_list);

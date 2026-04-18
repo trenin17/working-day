@@ -1,4 +1,4 @@
-#define V1_DOCUMENTS_SIGN
+#define V1_DOCUMENTS_CREATE_STAMP_FOR_NEP
 
 #include "view.hpp"
 
@@ -20,7 +20,7 @@
 
 #include <definitions/all.hpp>
 
-namespace views::v1::documents::sign {
+namespace views::v1::documents::create_stamp_for_nep{
 
 namespace {
 
@@ -219,8 +219,8 @@ properties:
 
 }  // namespace
 
-void AppendDocumentsSign(userver::components::ComponentList& component_list) {
+void AppendDocumentsCreateStampForNep(userver::components::ComponentList& component_list) {
   component_list.Append<DocumentsCreateStampForNepHandler>();
 }
 
-}  // namespace views::v1::documents::sign
+}  // namespace views::v1::documents::create_stamp_for_nep

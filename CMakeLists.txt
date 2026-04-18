@@ -62,7 +62,7 @@ add_library(${PROJECT_NAME}_objs OBJECT
 	src/views/v1/documents/download_with_signatures/view.cpp
 	src/views/v1/search/full/view.cpp
 	src/views/v1/search/suggest/view.cpp
-	src/views/v1/documents/sign/view.cpp
+	src/views/v1/documents/create_stamp_for_nep/view.cpp
 	src/views/v1/documents/list_all/view.cpp
 	src/views/v1/documents/get_signs/view.cpp
 	src/views/v1/superuser/company/add/view.cpp
