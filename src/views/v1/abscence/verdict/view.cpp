@@ -177,6 +177,9 @@ void GenerateVacationDocument(
                       "SET sign_required = 2 "
                       "WHERE id = $1",
                       file_key);
+  // НЭП и штамп здесь не вызываем: нет пароля сотрудника и в document_signatures
+  // ещё нет записей — подпись делает сотрудник через POST /v1/documents/nep-sign
+  // (или chain/update при цепочке), затем при необходимости штамп в том же потоке.
 }
 
 class AbscenceVerdictHandler final

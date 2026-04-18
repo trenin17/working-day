@@ -5,8 +5,8 @@
 
 #include <userver/components/component_list.hpp>
 
-namespace views::v1::documents::create_stamp_for_nep {
+namespace views::v1::documents::nep::create_stamp_for_nep {
 
 void AppendDocumentsCreateStampForNep(userver::components::ComponentList& component_list);
 
-}  // namespace views::v1::documents::create_stamp_for_nep
+}  // namespace views::v1::documents::nep::create_stamp_for_nep

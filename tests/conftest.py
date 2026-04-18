@@ -65,6 +65,9 @@ def userver_config_pyservice(mockserver_info):
         components['handler-v1-documents-nep-sign'][
             'pyservice-url'
         ] = mockserver_info.url('document/nep-sign')
+        components['handler-v1-documents-nep-sign'][
+            'pyservice-create-stamp-url'
+        ] = mockserver_info.url('document/create-stamp-for-nep')
 
         components['handler-v1-documents-nep-verify'][
             'pyservice-url'
