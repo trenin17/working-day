@@ -5,7 +5,11 @@
 #   NEP_BENCH_BASE_URL     — API (по умолчанию http://127.0.0.1:8080)
 #   NEP_BENCH_PGURI или PGHOST/...
 #   NEP_BENCH_ITERATIONS, NEP_BENCH_KEYS_ITERATIONS (для generate — см. ниже),
-#   NEP_BENCH_SIGNATURE_PASSWORD, NEP_BENCH_S3_BUCKET (опционально)
+#   NEP_BENCH_SIGNATURE_PASSWORD
+#   NEP_BENCH_S3_BUCKET    — бакет (по умолчанию working-day-documents); пустая строка = без S3,
+#                            только POST /v1/employee/keys/generate
+#   AWS_ENDPOINT_URL или NEP_BENCH_S3_ENDPOINT — для совместимого S3 (например Yandex:
+#                            https://storage.yandexcloud.net), иначе boto3 ходит в AWS
 #   NEP_BENCH_VERBOSE=1    — доп. проверочные SELECT в БД после вставки
 #
 set -euo pipefail
@@ -14,7 +18,12 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 BASE="${NEP_BENCH_BASE_URL:-http://127.0.0.1:8080}"
 ITER="${NEP_BENCH_ITERATIONS:-7}"
 PASS="${NEP_BENCH_SIGNATURE_PASSWORD:-123456}"
-S3_BUCKET="${NEP_BENCH_S3_BUCKET:-working-day-documents}"
+# Пустой NEP_BENCH_S3_BUCKET (явно задан) = пропуск загрузки в S3; если переменная не задана — дефолтный бакет.
+if [[ "${NEP_BENCH_S3_BUCKET+x}" ]]; then
+  S3_BUCKET="${NEP_BENCH_S3_BUCKET}"
+else
+  S3_BUCKET="working-day-documents"
+fi
 
 VPY="${ROOT}/python_service/.venv/bin/python"
 if [[ ! -x "$VPY" ]]; then

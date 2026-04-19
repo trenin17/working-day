@@ -180,7 +180,7 @@ class DocumentsVacationHandler final
     auto file_key = userver::utils::generators::GenerateUuid();
     auto response = http_client_.CreateRequest()
                         .post(
-                            "http://localhost:3000/"
+                            "http://python-service:3000/"
                             "document/generate?file_key=" +
                             file_key)
                         .data(link_request.ToJsonString())

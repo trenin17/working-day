@@ -96,7 +96,7 @@ additionalProperties: false
 properties:
     pyservice-url:
         type: string
-        description: Base URL of Python service (e.g. http://localhost:3000)
+        description: Base URL of Python service (e.g. http://python-service:3000)
     is_testing:
         type: boolean
         description: Use mock S3 presigned links in tests

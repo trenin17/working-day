@@ -205,7 +205,7 @@ components_manager:
                   - bearer
                 scopes:
                   - user
-            pyservice-url: 'http://localhost:3000/document/generate'
+            pyservice-url: 'http://python-service:3000/document/generate'
 
         handler-v1-notifications:
             path: /v1/notifications
@@ -343,7 +343,7 @@ components_manager:
                   - bearer
                 scopes:
                   - user
-            pyservice-url: 'http://localhost:3000/document/convert'
+            pyservice-url: 'http://python-service:3000/document/convert'
 
         handler-v1-documents-list:
             path: /v1/documents/list
@@ -375,7 +375,7 @@ components_manager:
                   - bearer
                 scopes:
                   - user
-            pyservice-url: 'http://localhost:3000/document/build-archive'
+            pyservice-url: 'http://python-service:3000/document/build-archive'
             is_testing: $is_testing
 
         handler-v1-search-full:
@@ -397,7 +397,7 @@ components_manager:
                   - bearer
                 scopes:
                   - user
-            pyservice-url: 'http://localhost:3000/document/create-stamp-for-nep'
+            pyservice-url: 'http://python-service:3000/document/create-stamp-for-nep'
 
         handler-v1-documents-upload-signature:
             path: /v1/documents/upload-signature
@@ -574,7 +574,7 @@ components_manager:
                   - bearer
                 scopes:
                   - user
-            pyservice-url: 'http://localhost:3000/document/convert'
+            pyservice-url: 'http://python-service:3000/document/convert'
 
         handler-v1-tracker-tasks-documents-remove:
             path: /v1/tracker/tasks/documents/remove
@@ -658,8 +658,8 @@ components_manager:
                   - bearer
                 scopes:
                   - user
-            pyservice-url: 'http://localhost:3000/document/create-stamp-for-nep'
-            pyservice-nep-sign-url: 'http://localhost:3000/document/nep-sign'
+            pyservice-url: 'http://python-service:3000/document/create-stamp-for-nep'
+            pyservice-nep-sign-url: 'http://python-service:3000/document/nep-sign'
 
         handler-v1-documents-remove:
             path: /v1/documents/remove
@@ -719,7 +719,7 @@ components_manager:
                   - bearer
                 scopes:
                   - user
-            pyservice-url: 'http://localhost:3000/attendance/export-to-excel'
+            pyservice-url: 'http://python-service:3000/attendance/export-to-excel'
 
         handler-v1-documents-generate-from-template:
             path: /v1/documents/generate_from_template
@@ -730,7 +730,7 @@ components_manager:
                   - bearer
                 scopes:
                   - user
-            pyservice-url: 'http://localhost:3000/document/generate-from-template'
+            pyservice-url: 'http://python-service:3000/document/generate-from-template'
 
         handler-v1-comments-add:
             path: /v1/comments/add
@@ -791,8 +791,8 @@ components_manager:
                   - bearer
                 scopes:
                   - user
-            pyservice-url: 'http://localhost:3000/document/nep-sign'
-            pyservice-create-stamp-url: 'http://localhost:3000/document/create-stamp-for-nep'
+            pyservice-url: 'http://python-service:3000/document/nep-sign'
+            pyservice-create-stamp-url: 'http://python-service:3000/document/create-stamp-for-nep'
 
         handler-v1-documents-nep-verify:
             path: /v1/documents/nep-verify
@@ -803,4 +803,4 @@ components_manager:
                   - bearer
                 scopes:
                   - user
-            pyservice-url: 'http://localhost:3000/document/nep-verify'
+            pyservice-url: 'http://python-service:3000/document/nep-verify'
