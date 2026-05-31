@@ -394,6 +394,15 @@ FOREIGN KEY (task_id)
 REFERENCES working_day_first.tracker_tasks(task_id)
 ON DELETE CASCADE;
 
+ALTER TABLE working_day_first.notifications
+ADD COLUMN IF NOT EXISTS document_id TEXT;
+
+ALTER TABLE working_day_first.notifications
+ADD CONSTRAINT notifications_document_id_fkey
+FOREIGN KEY (document_id)
+REFERENCES working_day_first.documents (id)
+ON DELETE CASCADE;
+
 CREATE INDEX idx_actions_user_id_end_date
 ON working_day_first.actions (user_id, end_date);
 

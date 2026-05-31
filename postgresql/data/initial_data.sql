@@ -1,3 +1,9 @@
+INSERT INTO wd_general.companies(id, name, head_template)
+VALUES ('first', 'First company', ''),
+       ('zero', 'Zero company', '')
+ON CONFLICT (id)
+DO NOTHING;
+
 INSERT INTO working_day_first.employees(id, name, surname)
 VALUES ('first_id', 'First', 'A'),
        ('second_id', 'Second', 'B'),

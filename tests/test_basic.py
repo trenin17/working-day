@@ -3680,6 +3680,254 @@ async def test_documents_list_signature_enrichment(service_client):
             assert "employee_name" in item
 
 
+async def set_employee_head(service_client, employee_id, head_id):
+    response = await service_client.post(
+        '/v1/employee/add-head',
+        params={'employee_id': employee_id},
+        headers={'Authorization': 'Bearer first_token'},
+        json={'head_id': head_id},
+    )
+    assert response.status == 200
+
+
+async def create_template_absence_request(service_client, absence_type='sick_leave'):
+    response = await service_client.post(
+        '/v1/documents/generate_from_template',
+        headers={'Authorization': 'Bearer first_token'},
+        json={
+            'type': absence_type,
+            'start_date': '2023-08-01T00:00:00',
+            'end_date': '2023-08-03T00:00:00',
+        },
+    )
+    return response.json()
+
+
+def find_notification(notifications, notification_type):
+    for item in notifications:
+        if item['type'] == notification_type:
+            return item
+    return None
+
+
+@pytest.mark.pgsql('db_1', files=['initial_data.sql'])
+async def test_generate_from_template_creates_action_document_and_chain(
+        service_client,
+):
+    await set_employee_head(service_client, 'first_id', 'second_id')
+
+    created = await create_template_absence_request(service_client)
+
+    document_id = created['document_id']
+    assert document_id.endswith('.pdf')
+    assert created['download_link'] == 's3 download test link'
+
+    head_notifications = await service_client.post(
+        '/v1/notifications',
+        headers={'Authorization': 'Bearer second_token'},
+    )
+    assert head_notifications.status == 200
+    head_items = json.loads(head_notifications.text)['notifications']
+    head_note = find_notification(head_items, 'vacation_request')
+    assert head_note is not None
+    assert head_note['document_id'] == document_id
+    assert head_note['action_id']
+    assert 'больничный' in head_note['text']
+
+    docs_response = await service_client.get(
+        '/v1/documents/list',
+        headers={'Authorization': 'Bearer second_token'},
+    )
+    assert docs_response.status == 200
+    docs = json.loads(docs_response.text)['documents']
+    doc = next(d for d in docs if d['id'] == document_id)
+    assert doc['type'] == 'employee_request'
+    assert doc['sign_required'] == 0
+    chain = [
+        {
+            'employee_id': item['employee_id'],
+            'requires_signature': item['requires_signature'],
+            'status': item['status'],
+        }
+        for item in doc['chain_metadata_new']
+    ]
+    assert chain == [
+        {'employee_id': 'first_id', 'requires_signature': 0, 'status': 1},
+        {'employee_id': 'second_id', 'requires_signature': 0, 'status': 0},
+    ]
+
+    actions_response = await service_client.post(
+        '/v1/actions',
+        headers={'Authorization': 'Bearer first_token'},
+        json={'from': '2023-08-01T00:00:00', 'to': '2023-08-05T00:00:00'},
+    )
+    assert actions_response.status == 200
+    actions = json.loads(actions_response.text)['actions']
+    action = next(a for a in actions if a['id'] == head_note['action_id'])
+    assert action['status'] == 'pending'
+    assert action['type'] == 'sick_leave'
+
+
+@pytest.mark.pgsql('db_1', files=['initial_data.sql'])
+async def test_generate_from_template_verdict_approve(service_client):
+    await set_employee_head(service_client, 'first_id', 'second_id')
+    created = await create_template_absence_request(service_client)
+    document_id = created['document_id']
+
+    head_notifications = await service_client.post(
+        '/v1/notifications',
+        headers={'Authorization': 'Bearer second_token'},
+    )
+    action_id = find_notification(
+        json.loads(head_notifications.text)['notifications'],
+        'vacation_request',
+    )['action_id']
+
+    verdict = await service_client.post(
+        '/v1/abscence/verdict',
+        headers={'Authorization': 'Bearer second_token'},
+        json={'action_id': action_id, 'approve': True},
+    )
+    assert verdict.status == 200
+
+    actions_response = await service_client.post(
+        '/v1/actions',
+        headers={'Authorization': 'Bearer first_token'},
+        json={'from': '2023-08-01T00:00:00', 'to': '2023-08-05T00:00:00'},
+    )
+    action = next(
+        a for a in json.loads(actions_response.text)['actions']
+        if a['id'] == action_id
+    )
+    assert action['status'] == 'approved'
+
+    employee_notifications = await service_client.post(
+        '/v1/notifications',
+        headers={'Authorization': 'Bearer first_token'},
+    )
+    employee_note = find_notification(
+        json.loads(employee_notifications.text)['notifications'],
+        'sick_leave_approved',
+    )
+    assert employee_note is not None
+    assert employee_note['document_id'] == document_id
+    assert employee_note['action_id'] == action_id
+
+    docs_response = await service_client.get(
+        '/v1/documents/list',
+        headers={'Authorization': 'Bearer second_token'},
+    )
+    doc = next(
+        d for d in json.loads(docs_response.text)['documents']
+        if d['id'] == document_id
+    )
+    assert doc['chain_metadata_new'][1]['status'] == 1
+
+
+@pytest.mark.pgsql('db_1', files=['initial_data.sql'])
+async def test_generate_from_template_verdict_reject(service_client):
+    await set_employee_head(service_client, 'first_id', 'second_id')
+    created = await create_template_absence_request(
+        service_client, absence_type='vacation')
+    document_id = created['document_id']
+
+    head_notifications = await service_client.post(
+        '/v1/notifications',
+        headers={'Authorization': 'Bearer second_token'},
+    )
+    action_id = find_notification(
+        json.loads(head_notifications.text)['notifications'],
+        'vacation_request',
+    )['action_id']
+
+    verdict = await service_client.post(
+        '/v1/abscence/verdict',
+        headers={'Authorization': 'Bearer second_token'},
+        json={'action_id': action_id, 'approve': False},
+    )
+    assert verdict.status == 200
+
+    actions_response = await service_client.post(
+        '/v1/actions',
+        headers={'Authorization': 'Bearer first_token'},
+        json={'from': '2023-08-01T00:00:00', 'to': '2023-08-05T00:00:00'},
+    )
+    assert all(
+        a['id'] != action_id
+        for a in json.loads(actions_response.text)['actions'])
+
+    employee_notifications = await service_client.post(
+        '/v1/notifications',
+        headers={'Authorization': 'Bearer first_token'},
+    )
+    employee_note = find_notification(
+        json.loads(employee_notifications.text)['notifications'],
+        'vacation_denied',
+    )
+    assert employee_note is not None
+    assert employee_note['document_id'] == document_id
+    assert employee_note.get('action_id') is None
+
+    docs_response = await service_client.get(
+        '/v1/documents/list',
+        headers={'Authorization': 'Bearer second_token'},
+    )
+    doc = next(
+        d for d in json.loads(docs_response.text)['documents']
+        if d['id'] == document_id
+    )
+    assert doc['chain_metadata_new'][1]['status'] == 2
+
+
+@pytest.mark.pgsql('db_1', files=['initial_data.sql'])
+async def test_generate_from_template_unknown_type(service_client):
+    await set_employee_head(service_client, 'first_id', 'second_id')
+
+    response = await service_client.post(
+        '/v1/documents/generate_from_template',
+        headers={'Authorization': 'Bearer first_token'},
+        json={
+            'type': 'unknown_type',
+            'start_date': '2023-08-01T00:00:00',
+            'end_date': '2023-08-03T00:00:00',
+        },
+    )
+    assert response.status == 400
+
+
+@pytest.mark.pgsql('db_1', files=['initial_data.sql'])
+async def test_generate_from_template_verdict_not_managers_turn(service_client):
+    await set_employee_head(service_client, 'first_id', 'second_id')
+    created = await create_template_absence_request(service_client)
+
+    head_notifications = await service_client.post(
+        '/v1/notifications',
+        headers={'Authorization': 'Bearer second_token'},
+    )
+    action_id = find_notification(
+        json.loads(head_notifications.text)['notifications'],
+        'vacation_request',
+    )['action_id']
+
+    verdict = await service_client.post(
+        '/v1/abscence/verdict',
+        headers={'Authorization': 'Bearer first_token'},
+        json={'action_id': action_id, 'approve': True},
+    )
+    assert verdict.status == 400
+    assert 'Not your turn' in verdict.text
+
+    docs_response = await service_client.get(
+        '/v1/documents/list',
+        headers={'Authorization': 'Bearer second_token'},
+    )
+    doc = next(
+        d for d in json.loads(docs_response.text)['documents']
+        if d['id'] == created['document_id']
+    )
+    assert doc['chain_metadata_new'][1]['status'] == 0
+
+
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])
 async def test_end(service_client):
     response = await service_client.post(

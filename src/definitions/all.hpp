@@ -155,6 +155,7 @@
 #define USE_PYSERVICE_DOCUMENT_GENERATE_REQUEST
 #define USE_ABSCENCE_VERDICT_REQUEST
 #define USE_ABSCENCE_VERDICT_RESPONSE
+#define USE_DOCUMENTS_CHAIN_UPDATE_RESPONSE
 #define USE_ERROR_MESSAGE
 #endif
 
@@ -162,6 +163,7 @@
 #define USE_PYSERVICE_DOCUMENT_GENERATE_REQUEST
 #define USE_GENERATE_FROM_TEMPLATE_REQUEST
 #define USE_GENERATE_FROM_TEMPLATE_RESPONSE
+#define USE_DOCUMENTS_CHAIN_METADATA_ITEM
 #define USE_ERROR_MESSAGE
 #endif
 
@@ -1283,12 +1285,18 @@ struct EmployeePermissions : public JsonCompatible {
 
 #ifdef USE_GENERATE_FROM_TEMPLATE_REQUEST
 struct GenerateFromTemplateRequest : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(start_date, userver::storages::postgres::TimePoint,
+                        "start_date");
+  REGISTER_STRUCT_FIELD(end_date, userver::storages::postgres::TimePoint,
+                        "end_date");
+  REGISTER_STRUCT_FIELD(type, std::string, "type");
   REGISTER_STRUCT_FIELD_OPTIONAL(params, std::vector<std::string>, "params");
 };
 #endif
 
 #ifdef USE_GENERATE_FROM_TEMPLATE_RESPONSE
 struct GenerateFromTemplateResponse : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(document_id, std::string, "document_id");
   REGISTER_STRUCT_FIELD(download_link, std::string, "download_link");
 };
 #endif

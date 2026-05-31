@@ -10,7 +10,6 @@
 #include <userver/components/component_context.hpp>
 #include <userver/engine/task/task.hpp>
 #include <userver/engine/task/task_with_result.hpp>
-#include <userver/logging/log.hpp>
 #include <userver/server/handlers/http_handler_base.hpp>
 #include <userver/storages/postgres/cluster.hpp>
 #include <userver/storages/postgres/component.hpp>
@@ -101,7 +100,7 @@ void GenerateVacationDocument(
   auto trx =
       pg_cluster->Begin("documents_vacation",
                         userver::storages::postgres::ClusterHostType::kMaster,
-                        {});  // TODO: change to slave read tx
+                        {});
 
   auto action_info =
       trx.Execute(
@@ -165,9 +164,9 @@ void GenerateVacationDocument(
   auto response = http_client.CreateRequest()
                       .post(pyservice_url + "?file_key=" + file_key)
                       .data(link_request.ToJsonString())
-                      .retry(2)  // retry once in case of error
+                      .retry(2)
                       .timeout(std::chrono::milliseconds{10000})
-                      .perform();  // start performing the request
+                      .perform();
   response->raise_for_status();
 
   file_key += ".pdf";
@@ -177,9 +176,6 @@ void GenerateVacationDocument(
                       "SET sign_required = 2 "
                       "WHERE id = $1",
                       file_key);
-  // НЭП и штамп здесь не вызываем: нет пароля сотрудника и в document_signatures
-  // ещё нет записей — подпись делает сотрудник через POST /v1/documents/nep-sign
-  // (или chain/update при цепочке), затем при необходимости штамп в том же потоке.
 }
 
 class AbscenceVerdictHandler final
@@ -203,7 +199,6 @@ class AbscenceVerdictHandler final
   std::string HandleRequestThrow(
       const userver::server::http::HttpRequest& request,
       userver::server::request::RequestContext& ctx) const override {
-    // CORS
     request.GetHttpResponse().SetHeader(
         static_cast<std::string>("Access-Control-Allow-Origin"), "*");
     request.GetHttpResponse().SetHeader(
@@ -231,6 +226,76 @@ class AbscenceVerdictHandler final
     const bool has_action_document = action_info.document_id.has_value() &&
                                      !action_info.document_id->empty();
 
+    std::vector<DocumentsChainMetadataItem> chain_metadata;
+    bool has_signature_chain = false;
+    if (has_action_document) {
+      auto doc_result = trx.Execute(
+          "SELECT chain_metadata_new "
+          "FROM working_day_" +
+              company_id +
+              ".documents "
+              "WHERE id = $1",
+          action_info.document_id.value());
+      if (!doc_result.IsEmpty()) {
+        chain_metadata = doc_result
+                             .AsSingleRow<DocumentsChainUpdateResponse>(
+                                 userver::storages::postgres::kRowTag)
+                             .chain_metadata;
+        has_signature_chain = !chain_metadata.empty();
+      }
+    }
+
+    if (has_signature_chain) {
+      auto rejected_it = std::find_if(
+          chain_metadata.begin(), chain_metadata.end(),
+          [](const auto& item) { return item.status == 2; });
+      if (rejected_it != chain_metadata.end()) {
+        trx.Rollback();
+        request.GetHttpResponse().SetStatus(
+            userver::server::http::HttpStatus::kConflict);
+        return ErrorMessage{"Document already rejected"}.ToJsonString();
+      }
+
+      auto current_it = std::find_if(
+          chain_metadata.begin(), chain_metadata.end(),
+          [](const auto& item) { return item.status == 0; });
+      if (current_it == chain_metadata.end()) {
+        trx.Rollback();
+        request.GetHttpResponse().SetStatus(
+            userver::server::http::HttpStatus::kConflict);
+        return ErrorMessage{"No pending approval steps"}.ToJsonString();
+      }
+
+      if (current_it->employee_id != user_id) {
+        trx.Rollback();
+        request.GetHttpResponse().SetStatus(
+            userver::server::http::HttpStatus::kBadRequest);
+        return ErrorMessage{"Not your turn to approve"}.ToJsonString();
+      }
+
+      if (request_body.approve) {
+        current_it->status = 1;
+        trx.Execute(
+            "UPDATE working_day_" + company_id + ".employee_document "
+            "SET signed = true "
+            "WHERE employee_id = $1 AND document_id = $2",
+            user_id, action_info.document_id.value());
+      } else {
+        current_it->status = 2;
+      }
+
+      size_t element_index = current_it - chain_metadata.begin();
+      trx.Execute(
+          "UPDATE working_day_" + company_id + ".documents "
+          "SET chain_metadata_new[" +
+              std::to_string(element_index + 1) + "] = $2 "
+          "WHERE id = $1",
+          action_info.document_id.value(),
+          DocumentsChainMetadataItemPg{current_it->employee_id,
+                                       current_it->requires_signature,
+                                       current_it->status});
+    }
+
     auto action_name = ActionTypeToName(action_info.type);
     std::string notification_text =
         "Ваш запрос на " + action_name.value() + " с " +
@@ -247,43 +312,47 @@ class AbscenceVerdictHandler final
       notification_text += " был отклонен.";
     }
 
-
     if (request_body.notification_id.has_value()) {
-      auto result = trx.Execute("DELETE FROM working_day_" + company_id +
-                                    ".notifications "
-                                    "WHERE id = $1 ",
-                                request_body.notification_id.value());
+      trx.Execute("DELETE FROM working_day_" + company_id +
+                      ".notifications "
+                      "WHERE id = $1 ",
+                  request_body.notification_id.value());
     }
 
     auto notification_id = userver::utils::generators::GenerateUuid();
-    std::optional<std::string> maybe_action_id = request_body.approve ? std::optional(request_body.action_id) : std::nullopt;
-    auto result =
-        trx.Execute("INSERT INTO working_day_" + company_id +
-                        ".notifications(id, type, text, user_id, "
-                        "sender_id, action_id) "
-                        "VALUES($1, $2, $3, $4, $5, $6) "
-                        "ON CONFLICT (id) "
-                        "DO NOTHING",
-                    notification_id, action_info.type + "_" + action_status,
-                    notification_text, action_info.employee_id, user_id,
-                    maybe_action_id);
+    std::optional<std::string> maybe_action_id =
+        request_body.approve
+            ? std::optional(request_body.action_id)
+            : std::nullopt;
+    trx.Execute("INSERT INTO working_day_" + company_id +
+                    ".notifications(id, type, text, user_id, "
+                    "sender_id, action_id, document_id) "
+                    "VALUES($1, $2, $3, $4, $5, $6, $7) "
+                    "ON CONFLICT (id) "
+                    "DO NOTHING",
+                notification_id, action_info.type + "_" + action_status,
+                notification_text, action_info.employee_id, user_id,
+                maybe_action_id,
+                has_action_document
+                    ? std::optional(action_info.document_id.value())
+                    : std::nullopt);
 
     if (request_body.approve) {
-      auto result = trx.Execute("UPDATE working_day_" + company_id +
-                                    ".actions "
-                                    "SET status = $2 "
-                                    "WHERE id = $1 ",
-                                request_body.action_id, action_status);
+      trx.Execute("UPDATE working_day_" + company_id +
+                      ".actions "
+                      "SET status = $2 "
+                      "WHERE id = $1 ",
+                  request_body.action_id, action_status);
     } else {
-      auto result = trx.Execute("DELETE FROM working_day_" + company_id +
-                                    ".actions "
-                                    "WHERE id = $1 ",
-                                request_body.action_id);
+      trx.Execute("DELETE FROM working_day_" + company_id +
+                      ".actions "
+                      "WHERE id = $1 ",
+                  request_body.action_id);
     }
 
     trx.Commit();
 
-    if (request_body.approve && has_action_document) {
+    if (request_body.approve && has_action_document && !has_signature_chain) {
       auto tasks = tasks_.Lock();
       while (!tasks->empty() && tasks->front().IsFinished()) {
         tasks->pop();

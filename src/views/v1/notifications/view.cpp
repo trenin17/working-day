@@ -75,6 +75,9 @@ class Notification {
     if (task_id) {
       j["task_id"] = task_id.value();
     }
+    if (document_id) {
+      j["document_id"] = document_id.value();
+    }
     j["created"] = userver::utils::datetime::Timestring(created, "UTC",
                                                         "%Y-%m-%dT%H:%M:%E6S");
 
@@ -87,6 +90,7 @@ class Notification {
   std::optional<std::string> user_photo_link;
   std::optional<std::string> action_id;
   std::optional<std::string> task_id;
+  std::optional<std::string> document_id;
   userver::storages::postgres::TimePoint created;
 };
 
@@ -152,6 +156,7 @@ class NotificationsHandler final
             e_user.photo_link,
             n.action_id,
             n.task_id,
+            n.document_id,
             n.created
         FROM working_day_)" + company_id + R"(.notifications n
         LEFT JOIN working_day_)" + company_id + R"(.employees e_sender

@@ -120,11 +120,9 @@ def mock_pyservice(mockserver) -> None:
             'response': 'OK'
         }
 
-    @mockserver.json_handler('/documents/generate-from-template')
-    def mock(request):
-        return {
-            'response': 'OK'
-        }
+    @mockserver.handler('/documents/generate-from-template')
+    def mock_generate_from_template(request):
+        return mockserver.make_response('OK', status=200, content_type='text/plain')
 
     @mockserver.json_handler('/tracker/tasks/documents/convert')
     def mock(request):

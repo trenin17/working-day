@@ -382,16 +382,14 @@ paths:
 
     /v1/documents/generate_from_template:
         post:
-            description: Generate document from template with parameters
+            description: |
+                Create an absence action, generate a document from template, attach a
+                two-step approval chain (employee already acknowledged, manager pending),
+                and notify the manager.
             parameters:
               - in: header
                 name: Authorization
                 description: Token of session user
-                schema:
-                    type: string
-              - in: query
-                name: action_id
-                description: Id of the action
                 schema:
                     type: string
             requestBody:
@@ -2048,6 +2046,11 @@ components:
                     type: string
                 action_id:
                     type: string
+                task_id:
+                    type: string
+                document_id:
+                    type: string
+                    description: Linked document for navigation to My Documents
                 created:
                     type: string
 
@@ -3201,7 +3204,17 @@ components:
         GenerateFromTemplateRequest:
             type: object
             additionalProperties: false
+            required:
+              - start_date
+              - end_date
+              - type
             properties:
+                start_date:
+                    $ref: '#/components/schemas/Timestamp'
+                end_date:
+                    $ref: '#/components/schemas/Timestamp'
+                type:
+                    $ref: '#/components/schemas/AbscenceType'
                 params:
                     type: array
                     description: Ordered list of parameters for placeholders
@@ -3212,8 +3225,11 @@ components:
             type: object
             additionalProperties: false
             required:
+              - document_id
               - download_link
             properties:
+                document_id:
+                    type: string
                 download_link:
                     type: string
 
