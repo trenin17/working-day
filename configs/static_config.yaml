@@ -731,6 +731,7 @@ components_manager:
                 scopes:
                   - user
             pyservice-url: 'http://python-service:3000/document/generate-from-template'
+            is_testing: $is_testing
 
         handler-v1-comments-add:
             path: /v1/comments/add
