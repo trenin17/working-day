@@ -58,11 +58,11 @@ class DocumentsSendHandler final
         PyserviceDocumentSendRequest py_request;
         py_request.file_key = request_body.document.id;
 
-        request_body.document.id = 
+        request_body.document.id =
             request_body.document.id.substr(0, request_body.document.id.size() - std::string(".docx").size()) + ".pdf";
         py_request.converted_file_key = request_body.document.id;
 
-    
+
         auto response = http_client_.CreateRequest()
                             .post(pyservice_url_)
                             .data(py_request.ToJsonString())
@@ -75,12 +75,13 @@ class DocumentsSendHandler final
     pg_cluster_->Execute(userver::storages::postgres::ClusterHostType::kMaster,
                          "INSERT INTO working_day_" + company_id +
                              ".documents(id, name, "
-                             "sign_required, description, parent_id) "
-                             "VALUES($1, $2, $3, $4, $5) ON CONFLICT (id) DO NOTHING",
+                             "sign_required, description, parent_id, author_id) "
+                             "VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT (id) DO NOTHING",
                          request_body.document.id, request_body.document.name,
                          request_body.document.sign_required,
                          request_body.document.description,
-                         request_body.document.parent_id.value_or(""));
+                         request_body.document.parent_id.value_or(""),
+                         user_id);
 
     auto notification_text = "Вам отправлен новый документ \"" +
                              request_body.document.name +
@@ -118,6 +119,7 @@ class DocumentsSendHandler final
                              "VALUES " +
                              filter,
                          parameters);
+
 
     pg_cluster_->Execute(userver::storages::postgres::ClusterHostType::kMaster,
                          "INSERT INTO working_day_" + company_id +

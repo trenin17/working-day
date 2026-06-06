@@ -15,6 +15,11 @@ std::string GenerateDocumentPresignedLink(const std::string& key,
                                           const LinkType type,
                                           bool is_testing = false);
 
+/// Presigned GET with Content-Disposition so the browser saves `download_filename`.
+std::string GenerateDocumentPresignedDownloadWithFilename(const std::string& key,
+                                                          const std::string& download_filename,
+                                                          bool is_testing = false);
+
 std::string GenerateTrackerTasksMediaPresignedLink(const std::string& key,
                                                    const LinkType type,
                                                    bool is_testing = false);

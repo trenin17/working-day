@@ -382,16 +382,14 @@ paths:
 
     /v1/documents/generate_from_template:
         post:
-            description: Generate document from template with parameters
+            description: |
+                Create an absence action, generate a document from template, attach a
+                two-step approval chain (employee already acknowledged, manager pending),
+                and notify the manager.
             parameters:
               - in: header
                 name: Authorization
                 description: Token of session user
-                schema:
-                    type: string
-              - in: query
-                name: action_id
-                description: Id of the action
                 schema:
                     type: string
             requestBody:
@@ -621,6 +619,29 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/UploadDocumentResponse'
 
+    /v1/documents/upload-signature:
+        post:
+            description: Sign document with KEP (Qualified Electronic Signature)
+            parameters:
+              - in: header
+                name: Authorization
+                description: Token of session user
+                schema:
+                    type: string
+            requestBody:
+                required: false
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/DocumentsUploadSignatureRequest'
+            responses:
+                '200':
+                    description: Document was signed successfully with KEP
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/DocumentsUploadSignatureResponse'
+
     /v1/documents/send:
         post:
             description: Send document
@@ -681,6 +702,29 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/DownloadDocumentResponse'
 
+    /v1/documents/download-with-signatures:
+        get:
+            description: Build archive (document + all signatures), upload to S3, return single download link
+            parameters:
+              - in: header
+                name: Authorization
+                schema:
+                    type: string
+              - in: query
+                name: id
+                description: Document id
+                schema:
+                    type: string
+            responses:
+                '200':
+                    description: Presigned URL to download the zip archive
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/DownloadDocumentResponse'
+                '404':
+                    description: Document not found or access denied
+
     /v1/documents/list-all:
         get:
             description: Get list of all existing documents
@@ -720,9 +764,11 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/DocumentsGetSignsResponse'
 
-    /v1/documents/sign:
+    /v1/documents/create-stamp-for-nep:
         post:
-            description: Sign the document
+            description: >
+              Add a visual PDF stamp for NEP (enhanced unqualified electronic signature)
+              based on existing NEP rows in document_signatures. Query parameter document_id only.
             parameters:
               - in: header
                 name: Authorization
@@ -736,12 +782,134 @@ paths:
                     type: string
             responses:
                 '200':
-                    description: Document was signed
+                    description: Stamped PDF version was created
                     content:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/AbscenceVerdictResponse'
 
+    /v1/employee/keys/generate:
+        post:
+            description: Generate NEP (Enhanced Unqualified Electronic Signature) keys for employee
+            parameters:
+              - in: header
+                name: Authorization
+                description: Token of session user
+                schema:
+                    type: string
+              - in: query
+                name: signature_password
+                required: true
+                description: Password for encrypting NEP private key (exactly 6 digits)
+                schema:
+                    type: string
+                    pattern: '^\d{6}$'
+            responses:
+                '200':
+                    description: Keys were generated successfully
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/EmployeeKeysGenerateResponse'
+                '400':
+                    description: Keys already exist or bad request
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+
+    /v1/documents/nep-sign:
+        post:
+            description: Sign document with NEP (Enhanced Unqualified Electronic Signature)
+            parameters:
+              - in: header
+                name: Authorization
+                description: Token of session user
+                schema:
+                    type: string
+              - in: query
+                name: document_id
+                description: Id of the document to sign
+                schema:
+                    type: string
+              - in: query
+                name: signature_password
+                required: true
+                description: Password for NEP private key (exactly 6 digits, same as set at key generation)
+                schema:
+                    type: string
+                    pattern: '^\d{6}$'
+            requestBody:
+                required: false
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/DocumentsNepSignRequest'
+            responses:
+                '200':
+                    description: Document was signed successfully with NEP
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/DocumentsNepSignResponse'
+                '400':
+                    description: Keys not found or bad request
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+                '401':
+                    description: Wrong signature_password
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+                '404':
+                    description: Document not found
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+                '502':
+                    description: Storage (S3) or NEP signing service error (e.g. download/upload failed)
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+
+    /v1/documents/nep-verify:
+        get:
+            description: Verify NEP signature of document
+            parameters:
+              - in: header
+                name: Authorization
+                description: Token of session user
+                schema:
+                    type: string
+              - in: query
+                name: signature_id
+                description: Id of the signature to verify
+                schema:
+                    type: string
+            responses:
+                '200':
+                    description: Signature verification result
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/DocumentsNepVerifyResponse'
+                '404':
+                    description: Signature not found
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+                '502':
+                    description: Storage (S3) or NEP verify service error (e.g. failed to load document or signature)
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
 
     /v1/superuser/company/add:
         post:
@@ -1739,6 +1907,7 @@ components:
               - id
               - name
               - surname
+              - has_nep
             properties:
                 id:
                     type: string
@@ -1774,6 +1943,9 @@ components:
                         $ref: '#/components/schemas/InventoryItem'
                 job_position:
                     type: string
+                has_nep:
+                    description: true if employee has NEP (unqualified e-signature) keys set in employee_keys
+                    type: boolean
 
         ProfileEditRequest:
             type: object
@@ -1874,6 +2046,11 @@ components:
                     type: string
                 action_id:
                     type: string
+                task_id:
+                    type: string
+                document_id:
+                    type: string
+                    description: Linked document for navigation to My Documents
                 created:
                     type: string
 
@@ -2277,6 +2454,7 @@ components:
                     type: string
                     description: Id to access the document
 
+
         DocumentSendRequest:
             type: object
             additionalProperties: false
@@ -2332,6 +2510,7 @@ components:
             required:
               - id
               - name
+              - author_id
             properties:
                 id:
                     type: string
@@ -2343,12 +2522,23 @@ components:
                       - employee_request
                       - admin_request
                 sign_required:
-                    type: boolean
+                    type: int
+                    enum: [0, 1, 2]
+                    description:
+                     0 - does not require a signature
+                     1 - requires a qualified signature
+                     2 - requires an unqualified signature
                 description:
                     type: string
                 signed:
                     description: This field only valid if requested by assignee of the document
                     type: boolean
+                author_id:
+                    description: ID of the user who sent/created this document
+                    type: string
+                author_photo_url:
+                    description: URL of the author's photo
+                    type: string
                 parent_id:
                     description: Parent document Id
                     type: string
@@ -2431,6 +2621,7 @@ components:
                         - .pdf
                         - .xlsx
                     default: ".pdf"
+
 
         InventoryItem:
             type: object
@@ -2856,7 +3047,7 @@ components:
                     enum: [0, 1, 2]
                     description:
                      0 - does not require a signature
-                     1 - requires a regular signature
+                     1 - requires a qualified signature
                      2 - requires an unqualified signature
                 status:
                     type: int
@@ -2865,6 +3056,24 @@ components:
                      0 - not_reached
                      1 - approved
                      2 - rejected
+                employee_name:
+                    type: string
+                    description: Full name of the employee (surname + name + patronymic)
+                signature_id:
+                    type: string
+                    description: UUID of the NEP signature from document_signatures table
+                signature_path:
+                    type: string
+                    description: S3 key of the .p7s signature file, pass to /v1/documents/download?id=<path>
+                signed_at:
+                    type: string
+                    description: Timestamp when the NEP signature was created
+                signature_type:
+                    type: string
+                    enum: [nep, kep]
+                    description: Type of signature
+                      - nep - NEP signature
+                      - kep - KEP signature
 
         DocumentsChainUpdateRequest:
             type: object
@@ -2876,10 +3085,22 @@ components:
                     type: int
                     enum: [0, 1, 2, 3]
                     description:
-                     0 - sign with regular signature and approve
+                     0 - sign with qualified signature and approve
                      1 - sign with unqualified signature and approve
                      2 - approve
                      3 - reject
+                signature_password:
+                    type: string
+                    description: |
+                      Password for NEPsignature (6 digits).
+                      Required when approving with unqualified signature (approval_status == 1)
+                      and the step requires a unqualified signature(requires_signature == 2).
+                signature_id:
+                    type: string
+                    description: |
+                      ID of KEP signature from document_signatures.
+                      Required when approving with KEP signature (approval_status == 0)
+                      and the step requires a qualified signature(requires_signature == 1).
 
         DocumentsChainUpdateResponse:
             type: object
@@ -2963,6 +3184,7 @@ components:
                     type: string
                     enum:
                       - can_remove_documents
+                      - can_upload_kep_signature
                       # etc.
                 permission_value:
                     type: int
@@ -2982,7 +3204,21 @@ components:
         GenerateFromTemplateRequest:
             type: object
             additionalProperties: false
+            required:
+              - start_date
+              - end_date
+              - type
+              - signature_password
             properties:
+                start_date:
+                    $ref: '#/components/schemas/Timestamp'
+                end_date:
+                    $ref: '#/components/schemas/Timestamp'
+                type:
+                    $ref: '#/components/schemas/AbscenceType'
+                signature_password:
+                    type: string
+                    description: NEP signature password of the requesting employee
                 params:
                     type: array
                     description: Ordered list of parameters for placeholders
@@ -2993,8 +3229,11 @@ components:
             type: object
             additionalProperties: false
             required:
+              - document_id
               - download_link
             properties:
+                document_id:
+                    type: string
                 download_link:
                     type: string
 
@@ -3054,3 +3293,117 @@ components:
                     $ref: '#/components/schemas/Timestamp'
                 last_updated_ts:
                     $ref: '#/components/schemas/Timestamp'
+
+        EmployeeKeysGenerateResponse:
+            type: object
+            additionalProperties: false
+            required:
+              - public_key
+              - public_key_hash
+            properties:
+                public_key:
+                    type: string
+                    description: Public RSA-2048 key in PEM format
+                public_key_hash:
+                    type: string
+                    description: SHA-256 hash of the public key
+
+        DocumentsNepSignRequest:
+            type: object
+            additionalProperties: false
+            properties:
+                reason:
+                    type: string
+                    description: Optional reason for signing
+                location:
+                    type: string
+                    description: Optional location of signing
+
+        DocumentsNepSignResponse:
+            type: object
+            additionalProperties: false
+            required:
+              - signature_id
+              - signature_path
+              - timestamp
+              - public_key_hash
+            properties:
+                signature_id:
+                    type: string
+                    description: ID of the created signature
+                signature_path:
+                    type: string
+                    description: Path to the detached signature file (.p7s)
+                timestamp:
+                    type: string
+                    description: Timestamp of signing
+                public_key_hash:
+                    type: string
+                    description: Hash of the public key used for signing
+
+        DocumentsUploadSignatureRequest:
+            type: object
+            additionalProperties: false
+            required:
+              - document_id
+              - extension
+              - signature_type
+            properties:
+                document_id:
+                    type: string
+                    description: Id of the document to sign
+                extension:
+                    type: string
+                    description: Extension of the document to sign
+                    enum: [.sig, .p7s]
+                    default: .sig
+                signature_type:
+                    type: string
+                    enum: [nep, kep]
+                    description: Type of signature
+                      - nep - NEP signature
+                      - kep - KEP signature
+
+        DocumentsUploadSignatureResponse:
+            type: object
+            additionalProperties: false
+            required:
+              - signature_id
+              - url
+            properties:
+                signature_id:
+                    type: string
+                url:
+                    type: string
+
+        DocumentsNepVerifyResponse:
+            type: object
+            additionalProperties: false
+            required:
+              - valid
+              - integrity_ok
+              - signature_ok
+              - message
+              - verified_at
+            properties:
+                valid:
+                    type: boolean
+                    description: Overall validity of the signature
+                integrity_ok:
+                    type: boolean
+                    description: Whether document integrity is intact
+                signature_ok:
+                    type: boolean
+                    description: Whether cryptographic signature is valid
+                message:
+                    type: string
+                    description: Human-readable verification result message
+                verified_at:
+                    type: string
+                    description: Timestamp of verification
+                signer_name:
+                    type: string
+                    description: Full name of the person who signed
+                signature_timestamp:
+                    type: string
+                    description: Timestamp when document was signed

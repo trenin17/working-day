@@ -54,6 +54,7 @@ class TrackerTasksDocumentsSendHandler final
     }
 
     const auto& company_id = ctx.GetData<std::string>("company_id");
+    const auto& user_id = ctx.GetData<std::string>("user_id");
 
     TrackerTasksDocumentItem request_body;
     request_body.ParseRegisteredFields(request.RequestBody());
@@ -92,12 +93,13 @@ class TrackerTasksDocumentsSendHandler final
     // Insert document record with visibility_status = 1 (archived) if it doesn't exist
     pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kMaster,
-        "INSERT INTO working_day_" + company_id + ".documents(id, name, description, sign_required, visibility_status, created_ts) "
-        "VALUES($1, $2, $3, $4, 1, NOW()) ON CONFLICT (id) DO NOTHING",
+        "INSERT INTO working_day_" + company_id + ".documents(id, name, description, sign_required, visibility_status, created_ts, author_id) "
+        "VALUES($1, $2, $3, $4, 1, NOW(), $5) ON CONFLICT (id) DO NOTHING",
         request_body.document_id,
         request_body.name,
         request_body.description.value_or(""),
-        false);
+        0,
+        user_id);
 
     // Create link between task and document
     auto trx = pg_cluster_->Begin(

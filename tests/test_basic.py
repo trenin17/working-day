@@ -36,7 +36,7 @@ async def test_db_initial_data(service_client):
     )
 
     assert response.status == 200
-    assert response.text == ('{"id":"first_id","inventory":[],"name":"First",'
+    assert response.text == ('{"has_nep":true,"id":"first_id","inventory":[],"name":"First",'
                              '"phones":[],"surname":"A"}')
 
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])
@@ -80,9 +80,9 @@ async def test_employees(service_client):
     assert response.status == 200
     assert response.text == ('{"employees":['
                              '{"id":"first_id","name":"First","surname":"A"},'
+                             '{"id":"second_id","name":"Second","surname":"B"},'
                              '{"id":"third_id","name":"Third","surname":"C"},'
-                             '{"id":"stranger_id","name":"Stranger","surname":"S"},'
-                             '{"id":"second_id","name":"Second","surname":"B"}]}')
+                             '{"id":"stranger_id","name":"Stranger","surname":"S"}]}')
 
 
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])
@@ -130,7 +130,7 @@ async def test_add(service_client):
     )
 
     assert response.status == 200
-    assert response.text == ('{"id":"' + new_id + '","inventory":[],"job_position":"worker","name":"Third",'
+    assert response.text == ('{"has_nep":false,"id":"' + new_id + '","inventory":[],"job_position":"worker","name":"Third",'
                              '"password":"' + new_password + '",'
                              '"phones":[],"surname":"C"}')
 
@@ -908,7 +908,7 @@ async def test_actions(service_client):
 
 
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])
-async def test_documents_send(service_client):
+async def test_documents_send(service_client, pgsql):
     response = await service_client.post(
         '/v1/employee/add',
         headers={'Authorization': 'Bearer first_token'},
@@ -930,9 +930,20 @@ async def test_documents_send(service_client):
         headers={'Authorization': 'Bearer ' + token},
         json={'employee_ids': ['first_id', 'second_id'], 'document': {
             'id': 'id1', 'name': 'doc1',
-            'description': 'text1', 'sign_required': True}}
+            'description': 'text1', 'sign_required': 1}}
     )
     assert response.status == 200
+
+    # Автор (tc) тоже видит отправленный документ в списке с author_id = tc
+    response = await service_client.get(
+        '/v1/documents/list',
+        headers={'Authorization': 'Bearer ' + token},
+    )
+    assert response.status == 200
+    author_docs = json.loads(response.text)['documents']
+    doc_id1_for_author = next((d for d in author_docs if d['id'] == 'id1'), None)
+    assert doc_id1_for_author is not None, 'Автор должен видеть отправленный документ в списке'
+    assert doc_id1_for_author['author_id'] == 'tc', 'У отправленного документа у автора author_id должен быть tc'
 
     response = await service_client.get(
         '/v1/documents/list',
@@ -948,28 +959,29 @@ async def test_documents_send(service_client):
              "id": "id1",
              "name": "doc1",
              "visibility_status": 0,
-             "sign_required": True,
+             "sign_required": 1,
              "signed": False,
+             "author_id": "tc",
              "type": "admin_request"},
             {"chain_metadata_new":[
-                {"employee_id":"first_id","requires_signature":1,"status":0},
-                {"employee_id":"second_id","requires_signature":0,"status":0}],
+                {"employee_id":"first_id","employee_name":"A First","requires_signature":1,"signature_id":"sig_1","signature_path":"doc_with_chain_first_id_kep.p7s","signature_type":"kep","signed_at":response_data["documents"][1]["chain_metadata_new"][0].get("signed_at"),"status":0},
+                {"employee_id":"second_id","employee_name":"B Second","requires_signature":0,"status":0}],
              "created_ts": response_data["documents"][1]["created_ts"],
              "description": "Test document with approval chain",
              "id": "doc_with_chain",
              "name": "Document with chain",
-             "sign_required": True,
+             "sign_required": 1,
              "signed": False,
              "visibility_status": 0,
              "type": "admin_request"},
             {"chain_metadata_new":[
-                {"employee_id":"first_id","requires_signature":1,"status":2},
-                {"employee_id":"second_id","requires_signature":0,"status":0}],
+                {"employee_id":"first_id","employee_name":"A First","requires_signature":1,"status":2},
+                {"employee_id":"second_id","employee_name":"B Second","requires_signature":0,"status":0}],
              "created_ts": response_data["documents"][2]["created_ts"],
              "description": "",
              "id": "rejected_doc",
              "name": "Rejected document",
-             "sign_required": True,
+             "sign_required": 1,
              "signed": False,
              "visibility_status": 0,
              "type": "admin_request"}
@@ -1003,10 +1015,29 @@ async def test_documents_send(service_client):
     )
     assert response.status == 200
     response_data = json.loads(response.text)
+    # Update signed_at from the actual response for second user
+    expected_response["documents"][1]["chain_metadata_new"][0]["signed_at"] = response_data["documents"][1]["chain_metadata_new"][0].get("signed_at")
     assert response_data == expected_response
 
+    # Штамп НЭП строится по строкам document_signatures (тип nep), а не по текущему пользователю
+    cursor = pgsql['db_1'].cursor()
+    cursor.execute(
+        """
+        INSERT INTO working_day_first.document_signatures(
+            id, document_id, employee_id, signature_path, signature_metadata, signature_type
+        ) VALUES (
+            'sig_test_id1_nep',
+            'id1',
+            'first_id',
+            'id1_first_nep_mock.p7s',
+            '{"timestamp": "2025-06-01T12:00:00Z", "user_id": "first_id"}'::jsonb,
+            'nep'
+        )
+        """
+    )
+
     response = await service_client.post(
-        '/v1/documents/sign',
+        '/v1/documents/create-stamp-for-nep',
         headers={'Authorization': 'Bearer first_token'},
         params={'document_id': 'id1'}
     )
@@ -1020,25 +1051,29 @@ async def test_documents_send(service_client):
     response_data = json.loads(response.text)
     expected_response = {
         "documents": [
-            {"chain_metadata_new":[
-                {"employee_id": "first_id","requires_signature": 1,"status": 0},
-                {"employee_id": "second_id","requires_signature": 0,"status": 0}],
+            {"author_id": "tc", "chain_metadata_new": [],
              "created_ts": response_data["documents"][0]["created_ts"],
-             "description": "Test document with approval chain",
-             "id": "doc_with_chain",
-             "name": "Document with chain",
-             "sign_required": True,
-             "type": "admin_request",
+             "description": "text1", "id": "id1", "name": "doc1", "sign_required": 1,
+             "type": "admin_request", "visibility_status": 0},
+            {"chain_metadata_new": [
+                {"employee_id": "first_id", "requires_signature": 1, "status": 0},
+                {"employee_id": "second_id", "requires_signature": 0, "status": 0}],
+             "created_ts": response_data["documents"][1]["created_ts"],
+             "description": "Test document with approval chain", "id": "doc_with_chain",
+             "name": "Document with chain", "sign_required": 1, "type": "admin_request",
              "visibility_status": 0},
-            {"chain_metadata_new":[
+            {"chain_metadata_new": [],
+             "created_ts": response_data["documents"][2]["created_ts"],
+             "description": "Document without approval chain", "id": "empty_chain_doc",
+             "name": "Empty chain doc", "sign_required": 0, "type": "admin_request",
+             "visibility_status": 0},
+            {"chain_metadata_new": [
                 {"employee_id": "first_id", "requires_signature": 1, "status": 2},
-                {"employee_id": "second_id","requires_signature": 0,"status": 0}],
-             "created_ts": response_data["documents"][1]["created_ts"], "description": "", "id": "rejected_doc", "name": "Rejected document", "sign_required": True, "type": "admin_request", "visibility_status": 0},
-            {"chain_metadata_new":[],
-             "created_ts": response_data["documents"][2]["created_ts"], "description": "Document without approval chain", "id": "empty_chain_doc", "name": "Empty chain doc", "sign_required": False, "type": "admin_request", "visibility_status": 0},
-            {"chain_metadata_new":[],
-             "created_ts": response_data["documents"][3]["created_ts"], "description": "text1", "id": "id1", "name": "doc1", "sign_required": True, "type": "admin_request", "visibility_status": 0}
-       ]
+                {"employee_id": "second_id", "requires_signature": 0, "status": 0}],
+             "created_ts": response_data["documents"][3]["created_ts"],
+             "description": "", "id": "rejected_doc", "name": "Rejected document",
+             "sign_required": 1, "type": "admin_request", "visibility_status": 0},
+        ]
     }
     assert response_data == expected_response
 
@@ -1059,10 +1094,10 @@ async def test_documents_send(service_client):
         },
         "signed": False
     }
-    assert response_json["signs"][0] == expected_sign
-    assert response_json["signs"][1]["document_id"].endswith(".pdf")
+    assert response_json["signs"][1] == expected_sign
+    assert response_json["signs"][0]["document_id"].endswith(".pdf")
     expected_sign = {
-        "document_id": response_json["signs"][1]["document_id"],
+        "document_id": response_json["signs"][0]["document_id"],
         "employee": {
             "id": "first_id",
             "name": "First",
@@ -1070,7 +1105,62 @@ async def test_documents_send(service_client):
         },
         "signed": True
     }
-    assert response_json["signs"][1] == expected_sign
+    assert response_json["signs"][0] == expected_sign
+
+
+@pytest.mark.pgsql('db_1', files=['initial_data.sql'])
+async def test_documents_list_author_photo_url(service_client):
+    """photo_link автора → author_photo_url (presigned; в testsuite — заглушка S3)."""
+    response = await service_client.post(
+        '/v1/employee/add',
+        headers={'Authorization': 'Bearer first_token'},
+        json={'name': 'Third', 'surname': 'C', 'role': 'admin'},
+    )
+    assert response.status == 200
+    employee_id = json.loads(response.text)['login']
+    password = json.loads(response.text)['password']
+
+    response = await service_client.post(
+        '/v1/authorize',
+        json={'login': employee_id, 'company_id': 'first', 'password': password},
+    )
+    assert response.status == 200
+    token = json.loads(response.text)['token']
+
+    response = await service_client.post(
+        '/v1/documents/send',
+        headers={'Authorization': 'Bearer ' + token},
+        json={'employee_ids': ['first_id', 'second_id'], 'document': {
+            'id': 'id1', 'name': 'doc1',
+            'description': 'text1', 'sign_required': 1}}
+    )
+    assert response.status == 200
+
+    response = await service_client.post(
+        '/v1/profile/upload-photo',
+        headers={'Authorization': 'Bearer ' + token},
+    )
+    assert response.status == 200
+    assert 'url' in json.loads(response.text)
+
+    response = await service_client.get(
+        '/v1/documents/list',
+        headers={'Authorization': 'Bearer ' + token},
+    )
+    assert response.status == 200
+    docs = json.loads(response.text)['documents']
+    id1 = next(d for d in docs if d['id'] == 'id1')
+    assert id1['author_id'] == employee_id
+    assert id1['author_photo_url'] == 's3 download test link'
+
+    response = await service_client.get(
+        '/v1/documents/list-all',
+        headers={'Authorization': 'Bearer ' + token},
+    )
+    assert response.status == 200
+    docs = json.loads(response.text)['documents']
+    id1_all = next(d for d in docs if d['id'] == 'id1')
+    assert id1_all['author_photo_url'] == 's3 download test link'
 
 
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])
@@ -1223,7 +1313,7 @@ async def test_inventory(service_client):
     )
     assert response.status == 200
     assert are_json_equal(response.text, (
-        '{"id":"first_id","inventory":[{"description":"desc1","id":"id1","name":"item1"}],"name":"First","phones":[],"surname":"A"}'
+        '{"has_nep":true,"id":"first_id","inventory":[{"description":"desc1","id":"id1","name":"item1"}],"name":"First","phones":[],"surname":"A"}'
     )) == True
 
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])
@@ -2648,7 +2738,7 @@ async def test_send_docx_document(service_client):
         headers={'Authorization': 'Bearer first_token'},
         json={'employee_ids': ['first_id', 'second_id'], 'document': {
             'id': 'id1.docx', 'name': 'doc1',
-            'description': 'text1', 'sign_required': True}}
+            'description': 'text1', 'sign_required': 1}}
     )
     assert response.status == 200
 
@@ -2665,29 +2755,30 @@ async def test_send_docx_document(service_client):
              "description": "text1",
              "id": "id1.pdf",
              "name": "doc1",
-             "sign_required": True,
+             "sign_required": 1,
              "signed": False,
+             "author_id": "first_id",
              "type": "admin_request",
              "visibility_status": 0},
             {"chain_metadata_new":[
-                {"employee_id":"first_id","requires_signature":1,"status":0},
-                {"employee_id":"second_id","requires_signature":0,"status":0}],
+                {"employee_id":"first_id","employee_name":"A First","requires_signature":1,"signature_id":"sig_1","signature_path":"doc_with_chain_first_id_kep.p7s","signature_type":"kep","signed_at":response_data["documents"][1]["chain_metadata_new"][0].get("signed_at"),"status":0},
+                {"employee_id":"second_id","employee_name":"B Second","requires_signature":0,"status":0}],
              "created_ts": response_data["documents"][1]["created_ts"],
              "description": "Test document with approval chain",
              "id": "doc_with_chain",
              "name": "Document with chain",
-             "sign_required": True,
+             "sign_required": 1,
              "signed": False,
              "type": "admin_request",
              "visibility_status": 0},
             {"chain_metadata_new":[
-                {"employee_id":"first_id","requires_signature":1,"status":2},
-                {"employee_id":"second_id","requires_signature":0,"status":0}],
+                {"employee_id":"first_id","employee_name":"A First","requires_signature":1,"status":2},
+                {"employee_id":"second_id","employee_name":"B Second","requires_signature":0,"status":0}],
              "created_ts": response_data["documents"][2]["created_ts"],
              "description": "",
              "id": "rejected_doc",
              "name": "Rejected document",
-             "sign_required": True,
+             "sign_required": 1,
              "signed": False,
              "type": "admin_request",
              "visibility_status": 0}
@@ -2702,11 +2793,17 @@ async def test_chain_update_approve(service_client):
     appr_status = 0
     status = 0
     for _ in range(2):
+        json_data = {
+            'approval_status': appr_status,
+        }
+        if appr_status == 0:
+            json_data['signature_id'] = 'sig_1'
+
         response = await service_client.post(
             '/v1/documents/chain/update',
             headers={'Authorization': auth},
             params={'document_id': 'doc_with_chain'},
-            json={'approval_status': appr_status}
+            json=json_data,
         )
         assert response.status == 200
         expected_response = {
@@ -2785,7 +2882,10 @@ async def test_chain_update_try_sign_non_signable(service_client):
         '/v1/documents/chain/update',
         headers={'Authorization': 'Bearer first_token'},
         params={'document_id': 'doc_with_chain'},
-        json={'approval_status': 0}
+        json={
+            'approval_status': 0,
+            'signature_id': 'sig_1',
+        }
     )
     assert response.status == 200
     response = await service_client.post(
@@ -2859,7 +2959,7 @@ async def test_chain_add(service_client):
             'chain_metadata_new': [
                 {
                     'employee_id': 'first_id',
-                    'requires_signature': 1,
+                    'requires_signature': 2,
                     'status': 0
                 },
                 {
@@ -2875,12 +2975,15 @@ async def test_chain_add(service_client):
         '/v1/documents/chain/update',
         headers={'Authorization': 'Bearer first_token'},
         params={'document_id': 'empty_chain_doc'},
-        json={'approval_status': 0}
+        json={
+            'approval_status': 1,
+            'signature_password': '123456',
+        }
     )
     assert response.status == 200
     expected_response = {
         "chain_metadata_new": [
-            {"employee_id": "first_id", "requires_signature": 1, "status": 1},
+            {"employee_id": "first_id", "requires_signature": 2, "status": 1},
             {"employee_id": "second_id", "requires_signature": 0, "status": 0},
         ]
     }
@@ -3535,6 +3638,297 @@ async def test_tasks_access_within_project(service_client):
         headers={'Authorization': 'Bearer third_token'},
     )
     assert response.status == 200
+
+@pytest.mark.pgsql('db_1', files=['initial_data.sql'])
+async def test_documents_list_signature_enrichment(service_client):
+    response = await service_client.get(
+        '/v1/documents/list',
+        headers={'Authorization': 'Bearer first_token'}
+    )
+    assert response.status == 200
+    response_data = json.loads(response.text)
+
+    # doc_with_chain has a signature for first_id
+    doc_with_chain = next(d for d in response_data["documents"] if d["id"] == "doc_with_chain")
+    chain = doc_with_chain["chain_metadata_new"]
+
+    # first_id has both employee_name and signature info
+    first_item = next(c for c in chain if c["employee_id"] == "first_id")
+    assert first_item["employee_name"] == "A First"
+    assert first_item["signature_id"] == "sig_1"
+    assert first_item["signature_path"] == "doc_with_chain_first_id_kep.p7s"
+    assert "signed_at" in first_item
+
+    # second_id has employee_name but no signature
+    second_item = next(c for c in chain if c["employee_id"] == "second_id")
+    assert second_item["employee_name"] == "B Second"
+    assert "signature_id" not in second_item
+    assert "signature_path" not in second_item
+    assert "signed_at" not in second_item
+
+    # rejected_doc has employee_names but no signatures
+    rejected_doc = next(d for d in response_data["documents"] if d["id"] == "rejected_doc")
+    for item in rejected_doc["chain_metadata_new"]:
+        assert "employee_name" in item
+        assert "signature_id" not in item
+
+    # empty chain docs have no chain_metadata to enrich
+    for doc in response_data["documents"]:
+        if doc["chain_metadata_new"] == []:
+            continue
+        for item in doc["chain_metadata_new"]:
+            assert "employee_name" in item
+
+
+async def set_employee_head(service_client, employee_id, head_id):
+    response = await service_client.post(
+        '/v1/employee/add-head',
+        params={'employee_id': employee_id},
+        headers={'Authorization': 'Bearer first_token'},
+        json={'head_id': head_id},
+    )
+    assert response.status == 200
+
+
+async def create_template_absence_request(service_client, absence_type='sick_leave'):
+    response = await service_client.post(
+        '/v1/documents/generate_from_template',
+        headers={'Authorization': 'Bearer first_token'},
+        json={
+            'type': absence_type,
+            'start_date': '2023-08-01T00:00:00',
+            'end_date': '2023-08-03T00:00:00',
+            'signature_password': '123456',
+        },
+    )
+    return response.json()
+
+
+def find_notification(notifications, notification_type):
+    for item in notifications:
+        if item['type'] == notification_type:
+            return item
+    return None
+
+
+@pytest.mark.pgsql('db_1', files=['initial_data.sql'])
+async def test_generate_from_template_creates_action_document_and_chain(
+        service_client,
+):
+    await set_employee_head(service_client, 'first_id', 'second_id')
+
+    created = await create_template_absence_request(service_client)
+
+    document_id = created['document_id']
+    assert document_id.endswith('.pdf')
+    assert created['download_link'] == 's3 download test link'
+
+    head_notifications = await service_client.post(
+        '/v1/notifications',
+        headers={'Authorization': 'Bearer second_token'},
+    )
+    assert head_notifications.status == 200
+    head_items = json.loads(head_notifications.text)['notifications']
+    head_note = find_notification(head_items, 'vacation_request')
+    assert head_note is not None
+    assert head_note['document_id'] == document_id
+    assert head_note['action_id']
+    assert 'больничный' in head_note['text']
+
+    docs_response = await service_client.get(
+        '/v1/documents/list',
+        headers={'Authorization': 'Bearer second_token'},
+    )
+    assert docs_response.status == 200
+    docs = json.loads(docs_response.text)['documents']
+    doc = next(d for d in docs if d['id'] == document_id)
+    assert doc['type'] == 'employee_request'
+    assert doc['sign_required'] == 0
+    chain = [
+        {
+            'employee_id': item['employee_id'],
+            'requires_signature': item['requires_signature'],
+            'status': item['status'],
+        }
+        for item in doc['chain_metadata_new']
+    ]
+    assert chain == [
+        {'employee_id': 'first_id', 'requires_signature': 0, 'status': 1},
+        {'employee_id': 'second_id', 'requires_signature': 0, 'status': 0},
+    ]
+
+    actions_response = await service_client.post(
+        '/v1/actions',
+        headers={'Authorization': 'Bearer first_token'},
+        json={'from': '2023-08-01T00:00:00', 'to': '2023-08-05T00:00:00'},
+    )
+    assert actions_response.status == 200
+    actions = json.loads(actions_response.text)['actions']
+    action = next(a for a in actions if a['id'] == head_note['action_id'])
+    assert action['status'] == 'pending'
+    assert action['type'] == 'sick_leave'
+
+
+@pytest.mark.pgsql('db_1', files=['initial_data.sql'])
+async def test_generate_from_template_verdict_approve(service_client):
+    await set_employee_head(service_client, 'first_id', 'second_id')
+    created = await create_template_absence_request(service_client)
+    document_id = created['document_id']
+
+    head_notifications = await service_client.post(
+        '/v1/notifications',
+        headers={'Authorization': 'Bearer second_token'},
+    )
+    action_id = find_notification(
+        json.loads(head_notifications.text)['notifications'],
+        'vacation_request',
+    )['action_id']
+
+    verdict = await service_client.post(
+        '/v1/abscence/verdict',
+        headers={'Authorization': 'Bearer second_token'},
+        json={'action_id': action_id, 'approve': True},
+    )
+    assert verdict.status == 200
+
+    actions_response = await service_client.post(
+        '/v1/actions',
+        headers={'Authorization': 'Bearer first_token'},
+        json={'from': '2023-08-01T00:00:00', 'to': '2023-08-05T00:00:00'},
+    )
+    action = next(
+        a for a in json.loads(actions_response.text)['actions']
+        if a['id'] == action_id
+    )
+    assert action['status'] == 'approved'
+
+    employee_notifications = await service_client.post(
+        '/v1/notifications',
+        headers={'Authorization': 'Bearer first_token'},
+    )
+    employee_note = find_notification(
+        json.loads(employee_notifications.text)['notifications'],
+        'sick_leave_approved',
+    )
+    assert employee_note is not None
+    assert employee_note['document_id'] == document_id
+    assert employee_note['action_id'] == action_id
+
+    docs_response = await service_client.get(
+        '/v1/documents/list',
+        headers={'Authorization': 'Bearer second_token'},
+    )
+    doc = next(
+        d for d in json.loads(docs_response.text)['documents']
+        if d['id'] == document_id
+    )
+    assert doc['chain_metadata_new'][1]['status'] == 1
+
+
+@pytest.mark.pgsql('db_1', files=['initial_data.sql'])
+async def test_generate_from_template_verdict_reject(service_client):
+    await set_employee_head(service_client, 'first_id', 'second_id')
+    created = await create_template_absence_request(
+        service_client, absence_type='vacation')
+    document_id = created['document_id']
+
+    head_notifications = await service_client.post(
+        '/v1/notifications',
+        headers={'Authorization': 'Bearer second_token'},
+    )
+    action_id = find_notification(
+        json.loads(head_notifications.text)['notifications'],
+        'vacation_request',
+    )['action_id']
+
+    verdict = await service_client.post(
+        '/v1/abscence/verdict',
+        headers={'Authorization': 'Bearer second_token'},
+        json={'action_id': action_id, 'approve': False},
+    )
+    assert verdict.status == 200
+
+    actions_response = await service_client.post(
+        '/v1/actions',
+        headers={'Authorization': 'Bearer first_token'},
+        json={'from': '2023-08-01T00:00:00', 'to': '2023-08-05T00:00:00'},
+    )
+    assert all(
+        a['id'] != action_id
+        for a in json.loads(actions_response.text)['actions'])
+
+    employee_notifications = await service_client.post(
+        '/v1/notifications',
+        headers={'Authorization': 'Bearer first_token'},
+    )
+    employee_note = find_notification(
+        json.loads(employee_notifications.text)['notifications'],
+        'vacation_denied',
+    )
+    assert employee_note is not None
+    assert employee_note['document_id'] == document_id
+    assert employee_note.get('action_id') is None
+
+    docs_response = await service_client.get(
+        '/v1/documents/list',
+        headers={'Authorization': 'Bearer second_token'},
+    )
+    doc = next(
+        d for d in json.loads(docs_response.text)['documents']
+        if d['id'] == document_id
+    )
+    assert doc['chain_metadata_new'][1]['status'] == 2
+
+
+@pytest.mark.pgsql('db_1', files=['initial_data.sql'])
+async def test_generate_from_template_unknown_type(service_client):
+    await set_employee_head(service_client, 'first_id', 'second_id')
+
+    response = await service_client.post(
+        '/v1/documents/generate_from_template',
+        headers={'Authorization': 'Bearer first_token'},
+        json={
+            'type': 'unknown_type',
+            'start_date': '2023-08-01T00:00:00',
+            'end_date': '2023-08-03T00:00:00',
+            'signature_password': '123456',
+        },
+    )
+    assert response.status == 400
+
+
+@pytest.mark.pgsql('db_1', files=['initial_data.sql'])
+async def test_generate_from_template_verdict_not_managers_turn(service_client):
+    await set_employee_head(service_client, 'first_id', 'second_id')
+    created = await create_template_absence_request(service_client)
+
+    head_notifications = await service_client.post(
+        '/v1/notifications',
+        headers={'Authorization': 'Bearer second_token'},
+    )
+    action_id = find_notification(
+        json.loads(head_notifications.text)['notifications'],
+        'vacation_request',
+    )['action_id']
+
+    verdict = await service_client.post(
+        '/v1/abscence/verdict',
+        headers={'Authorization': 'Bearer first_token'},
+        json={'action_id': action_id, 'approve': True},
+    )
+    assert verdict.status == 400
+    assert 'Not your turn' in verdict.text
+
+    docs_response = await service_client.get(
+        '/v1/documents/list',
+        headers={'Authorization': 'Bearer second_token'},
+    )
+    doc = next(
+        d for d in json.loads(docs_response.text)['documents']
+        if d['id'] == created['document_id']
+    )
+    assert doc['chain_metadata_new'][1]['status'] == 0
+
 
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])
 async def test_end(service_client):

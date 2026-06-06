@@ -394,6 +394,15 @@ FOREIGN KEY (task_id)
 REFERENCES working_day_first.tracker_tasks(task_id)
 ON DELETE CASCADE;
 
+ALTER TABLE working_day_first.notifications
+ADD COLUMN IF NOT EXISTS document_id TEXT;
+
+ALTER TABLE working_day_first.notifications
+ADD CONSTRAINT notifications_document_id_fkey
+FOREIGN KEY (document_id)
+REFERENCES working_day_first.documents (id)
+ON DELETE CASCADE;
+
 CREATE INDEX idx_actions_user_id_end_date
 ON working_day_first.actions (user_id, end_date);
 
@@ -422,3 +431,112 @@ CREATE TABLE IF NOT EXISTS working_day_first.task_comments (
 
 CREATE INDEX idx_task_comments_task_id ON working_day_first.task_comments (task_id);
 CREATE INDEX idx_task_comments_comment_id ON working_day_first.task_comments (comment_id);
+
+-- Таблица для хранения ключевых пар сотрудников
+DROP TABLE IF EXISTS working_day_first.employee_keys CASCADE;
+
+CREATE TABLE IF NOT EXISTS working_day_first.employee_keys (
+    employee_id TEXT PRIMARY KEY NOT NULL,
+    private_key TEXT NOT NULL,
+    public_key TEXT NOT NULL,
+    public_key_hash TEXT,
+    created_ts TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_ts TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    FOREIGN KEY (employee_id) REFERENCES working_day_first.employees (id) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_employee_keys_hash ON working_day_first.employee_keys(public_key_hash);
+
+-- Таблица для хранения подписей документов
+DROP TABLE IF EXISTS working_day_first.document_signatures CASCADE;
+
+CREATE TABLE IF NOT EXISTS working_day_first.document_signatures (
+    id TEXT PRIMARY KEY NOT NULL,
+    document_id TEXT NOT NULL,
+    employee_id TEXT NOT NULL,
+    signature_path TEXT NOT NULL,
+    signature_metadata JSONB NOT NULL,
+    public_key_hash TEXT NOT NULL,
+    created_ts TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    FOREIGN KEY (document_id) REFERENCES working_day_first.documents (id) ON DELETE CASCADE,
+    FOREIGN KEY (employee_id) REFERENCES working_day_first.employees (id) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_document_signatures_doc ON working_day_first.document_signatures(document_id);
+CREATE INDEX idx_document_signatures_emp ON working_day_first.document_signatures(employee_id);
+CREATE INDEX idx_document_signatures_created ON working_day_first.document_signatures(created_ts DESC);
+
+DROP TABLE IF EXISTS working_day_first.employee_signature_passwords CASCADE;
+
+CREATE TABLE working_day_first.employee_signature_passwords (
+    employee_id TEXT PRIMARY KEY NOT NULL,
+    signature_password CHAR(6) NOT NULL CHECK (signature_password ~ '^\d{6}$'),
+    created_ts TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_ts TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    FOREIGN KEY (employee_id) REFERENCES working_day_first.employees (id) ON DELETE CASCADE
+);
+
+ALTER TABLE working_day_first.document_signatures
+ADD COLUMN signature_type TEXT NOT NULL DEFAULT 'nep' CHECK (signature_type IN ('nep', 'kep'));
+
+ALTER TABLE working_day_first.employee_permissions
+DROP CONSTRAINT IF EXISTS employee_permissions_permission_type_check;
+
+ALTER TABLE working_day_first.employee_permissions
+ADD CONSTRAINT employee_permissions_permission_type_check
+CHECK (permission_type IN ('can_remove_documents', 'can_upload_kep_signature'));
+
+ALTER TABLE working_day_first.document_signatures
+ALTER COLUMN public_key_hash DROP NOT NULL;
+
+ALTER TABLE working_day_first.documents
+ALTER COLUMN sign_required DROP DEFAULT;
+
+ALTER TABLE working_day_first.documents
+ALTER COLUMN sign_required TYPE INT USING (CASE WHEN sign_required THEN 2 ELSE 0 END);
+
+ALTER TABLE working_day_first.documents
+ALTER COLUMN sign_required SET DEFAULT 0;
+
+ALTER TABLE working_day_first.documents
+ADD COLUMN IF NOT EXISTS author_id TEXT REFERENCES working_day_first.employees (id) ON DELETE SET NULL;
+
+CREATE INDEX IF NOT EXISTS idx_documents_author_id ON working_day_first.documents (author_id);
+
+CREATE TABLE IF NOT EXISTS working_day_first.employee_signature_passwords_audit (
+    id BIGSERIAL PRIMARY KEY,
+    occurred_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    operation TEXT NOT NULL CHECK (operation IN ('INSERT', 'UPDATE', 'DELETE')),
+    employee_id TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_esp_audit_employee_occurred
+    ON working_day_first.employee_signature_passwords_audit (employee_id, occurred_at DESC);
+
+CREATE OR REPLACE FUNCTION working_day_first.log_employee_signature_passwords_change()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF TG_OP = 'DELETE' THEN
+        INSERT INTO working_day_first.employee_signature_passwords_audit (operation, employee_id)
+        VALUES ('DELETE', OLD.employee_id);
+        RETURN OLD;
+    ELSIF TG_OP = 'UPDATE' THEN
+        INSERT INTO working_day_first.employee_signature_passwords_audit (operation, employee_id)
+        VALUES ('UPDATE', NEW.employee_id);
+        RETURN NEW;
+    ELSIF TG_OP = 'INSERT' THEN
+        INSERT INTO working_day_first.employee_signature_passwords_audit (operation, employee_id)
+        VALUES ('INSERT', NEW.employee_id);
+        RETURN NEW;
+    END IF;
+    RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_employee_signature_passwords_audit
+    ON working_day_first.employee_signature_passwords;
+
+CREATE TRIGGER trg_employee_signature_passwords_audit
+    AFTER INSERT OR UPDATE OR DELETE ON working_day_first.employee_signature_passwords
+    FOR EACH ROW
+    EXECUTE FUNCTION working_day_first.log_employee_signature_passwords_change();

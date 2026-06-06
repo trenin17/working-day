@@ -96,6 +96,12 @@
 #define USE_DOWNLOAD_DOCUMENT_RESPONSE
 #endif
 
+#ifdef V1_DOCUMENTS_DOWNLOAD_WITH_SIGNATURES
+#define USE_DOWNLOAD_DOCUMENT_WITH_SIGNATURES_RESPONSE
+#define USE_DOWNLOAD_DOCUMENT_RESPONSE
+#define USE_ERROR_MESSAGE
+#endif
+
 #ifdef V1_DOCUMENTS_LIST_ALL
 #define USE_DOCUMENTS_LIST_ALL_RESPONSE
 #endif
@@ -149,7 +155,7 @@
 #define USE_PYSERVICE_DOCUMENT_GENERATE_REQUEST
 #define USE_ABSCENCE_VERDICT_REQUEST
 #define USE_ABSCENCE_VERDICT_RESPONSE
-#define USE_PYSERVICE_DOCUMENT_SIGN_REQUEST
+#define USE_DOCUMENTS_CHAIN_UPDATE_RESPONSE
 #define USE_ERROR_MESSAGE
 #endif
 
@@ -157,12 +163,12 @@
 #define USE_PYSERVICE_DOCUMENT_GENERATE_REQUEST
 #define USE_GENERATE_FROM_TEMPLATE_REQUEST
 #define USE_GENERATE_FROM_TEMPLATE_RESPONSE
+#define USE_DOCUMENTS_CHAIN_METADATA_ITEM
 #define USE_ERROR_MESSAGE
 #endif
 
-#ifdef V1_DOCUMENTS_SIGN
-#define USE_LIST_EMPLOYEE_WITH_SUBCOMPANY
-#define USE_PYSERVICE_DOCUMENT_SIGN_REQUEST
+#ifdef V1_DOCUMENTS_CREATE_STAMP_FOR_NEP
+#define USE_PYSERVICE_CREATE_STAMP_FOR_NEP_REQUEST
 #define USE_ABSCENCE_VERDICT_RESPONSE
 #define USE_ERROR_MESSAGE
 #endif
@@ -275,7 +281,7 @@
 
 #ifdef V1_DOCUMENTS_CHAIN_UPDATE
 #define USE_LIST_EMPLOYEE_WITH_SUBCOMPANY
-#define USE_PYSERVICE_DOCUMENT_SIGN_REQUEST
+#define USE_PYSERVICE_NEP_SIGN_REQUEST
 #define USE_DOCUMENTS_CHAIN_UPDATE_REQUEST
 #define USE_DOCUMENTS_CHAIN_UPDATE_RESPONSE
 #define USE_ERROR_MESSAGE
@@ -346,6 +352,31 @@
 #endif
 
 #ifdef V1_COMMENTS_REMOVE
+#define USE_ERROR_MESSAGE
+#endif
+
+#ifdef V1_EMPLOYEE_KEYS_GENERATE
+#define USE_EMPLOYEE_KEYS_GENERATE_RESPONSE
+#define USE_ERROR_MESSAGE
+#endif
+
+#ifdef V1_DOCUMENTS_NEP_SIGN
+#define USE_DOCUMENTS_NEP_SIGN_REQUEST
+#define USE_PYSERVICE_NEP_SIGN_REQUEST
+#define USE_DOCUMENTS_NEP_SIGN_RESPONSE
+#define USE_ERROR_MESSAGE
+#endif
+
+#ifdef V1_DOCUMENTS_NEP_VERIFY
+#define USE_DOCUMENTS_NEP_VERIFY_REQUEST
+#define USE_PYSERVICE_NEP_VERIFY_REQUEST
+#define USE_DOCUMENTS_NEP_VERIFY_RESPONSE
+#define USE_ERROR_MESSAGE
+#endif
+
+#ifdef V1_DOCUMENTS_UPLOAD_SIGNATURE
+#define USE_UPLOAD_SIGNATURE_REQUEST
+#define USE_UPLOAD_SIGNATURE_RESPONSE
 #define USE_ERROR_MESSAGE
 #endif
 
@@ -541,6 +572,11 @@ struct DocumentsChainMetadataItem : public JsonCompatible {
   REGISTER_STRUCT_FIELD(employee_id, std::string, "employee_id");
   REGISTER_STRUCT_FIELD(requires_signature, int, "requires_signature", 0);
   REGISTER_STRUCT_FIELD(status, int, "status");
+  REGISTER_STRUCT_FIELD_OPTIONAL(employee_name, std::string, "employee_name");
+  REGISTER_STRUCT_FIELD_OPTIONAL(signature_id, std::string, "signature_id");
+  REGISTER_STRUCT_FIELD_OPTIONAL(signature_path, std::string, "signature_path");
+  REGISTER_STRUCT_FIELD_OPTIONAL(signed_at, std::string, "signed_at");
+  REGISTER_STRUCT_FIELD_OPTIONAL(signature_type, std::string, "signature_type");
 };
 
 template <>
@@ -559,15 +595,17 @@ struct DocumentItem : public JsonCompatible {
 
   auto Introspect() {
     return std::tie(id, name, type, sign_required, description, is_signed,
-                    parent_id, created_ts, chain_metadata, visibility_status);
+                    author_id, author_photo_url, parent_id, created_ts, chain_metadata, visibility_status);
   }
 
   REGISTER_STRUCT_FIELD(id, std::string, "id");
   REGISTER_STRUCT_FIELD(name, std::string, "name");
   REGISTER_STRUCT_FIELD_OPTIONAL(type, std::string, "type");
-  REGISTER_STRUCT_FIELD(sign_required, bool, "sign_required", false);
+  REGISTER_STRUCT_FIELD(sign_required, int, "sign_required", 0);
   REGISTER_STRUCT_FIELD_OPTIONAL(description, std::string, "description");
   REGISTER_STRUCT_FIELD_OPTIONAL(is_signed, bool, "signed");
+  REGISTER_STRUCT_FIELD_OPTIONAL(author_id, std::string, "author_id");
+  REGISTER_STRUCT_FIELD_OPTIONAL(author_photo_url, std::string, "author_photo_url");
   REGISTER_STRUCT_FIELD_OPTIONAL(parent_id, std::string, "parent_id");
   REGISTER_STRUCT_FIELD_OPTIONAL(created_ts, userver::storages::postgres::TimePoint, "created_ts");
   REGISTER_STRUCT_FIELD_OPTIONAL(chain_metadata, std::vector<DocumentsChainMetadataItem>, "chain_metadata_new");
@@ -592,6 +630,17 @@ struct DocumentsListResponse : public JsonCompatible {
 #ifdef USE_DOWNLOAD_DOCUMENT_RESPONSE
 struct DownloadDocumentResponse : public JsonCompatible {
   REGISTER_STRUCT_FIELD(url, std::string, "url");
+};
+#endif
+
+#ifdef USE_DOWNLOAD_DOCUMENT_WITH_SIGNATURES_RESPONSE
+struct DownloadDocumentWithSignaturesSignatureItem : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(signature_path, std::string, "signature_path");
+  REGISTER_STRUCT_FIELD(url, std::string, "url");
+};
+struct DownloadDocumentWithSignaturesResponse : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(document_url, std::string, "document_url");
+  REGISTER_STRUCT_FIELD(signatures, std::vector<DownloadDocumentWithSignaturesSignatureItem>, "signatures");
 };
 #endif
 
@@ -733,17 +782,20 @@ struct AbscenceVerdictRequest : public JsonCompatible {
 };
 #endif
 
-#ifdef USE_PYSERVICE_DOCUMENT_SIGN_REQUEST
-struct PyserviceDocumentSignRequest : public JsonCompatible {
+#ifdef USE_PYSERVICE_CREATE_STAMP_FOR_NEP_REQUEST
+struct PyserviceNepStampSigner : public JsonCompatible {
   REGISTER_STRUCT_FIELD(employee_id, std::string, "employee_id");
-  REGISTER_STRUCT_FIELD(employee_name, std::string, "employee_name");
-  REGISTER_STRUCT_FIELD(employee_surname, std::string, "employee_surname");
-  REGISTER_STRUCT_FIELD_OPTIONAL(employee_patronymic, std::string,
-                                 "employee_patronymic");
-  REGISTER_STRUCT_FIELD(subcompany, std::string, "subcompany");
+  REGISTER_STRUCT_FIELD(name, std::string, "name");
+  REGISTER_STRUCT_FIELD(surname, std::string, "surname");
+  REGISTER_STRUCT_FIELD_OPTIONAL(patronymic, std::string, "patronymic");
+};
+
+struct PyserviceCreateStampForNepRequest : public JsonCompatible {
   REGISTER_STRUCT_FIELD(file_key, std::string, "file_key");
   REGISTER_STRUCT_FIELD(signed_file_key, std::string, "signed_file_key");
-  REGISTER_STRUCT_FIELD_OPTIONAL(is_first_signature, bool, "is_first_signature");
+  REGISTER_STRUCT_FIELD(signers, std::vector<PyserviceNepStampSigner>, "signers");
+  REGISTER_STRUCT_FIELD(organization, std::string, "organization");
+  REGISTER_STRUCT_FIELD(is_first_signature, bool, "is_first_signature");
 };
 #endif
 
@@ -813,7 +865,7 @@ struct Employee : public JsonCompatible {
   auto Introspect() {
     return std::tie(id, name, surname, patronymic, photo_link, phones, email,
                     birthday, password, head_id, telegram_id, vk_id, team,
-                    head_info, inventory, job_position);
+                    head_info, inventory, job_position, has_nep);
   }
 
   REGISTER_STRUCT_FIELD(id, std::string, "id");
@@ -833,6 +885,7 @@ struct Employee : public JsonCompatible {
   REGISTER_STRUCT_FIELD_OPTIONAL(inventory, std::vector<InventoryItem>,
                                  "inventory");
   REGISTER_STRUCT_FIELD_OPTIONAL(job_position, std::string, "job_position");
+  REGISTER_STRUCT_FIELD(has_nep, bool, "has_nep");
 };
 #endif
 
@@ -1136,6 +1189,8 @@ struct PyserviceDocumentSendRequest : public JsonCompatible {
 #ifdef USE_DOCUMENTS_CHAIN_UPDATE_REQUEST
 struct DocumentsChainUpdateRequest : public JsonCompatible {
   REGISTER_STRUCT_FIELD(approval_status, int, "approval_status");
+  REGISTER_STRUCT_FIELD_OPTIONAL(signature_password, std::string, "signature_password");
+  REGISTER_STRUCT_FIELD_OPTIONAL(signature_id, std::string, "signature_id");
 };
 #endif
 
@@ -1217,7 +1272,7 @@ struct EmployeePermissionsItem : public JsonCompatible {
     return std::tie(permission_type, permission_value);
   }
 
-  REGISTER_STRUCT_ENUM_FIELD(permission_type, std::string, "permission_type", {"can_remove_documents" /*, etc*/ });
+  REGISTER_STRUCT_ENUM_FIELD(permission_type, std::string, "permission_type", {"can_remove_documents", "can_upload_kep_signature" /*, etc*/ });
   REGISTER_STRUCT_FIELD(permission_value, int, "permission_value");
 };
 #endif
@@ -1230,12 +1285,19 @@ struct EmployeePermissions : public JsonCompatible {
 
 #ifdef USE_GENERATE_FROM_TEMPLATE_REQUEST
 struct GenerateFromTemplateRequest : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(start_date, userver::storages::postgres::TimePoint,
+                        "start_date");
+  REGISTER_STRUCT_FIELD(end_date, userver::storages::postgres::TimePoint,
+                        "end_date");
+  REGISTER_STRUCT_FIELD(type, std::string, "type");
+  REGISTER_STRUCT_FIELD(signature_password, std::string, "signature_password");
   REGISTER_STRUCT_FIELD_OPTIONAL(params, std::vector<std::string>, "params");
 };
 #endif
 
 #ifdef USE_GENERATE_FROM_TEMPLATE_RESPONSE
 struct GenerateFromTemplateResponse : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(document_id, std::string, "document_id");
   REGISTER_STRUCT_FIELD(download_link, std::string, "download_link");
 };
 #endif
@@ -1289,5 +1351,81 @@ struct CommentItem : public JsonCompatible {
   REGISTER_STRUCT_FIELD_OPTIONAL(documents_ids, std::vector<std::string>, "documents_ids");
   REGISTER_STRUCT_FIELD(created_ts, userver::storages::postgres::TimePoint, "created_ts");
   REGISTER_STRUCT_FIELD(last_updated_ts, userver::storages::postgres::TimePoint, "last_updated_ts");
+};
+#endif
+
+#ifdef USE_EMPLOYEE_KEYS_GENERATE_RESPONSE
+struct EmployeeKeysGenerateResponse : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(public_key, std::string, "public_key");
+  REGISTER_STRUCT_FIELD(public_key_hash, std::string, "public_key_hash");
+};
+#endif
+
+#ifdef USE_DOCUMENTS_NEP_SIGN_REQUEST
+struct DocumentsNepSignRequest : public JsonCompatible {
+  REGISTER_STRUCT_FIELD_OPTIONAL(reason, std::string, "reason");
+  REGISTER_STRUCT_FIELD_OPTIONAL(location, std::string, "location");
+};
+#endif
+
+#ifdef USE_PYSERVICE_NEP_SIGN_REQUEST
+struct PyserviceNepSignRequest : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(document_id, std::string, "document_id");
+  REGISTER_STRUCT_FIELD(employee_id, std::string, "employee_id");
+  REGISTER_STRUCT_FIELD(employee_name, std::string, "employee_name");
+  REGISTER_STRUCT_FIELD(private_key, std::string, "private_key");
+  REGISTER_STRUCT_FIELD(public_key, std::string, "public_key");
+  REGISTER_STRUCT_FIELD_OPTIONAL(reason, std::string, "reason");
+  REGISTER_STRUCT_FIELD_OPTIONAL(location, std::string, "location");
+};
+#endif
+
+#ifdef USE_DOCUMENTS_NEP_SIGN_RESPONSE
+struct DocumentsNepSignResponse : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(signature_id, std::string, "signature_id");
+  REGISTER_STRUCT_FIELD(signature_path, std::string, "signature_path");
+  REGISTER_STRUCT_FIELD(timestamp, std::string, "timestamp");
+  REGISTER_STRUCT_FIELD(public_key_hash, std::string, "public_key_hash");
+};
+#endif
+
+#ifdef USE_DOCUMENTS_NEP_VERIFY_REQUEST
+struct DocumentsNepVerifyRequest : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(signature_id, std::string, "signature_id");
+};
+#endif
+
+#ifdef USE_PYSERVICE_NEP_VERIFY_REQUEST
+struct PyserviceNepVerifyRequest : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(document_id, std::string, "document_id");
+  REGISTER_STRUCT_FIELD(signature_path, std::string, "signature_path");
+  REGISTER_STRUCT_FIELD(public_key, std::string, "public_key");
+};
+#endif
+
+#ifdef USE_DOCUMENTS_NEP_VERIFY_RESPONSE
+struct DocumentsNepVerifyResponse : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(valid, bool, "valid");
+  REGISTER_STRUCT_FIELD(integrity_ok, bool, "integrity_ok");
+  REGISTER_STRUCT_FIELD(signature_ok, bool, "signature_ok");
+  REGISTER_STRUCT_FIELD(message, std::string, "message");
+  REGISTER_STRUCT_FIELD(verified_at, std::string, "verified_at");
+  REGISTER_STRUCT_FIELD_OPTIONAL(signer_name, std::string, "signer_name");
+  REGISTER_STRUCT_FIELD_OPTIONAL(signature_timestamp, std::string, "signature_timestamp");
+};
+#endif
+
+#ifdef USE_UPLOAD_SIGNATURE_REQUEST
+struct DocumentsUploadSignatureRequest : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(document_id, std::string, "document_id");
+  REGISTER_STRUCT_FIELD(extension, std::string, "extension");
+  REGISTER_STRUCT_FIELD(signature_type, std::string, "signature_type");
+};
+#endif
+
+#ifdef USE_UPLOAD_SIGNATURE_RESPONSE
+struct DocumentsUploadSignatureResponse : public JsonCompatible {
+  REGISTER_STRUCT_FIELD(signature_id, std::string, "signature_id");
+  REGISTER_STRUCT_FIELD(url, std::string, "url");
 };
 #endif

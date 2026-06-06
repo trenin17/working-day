@@ -5,3 +5,6 @@ PyMuPDF
 openpyxl
 requests
 pandas
+cryptography
+pyhanko
+asn1crypto
