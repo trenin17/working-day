@@ -78,7 +78,7 @@ class LoadRecentMessagesHandler final
       msg.timestamp = messages[i].timestamp;
       msg.sender_id = messages[i].sender_id.value_or("");
       msg.content = MessengerMessageContent(messages[i].content.value_or(""));
-      jsonArray[i] = msg.ToJsonString();
+      jsonArray[i] = nlohmann::json::parse(msg.ToJsonString());
     }
     return to_string(jsonArray);
   }

@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Messenger — Working Day</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Top bar -->
+        <header id="topbar">
+            <h1>Messenger</h1>
+            <div id="user-selector">
+                <label for="user-select">Logged in as:</label>
+                <select id="user-select">
+                    {% for uid, u in users.items() %}
+                    <option value="{{ uid }}" data-token="{{ u.token }}" data-name="{{ u.name }}">
+                        {{ u.name }} ({{ u.role }})
+                    </option>
+                    {% endfor %}
+                </select>
+                <span id="ws-status" class="status-dot disconnected" title="WebSocket disconnected"></span>
+            </div>
+        </header>
+
+        <div id="main">
+            <!-- Sidebar: chat list -->
+            <aside id="sidebar">
+                <div id="sidebar-header">
+                    <h2>Chats</h2>
+                    <button id="btn-new-chat" title="New chat">+</button>
+                </div>
+                <div id="chat-list"></div>
+            </aside>
+
+            <!-- Chat area -->
+            <section id="chat-area">
+                <div id="chat-placeholder">
+                    <p>Select a chat to start messaging</p>
+                </div>
+                <div id="chat-view" class="hidden">
+                    <div id="chat-header">
+                        <h3 id="chat-title"></h3>
+                    </div>
+                    <div id="messages"></div>
+                    <div id="input-bar">
+                        <input type="text" id="msg-input" placeholder="Type a message..." autocomplete="off">
+                        <button id="btn-send">Send</button>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <!-- New chat modal -->
+    <div id="modal-overlay" class="hidden">
+        <div id="modal">
+            <h3>Create New Chat</h3>
+            <label for="new-chat-name">Chat name</label>
+            <input type="text" id="new-chat-name" placeholder="Enter chat name...">
+            <label>Members</label>
+            <div id="member-checkboxes"></div>
+            <div id="modal-actions">
+                <button id="btn-modal-cancel">Cancel</button>
+                <button id="btn-modal-create">Create</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Pass server-side data to JS
+        const USERS = {{ users | tojson }};
+        const WS_BASE_URL = "{{ service_ws_url }}";
+    </script>
+    <script src="/static/app.js"></script>
+</body>
+</html>

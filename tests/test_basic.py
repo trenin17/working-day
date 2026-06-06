@@ -4,6 +4,7 @@ from wsgiref import headers
 import pytest
 import json
 import re
+import websockets
 from string import Template
 
 from testsuite.databases import pgsql
@@ -1838,8 +1839,297 @@ async def test_load_recent_messages(service_client):
     )
 
     assert response.status == 200
-    assert response.text == ('[\"{\\\"chat_id\\\":\\\"chat1\\\",\\\"content\\\":{\\\"content\\\":\\\"Hello world!\\\"},'
-                             '\\\"sender_id\\\":\\\"user1\\\",\\\"timestamp\\\":\\\"2025-02-25T10:00:00.000000\\\"}\"]')
+    messages = response.json()
+    assert isinstance(messages, list)
+    assert len(messages) == 1
+    assert messages[0]['chat_id'] == 'chat1'
+    assert messages[0]['sender_id'] == 'user1'
+    assert messages[0]['content']['content'] == 'Hello world!'
+    assert messages[0]['timestamp'] == '2025-02-25T10:00:00.000000'
+
+
+# ============== Comprehensive Messenger Tests ==============
+
+@pytest.mark.pgsql('db_1', files=['initial_data.sql'])
+async def test_messenger_create_chat_basic(service_client):
+    """Create a chat, verify response contains chat_id."""
+    response = await service_client.post(
+        '/v1/messenger/create-chat',
+        headers={'Authorization': 'Bearer first_token'},
+        json={'chat_name': 'Basic Chat', 'id_list': ['first_id', 'second_id']},
+    )
+    assert response.status == 200
+    data = response.json()
+    assert 'chat_id' in data
+    assert len(data['chat_id']) > 0
+
+
+@pytest.mark.pgsql('db_1', files=['initial_data.sql'])
+async def test_messenger_create_chat_and_list(service_client):
+    """Create a chat, list chats for member, verify it appears with correct name."""
+    create_resp = await service_client.post(
+        '/v1/messenger/create-chat',
+        headers={'Authorization': 'Bearer first_token'},
+        json={'chat_name': 'Listed Chat', 'id_list': ['first_id', 'second_id']},
+    )
+    assert create_resp.status == 200
+    chat_id = create_resp.json()['chat_id']
+
+    list_resp = await service_client.post(
+        '/v1/messenger/list-chats',
+        params={'employee_id': 'first_id'},
+        headers={'Authorization': 'Bearer first_token'},
+    )
+    assert list_resp.status == 200
+    chats = list_resp.json()['chats']
+    created = next((c for c in chats if c['chat_id'] == chat_id), None)
+    assert created is not None
+    assert created['chat_name'] == 'Listed Chat'
+
+
+@pytest.mark.pgsql('db_1', files=['initial_data.sql'])
+async def test_messenger_create_chat_multiple_members(service_client):
+    """Create a group chat with 3 members, verify all can see it."""
+    create_resp = await service_client.post(
+        '/v1/messenger/create-chat',
+        headers={'Authorization': 'Bearer first_token'},
+        json={'chat_name': 'Group Chat', 'id_list': ['first_id', 'second_id', 'stranger_id']},
+    )
+    assert create_resp.status == 200
+    chat_id = create_resp.json()['chat_id']
+
+    for employee_id in ['first_id', 'second_id', 'stranger_id']:
+        resp = await service_client.post(
+            '/v1/messenger/list-chats',
+            params={'employee_id': employee_id},
+            headers={'Authorization': 'Bearer first_token'},
+        )
+        assert resp.status == 200
+        assert chat_id in [c['chat_id'] for c in resp.json()['chats']], \
+            f'{employee_id} should see the group chat'
+
+
+@pytest.mark.pgsql('db_1', files=['initial_data.sql'])
+async def test_messenger_list_chats_empty(service_client):
+    """List chats for user with no chats, verify empty response."""
+    response = await service_client.post(
+        '/v1/messenger/list-chats',
+        params={'employee_id': 'stranger_id'},
+        headers={'Authorization': 'Bearer first_token'},
+    )
+    assert response.status == 200
+    assert response.json()['chats'] == []
+
+
+@pytest.mark.pgsql('db_1', files=['initial_data.sql'])
+async def test_messenger_list_chats_with_last_message(service_client):
+    """Verify list-chats includes last_message for chats with messages."""
+    response = await service_client.post(
+        '/v1/messenger/list-chats',
+        params={'employee_id': 'first_id'},
+        headers={'Authorization': 'Bearer first_token'},
+    )
+    assert response.status == 200
+    chats = response.json()['chats']
+    chat1 = next(c for c in chats if c['chat_id'] == 'chat1')
+    last_msg = chat1['last_message']
+    assert last_msg['sender_id'] == 'user1'
+    assert last_msg['content']['content'] == 'Hello world!'
+    assert 'timestamp' in last_msg
+
+
+@pytest.mark.pgsql('db_1', files=['initial_data.sql'])
+async def test_messenger_recent_messages_returns_proper_json(service_client):
+    """Verify recent-messages returns proper JSON objects (not double-serialized)."""
+    response = await service_client.post(
+        '/v1/messenger/recent-messages',
+        headers={'Authorization': 'Bearer first_token'},
+        json={'chat_id': 'chat1'},
+    )
+    assert response.status == 200
+    messages = response.json()
+    assert isinstance(messages, list)
+    assert len(messages) == 1
+    msg = messages[0]
+    # Verify proper JSON object structure (not escaped strings)
+    assert isinstance(msg, dict)
+    assert msg['chat_id'] == 'chat1'
+    assert msg['sender_id'] == 'user1'
+    assert isinstance(msg['content'], dict)
+    assert msg['content']['content'] == 'Hello world!'
+
+
+@pytest.mark.pgsql('db_1', files=['initial_data.sql'])
+async def test_messenger_recent_messages_empty_chat(service_client):
+    """Create a new chat, load messages, verify empty (no blank message after fix)."""
+    create_resp = await service_client.post(
+        '/v1/messenger/create-chat',
+        headers={'Authorization': 'Bearer first_token'},
+        json={'chat_name': 'Empty Chat', 'id_list': ['first_id']},
+    )
+    assert create_resp.status == 200
+    chat_id = create_resp.json()['chat_id']
+
+    response = await service_client.post(
+        '/v1/messenger/recent-messages',
+        headers={'Authorization': 'Bearer first_token'},
+        json={'chat_id': chat_id},
+    )
+    assert response.status == 200
+    result = response.json()
+    # After fix: no blank message inserted on chat creation
+    assert result is None or result == []
+
+
+@pytest.mark.pgsql('db_1', files=['initial_data.sql'])
+async def test_messenger_recent_messages_ordering(service_client, service_port):
+    """Send multiple messages via WebSocket, verify DESC timestamp order."""
+    create_resp = await service_client.post(
+        '/v1/messenger/create-chat',
+        headers={'Authorization': 'Bearer first_token'},
+        json={'chat_name': 'Order Test', 'id_list': ['first_id']},
+    )
+    assert create_resp.status == 200
+    chat_id = create_resp.json()['chat_id']
+
+    # Send 3 messages via WebSocket with small delays for distinct timestamps
+    ws_url = f'ws://localhost:{service_port}/chat?token=first_token'
+    async with websockets.connect(ws_url) as ws:
+        for i in range(3):
+            await ws.send(json.dumps({
+                'chat_id': chat_id,
+                'content': {'content': f'Message {i}'},
+            }))
+            await asyncio.wait_for(ws.recv(), timeout=2.0)
+            await asyncio.sleep(0.05)
+
+    # Verify DESC timestamp order
+    response = await service_client.post(
+        '/v1/messenger/recent-messages',
+        headers={'Authorization': 'Bearer first_token'},
+        json={'chat_id': chat_id},
+    )
+    assert response.status == 200
+    messages = response.json()
+    assert len(messages) == 3
+    # Messages should be in DESC timestamp order (newest first)
+    for i in range(len(messages) - 1):
+        assert messages[i]['timestamp'] >= messages[i + 1]['timestamp']
+    # Newest message should be "Message 2"
+    assert messages[0]['content']['content'] == 'Message 2'
+    assert messages[2]['content']['content'] == 'Message 0'
+
+
+@pytest.mark.pgsql('db_1', files=['initial_data.sql'])
+async def test_messenger_create_chat_unauthorized(service_client):
+    """All messenger REST endpoints return 401 without auth token."""
+    # create-chat
+    resp = await service_client.post(
+        '/v1/messenger/create-chat',
+        json={'chat_name': 'No Auth', 'id_list': ['first_id']},
+    )
+    assert resp.status == 401
+
+    # list-chats
+    resp = await service_client.post(
+        '/v1/messenger/list-chats',
+        params={'employee_id': 'first_id'},
+    )
+    assert resp.status == 401
+
+    # recent-messages
+    resp = await service_client.post(
+        '/v1/messenger/recent-messages',
+        json={'chat_id': 'chat1'},
+    )
+    assert resp.status == 401
+
+
+@pytest.mark.pgsql('db_1', files=['initial_data.sql'])
+async def test_messenger_websocket_send_and_receive(service_client, service_port):
+    """Connect via WebSocket, send a message, verify it's persisted via REST."""
+    create_resp = await service_client.post(
+        '/v1/messenger/create-chat',
+        headers={'Authorization': 'Bearer first_token'},
+        json={'chat_name': 'WS Send Test', 'id_list': ['first_id', 'second_id']},
+    )
+    assert create_resp.status == 200
+    chat_id = create_resp.json()['chat_id']
+
+    # Send message via WebSocket
+    ws_url = f'ws://localhost:{service_port}/chat?token=first_token'
+    async with websockets.connect(ws_url) as ws:
+        await ws.send(json.dumps({
+            'chat_id': chat_id,
+            'content': {'content': 'WebSocket hello!'},
+        }))
+        # Server echoes the message back (sender is also a chat member)
+        echo = await asyncio.wait_for(ws.recv(), timeout=2.0)
+        echo_data = json.loads(echo)
+        assert echo_data['sender_id'] == 'first_id'
+        assert echo_data['chat_id'] == chat_id
+
+    # Verify message was persisted via REST
+    response = await service_client.post(
+        '/v1/messenger/recent-messages',
+        headers={'Authorization': 'Bearer first_token'},
+        json={'chat_id': chat_id},
+    )
+    assert response.status == 200
+    messages = response.json()
+    assert len(messages) == 1
+    assert messages[0]['content']['content'] == 'WebSocket hello!'
+    assert messages[0]['sender_id'] == 'first_id'
+    assert messages[0]['chat_id'] == chat_id
+
+
+@pytest.mark.pgsql('db_1', files=['initial_data.sql'])
+async def test_messenger_websocket_broadcast(service_client, service_port):
+    """Two users connect via WebSocket, one sends message, other receives it."""
+    create_resp = await service_client.post(
+        '/v1/messenger/create-chat',
+        headers={'Authorization': 'Bearer first_token'},
+        json={'chat_name': 'Broadcast Test', 'id_list': ['first_id', 'second_id']},
+    )
+    assert create_resp.status == 200
+    chat_id = create_resp.json()['chat_id']
+
+    ws_url_1 = f'ws://localhost:{service_port}/chat?token=first_token'
+    ws_url_2 = f'ws://localhost:{service_port}/chat?token=second_token'
+
+    async with websockets.connect(ws_url_1) as ws1, \
+               websockets.connect(ws_url_2) as ws2:
+        # User 1 sends a message
+        await ws1.send(json.dumps({
+            'chat_id': chat_id,
+            'content': {'content': 'Hello from user 1!'},
+        }))
+
+        # User 1 gets echo back (they are a member too)
+        echo = await asyncio.wait_for(ws1.recv(), timeout=2.0)
+        echo_data = json.loads(echo)
+        assert echo_data['sender_id'] == 'first_id'
+        assert echo_data['content']['content'] == 'Hello from user 1!'
+
+        # User 2 receives the broadcast
+        broadcast = await asyncio.wait_for(ws2.recv(), timeout=2.0)
+        broadcast_data = json.loads(broadcast)
+        assert broadcast_data['sender_id'] == 'first_id'
+        assert broadcast_data['content']['content'] == 'Hello from user 1!'
+        assert broadcast_data['chat_id'] == chat_id
+
+
+@pytest.mark.pgsql('db_1', files=['initial_data.sql'])
+async def test_messenger_websocket_no_auth(service_port):
+    """WebSocket connection without auth should be rejected."""
+    ws_url = f'ws://localhost:{service_port}/chat'
+    try:
+        async with websockets.connect(ws_url) as ws:
+            await ws.recv()
+        pytest.fail("Connection should have been rejected without auth")
+    except Exception:
+        pass  # Expected: server rejects unauthenticated WebSocket
+
 
 @pytest.mark.pgsql('db_1', files=['initial_data.sql'])
 async def test_tracker_assigned_tasks_to_user (service_client):
