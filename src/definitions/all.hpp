@@ -1290,6 +1290,7 @@ struct GenerateFromTemplateRequest : public JsonCompatible {
   REGISTER_STRUCT_FIELD(end_date, userver::storages::postgres::TimePoint,
                         "end_date");
   REGISTER_STRUCT_FIELD(type, std::string, "type");
+  REGISTER_STRUCT_FIELD(signature_password, std::string, "signature_password");
   REGISTER_STRUCT_FIELD_OPTIONAL(params, std::vector<std::string>, "params");
 };
 #endif

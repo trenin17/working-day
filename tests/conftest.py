@@ -80,6 +80,12 @@ def userver_config_pyservice(mockserver_info):
         components['handler-v1-documents-generate-from-template'][
             'pyservice-url'
         ] = mockserver_info.url('documents/generate-from-template')
+        components['handler-v1-documents-generate-from-template'][
+            'pyservice-nep-sign-url'
+        ] = mockserver_info.url('document/nep-sign')
+        components['handler-v1-documents-generate-from-template'][
+            'pyservice-create-stamp-url'
+        ] = mockserver_info.url('document/create-stamp-for-nep')
 
         components['handler-v1-tracker-tasks-documents-send'][
             'pyservice-url'

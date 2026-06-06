@@ -20,8 +20,11 @@
 
 #include "definitions/all.hpp"
 #include "utils/s3_presigned_links.hpp"
+#include "views/v1/documents/nep/common/nep_common.hpp"
 
 using json = nlohmann::json;
+
+namespace nep_common = views::v1::documents::nep::common;
 
 namespace views::v1::documents::generate_from_template {
 
@@ -179,6 +182,12 @@ properties:
     is_testing:
         type: boolean
         description: Use stub S3 presigned URLs in testsuite
+    pyservice-nep-sign-url:
+        type: string
+        description: Url of python service (document/nep-sign)
+    pyservice-create-stamp-url:
+        type: string
+        description: Url of python service (document/create-stamp-for-nep), after NEP if sign_required != 0
 )");
   }
 
@@ -194,6 +203,9 @@ properties:
             component_context.FindComponent<userver::components::HttpClient>()
                 .GetHttpClient()),
         pyservice_url_(config["pyservice-url"].As<std::string>()),
+        pyservice_nep_sign_url_(config["pyservice-nep-sign-url"].As<std::string>()),
+        pyservice_create_stamp_url_(
+            config["pyservice-create-stamp-url"].As<std::string>()),
         is_testing_(config["is_testing"].As<bool>()) {}
 
   std::string HandleRequestThrow(
@@ -209,6 +221,12 @@ properties:
 
     GenerateFromTemplateRequest request_body;
     request_body.ParseRegisteredFields(request.RequestBody());
+
+    if (request_body.signature_password.empty()) {
+      request.GetHttpResponse().SetStatus(
+          userver::server::http::HttpStatus::kBadRequest);
+      return ErrorMessage{"signature_password is required"}.ToJsonString();
+    }
 
     auto notification_text = BuildHeadNotificationText(
         request_body.type, request_body.start_date, request_body.end_date);
@@ -348,7 +366,7 @@ properties:
             "(employee_id, document_id, signed) "
             "VALUES ($1, $2, $3), ($4, $2, $5) "
             "ON CONFLICT DO NOTHING",
-        user_id, file_key, true, head_employee_id, false);
+        user_id, file_key, false, head_employee_id, false);
 
     auto notification_id = userver::utils::generators::GenerateUuid();
     trx.Execute("INSERT INTO working_day_" + company_id +
@@ -362,6 +380,27 @@ properties:
 
     trx.Commit();
 
+    nep_common::NepSignResult nep_out;
+    auto nep_err = nep_common::RunNepSign(
+        pg_cluster_, http_client_, pyservice_nep_sign_url_, company_id, user_id,
+        file_key, request_body.signature_password, std::nullopt, std::nullopt,
+        nep_out);
+    if (nep_err.has_value()) {
+      request.GetHttpResponse().SetStatus(nep_err->status);
+      return nep_err->body;
+    }
+
+    auto stamp_err = nep_common::TryCreateStampAfterNepSign(
+        pg_cluster_, http_client_, pyservice_create_stamp_url_, company_id,
+        user_id, file_key);
+    if (stamp_err.has_value()) {
+      LOG_ERROR() << "generate_from_template: NEP sign ok but create-stamp failed "
+                     "document_id="
+                  << file_key;
+      request.GetHttpResponse().SetStatus(stamp_err->status);
+      return stamp_err->body;
+    }
+
     GenerateFromTemplateResponse result;
     result.document_id = file_key;
     result.download_link = utils::s3_presigned_links::GenerateDocumentPresignedLink(
@@ -373,6 +412,8 @@ properties:
   userver::storages::postgres::ClusterPtr pg_cluster_;
   userver::clients::http::Client& http_client_;
   std::string pyservice_url_;
+  std::string pyservice_nep_sign_url_;
+  std::string pyservice_create_stamp_url_;
   bool is_testing_{false};
 };
 

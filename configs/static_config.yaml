@@ -731,6 +731,8 @@ components_manager:
                 scopes:
                   - user
             pyservice-url: 'http://python-service:3000/document/generate-from-template'
+            pyservice-nep-sign-url: 'http://python-service:3000/document/nep-sign'
+            pyservice-create-stamp-url: 'http://python-service:3000/document/create-stamp-for-nep'
             is_testing: $is_testing
 
         handler-v1-comments-add:

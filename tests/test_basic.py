@@ -3698,6 +3698,7 @@ async def create_template_absence_request(service_client, absence_type='sick_lea
             'type': absence_type,
             'start_date': '2023-08-01T00:00:00',
             'end_date': '2023-08-03T00:00:00',
+            'signature_password': '123456',
         },
     )
     return response.json()
@@ -3890,6 +3891,7 @@ async def test_generate_from_template_unknown_type(service_client):
             'type': 'unknown_type',
             'start_date': '2023-08-01T00:00:00',
             'end_date': '2023-08-03T00:00:00',
+            'signature_password': '123456',
         },
     )
     assert response.status == 400

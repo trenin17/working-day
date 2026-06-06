@@ -3208,6 +3208,7 @@ components:
               - start_date
               - end_date
               - type
+              - signature_password
             properties:
                 start_date:
                     $ref: '#/components/schemas/Timestamp'
@@ -3215,6 +3216,9 @@ components:
                     $ref: '#/components/schemas/Timestamp'
                 type:
                     $ref: '#/components/schemas/AbscenceType'
+                signature_password:
+                    type: string
+                    description: NEP signature password of the requesting employee
                 params:
                     type: array
                     description: Ordered list of parameters for placeholders
