@@ -52,15 +52,71 @@ class InfoTrackerTasksHandler final
     if (task_id.empty()) {
       request.GetHttpResponse().SetStatus(
           userver::server::http::HttpStatus::kBadRequest);
-      return ErrorMessage{"Missing task_id parametr"}.ToJsonString();
+      return ErrorMessage{"Missing task_id parameter"}.ToJsonString();
     }
 
     auto result = pg_cluster_->Execute(
-        userver::storages::postgres::ClusterHostType::kSlave,
-        "SELECT title, project_name, description, id, creator, assignee, status, media_links, created_ts, deadline "
-        "FROM working_day_" + company_id + ".tracker_tasks "
-            "WHERE id = $1",
-        task_id);
+    userver::storages::postgres::ClusterHostType::kSlave,
+    R"(
+    SELECT
+        t.task_id,
+        t.title,
+        t.project_id,
+        t.description,
+        t.creator,
+        t.assignee,
+        t.status,
+        t.priority,
+        t.media_links,
+        t.created_ts,
+        t.last_updated_ts,
+        t.deadline,
+        t.action_id,
+        COALESCE(obs.observers, '{}') AS observers,
+        COALESCE(rel.related_tasks_ids, '{}') AS related_tasks_ids,
+        COALESCE(docs.document_ids, '{}') AS document_ids,
+        COALESCE(com.comments_ids, '{}') AS comments_ids
+    FROM working_day_)" + company_id + R"(.tracker_tasks t
+    LEFT JOIN (
+        SELECT task_id, array_agg(employee_id) AS observers
+        FROM working_day_)" + company_id + R"(.tracker_task_observers
+        GROUP BY task_id
+    ) obs ON obs.task_id = t.task_id
+    LEFT JOIN (
+        SELECT task_id, array_agg(task_id_related) AS related_tasks_ids
+        FROM working_day_)" + company_id + R"(.tracker_task_related_tasks
+        GROUP BY task_id
+    ) rel ON rel.task_id = t.task_id
+    LEFT JOIN (
+        SELECT task_id, array_agg(document_id) AS document_ids
+        FROM working_day_)" + company_id + R"(.task_documents
+        GROUP BY task_id
+    ) docs ON docs.task_id = t.task_id
+    LEFT JOIN (
+        SELECT task_id, array_agg(comment_id) AS comments_ids
+        FROM working_day_)" + company_id + R"(.task_comments
+        GROUP BY task_id
+    ) com ON com.task_id = t.task_id
+    WHERE t.task_id = $1
+      AND (
+        t.creator = $2
+        OR t.assignee = $2
+        OR EXISTS (
+            SELECT 1 FROM working_day_)" + company_id + R"(.tracker_task_observers o
+            WHERE o.task_id = t.task_id AND o.employee_id = $2
+        )
+        OR EXISTS (
+            SELECT 1 FROM working_day_)" + company_id + R"(.tracker_projects p
+            WHERE p.project_id = t.project_id AND p.creator = $2
+        )
+        OR EXISTS (
+            SELECT 1 FROM working_day_)" + company_id + R"(.tracker_project_assigned_users pau
+            WHERE pau.project_id = t.project_id AND pau.employee_id = $2
+        )
+      )
+    )",
+    task_id, user_id);
+
 
     if (result.IsEmpty()) {
       request.GetHttpResponse().SetStatus(
@@ -68,10 +124,10 @@ class InfoTrackerTasksHandler final
       return ErrorMessage{"Task not Found"}.ToJsonString();
     }
 
-    TrackerTasksInfoItem response{result.AsSingleRow<TrackerTasksInfoItem>(userver::storages::postgres::kRowTag)};
+    TrackerTasksItemResponse response{result.AsSingleRow<TrackerTasksItemResponse>(userver::storages::postgres::kRowTag)};
 
     if (response.media_links.has_value()) {
-      for (auto& link : response.media_links.value()) {
+      for (auto& link : *response.media_links) {
           link = utils::s3_presigned_links::GenerateTrackerTasksMediaPresignedLink(
               link, utils::s3_presigned_links::Download, is_testing_);
       }

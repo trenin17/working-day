@@ -61,9 +61,11 @@ add_library(${PROJECT_NAME}_objs OBJECT
 	src/views/v1/documents/send/view.cpp
 	src/views/v1/documents/list/view.cpp
 	src/views/v1/documents/download/view.cpp
+	src/views/v1/documents/download_with_signatures/view.cpp
 	src/views/v1/search/full/view.cpp
 	src/views/v1/search/suggest/view.cpp
-	src/views/v1/documents/sign/view.cpp
+	src/views/v1/documents/nep/common/nep_common.cpp
+	src/views/v1/documents/nep/create_stamp_for_nep/view.cpp
 	src/views/v1/documents/list_all/view.cpp
 	src/views/v1/documents/get_signs/view.cpp
 	src/views/v1/superuser/company/add/view.cpp
@@ -73,12 +75,17 @@ add_library(${PROJECT_NAME}_objs OBJECT
 	src/views/v1/messenger/recent_messages/view.cpp
 	src/views/v1/tracker/projects/add/view.cpp
 	src/views/v1/tracker/projects/list/view.cpp
+	src/views/v1/tracker/projects/media/upload/view.cpp
+	src/views/v1/tracker/projects/info/view.cpp
+	src/views/v1/tracker/projects/edit/view.cpp
 	src/views/v1/tracker/tasks/add/view.cpp
 	src/views/v1/tracker/tasks/list/view.cpp
 	src/views/v1/tracker/tasks/info/view.cpp
 	src/views/v1/tracker/tasks/assigned_to_user/view.cpp
 	src/views/v1/tracker/tasks/edit/view.cpp
 	src/views/v1/tracker/tasks/media/upload/view.cpp
+	src/views/v1/tracker/tasks/documents/send/view.cpp
+	src/views/v1/tracker/tasks/documents/remove/view.cpp
 	src/views/v1/documents/chain/update/view.cpp
 	src/views/v1/documents/chain/add/view.cpp
 	src/views/v1/documents/remove/view.cpp
@@ -87,6 +94,14 @@ add_library(${PROJECT_NAME}_objs OBJECT
 	src/views/v1/documents/generate_from_template/view.cpp
 	src/views/v1/employee/permissions/list/view.cpp
 	src/views/v1/employee/permissions/set/view.cpp
+	src/views/v1/comments/add/view.cpp
+	src/views/v1/comments/edit/view.cpp
+	src/views/v1/comments/info/view.cpp
+	src/views/v1/comments/remove/view.cpp
+	src/views/v1/employee/keys/generate/view.cpp
+	src/views/v1/documents/nep/nep_sign/view.cpp
+	src/views/v1/documents/nep_verify/view.cpp
+	src/views/v1/documents/upload_signature/view.cpp
 )
 target_link_libraries(${PROJECT_NAME}_objs PUBLIC userver-postgresql)
 target_link_libraries(${PROJECT_NAME}_objs PRIVATE nlohmann_json::nlohmann_json)

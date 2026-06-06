@@ -1,4 +1,5 @@
 #define V1_DOCUMENTS_GENERATE_FROM_TEMPLATE
+#define USERVER_POSTGRES_ENABLE_LEGACY_TIMESTAMP 1
 
 #include "view.hpp"
 
@@ -15,14 +16,21 @@
 #include <userver/utils/boost_uuid4.hpp>
 #include <userver/yaml_config/merge_schemas.hpp>
 
+#include <fmt/core.h>
 
 #include "definitions/all.hpp"
+#include "utils/s3_presigned_links.hpp"
+#include "views/v1/documents/nep/common/nep_common.hpp"
 
 using json = nlohmann::json;
+
+namespace nep_common = views::v1::documents::nep::common;
 
 namespace views::v1::documents::generate_from_template {
 
 namespace {
+
+const std::string kTz = "UTC";
 
 std::optional<std::string> ActionTypeToName(const std::string& type) {
   if (type == "vacation") {
@@ -69,10 +77,78 @@ std::optional<std::string> ActionTypeToName(const std::string& type) {
   return std::nullopt;
 }
 
-struct ActionInfo {
-  std::string employee_id, type;
-  userver::storages::postgres::TimePoint start_date, end_date;
-};
+std::optional<std::string> BuildHeadNotificationText(
+    const std::string& type,
+    const userver::storages::postgres::TimePoint& start_date,
+    const userver::storages::postgres::TimePoint& end_date) {
+  constexpr auto notification_fmt =
+      "Ваш сотрудник запросил {} c {} по {}. Подтвердите или отклоните "
+      "запрос.";
+  auto start = userver::utils::datetime::Timestring(start_date, kTz, "%Y-%m-%d");
+  auto end = userver::utils::datetime::Timestring(end_date, kTz, "%Y-%m-%d");
+  auto start_time =
+      userver::utils::datetime::Timestring(start_date, kTz, "%Y-%m-%d %H:%M:%S");
+  auto end_time =
+      userver::utils::datetime::Timestring(end_date, kTz, "%Y-%m-%d %H:%M:%S");
+
+  if (type == "vacation") {
+    return fmt::format(notification_fmt, "отпуск", start, end);
+  } else if (type == "sick_leave") {
+    return fmt::format(notification_fmt, "больничный", start, end);
+  } else if (type == "unpaid_vacation") {
+    return fmt::format(notification_fmt, "неоплачиваемый отпуск", start, end);
+  } else if (type == "business_trip") {
+    return fmt::format(notification_fmt, "командировку", start, end);
+  } else if (type == "overtime") {
+    return fmt::format(notification_fmt, "сверхурочные", start_time, end_time);
+  } else if (type == "vacation_days_instead") {
+    return fmt::format(notification_fmt, "дни в счёт ежегодного отпуска", start,
+                     end);
+  } else if (type == "payout_birth") {
+    return fmt::format(notification_fmt,
+                     "единовременную выплату при рождении ребёнка", start,
+                     end);
+  } else if (type == "certificates_on_dismissal") {
+    return fmt::format(notification_fmt, "выдачу справок при увольнении", start,
+                     end);
+  } else if (type == "tax_deduction_children") {
+    return fmt::format(notification_fmt, "налоговый вычет на детей", start, end);
+  } else if (type == "part_time") {
+    return fmt::format(notification_fmt, "неполный рабочий день", start, end);
+  } else if (type == "maternity_childcare_15") {
+    return fmt::format(notification_fmt, "отпуск по уходу за ребёнком до 1.5 лет",
+                     start, end);
+  } else if (type == "maternity_childcare_3") {
+    return fmt::format(notification_fmt, "отпуск по уходу за ребёнком до 3 лет",
+                     start, end);
+  } else if (type == "maternity_pregnancy") {
+    return fmt::format(notification_fmt, "отпуск по беременности и родам", start,
+                     end);
+  } else if (type == "transfer") {
+    return fmt::format(notification_fmt, "перевод на другую должность", start,
+                     end);
+  } else if (type == "vacation_shift") {
+    return fmt::format(notification_fmt, "перенос ежегодного отпуска", start,
+                     end);
+  } else if (type == "maternity_work_during") {
+    return fmt::format(notification_fmt, "работу в период декретного отпуска",
+                     start, end);
+  } else if (type == "personal_data_change") {
+    return fmt::format(notification_fmt, "смену персональных данных", start,
+                     end);
+  } else if (type == "resignation") {
+    return fmt::format(notification_fmt, "увольнение по собственному желанию",
+                     start, end);
+  } else if (type == "maternity_early_exit") {
+    return fmt::format(notification_fmt, "досрочный выход из отпуска по уходу",
+                     start, end);
+  } else if (type == "unpaid_vacation_with_reason") {
+    return fmt::format(notification_fmt,
+                     "отпуск без сохранения ЗП (с указанием причины)", start,
+                     end);
+  }
+  return std::nullopt;
+}
 
 struct EmployeeInfo {
   std::string name, surname, subcompany;
@@ -83,6 +159,7 @@ struct HeadInfo {
   std::string name, surname;
   std::optional<std::string> patronymic, job_position;
 };
+
 class HeadTemplate {
  public:
   std::string head_template;
@@ -102,6 +179,15 @@ properties:
     pyservice-url:
         type: string
         description: Url of python service
+    is_testing:
+        type: boolean
+        description: Use stub S3 presigned URLs in testsuite
+    pyservice-nep-sign-url:
+        type: string
+        description: Url of python service (document/nep-sign)
+    pyservice-create-stamp-url:
+        type: string
+        description: Url of python service (document/create-stamp-for-nep), after NEP if sign_required != 0
 )");
   }
 
@@ -116,12 +202,15 @@ properties:
         http_client_(
             component_context.FindComponent<userver::components::HttpClient>()
                 .GetHttpClient()),
-        pyservice_url_(config["pyservice-url"].As<std::string>()) {}
+        pyservice_url_(config["pyservice-url"].As<std::string>()),
+        pyservice_nep_sign_url_(config["pyservice-nep-sign-url"].As<std::string>()),
+        pyservice_create_stamp_url_(
+            config["pyservice-create-stamp-url"].As<std::string>()),
+        is_testing_(config["is_testing"].As<bool>()) {}
 
   std::string HandleRequestThrow(
       const userver::server::http::HttpRequest& request,
       userver::server::request::RequestContext& ctx) const override {
-    // CORS
     request.GetHttpResponse().SetHeader(
         static_cast<std::string>("Access-Control-Allow-Origin"), "*");
     request.GetHttpResponse().SetHeader(
@@ -130,28 +219,41 @@ properties:
     auto user_id = ctx.GetData<std::string>("user_id");
     const auto& company_id = ctx.GetData<std::string>("company_id");
 
-    auto action_id = request.GetArg("action_id");
-    LOG_INFO() << "action_id: " << action_id;
     GenerateFromTemplateRequest request_body;
     request_body.ParseRegisteredFields(request.RequestBody());
 
-    auto file_key = userver::utils::generators::GenerateUuid();
+    if (request_body.signature_password.empty()) {
+      request.GetHttpResponse().SetStatus(
+          userver::server::http::HttpStatus::kBadRequest);
+      return ErrorMessage{"signature_password is required"}.ToJsonString();
+    }
+
+    auto notification_text = BuildHeadNotificationText(
+        request_body.type, request_body.start_date, request_body.end_date);
+    if (!notification_text.has_value()) {
+      request.GetHttpResponse().SetStatus(
+          userver::server::http::HttpStatus::kBadRequest);
+      return ErrorMessage{"Unknown abscence type"}.ToJsonString();
+    }
+
+    if (request_body.type != "overtime") {
+      using namespace userver::utils::datetime;
+      using namespace std::literals::chrono_literals;
+      request_body.start_date = Stringtime(
+          Timestring(request_body.start_date, kTz, "%Y-%m-%d"), kTz, "%Y-%m-%d");
+      request_body.end_date =
+          Stringtime(Timestring(request_body.end_date, kTz, "%Y-%m-%d"), kTz,
+                     "%Y-%m-%d") +
+          1439min;
+    }
+
+    auto action_id = userver::utils::generators::GenerateUuid();
+    const std::string action_status = "pending";
 
     auto trx = pg_cluster_->Begin(
-        "documents_generate_from_template",
+        "documents_generate_from_template_read",
         userver::storages::postgres::ClusterHostType::kMaster,
-        {});  // TODO: change to slave read tx
-
-
-    auto action_info =
-        trx.Execute(
-               "SELECT user_id, type, start_date, end_date "
-               "FROM working_day_" +
-                   company_id +
-                   ".actions "
-                   "WHERE id = $1",
-               action_id)
-            .AsSingleRow<ActionInfo>(userver::storages::postgres::kRowTag);
+        {});
 
     auto employee_info =
         trx.Execute(
@@ -160,8 +262,11 @@ properties:
                    company_id +
                    ".employees "
                    "WHERE id = $1 ",
-               action_info.employee_id)
+               user_id)
             .AsSingleRow<EmployeeInfo>(userver::storages::postgres::kRowTag);
+
+    const auto head_employee_id =
+        employee_info.head_id.value_or(user_id);
 
     auto head_info =
         trx.Execute(
@@ -169,23 +274,27 @@ properties:
                "FROM working_day_" +
                    company_id +
                    ".employees "
-                   "WHERE id = $1 ",
-               employee_info.head_id.value_or(action_info.employee_id))
+               "WHERE id = $1 ",
+               head_employee_id)
             .AsSingleRow<HeadInfo>(userver::storages::postgres::kRowTag);
 
     auto head_template = trx.Execute(
-               "SELECT head_template "
-               "FROM wd_general.companies "
-                   "WHERE id = $1 ",
-                company_id)
-                .AsSingleRow<HeadTemplate>(userver::storages::postgres::kRowTag).head_template;
+                              "SELECT head_template "
+                              "FROM wd_general.companies "
+                              "WHERE id = $1 ",
+                              company_id)
+                              .AsSingleRow<HeadTemplate>(
+                                  userver::storages::postgres::kRowTag)
+                              .head_template;
 
     trx.Commit();
 
+    auto file_key = userver::utils::generators::GenerateUuid();
+
     PyserviceDocumentGenerateRequest link_request;
-    link_request.action_type = action_info.type;
+    link_request.action_type = request_body.type;
     link_request.request_type = "create";
-    link_request.employee_id = action_info.employee_id;
+    link_request.employee_id = user_id;
     link_request.employee_name = employee_info.name;
     link_request.employee_surname = employee_info.surname;
     link_request.subcompany = employee_info.subcompany;
@@ -193,9 +302,9 @@ properties:
     link_request.head_name = head_info.name;
     link_request.head_surname = head_info.surname;
     link_request.start_date = userver::utils::datetime::Timestring(
-        action_info.start_date, "UTC", "%d.%m.%Y");
+        request_body.start_date, kTz, "%d.%m.%Y");
     link_request.end_date = userver::utils::datetime::Timestring(
-        action_info.end_date, "UTC", "%d.%m.%Y"),
+        request_body.end_date, kTz, "%d.%m.%Y");
     link_request.employee_patronymic = employee_info.patronymic;
     link_request.head_patronymic = head_info.patronymic;
     link_request.employee_position = employee_info.job_position;
@@ -205,57 +314,97 @@ properties:
     }
     link_request.head_template = head_template;
 
-
     auto resp = http_client_.CreateRequest()
-                    .post(
-                        "http://python-service:3000/"
-                        "document/generate-from-template?file_key=" +
-                        file_key
-                    )
+                    .post(pyservice_url_ + "?file_key=" + file_key)
                     .data(link_request.ToJsonString())
                     .retry(2)
                     .timeout(std::chrono::milliseconds{5000})
                     .perform();
 
     resp->raise_for_status();
-    GenerateFromTemplateResponse result;
-    result.download_link = resp->body();
 
-
-    auto action_name = ActionTypeToName(action_info.type);
-
-    auto document_name = "Запрос на " + action_name.value() + " " + employee_info.surname + " " +
-                         employee_info.name + " " +
+    auto action_name = ActionTypeToName(request_body.type);
+    auto document_name = "Запрос на " + action_name.value() + " " +
+                         employee_info.surname + " " + employee_info.name +
+                         " " +
                          userver::utils::datetime::Timestring(
-                             action_info.start_date, "UTC", "%d.%m.%Y") +
+                             request_body.start_date, kTz, "%d.%m.%Y") +
                          " - " +
                          userver::utils::datetime::Timestring(
-                             action_info.end_date, "UTC", "%d.%m.%Y");
+                             request_body.end_date, kTz, "%d.%m.%Y");
     file_key += ".pdf";
 
-    pg_cluster_->Execute(userver::storages::postgres::ClusterHostType::kMaster,
-                         "INSERT INTO working_day_" + company_id +
-                             ".documents(id, name, "
-                             "sign_required, type) "
-                             "VALUES($1, $2, $3, $4)",
-                         file_key, document_name, false, "employee_request");
+    std::vector<DocumentsChainMetadataItemPg> chain_metadata_pg{
+        DocumentsChainMetadataItemPg{user_id, 0, 1},
+        DocumentsChainMetadataItemPg{head_employee_id, 0, 0},
+    };
 
-    pg_cluster_->Execute(userver::storages::postgres::ClusterHostType::kMaster,
-                         "UPDATE working_day_" + company_id + ".actions "
-                             "SET document_id = $1 "
-                             "WHERE id = $2",
-                         file_key, action_id);
-
-    pg_cluster_->Execute(
+    trx = pg_cluster_->Begin(
+        "documents_generate_from_template_write",
         userver::storages::postgres::ClusterHostType::kMaster,
+        {});
+
+    trx.Execute("INSERT INTO working_day_" + company_id +
+                    ".documents(id, name, sign_required, type, author_id, "
+                    "chain_metadata_new) "
+                    "VALUES($1, $2, $3, $4, $5, $6)",
+                file_key, document_name, 0, "employee_request", user_id,
+                chain_metadata_pg);
+
+    trx.Execute("INSERT INTO working_day_" + company_id +
+                    ".actions(id, type, user_id, start_date, "
+                    "end_date, status, document_id) "
+                    "VALUES($1, $2, $3, $4, $5, $6, $7) "
+                    "ON CONFLICT (id) "
+                    "DO NOTHING",
+                action_id, request_body.type, user_id, request_body.start_date,
+                request_body.end_date, action_status, file_key);
+
+    trx.Execute(
         "INSERT INTO working_day_" + company_id +
             ".employee_document "
             "(employee_id, document_id, signed) "
-            "VALUES ($1, $2, $3), ($4, $2, $3) "
+            "VALUES ($1, $2, $3), ($4, $2, $5) "
             "ON CONFLICT DO NOTHING",
-        action_info.employee_id, file_key, false,
-        employee_info.head_id.value_or(action_info.employee_id));
+        user_id, file_key, false, head_employee_id, false);
 
+    auto notification_id = userver::utils::generators::GenerateUuid();
+    trx.Execute("INSERT INTO working_day_" + company_id +
+                    ".notifications(id, type, text, user_id, "
+                    "sender_id, action_id, document_id) "
+                    "VALUES($1, $2, $3, $4, $5, $6, $7) "
+                    "ON CONFLICT (id) "
+                    "DO NOTHING",
+                notification_id, "vacation_request", notification_text.value(),
+                head_employee_id, user_id, action_id, file_key);
+
+    trx.Commit();
+
+    nep_common::NepSignResult nep_out;
+    auto nep_err = nep_common::RunNepSign(
+        pg_cluster_, http_client_, pyservice_nep_sign_url_, company_id, user_id,
+        file_key, request_body.signature_password, std::nullopt, std::nullopt,
+        nep_out);
+    if (nep_err.has_value()) {
+      request.GetHttpResponse().SetStatus(nep_err->status);
+      return nep_err->body;
+    }
+
+    auto stamp_err = nep_common::TryCreateStampAfterNepSign(
+        pg_cluster_, http_client_, pyservice_create_stamp_url_, company_id,
+        user_id, file_key);
+    if (stamp_err.has_value()) {
+      LOG_ERROR() << "generate_from_template: NEP sign ok but create-stamp failed "
+                     "document_id="
+                  << file_key;
+      request.GetHttpResponse().SetStatus(stamp_err->status);
+      return stamp_err->body;
+    }
+
+    GenerateFromTemplateResponse result;
+    result.document_id = file_key;
+    result.download_link = utils::s3_presigned_links::GenerateDocumentPresignedLink(
+        file_key, utils::s3_presigned_links::Download, is_testing_);
     return result.ToJsonString();
   }
 
@@ -263,6 +412,9 @@ properties:
   userver::storages::postgres::ClusterPtr pg_cluster_;
   userver::clients::http::Client& http_client_;
   std::string pyservice_url_;
+  std::string pyservice_nep_sign_url_;
+  std::string pyservice_create_stamp_url_;
+  bool is_testing_{false};
 };
 
 }  // namespace

@@ -14,4 +14,5 @@ aws/
 *.pem
 python_service/.venv/
 configs/secdist.json
+deploy/.env
 deploy/deploy_docker.sh

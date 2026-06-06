@@ -1,6 +1,7 @@
 #include "view.hpp"
 
 #include <nlohmann/json.hpp>
+#include <unordered_map>
 
 #include <userver/clients/dns/component.hpp>
 #include <userver/components/component_config.hpp>
@@ -18,9 +19,23 @@ namespace views::v1::notifications {
 
 namespace {
 
+using PhotoLinkCache = std::unordered_map<std::string, std::string>;
+
+static std::string GetOrCreatePhotoUrl(const std::string& photo_link,
+                                       PhotoLinkCache& cache) {
+  auto it = cache.find(photo_link);
+  if (it != cache.end()) {
+    return it->second;
+  }
+  std::string url = utils::s3_presigned_links::GeneratePhotoPresignedLink(
+      photo_link, utils::s3_presigned_links::LinkType::Download);
+  cache[photo_link] = url;
+  return url;
+}
+
 class ListEmployee {
  public:
-  json ToJSONObject() const {
+  json ToJSONObject(PhotoLinkCache& photo_cache) const {
     json j;
     j["id"] = id;
     j["name"] = name;
@@ -29,8 +44,7 @@ class ListEmployee {
       j["patronymic"] = patronymic.value();
     }
     if (photo_link) {
-      j["photo_link"] = utils::s3_presigned_links::GeneratePhotoPresignedLink(
-          photo_link.value(), utils::s3_presigned_links::LinkType::Download);
+      j["photo_link"] = GetOrCreatePhotoUrl(photo_link.value(), photo_cache);
     }
 
     return j;
@@ -42,17 +56,27 @@ class ListEmployee {
 
 class Notification {
  public:
-  json ToJSONObject() const {
+  json ToJSONObject(PhotoLinkCache& photo_cache) const {
     json j;
     j["id"] = id;
     j["type"] = type;
     j["text"] = text;
     j["is_read"] = is_read;
     if (sender) {
-      j["sender"] = sender.value().ToJSONObject();
+      j["sender"] = sender.value().ToJSONObject(photo_cache);
+    }
+    if (user_photo_link) {
+      j["user_photo_url"] =
+          GetOrCreatePhotoUrl(user_photo_link.value(), photo_cache);
     }
     if (action_id) {
       j["action_id"] = action_id.value();
+    }
+    if (task_id) {
+      j["task_id"] = task_id.value();
+    }
+    if (document_id) {
+      j["document_id"] = document_id.value();
     }
     j["created"] = userver::utils::datetime::Timestring(created, "UTC",
                                                         "%Y-%m-%dT%H:%M:%E6S");
@@ -63,7 +87,10 @@ class Notification {
   std::string id, type, text;
   bool is_read;
   std::optional<ListEmployee> sender;
+  std::optional<std::string> user_photo_link;
   std::optional<std::string> action_id;
+  std::optional<std::string> task_id;
+  std::optional<std::string> document_id;
   userver::storages::postgres::TimePoint created;
 };
 
@@ -72,8 +99,9 @@ class NotificationsResponse {
   std::string ToJSON() const {
     json j;
     j["notifications"] = json::array();
+    PhotoLinkCache photo_cache;
     for (const auto& notification : notifications) {
-      j["notifications"].push_back(notification.ToJSONObject());
+      j["notifications"].push_back(notification.ToJSONObject(photo_cache));
     }
     return j.dump();
   }
@@ -110,28 +138,33 @@ class NotificationsHandler final
     auto result = pg_cluster_->Execute(
       userver::storages::postgres::ClusterHostType::kSlave,
         R"(
-        SELECT 
-            n.id, 
-            n.type, 
-            n.text, 
+        SELECT
+            n.id,
+            n.type,
+            n.text,
             n.is_read,
-            CASE 
+            CASE
                 WHEN n.sender_id IS NULL THEN NULL
                 ELSE ROW(
-                    e.id, 
-                    e.name, 
-                    e.surname, 
-                    e.patronymic, 
-                    e.photo_link
+                    e_sender.id,
+                    e_sender.name,
+                    e_sender.surname,
+                    e_sender.patronymic,
+                    e_sender.photo_link
                 )
             END,
-            n.action_id, 
+            e_user.photo_link,
+            n.action_id,
+            n.task_id,
+            n.document_id,
             n.created
         FROM working_day_)" + company_id + R"(.notifications n
-        LEFT JOIN working_day_)" + company_id + R"(.employees e 
-            ON e.id = n.sender_id
+        LEFT JOIN working_day_)" + company_id + R"(.employees e_sender
+            ON e_sender.id = n.sender_id
+        LEFT JOIN working_day_)" + company_id + R"(.employees e_user
+            ON e_user.id = n.user_id
         WHERE n.user_id = $1
-        ORDER BY n.created DESC 
+        ORDER BY n.created DESC
         LIMIT 100
         )",
         user_id

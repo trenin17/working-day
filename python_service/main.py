@@ -1,9 +1,12 @@
 from aiohttp import web
 from generate_document.generate import generate_document
-from sign_document.sign import sign_document
+from sign_document.sign import create_stamp_for_nep
 from convert_document.convert import convert_document
 from attendance_export_to_excel.export import generate_attendance_excel
 from generate_from_template.generate import generate_from_template
+from nep_signer.sign_handler import nep_sign_document
+from nep_signer.verify_handler import nep_verify_document
+from build_archive.handler import build_document_archive
 import subprocess
 import logging
 
@@ -38,9 +41,12 @@ logging.getLogger('aiohttp.server').setLevel(logging.ERROR)
 
 app = web.Application(middlewares=[error_logging_middleware])
 app.add_routes([web.post('/document/generate', generate_document)])
-app.add_routes([web.post('/document/sign', sign_document)])
+app.add_routes([web.post('/document/create-stamp-for-nep', create_stamp_for_nep)])
 app.add_routes([web.post('/document/convert', convert_document)])
 app.add_routes([web.post('/attendance/export-to-excel', generate_attendance_excel)])
 app.add_routes([web.post('/document/generate-from-template', generate_from_template)])
+app.add_routes([web.post('/document/nep-sign', nep_sign_document)])
+app.add_routes([web.post('/document/nep-verify', nep_verify_document)])
+app.add_routes([web.post('/document/build-archive', build_document_archive)])
 
 web.run_app(app, host='0.0.0.0', port=3000)

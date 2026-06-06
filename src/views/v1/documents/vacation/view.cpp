@@ -201,9 +201,9 @@ class DocumentsVacationHandler final
     pg_cluster_->Execute(userver::storages::postgres::ClusterHostType::kMaster,
                          "INSERT INTO working_day_" + company_id +
                              ".documents(id, name, "
-                             "sign_required, type) "
-                             "VALUES($1, $2, $3, $4)",
-                         file_key, document_name, true, "employee_request");
+                             "sign_required, type, author_id) "
+                             "VALUES($1, $2, $3, $4, $5)",
+                         file_key, document_name, 1, "employee_request", user_id);
 
     pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kMaster,
@@ -214,6 +214,11 @@ class DocumentsVacationHandler final
             "ON CONFLICT DO NOTHING",
         action_info.employee_id, file_key, true,
         employee_info.head_id.value_or(action_info.employee_id));
+
+    pg_cluster_->Execute(userver::storages::postgres::ClusterHostType::kMaster,
+                         "UPDATE working_day_" + company_id +
+                             ".actions SET document_id = $1 WHERE id = $2",
+                         file_key, action_id);
 
     return response->body();
   }

@@ -14,6 +14,9 @@
 
 #include <definitions/all.hpp>
 
+#include "utils/s3_presigned_links.hpp"
+
+
 namespace views::v1::tracker::projects::list {
 
 namespace {
@@ -42,17 +45,31 @@ class TrackerProjectsListHandler final
         static_cast<std::string>("Access-Control-Allow-Headers"), "*");
 
     const auto& company_id = ctx.GetData<std::string>("company_id");
+    const auto& user_id = ctx.GetData<std::string>("user_id");
 
     auto result = pg_cluster_->Execute(
         userver::storages::postgres::ClusterHostType::kMaster,
-        "SELECT project_name, tasks_count "
-        "FROM working_day_" + 
-            company_id + 
-            ".tracker_projects");
+        "SELECT p.project_id, p.title, p.image_url, p.creator "
+        "FROM working_day_" + company_id + ".tracker_projects p "
+        "WHERE p.creator = $1 "
+        "   OR EXISTS ("
+        "     SELECT 1 FROM working_day_" + company_id + ".tracker_project_assigned_users au "
+        "     WHERE au.project_id = p.project_id AND au.employee_id = $1"
+        "   ) "
+        "ORDER BY p.created_ts DESC",
+        user_id
+    );
 
     TrackerProjectsListResponse response;
-    response.projects = result.AsContainer<std::vector<TrackerProjectsListItem>>(
+    response.projects = result.AsContainer<std::vector<TrackerProjectsItemResponseShort>>(
         userver::storages::postgres::kRowTag);
+
+    for (auto& project : response.projects) {
+      if (project.image_url.has_value()) {
+        project.image_url = utils::s3_presigned_links::GenerateTrackerProjectsMediaPresignedLink(
+            project.image_url.value(), utils::s3_presigned_links::Download);
+      }
+    }
 
     return response.ToJsonString();
   }

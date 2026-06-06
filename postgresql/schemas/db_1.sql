@@ -220,25 +220,87 @@ CREATE TABLE IF NOT EXISTS working_day_first.employee_chats (
   FOREIGN KEY (chat_id) REFERENCES working_day_first.messenger_chats (chat_id) ON DELETE CASCADE
 );
 
+DROP TABLE IF EXISTS working_day_first.tracker_project_assigned_users;
+DROP TABLE IF EXISTS working_day_first.tracker_projects;
 CREATE TABLE IF NOT EXISTS working_day_first.tracker_projects (
-    project_name TEXT PRIMARY KEY,
-    tasks_count INT NOT NULL DEFAULT 0
-);
-
-CREATE TABLE IF NOT EXISTS working_day_first.tracker_tasks (
-    id TEXT PRIMARY KEY NOT NULL,
+    project_id TEXT PRIMARY KEY NOT NULL,
     title TEXT NOT NULL,
     description TEXT,
-    project_name TEXT NOT NULL,
+    image_url TEXT,
+    creator TEXT NOT NULL,
+    tasks_count INT NOT NULL DEFAULT 0,
+    status TEXT NOT NULL CHECK (status IN ('Open', 'Pause', 'Closed')) DEFAULT 'Open',
+    created_ts TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    last_updated_ts TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    FOREIGN KEY (creator) REFERENCES working_day_first.employees (id) ON DELETE CASCADE
+);
+CREATE TABLE IF NOT EXISTS working_day_first.tracker_project_assigned_users (
+    project_id TEXT NOT NULL,
+    employee_id TEXT NOT NULL,
+    PRIMARY KEY (project_id, employee_id),
+    FOREIGN KEY (project_id) REFERENCES working_day_first.tracker_projects (project_id) ON DELETE CASCADE,
+    FOREIGN KEY (employee_id) REFERENCES working_day_first.employees (id) ON DELETE CASCADE
+);
+CREATE INDEX idx_tracker_project_assigned_users_employee
+ON working_day_first.tracker_project_assigned_users (employee_id);
+
+DROP TABLE IF EXISTS working_day_first.tracker_task_observers;
+DROP TABLE IF EXISTS working_day_first.tracker_task_related_tasks;
+DROP TABLE IF EXISTS working_day_first.tracker_tasks;
+CREATE TABLE IF NOT EXISTS working_day_first.tracker_tasks (
+    task_id TEXT PRIMARY KEY NOT NULL,
+    title TEXT NOT NULL,
+    description TEXT,
+    project_id TEXT NOT NULL,
     creator TEXT NOT NULL,
     assignee TEXT,
-    status TEXT CHECK (status IN ('Open', 'InProgress', 'Review', 'Done')),
+    status TEXT NOT NULL CHECK (status IN ('Open', 'InProgress', 'Review', 'Done', 'Cancelled')),
+    priority TEXT NOT NULL CHECK (priority IN ('Low', 'Middle', 'High')),
     media_links TEXT[] DEFAULT ARRAY[]::TEXT[],
     created_ts TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    last_updated_ts TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     deadline TIMESTAMPTZ,
+    action_id TEXT,
+    FOREIGN KEY (action_id) REFERENCES working_day_first.actions (id) ON DELETE CASCADE,
+    FOREIGN KEY (project_id) REFERENCES working_day_first.tracker_projects (project_id) ON DELETE CASCADE,
     FOREIGN KEY (creator) REFERENCES working_day_first.employees (id) ON DELETE CASCADE,
     FOREIGN KEY (assignee) REFERENCES working_day_first.employees (id) ON DELETE CASCADE
 );
+
+CREATE INDEX idx_tracker_tasks_creator
+ON working_day_first.tracker_tasks (creator);
+
+CREATE INDEX idx_tracker_tasks_assignee
+ON working_day_first.tracker_tasks (assignee);
+
+CREATE TABLE IF NOT EXISTS working_day_first.tracker_task_observers (
+    task_id TEXT NOT NULL,
+    employee_id TEXT NOT NULL,
+    PRIMARY KEY (task_id, employee_id),
+    FOREIGN KEY (task_id) REFERENCES working_day_first.tracker_tasks (task_id) ON DELETE CASCADE,
+    FOREIGN KEY (employee_id) REFERENCES working_day_first.employees (id) ON DELETE CASCADE
+);
+CREATE INDEX idx_tracker_task_observers
+  ON working_day_first.tracker_task_observers (employee_id);
+
+CREATE TABLE IF NOT EXISTS working_day_first.tracker_task_related_tasks (
+    task_id TEXT NOT NULL,
+    task_id_related TEXT NOT NULL,
+    PRIMARY KEY (task_id, task_id_related),
+    FOREIGN KEY (task_id) REFERENCES working_day_first.tracker_tasks (task_id) ON DELETE CASCADE,
+    FOREIGN KEY (task_id_related) REFERENCES working_day_first.tracker_tasks (task_id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS working_day_first.task_documents (
+    task_id TEXT NOT NULL,
+    document_id TEXT NOT NULL,
+    PRIMARY KEY (task_id, document_id),
+    FOREIGN KEY (task_id) REFERENCES working_day_first.tracker_tasks (task_id) ON DELETE CASCADE,
+    FOREIGN KEY (document_id) REFERENCES working_day_first.documents (id) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_task_documents_task_id ON working_day_first.task_documents (task_id);
+CREATE INDEX idx_task_documents_document_id ON working_day_first.task_documents (document_id);
 
 CREATE TYPE wd_general.chain_metadata_item AS (
     employee_id TEXT,
@@ -315,3 +377,166 @@ ADD CONSTRAINT actions_document_id_fkey
 FOREIGN KEY (document_id)
 REFERENCES working_day_first.documents(id)
 ON DELETE CASCADE;
+
+ALTER TABLE working_day_first.reverse_index
+DROP CONSTRAINT IF EXISTS reverse_index_entity_type_check;
+
+ALTER TABLE working_day_first.reverse_index
+ADD CONSTRAINT reverse_index_entity_type_check
+CHECK (entity_type IN ('employees', 'tasks', 'projects'));
+
+ALTER TABLE working_day_first.notifications
+ADD COLUMN IF NOT EXISTS task_id TEXT;
+
+ALTER TABLE working_day_first.notifications
+ADD CONSTRAINT notifications_task_id_fkey
+FOREIGN KEY (task_id)
+REFERENCES working_day_first.tracker_tasks(task_id)
+ON DELETE CASCADE;
+
+ALTER TABLE working_day_first.notifications
+ADD COLUMN IF NOT EXISTS document_id TEXT;
+
+ALTER TABLE working_day_first.notifications
+ADD CONSTRAINT notifications_document_id_fkey
+FOREIGN KEY (document_id)
+REFERENCES working_day_first.documents (id)
+ON DELETE CASCADE;
+
+CREATE INDEX idx_actions_user_id_end_date
+ON working_day_first.actions (user_id, end_date);
+
+-- Create comments table
+CREATE TABLE IF NOT EXISTS working_day_first.comments (
+    comment_id TEXT PRIMARY KEY NOT NULL,
+    author_id TEXT NOT NULL,
+    data TEXT NOT NULL,
+    documents_ids TEXT[] DEFAULT ARRAY[]::TEXT[],
+    created_ts TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    last_updated_ts TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    FOREIGN KEY (author_id) REFERENCES working_day_first.employees (id) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_comments_author_id ON working_day_first.comments (author_id);
+CREATE INDEX idx_comments_created_ts ON working_day_first.comments (created_ts);
+
+-- Create task_comments table for linking tasks with comments
+CREATE TABLE IF NOT EXISTS working_day_first.task_comments (
+    task_id TEXT NOT NULL,
+    comment_id TEXT NOT NULL,
+    PRIMARY KEY (task_id, comment_id),
+    FOREIGN KEY (task_id) REFERENCES working_day_first.tracker_tasks (task_id) ON DELETE CASCADE,
+    FOREIGN KEY (comment_id) REFERENCES working_day_first.comments (comment_id) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_task_comments_task_id ON working_day_first.task_comments (task_id);
+CREATE INDEX idx_task_comments_comment_id ON working_day_first.task_comments (comment_id);
+
+-- Таблица для хранения ключевых пар сотрудников
+DROP TABLE IF EXISTS working_day_first.employee_keys CASCADE;
+
+CREATE TABLE IF NOT EXISTS working_day_first.employee_keys (
+    employee_id TEXT PRIMARY KEY NOT NULL,
+    private_key TEXT NOT NULL,
+    public_key TEXT NOT NULL,
+    public_key_hash TEXT,
+    created_ts TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_ts TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    FOREIGN KEY (employee_id) REFERENCES working_day_first.employees (id) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_employee_keys_hash ON working_day_first.employee_keys(public_key_hash);
+
+-- Таблица для хранения подписей документов
+DROP TABLE IF EXISTS working_day_first.document_signatures CASCADE;
+
+CREATE TABLE IF NOT EXISTS working_day_first.document_signatures (
+    id TEXT PRIMARY KEY NOT NULL,
+    document_id TEXT NOT NULL,
+    employee_id TEXT NOT NULL,
+    signature_path TEXT NOT NULL,
+    signature_metadata JSONB NOT NULL,
+    public_key_hash TEXT NOT NULL,
+    created_ts TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    FOREIGN KEY (document_id) REFERENCES working_day_first.documents (id) ON DELETE CASCADE,
+    FOREIGN KEY (employee_id) REFERENCES working_day_first.employees (id) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_document_signatures_doc ON working_day_first.document_signatures(document_id);
+CREATE INDEX idx_document_signatures_emp ON working_day_first.document_signatures(employee_id);
+CREATE INDEX idx_document_signatures_created ON working_day_first.document_signatures(created_ts DESC);
+
+DROP TABLE IF EXISTS working_day_first.employee_signature_passwords CASCADE;
+
+CREATE TABLE working_day_first.employee_signature_passwords (
+    employee_id TEXT PRIMARY KEY NOT NULL,
+    signature_password CHAR(6) NOT NULL CHECK (signature_password ~ '^\d{6}$'),
+    created_ts TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_ts TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    FOREIGN KEY (employee_id) REFERENCES working_day_first.employees (id) ON DELETE CASCADE
+);
+
+ALTER TABLE working_day_first.document_signatures
+ADD COLUMN signature_type TEXT NOT NULL DEFAULT 'nep' CHECK (signature_type IN ('nep', 'kep'));
+
+ALTER TABLE working_day_first.employee_permissions
+DROP CONSTRAINT IF EXISTS employee_permissions_permission_type_check;
+
+ALTER TABLE working_day_first.employee_permissions
+ADD CONSTRAINT employee_permissions_permission_type_check
+CHECK (permission_type IN ('can_remove_documents', 'can_upload_kep_signature'));
+
+ALTER TABLE working_day_first.document_signatures
+ALTER COLUMN public_key_hash DROP NOT NULL;
+
+ALTER TABLE working_day_first.documents
+ALTER COLUMN sign_required DROP DEFAULT;
+
+ALTER TABLE working_day_first.documents
+ALTER COLUMN sign_required TYPE INT USING (CASE WHEN sign_required THEN 2 ELSE 0 END);
+
+ALTER TABLE working_day_first.documents
+ALTER COLUMN sign_required SET DEFAULT 0;
+
+ALTER TABLE working_day_first.documents
+ADD COLUMN IF NOT EXISTS author_id TEXT REFERENCES working_day_first.employees (id) ON DELETE SET NULL;
+
+CREATE INDEX IF NOT EXISTS idx_documents_author_id ON working_day_first.documents (author_id);
+
+CREATE TABLE IF NOT EXISTS working_day_first.employee_signature_passwords_audit (
+    id BIGSERIAL PRIMARY KEY,
+    occurred_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    operation TEXT NOT NULL CHECK (operation IN ('INSERT', 'UPDATE', 'DELETE')),
+    employee_id TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_esp_audit_employee_occurred
+    ON working_day_first.employee_signature_passwords_audit (employee_id, occurred_at DESC);
+
+CREATE OR REPLACE FUNCTION working_day_first.log_employee_signature_passwords_change()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF TG_OP = 'DELETE' THEN
+        INSERT INTO working_day_first.employee_signature_passwords_audit (operation, employee_id)
+        VALUES ('DELETE', OLD.employee_id);
+        RETURN OLD;
+    ELSIF TG_OP = 'UPDATE' THEN
+        INSERT INTO working_day_first.employee_signature_passwords_audit (operation, employee_id)
+        VALUES ('UPDATE', NEW.employee_id);
+        RETURN NEW;
+    ELSIF TG_OP = 'INSERT' THEN
+        INSERT INTO working_day_first.employee_signature_passwords_audit (operation, employee_id)
+        VALUES ('INSERT', NEW.employee_id);
+        RETURN NEW;
+    END IF;
+    RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_employee_signature_passwords_audit
+    ON working_day_first.employee_signature_passwords;
+
+CREATE TRIGGER trg_employee_signature_passwords_audit
+    AFTER INSERT OR UPDATE OR DELETE ON working_day_first.employee_signature_passwords
+    FOR EACH ROW
+    EXECUTE FUNCTION working_day_first.log_employee_signature_passwords_change();

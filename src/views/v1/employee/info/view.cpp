@@ -60,7 +60,8 @@ class InfoEmployeeHandler final
         "employees.telegram_id, employees.vk_id, employees.team, "
         "case when employees.head_id is null then null else ROW (heads.id, "
         "heads.name, "
-        "heads.surname, NULL::TEXT, NULL::TEXT) end as head_info, employees.inventory, employees.job_position "
+        "heads.surname, NULL::TEXT, NULL::TEXT) end as head_info, employees.inventory, employees.job_position, "
+        "EXISTS (SELECT 1 FROM working_day_" + company_id + ".employee_keys ek WHERE ek.employee_id = employees.id) AS has_nep "
         "FROM working_day_" +
             company_id +
             ".employees as employees "
@@ -79,7 +80,7 @@ class InfoEmployeeHandler final
 
     Employee response{
         result.AsSingleRow<Employee>(userver::storages::postgres::kRowTag)};
- 
+
     if (response.photo_link.has_value()) {
       response.photo_link =
           utils::s3_presigned_links::GeneratePhotoPresignedLink(

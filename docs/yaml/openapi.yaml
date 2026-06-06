@@ -382,16 +382,14 @@ paths:
 
     /v1/documents/generate_from_template:
         post:
-            description: Generate document from template with parameters
+            description: |
+                Create an absence action, generate a document from template, attach a
+                two-step approval chain (employee already acknowledged, manager pending),
+                and notify the manager.
             parameters:
               - in: header
                 name: Authorization
                 description: Token of session user
-                schema:
-                    type: string
-              - in: query
-                name: action_id
-                description: Id of the action
                 schema:
                     type: string
             requestBody:
@@ -621,6 +619,29 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/UploadDocumentResponse'
 
+    /v1/documents/upload-signature:
+        post:
+            description: Sign document with KEP (Qualified Electronic Signature)
+            parameters:
+              - in: header
+                name: Authorization
+                description: Token of session user
+                schema:
+                    type: string
+            requestBody:
+                required: false
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/DocumentsUploadSignatureRequest'
+            responses:
+                '200':
+                    description: Document was signed successfully with KEP
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/DocumentsUploadSignatureResponse'
+
     /v1/documents/send:
         post:
             description: Send document
@@ -681,6 +702,29 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/DownloadDocumentResponse'
 
+    /v1/documents/download-with-signatures:
+        get:
+            description: Build archive (document + all signatures), upload to S3, return single download link
+            parameters:
+              - in: header
+                name: Authorization
+                schema:
+                    type: string
+              - in: query
+                name: id
+                description: Document id
+                schema:
+                    type: string
+            responses:
+                '200':
+                    description: Presigned URL to download the zip archive
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/DownloadDocumentResponse'
+                '404':
+                    description: Document not found or access denied
+
     /v1/documents/list-all:
         get:
             description: Get list of all existing documents
@@ -720,9 +764,11 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/DocumentsGetSignsResponse'
 
-    /v1/documents/sign:
+    /v1/documents/create-stamp-for-nep:
         post:
-            description: Sign the document
+            description: >
+              Add a visual PDF stamp for NEP (enhanced unqualified electronic signature)
+              based on existing NEP rows in document_signatures. Query parameter document_id only.
             parameters:
               - in: header
                 name: Authorization
@@ -736,12 +782,134 @@ paths:
                     type: string
             responses:
                 '200':
-                    description: Document was signed
+                    description: Stamped PDF version was created
                     content:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/AbscenceVerdictResponse'
 
+    /v1/employee/keys/generate:
+        post:
+            description: Generate NEP (Enhanced Unqualified Electronic Signature) keys for employee
+            parameters:
+              - in: header
+                name: Authorization
+                description: Token of session user
+                schema:
+                    type: string
+              - in: query
+                name: signature_password
+                required: true
+                description: Password for encrypting NEP private key (exactly 6 digits)
+                schema:
+                    type: string
+                    pattern: '^\d{6}$'
+            responses:
+                '200':
+                    description: Keys were generated successfully
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/EmployeeKeysGenerateResponse'
+                '400':
+                    description: Keys already exist or bad request
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+
+    /v1/documents/nep-sign:
+        post:
+            description: Sign document with NEP (Enhanced Unqualified Electronic Signature)
+            parameters:
+              - in: header
+                name: Authorization
+                description: Token of session user
+                schema:
+                    type: string
+              - in: query
+                name: document_id
+                description: Id of the document to sign
+                schema:
+                    type: string
+              - in: query
+                name: signature_password
+                required: true
+                description: Password for NEP private key (exactly 6 digits, same as set at key generation)
+                schema:
+                    type: string
+                    pattern: '^\d{6}$'
+            requestBody:
+                required: false
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/DocumentsNepSignRequest'
+            responses:
+                '200':
+                    description: Document was signed successfully with NEP
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/DocumentsNepSignResponse'
+                '400':
+                    description: Keys not found or bad request
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+                '401':
+                    description: Wrong signature_password
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+                '404':
+                    description: Document not found
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+                '502':
+                    description: Storage (S3) or NEP signing service error (e.g. download/upload failed)
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+
+    /v1/documents/nep-verify:
+        get:
+            description: Verify NEP signature of document
+            parameters:
+              - in: header
+                name: Authorization
+                description: Token of session user
+                schema:
+                    type: string
+              - in: query
+                name: signature_id
+                description: Id of the signature to verify
+                schema:
+                    type: string
+            responses:
+                '200':
+                    description: Signature verification result
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/DocumentsNepVerifyResponse'
+                '404':
+                    description: Signature not found
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+                '502':
+                    description: Storage (S3) or NEP verify service error (e.g. failed to load document or signature)
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
 
     /v1/superuser/company/add:
         post:
@@ -780,6 +948,7 @@ paths:
             responses:
                 '200':
                     description: Inventory item was added
+
     /v1/tracker/projects/add:
         post:
             description: Add new project
@@ -794,10 +963,54 @@ paths:
                 content:
                     application/json:
                         schema:
-                            $ref: '#/components/schemas/TrackerProjectsAddRequest'
+                            $ref: '#/components/schemas/TrackerProjectsItemRequest'
             responses:
                 '200':
                     description: Project item was added
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/TrackerProjectsAddResponse'
+                '400':
+                    description: Bad request, missing parameters or invalid assigned_users_ids
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+
+    /v1/tracker/projects/info:
+        get:
+            description: Get project info
+            parameters:
+              - in: query
+                name: project_id
+                description: ID of the project to check
+                schema:
+                    type: string
+              - in: header
+                name: Authorization
+                description: Token of session user
+                schema:
+                    type: string
+            responses:
+                '200':
+                    description: Project information
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/TrackerProjectsItemResponse'
+                '400':
+                    description: Bad request
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+                '404':
+                    description: Not found
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
 
     /v1/tracker/projects/list:
         get:
@@ -814,7 +1027,76 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/TrackerProjectsListResponse'
+                                $ref: '#/components/schemas/TrackerProjectsItemResponseShort'
+
+    # TODO: /v1/tracker/project/available-to-user:
+    #        description: Get all projects available to the user
+
+    /v1/tracker/projects/edit:
+        post:
+            description: Edit project information
+            parameters:
+                - in: query
+                  name: project_id
+                  description: ID of the project to edit information for
+                  schema:
+                      type: string
+                - in: header
+                  name: Authorization
+                  description: Token of session user
+                  schema:
+                      type: string
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/TrackerProjectsEditRequest'
+            responses:
+                '200':
+                    description: Information was updated
+                '400':
+                description: Bad request, missing parameters or invalid assigned_users_ids
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/ErrorMessage'
+                '404':
+                    description: Not found
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+
+
+    /v1/tracker/projects/media/upload:
+        post:
+            description: Upload icon for the project
+            parameters:
+              - in: query
+                name: project_id
+                schema:
+                    type: string
+              - in: header
+                name: Authorization
+                description: Token of session user
+                schema:
+                    type: string
+
+            responses:
+                '200':
+                    description: Upload link
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/MediaUploadResponse'
+                '400':
+                    description: Bad request
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+
 
     /v1/tracker/tasks/add:
         post:
@@ -830,10 +1112,15 @@ paths:
                 content:
                     application/json:
                         schema:
-                            $ref: '#/components/schemas/TrackerTasksAddRequest'
+                            $ref: '#/components/schemas/TrackerTasksItemRequest'
             responses:
                 '200':
-                    description: Task was added
+                    description: Task item was added
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/TrackerTasksAddResponse'
+
                 '404':
                     description: Project not found
                     content:
@@ -846,10 +1133,10 @@ paths:
             description: Get list of all existing tasks
             parameters:
                 - in: header
-                name: Authorization
-                description: Token of session user
-                schema:
-                    type: string
+                  name: Authorization
+                  description: Token of session user
+                  schema:
+                      type: string
             responses:
                 '200':
                     description: List of tasks
@@ -878,7 +1165,7 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/TrackerTasksInfoItem'
+                                $ref: '#/components/schemas/TrackerTasksItemResponse'
                 '400':
                     description: Bad request
                     content:
@@ -912,12 +1199,7 @@ paths:
                     content:
                         application/json:
                             schema:
-                                type: object
-                                properties:
-                                    tasks:
-                                        type: array
-                                        items:
-                                            $ref: '#/components/schemas/TrackerTasksListItem'
+                                $ref: '#/components/schemas/TrackerTasksListResponse'
                 '400':
                 description: Bad request, missing parameters
                 content:
@@ -932,36 +1214,111 @@ paths:
                                 $ref: '#/components/schemas/ErrorMessage'
 
     /v1/tracker/tasks/edit:
-    post:
-        description: Edit task information
-        parameters:
-            - in: query
+        post:
+            description: Edit task information
+            parameters:
+              - in: query
                 name: task_id
                 description: Id of the task to edit information for
                 schema:
                     type: string
-            - in: header
-            name: Authorization
-            description: Token of session user
-            schema:
-                type: string
-        requestBody:
-            required: true
-            content:
-                application/json:
-                    schema:
-                        $ref: '#/components/schemas/TrackerTasksEditRequest'
-        responses:
-            '200':
-                description: Information was updated
-            '400':
-                description: Bad request, missing parameters
+              - in: header
+                name: Authorization
+                description: Token of session user
+                schema:
+                    type: string
+            requestBody:
+                required: true
                 content:
                     application/json:
                         schema:
-                            $ref: '#/components/schemas/ErrorMessage'
-            '404':
-                    description: Not found
+                            $ref: '#/components/schemas/TrackerTasksEditRequest'
+            responses:
+                '200':
+                    description: Information was updated
+                '400':
+                    description: Bad request, missing parameters
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+                '404':
+                        description: Not found
+                        content:
+                            application/json:
+                                schema:
+                                    $ref: '#/components/schemas/ErrorMessage'
+
+    # вызов /v1/documents/upload, а затем /v1/tracker/tasks/documents/send
+    /v1/tracker/tasks/documents/send:
+        post:
+            description: Attach uploaded document to the task
+            parameters:
+              - in: query
+                name: task_id
+                schema:
+                    type: string
+                description: ID of the task
+              - in: header
+                name: Authorization
+                description: Token of session user
+                schema:
+                    type: string
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/TrackerTasksDocumentItem'
+
+            responses:
+                '200':
+                    description: Document was attached to task successfully
+                '400':
+                    description: Bad request
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+                '404':
+                    description: Task not found
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+
+        /v1/tracker/tasks/documents/remove:
+        delete:
+            description: Remove document from the task
+            parameters:
+              - in: query
+                name: task_id
+                required: true
+                schema:
+                    type: string
+                description: ID of the task
+              - in: query
+                name: document_id
+                required: true
+                schema:
+                    type: string
+                description: ID of the document to remove
+              - in: header
+                name: Authorization
+                description: Token of session user
+                schema:
+                    type: string
+            responses:
+                '200':
+                    description: Document was removed from task successfully
+                '400':
+                    description: Bad request
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+                '404':
+                    description: Task or document not found
                     content:
                         application/json:
                             schema:
@@ -987,7 +1344,7 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/TrackerTasksMediaUploadResponse'
+                                $ref: '#/components/schemas/MediaUploadResponse'
                 '400':
                     description: Bad request
                     content:
@@ -1263,7 +1620,6 @@ paths:
                         schema:
                         $ref: '#/components/schemas/ErrorMessage'
 
-
     /v1/employee/permissions/set:
         post:
             description: Set permissions for an employee
@@ -1309,7 +1665,148 @@ paths:
                         schema:
                         $ref: '#/components/schemas/ErrorMessage'
 
+    /v1/comments/add:
+        post:
+            description: Add a new comment
+            parameters:
+              - in: header
+                name: Authorization
+                description: Token of session user
+                schema:
+                    type: string
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CommentAddRequest'
+            responses:
+                '200':
+                    description: Comment was added successfully
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CommentAddResponse'
+                '400':
+                    description: Bad request
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
 
+                '404':
+                    description: Task not found
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+
+
+    /v1/comments/edit:
+        post:
+            description: Edit an existing comment
+            parameters:
+              - in: header
+                name: Authorization
+                description: Token of session user
+                schema:
+                    type: string
+              - in: query
+                name: comment_id
+                description: Id of the comment
+                schema:
+                    type: string
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CommentEditRequest'
+            responses:
+                '200':
+                    description: Comment was edited successfully
+                '400':
+                    description: Bad request
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+                '403':
+                    description: Forbidden - insufficient rights
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+                '404':
+                    description: Comment not found
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+
+        /v1/comments/info:
+        get:
+            description: Get comment information
+            parameters:
+              - in: query
+                name: comment_id
+                required: true
+                schema:
+                    type: string
+                description: ID of the comment
+              - in: header
+                name: Authorization
+                description: Token of session user
+                schema:
+                    type: string
+            responses:
+                '200':
+                    description: Comment information
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CommentItem'
+                '400':
+                    description: Bad request
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+                '404':
+                    description: Comment not found
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+    /v1/comments/remove:
+        post:
+            description: Remove a comment
+            parameters:
+              - in: header
+                name: Authorization
+                description: Token of session user
+                schema:
+                    type: string
+              - in: query
+                name: comment_id
+                description: Id of the comment
+                schema:
+                    type: string
+            responses:
+                '200':
+                    description: Comment was removed successfully
+                '400':
+                    description: Bad request
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
+                '404':
+                    description: Comment not found
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorMessage'
 
 components:
     schemas:
@@ -1410,6 +1907,7 @@ components:
               - id
               - name
               - surname
+              - has_nep
             properties:
                 id:
                     type: string
@@ -1445,6 +1943,9 @@ components:
                         $ref: '#/components/schemas/InventoryItem'
                 job_position:
                     type: string
+                has_nep:
+                    description: true if employee has NEP (unqualified e-signature) keys set in employee_keys
+                    type: boolean
 
         ProfileEditRequest:
             type: object
@@ -1538,10 +2039,18 @@ components:
                     type: boolean
                 sender:
                     $ref: "#/components/schemas/ListEmployee"
+                user_photo_url:
+                    type: string
+                    description: Presigned URL to the photo of the user who receives the notification
                 text:
                     type: string
                 action_id:
                     type: string
+                task_id:
+                    type: string
+                document_id:
+                    type: string
+                    description: Linked document for navigation to My Documents
                 created:
                     type: string
 
@@ -1731,6 +2240,7 @@ components:
                 - absence_unknown_reason # НН
                 - downtime_not_employer_fault # НП
                 - suspension_with_pay # НО
+                - tracker_task_deadline # ТД
 
         AttendanceAddRequest:
             type: object
@@ -1883,7 +2393,11 @@ components:
                 tasks:
                     type: array
                     items:
-                        $ref: '#/components/schemas/TrackerTasksListItem'
+                        $ref: '#/components/schemas/TrackerTasksItemResponseShort'
+                projects:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/TrackerProjectsItemResponseShort'
 
         AttendanceListAllRequest:
             type: object
@@ -1940,6 +2454,7 @@ components:
                     type: string
                     description: Id to access the document
 
+
         DocumentSendRequest:
             type: object
             additionalProperties: false
@@ -1970,12 +2485,32 @@ components:
                     items:
                         $ref: '#/components/schemas/DocumentItem'
 
+        TrackerTasksDocumentItem:
+            type: object
+            additionalProperties: false
+            required:
+              - document_id
+              - name
+            properties:
+                document_id:
+                    type: string
+                name:
+                    type: string
+                description:
+                    type: string
+                created_ts:
+                    $ref: '#/components/schemas/Timestamp'
+                visibility_status:
+                    description: Document visibility status (0 — visible, 1 — archived)
+                    type: int
+
         DocumentItem:
             type: object
             additionalProperties: false
             required:
               - id
               - name
+              - author_id
             properties:
                 id:
                     type: string
@@ -1987,12 +2522,23 @@ components:
                       - employee_request
                       - admin_request
                 sign_required:
-                    type: boolean
+                    type: int
+                    enum: [0, 1, 2]
+                    description:
+                     0 - does not require a signature
+                     1 - requires a qualified signature
+                     2 - requires an unqualified signature
                 description:
                     type: string
                 signed:
                     description: This field only valid if requested by assignee of the document
                     type: boolean
+                author_id:
+                    description: ID of the user who sent/created this document
+                    type: string
+                author_photo_url:
+                    description: URL of the author's photo
+                    type: string
                 parent_id:
                     description: Parent document Id
                     type: string
@@ -2075,6 +2621,7 @@ components:
                         - .pdf
                         - .xlsx
                     default: ".pdf"
+
 
         InventoryItem:
             type: object
@@ -2180,25 +2727,109 @@ components:
                 chat_id:
                     type: string
 
-        TrackerProjectsAddRequest:
+        ProjectStatus:
+            type: string
+            enum:
+                - Open
+                - Pause
+                - Closed
+
+        TrackerProjectsItemRequest:
             type: object
             additionalProperties: false
             required:
-              - project_name
+                - project_id
+                - title
             properties:
-                project_name:
+                project_id:
+                    type: string
+                    description: Unique key of the project in uppercase Latin letters only. No spaces, numbers or underscores allowed. Example: MYPROJECT
+                title:
+                    type: string
+                    description: Name of the project
+                description:
+                    type: string
+                status:
+                    $ref: '#/components/schemas/ProjectStatus'
+                assigned_users_ids:
+                    type: array
+                    items:
+                        type: string
+
+        TrackerProjectsAddResponse:
+            type: object
+            additionalProperties: false
+            required:
+              - project_id
+            properties:
+                project_id:
                     type: string
 
-        TrackerProjectsListItem:
+        TrackerProjectsItemResponseShort:
             type: object
             additionalProperties: false
             required:
-              -  project_name
+              - project_id
+              - title
+              - creator
             properties:
-                project_name:
+                project_id:
+                    type: string
+                title:
+                    type: string
+                creator:
+                    type: string
+                image_url:
+                    type: string
+
+        TrackerProjectsItemResponse:
+            type: object
+            additionalProperties: false
+            required:
+              - project_id
+              - title
+              - creator
+              - tasks_count
+              - created_ts
+              - last_updated_ts
+            properties:
+                project_id:
+                    type: string
+                title:
+                    type: string
+                description:
+                    type: string
+                image_url:
+                    type: string
+                creator:
                     type: string
                 tasks_count:
                     type: integer
+                status:
+                    $ref: '#/components/schemas/ProjectStatus'
+                created_ts:
+                    $ref: '#/components/schemas/Timestamp'
+                last_updated_ts:
+                    $ref: '#/components/schemas/Timestamp'
+                assigned_users_ids:
+                    type: array
+                    items:
+                        type: string
+
+        TrackerProjectsEditRequest:
+            type: object
+            additionalProperties: false
+            properties:
+                title:
+                    type: string
+                description:
+                    type: string
+                status:
+                    $ref: '#/components/schemas/ProjectStatus'
+                assigned_users_ids:
+                    type: array
+                    items:
+                        type: string
 
         TrackerProjectsListResponse:
             type: object
@@ -2208,88 +2839,179 @@ components:
                     type: array
                     description: List of project items
                     items:
-                        $ref: '#/components/schemas/TrackerProjectsListItem'
+                        $ref: '#/components/schemas/TrackerProjectsItemResponseShort'
 
-        TrackerTasksAddRequest:
+        TaskStatus:
+            type: string
+            enum:
+                - Open
+                - InProgress
+                - Review
+                - Done
+                - Cancelled # (+comment)
+
+        TaskPriority:
+            type: string
+            enum:
+                - Low
+                - Middle
+                - High
+
+        TrackerTasksItemRequest:
             type: object
             additionalProperties: false
             required:
-              - title
-              - project_name
-              - creator
+                - title
+                - project_id
             properties:
                 title:
                     type: string
                     description: Name of the task
-                project_name:
+                project_id:
                     type: string
-                    description: Name of the parent project
+                    description: ID of the parent project
                 description:
                     type: string
                     description: Description of the task
-                creator:
-                    type: string
-                    description: The creator of the task
                 assignee:
                     type: string
                     description: The assigned person for the task
                 deadline:
                     $ref: '#/components/schemas/Timestamp'
-
-        TrackerTasksInfoItem:
-            type: object
-            additionalProperties: false
-            required:
-              -  title
-              -  project_name
-              -  creator
-            properties:
-                title:
-                    type: string
-                id:
-                    type: string
-                project_name:
-                    type: string
-                description:
-                    type: string
-                creator:
-                    type: string
-                assignee:
-                    type: string
                 status:
-                    type: string
-                    enum:
-                      - Open
-                      - InProgress
-                      - Review
-                      - Done
-                media_links:
+                    $ref: '#/components/schemas/TaskStatus'
+                priority:
+                    $ref: '#/components/schemas/TaskPriority'
+                observers:
                     type: array
                     items:
                         type: string
-                created_at:
-                    $ref: '#/components/schemas/Timestamp'
-                deadline:
-                    $ref: '#/components/schemas/Timestamp'
+                related_tasks_ids:
+                    type: array
+                    items:
+                        type: string
 
-        TrackerTasksListItem:
+        TrackerTasksEditRequest:
             type: object
             additionalProperties: false
-            required:
-              -  title
-              -  project_name
-              -  creator
             properties:
                 title:
                     type: string
-                id:
+                    description: Name of the task
+                project_id:
                     type: string
-                project_name:
+                    description: ID of the parent project
+                description:
+                    type: string
+                    description: Description of the task
+                assignee:
+                    type: string
+                    description: The assigned person for the task
+                deadline:
+                    $ref: '#/components/schemas/Timestamp'
+                status:
+                    $ref: '#/components/schemas/TaskStatus'
+                priority:
+                    $ref: '#/components/schemas/TaskPriority'
+                observers:
+                    type: array
+                    items:
+                        type: string
+                related_tasks_ids:
+                    type: array
+                    items:
+                        type: string
+
+        TrackerTasksAddResponse:
+            type: object
+            additionalProperties: false
+            required:
+              - task_id
+            properties:
+                task_id:
+                    type: string
+
+        TrackerTasksItemResponseShort:
+            type: object
+            additionalProperties: false
+            required:
+              - task_id
+              - project_id
+              - title
+              - creator
+            properties:
+                task_id:
+                    type: string
+                project_id:
+                    type: string
+                title:
                     type: string
                 creator:
                     type: string
                 assignee:
                     type: string
+
+        TrackerTasksItemResponse:
+            allOf:
+                - $ref: '#/components/schemas/TrackerTasksItemResponseShort'
+                - type: object
+                  additionalProperties: false
+                  required:
+                    - status
+                    - created_ts
+                    - last_updated_ts
+                    - priority
+                  properties:
+                      description:
+                          type: string
+                          description: Description of the task
+                      status:
+                          $ref: '#/components/schemas/TaskStatus'
+                      created_ts:
+                          $ref: '#/components/schemas/Timestamp'
+                      last_updated_ts:
+                          $ref: '#/components/schemas/Timestamp'
+                      media_links:
+                          type: array
+                          items:
+                              type: string
+                      deadline:
+                          $ref: '#/components/schemas/Timestamp'
+                      action_id:
+                          type: string
+                      priority:
+                          $ref: '#/components/schemas/TaskPriority'
+                      observers:
+                          type: array
+                          items:
+                              type: string
+                      related_tasks_ids:
+                          type: array
+                          items:
+                              type: string
+                      documents_ids:
+                          type: array
+                          items:
+                              type: string
+                          description: List of document ids attached to the task
+                      comments_ids:
+                          type: array
+                          items:
+                              type: string
+                          description: List of comment ids attached to the task
+
+
+        # -- комментарии (отдельно):
+        #    comment_id
+        #    author_id
+        #    data: text
+        #    documents_ids: list[string]
+        #    created_at
+        #    last_updated
+        #    + add/delete/edit
+        #    available_entity: document, task
+        #    --- employee_id + documents
+
 
         TrackerTasksListResponse:
             type: object
@@ -2299,31 +3021,9 @@ components:
                     type: array
                     description: List of tasks items
                     items:
-                        $ref: '#/components/schemas/TrackerTasksListItem'
+                        $ref: '#/components/schemas/TrackerTasksItemResponseShort'
 
-        TrackerTasksEditRequest:
-            type: object
-            additionalProperties: false
-            properties:
-                title:
-                    type: string
-                description:
-                    type: string
-                project_name:
-                    type: string
-                assignee:
-                    type: string
-                status:
-                    type: string
-                    enum:
-                      - Open
-                      - InProgress
-                      - Review
-                      - Done
-                deadline:
-                    $ref: '#/components/schemas/Timestamp'
-
-        TrackerTasksMediaUploadResponse:
+        MediaUploadResponse:
             type: object
             additionalProperties: false
             required:
@@ -2347,7 +3047,7 @@ components:
                     enum: [0, 1, 2]
                     description:
                      0 - does not require a signature
-                     1 - requires a regular signature
+                     1 - requires a qualified signature
                      2 - requires an unqualified signature
                 status:
                     type: int
@@ -2356,6 +3056,24 @@ components:
                      0 - not_reached
                      1 - approved
                      2 - rejected
+                employee_name:
+                    type: string
+                    description: Full name of the employee (surname + name + patronymic)
+                signature_id:
+                    type: string
+                    description: UUID of the NEP signature from document_signatures table
+                signature_path:
+                    type: string
+                    description: S3 key of the .p7s signature file, pass to /v1/documents/download?id=<path>
+                signed_at:
+                    type: string
+                    description: Timestamp when the NEP signature was created
+                signature_type:
+                    type: string
+                    enum: [nep, kep]
+                    description: Type of signature
+                      - nep - NEP signature
+                      - kep - KEP signature
 
         DocumentsChainUpdateRequest:
             type: object
@@ -2367,10 +3085,22 @@ components:
                     type: int
                     enum: [0, 1, 2, 3]
                     description:
-                     0 - sign with regular signature and approve
+                     0 - sign with qualified signature and approve
                      1 - sign with unqualified signature and approve
                      2 - approve
                      3 - reject
+                signature_password:
+                    type: string
+                    description: |
+                      Password for NEPsignature (6 digits).
+                      Required when approving with unqualified signature (approval_status == 1)
+                      and the step requires a unqualified signature(requires_signature == 2).
+                signature_id:
+                    type: string
+                    description: |
+                      ID of KEP signature from document_signatures.
+                      Required when approving with KEP signature (approval_status == 0)
+                      and the step requires a qualified signature(requires_signature == 1).
 
         DocumentsChainUpdateResponse:
             type: object
@@ -2454,6 +3184,7 @@ components:
                     type: string
                     enum:
                       - can_remove_documents
+                      - can_upload_kep_signature
                       # etc.
                 permission_value:
                     type: int
@@ -2473,7 +3204,21 @@ components:
         GenerateFromTemplateRequest:
             type: object
             additionalProperties: false
+            required:
+              - start_date
+              - end_date
+              - type
+              - signature_password
             properties:
+                start_date:
+                    $ref: '#/components/schemas/Timestamp'
+                end_date:
+                    $ref: '#/components/schemas/Timestamp'
+                type:
+                    $ref: '#/components/schemas/AbscenceType'
+                signature_password:
+                    type: string
+                    description: NEP signature password of the requesting employee
                 params:
                     type: array
                     description: Ordered list of parameters for placeholders
@@ -2484,7 +3229,181 @@ components:
             type: object
             additionalProperties: false
             required:
+              - document_id
               - download_link
             properties:
+                document_id:
+                    type: string
                 download_link:
                     type: string
+
+        CommentAddRequest:
+            type: object
+            additionalProperties: false
+            required:
+              - data
+            properties:
+                data:
+                    type: string
+                    description: Comment text content
+                task_id:
+                    type: string
+                    description: ID of the task to attach the comment to
+
+        CommentAddResponse:
+            type: object
+            additionalProperties: false
+            required:
+              - comment_id
+            properties:
+                comment_id:
+                    type: string
+
+        CommentEditRequest:
+            type: object
+            additionalProperties: false
+            properties:
+                data:
+                    type: string
+                    description: Updated comment text content
+
+        CommentItem:
+            type: object
+            additionalProperties: false
+            required:
+              - comment_id
+              - author_id
+              - data
+              - created_ts
+              - last_updated_ts
+            properties:
+                comment_id:
+                    type: string
+                author_id:
+                    type: string
+                data:
+                    type: string
+                    description: Comment text content
+                documents_ids:
+                    type: array
+                    items:
+                        type: string
+                    description: List of document IDs attached to the comment
+                created_ts:
+                    $ref: '#/components/schemas/Timestamp'
+                last_updated_ts:
+                    $ref: '#/components/schemas/Timestamp'
+
+        EmployeeKeysGenerateResponse:
+            type: object
+            additionalProperties: false
+            required:
+              - public_key
+              - public_key_hash
+            properties:
+                public_key:
+                    type: string
+                    description: Public RSA-2048 key in PEM format
+                public_key_hash:
+                    type: string
+                    description: SHA-256 hash of the public key
+
+        DocumentsNepSignRequest:
+            type: object
+            additionalProperties: false
+            properties:
+                reason:
+                    type: string
+                    description: Optional reason for signing
+                location:
+                    type: string
+                    description: Optional location of signing
+
+        DocumentsNepSignResponse:
+            type: object
+            additionalProperties: false
+            required:
+              - signature_id
+              - signature_path
+              - timestamp
+              - public_key_hash
+            properties:
+                signature_id:
+                    type: string
+                    description: ID of the created signature
+                signature_path:
+                    type: string
+                    description: Path to the detached signature file (.p7s)
+                timestamp:
+                    type: string
+                    description: Timestamp of signing
+                public_key_hash:
+                    type: string
+                    description: Hash of the public key used for signing
+
+        DocumentsUploadSignatureRequest:
+            type: object
+            additionalProperties: false
+            required:
+              - document_id
+              - extension
+              - signature_type
+            properties:
+                document_id:
+                    type: string
+                    description: Id of the document to sign
+                extension:
+                    type: string
+                    description: Extension of the document to sign
+                    enum: [.sig, .p7s]
+                    default: .sig
+                signature_type:
+                    type: string
+                    enum: [nep, kep]
+                    description: Type of signature
+                      - nep - NEP signature
+                      - kep - KEP signature
+
+        DocumentsUploadSignatureResponse:
+            type: object
+            additionalProperties: false
+            required:
+              - signature_id
+              - url
+            properties:
+                signature_id:
+                    type: string
+                url:
+                    type: string
+
+        DocumentsNepVerifyResponse:
+            type: object
+            additionalProperties: false
+            required:
+              - valid
+              - integrity_ok
+              - signature_ok
+              - message
+              - verified_at
+            properties:
+                valid:
+                    type: boolean
+                    description: Overall validity of the signature
+                integrity_ok:
+                    type: boolean
+                    description: Whether document integrity is intact
+                signature_ok:
+                    type: boolean
+                    description: Whether cryptographic signature is valid
+                message:
+                    type: string
+                    description: Human-readable verification result message
+                verified_at:
+                    type: string
+                    description: Timestamp of verification
+                signer_name:
+                    type: string
+                    description: Full name of the person who signed
+                signature_timestamp:
+                    type: string
+                    description: Timestamp when document was signed

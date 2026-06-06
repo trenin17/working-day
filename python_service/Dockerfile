@@ -20,6 +20,8 @@ COPY convert_document ./convert_document
 COPY attendance_export_to_excel ./attendance_export_to_excel
 COPY generate_from_template ./generate_from_template
 COPY s3_client ./s3_client
+COPY nep_signer ./nep_signer
+COPY build_archive ./build_archive
 COPY start_service.sh .
 
 CMD [ "./start_service.sh" ]

@@ -48,7 +48,8 @@ class EmployeesHandler final
         "SELECT id, name, surname, patronymic, photo_link "
         "FROM working_day_" +
             company_id +
-            ".employees");
+            ".employees "
+        "ORDER BY surname, name, patronymic NULLS LAST");
 
     EmployeesResponse response;
     response.employees = result.AsContainer<std::vector<ListEmployee>>(

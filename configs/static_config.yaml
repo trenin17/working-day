@@ -8,7 +8,7 @@ components_manager:
     task_processors:                  # Task processor is an executor for coroutine tasks
 
         main-task-processor:          # Make a task processor for CPU-bound couroutine tasks.
-            worker_threads: $worker-threads         # Process tasks in 4 threads.
+            worker_threads: $worker-threads         # Process tasks in 2 threads.
             thread_name: main-worker  # OS will show the threads of this task processor with 'main-worker' prefix.
 
         fs-task-processor:            # Make a separate task processor for filesystem bound tasks.
@@ -85,6 +85,7 @@ components_manager:
 
         http-client:
             fs-task-processor: fs-task-processor
+            threads: 2
 
         tests-control:
             load-enabled: $is_testing
@@ -331,7 +332,7 @@ components_manager:
                 types:
                   - bearer
                 scopes:
-                  - admin
+                  - user
 
         handler-v1-documents-send:
             path: /v1/documents/send
@@ -341,7 +342,7 @@ components_manager:
                 types:
                   - bearer
                 scopes:
-                  - admin
+                  - user
             pyservice-url: 'http://python-service:3000/document/convert'
 
         handler-v1-documents-list:
@@ -353,6 +354,7 @@ components_manager:
                   - bearer
                 scopes:
                   - user
+            is_testing: $is_testing
 
         handler-v1-documents-download:
             path: /v1/documents/download
@@ -364,6 +366,18 @@ components_manager:
                 scopes:
                   - user
 
+        handler-v1-documents-download-with-signatures:
+            path: /v1/documents/download-with-signatures
+            method: GET
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - user
+            pyservice-url: 'http://python-service:3000/document/build-archive'
+            is_testing: $is_testing
+
         handler-v1-search-full:
             path: /v1/search/full
             method: POST
@@ -374,8 +388,8 @@ components_manager:
                 scopes:
                   - user
 
-        handler-v1-documents-sign:
-            path: /v1/documents/sign
+        handler-v1-documents-create-stamp-for-nep:
+            path: /v1/documents/create-stamp-for-nep
             method: POST
             task_processor: main-task-processor
             auth:
@@ -383,7 +397,17 @@ components_manager:
                   - bearer
                 scopes:
                   - user
-            pyservice-url: 'http://python-service:3000/document/sign'
+            pyservice-url: 'http://python-service:3000/document/create-stamp-for-nep'
+
+        handler-v1-documents-upload-signature:
+            path: /v1/documents/upload-signature
+            method: POST
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - user
 
         handler-v1-documents-list-all:
             path: /v1/documents/list-all
@@ -394,6 +418,7 @@ components_manager:
                   - bearer
                 scopes:
                   - admin
+            is_testing: $is_testing
 
         handler-v1-documents-get-signs:
             path: /v1/documents/get-signs
@@ -439,6 +464,38 @@ components_manager:
         handler-v1-tracker-projects-list:
             path: /v1/tracker/projects/list
             method: GET
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - user
+
+        handler-v1-tracker-projects-media-upload:
+            path: /v1/tracker/projects/media/upload
+            method: POST
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - user
+            is_testing: $is_testing
+
+        handler-v1-tracker-projects-info:
+            path: /v1/tracker/projects/info
+            method: GET
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - user
+            is_testing: $is_testing
+
+        handler-v1-tracker-projects-edit:
+            path: /v1/tracker/projects/edit
+            method: POST
             task_processor: main-task-processor
             auth:
                 types:
@@ -507,6 +564,27 @@ components_manager:
                 scopes:
                   - user
             is_testing: $is_testing
+
+        handler-v1-tracker-tasks-documents-send:
+            path: /v1/tracker/tasks/documents/send
+            method: POST
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - user
+            pyservice-url: 'http://python-service:3000/document/convert'
+
+        handler-v1-tracker-tasks-documents-remove:
+            path: /v1/tracker/tasks/documents/remove
+            method: POST
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - user
 
         handler-v1-documents-chain-add:
             path: /v1/documents/chain/add
@@ -580,7 +658,8 @@ components_manager:
                   - bearer
                 scopes:
                   - user
-            pyservice-url: 'http://python-service:3000/document/sign'
+            pyservice-url: 'http://python-service:3000/document/create-stamp-for-nep'
+            pyservice-nep-sign-url: 'http://python-service:3000/document/nep-sign'
 
         handler-v1-documents-remove:
             path: /v1/documents/remove
@@ -611,7 +690,6 @@ components_manager:
                   - bearer
                 scopes:
                   - user
-
         handler-v1-employee-permissions-list:
             path: /v1/employee/permissions/list
             method: POST
@@ -653,7 +731,10 @@ components_manager:
                 scopes:
                   - user
             pyservice-url: 'http://python-service:3000/document/generate-from-template'
-        
+            pyservice-nep-sign-url: 'http://python-service:3000/document/nep-sign'
+            pyservice-create-stamp-url: 'http://python-service:3000/document/create-stamp-for-nep'
+            is_testing: $is_testing
+
         websocket-handler:            # Finally! Websocket handler.
             path: /chat               # Registering handlers '/*' find files.
             method: GET               # Handle only GET requests.
@@ -661,3 +742,75 @@ components_manager:
             max-remote-payload: 100000
             fragment-size: 100000
 
+        handler-v1-comments-add:
+            path: /v1/comments/add
+            method: POST
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - user
+
+        handler-v1-comments-edit:
+            path: /v1/comments/edit
+            method: POST
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - user
+
+        handler-v1-comments-info:
+            path: /v1/comments/info
+            method: GET
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - user
+
+        handler-v1-comments-remove:
+            path: /v1/comments/remove
+            method: POST
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - user
+
+        handler-v1-employee-keys-generate:
+            path: /v1/employee/keys/generate
+            method: POST
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - user
+
+        handler-v1-documents-nep-sign:
+            path: /v1/documents/nep-sign
+            method: POST
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - user
+            pyservice-url: 'http://python-service:3000/document/nep-sign'
+            pyservice-create-stamp-url: 'http://python-service:3000/document/create-stamp-for-nep'
+
+        handler-v1-documents-nep-verify:
+            path: /v1/documents/nep-verify
+            method: GET
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - bearer
+                scopes:
+                  - user
+            pyservice-url: 'http://python-service:3000/document/nep-verify'

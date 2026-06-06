@@ -10,7 +10,6 @@
 #include <userver/components/component_context.hpp>
 #include <userver/engine/task/task.hpp>
 #include <userver/engine/task/task_with_result.hpp>
-#include <userver/logging/log.hpp>
 #include <userver/server/handlers/http_handler_base.hpp>
 #include <userver/storages/postgres/cluster.hpp>
 #include <userver/storages/postgres/component.hpp>
@@ -19,8 +18,6 @@
 #include <userver/yaml_config/merge_schemas.hpp>
 
 #include "definitions/all.hpp"
-
-using json = nlohmann::json;
 
 namespace views::v1::abscence::verdict {
 
@@ -88,7 +85,7 @@ struct HeadInfo {
 };
 
 struct VacationDocumentRequest {
-  std::string action_id, user_id, company_id;
+  std::string action_id, company_id;
 };
 
 void GenerateVacationDocument(
@@ -98,13 +95,12 @@ void GenerateVacationDocument(
     const std::string& pyservice_url) {
   auto action_id = request.action_id;
   auto request_type = "create";
-  auto user_id = request.user_id;
   const auto& company_id = request.company_id;
 
   auto trx =
       pg_cluster->Begin("documents_vacation",
                         userver::storages::postgres::ClusterHostType::kMaster,
-                        {});  // TODO: change to slave read tx
+                        {});
 
   auto action_info =
       trx.Execute(
@@ -115,6 +111,11 @@ void GenerateVacationDocument(
                  "WHERE id = $1",
              action_id)
           .AsSingleRow<ActionInfo>(userver::storages::postgres::kRowTag);
+
+  if (!action_info.document_id.has_value() ||
+      action_info.document_id.value().empty()) {
+    return;
+  }
 
   auto employee_info =
       trx.Execute(
@@ -163,57 +164,18 @@ void GenerateVacationDocument(
   auto response = http_client.CreateRequest()
                       .post(pyservice_url + "?file_key=" + file_key)
                       .data(link_request.ToJsonString())
-                      .retry(2)  // retry once in case of error
+                      .retry(2)
                       .timeout(std::chrono::milliseconds{10000})
-                      .perform();  // start performing the request
+                      .perform();
   response->raise_for_status();
 
-  auto action_name = ActionTypeToName(action_info.type);
-
-  auto document_name = "Запрос на " + action_name.value() + " " +
-                       employee_info.surname + " " + employee_info.name + " " +
-                       userver::utils::datetime::Timestring(
-                           action_info.start_date, "UTC", "%d.%m.%Y") +
-                       " - " +
-                       userver::utils::datetime::Timestring(
-                           action_info.end_date, "UTC", "%d.%m.%Y");
-
-  auto file_key_signed = file_key + "_signed.pdf";
   file_key += ".pdf";
 
   pg_cluster->Execute(userver::storages::postgres::ClusterHostType::kMaster,
-                      "INSERT INTO working_day_" + company_id +
-                          ".documents(id, name, "
-                          "sign_required, type) "
-                          "VALUES($1, $2, $3, $4)",
-                      file_key_signed, document_name, true, "employee_request");
-
-  pg_cluster->Execute(userver::storages::postgres::ClusterHostType::kMaster,
-                      "DELETE FROM working_day_" + company_id + ".employee_document "
-                      "WHERE employee_id = $1 AND document_id = $2",
-                      action_info.employee_id, file_key);
-
-  pg_cluster->Execute(userver::storages::postgres::ClusterHostType::kMaster,
                       "UPDATE working_day_" + company_id + ".documents "
-                      "SET parent_id = $2 "
+                      "SET sign_required = 2 "
                       "WHERE id = $1",
-                      file_key, file_key_signed);
-
-  pg_cluster->Execute(userver::storages::postgres::ClusterHostType::kMaster,
-                      "INSERT INTO working_day_" + company_id +
-                          ".employee_document "
-                          "(employee_id, document_id, signed) "
-                          "VALUES ($1, $2, $3), ($4, $2, $3) "
-                          "ON CONFLICT DO NOTHING",
-                      action_info.employee_id, file_key_signed, true,
-                      employee_info.head_id.value_or(action_info.employee_id));
-
-  pg_cluster->Execute(userver::storages::postgres::ClusterHostType::kMaster,
-                       "UPDATE working_day_" + company_id + ".documents "
-                          "SET sign_required = TRUE "
-                          "WHERE id = $1",
-                       action_info.document_id);
-
+                      file_key);
 }
 
 class AbscenceVerdictHandler final
@@ -232,12 +194,11 @@ class AbscenceVerdictHandler final
         http_client_(
             component_context.FindComponent<userver::components::HttpClient>()
                 .GetHttpClient()),
-        pyservice_url(config["pyservice-url"].As<std::string>()) {}
+        pyservice_url_(config["pyservice-url"].As<std::string>()) {}
 
   std::string HandleRequestThrow(
       const userver::server::http::HttpRequest& request,
       userver::server::request::RequestContext& ctx) const override {
-    // CORS
     request.GetHttpResponse().SetHeader(
         static_cast<std::string>("Access-Control-Allow-Origin"), "*");
     request.GetHttpResponse().SetHeader(
@@ -262,10 +223,77 @@ class AbscenceVerdictHandler final
                request_body.action_id)
             .AsSingleRow<ActionInfo>(userver::storages::postgres::kRowTag);
 
-    if (!action_info.document_id) {
-      request.GetHttpResponse().SetStatus(
-          userver::server::http::HttpStatus::kBadRequest);
-      return ErrorMessage{"Document doesn't exist"}.ToJsonString();
+    const bool has_action_document = action_info.document_id.has_value() &&
+                                     !action_info.document_id->empty();
+
+    std::vector<DocumentsChainMetadataItem> chain_metadata;
+    bool has_signature_chain = false;
+    if (has_action_document) {
+      auto doc_result = trx.Execute(
+          "SELECT chain_metadata_new "
+          "FROM working_day_" +
+              company_id +
+              ".documents "
+              "WHERE id = $1",
+          action_info.document_id.value());
+      if (!doc_result.IsEmpty()) {
+        chain_metadata = doc_result
+                             .AsSingleRow<DocumentsChainUpdateResponse>(
+                                 userver::storages::postgres::kRowTag)
+                             .chain_metadata;
+        has_signature_chain = !chain_metadata.empty();
+      }
+    }
+
+    if (has_signature_chain) {
+      auto rejected_it = std::find_if(
+          chain_metadata.begin(), chain_metadata.end(),
+          [](const auto& item) { return item.status == 2; });
+      if (rejected_it != chain_metadata.end()) {
+        trx.Rollback();
+        request.GetHttpResponse().SetStatus(
+            userver::server::http::HttpStatus::kConflict);
+        return ErrorMessage{"Document already rejected"}.ToJsonString();
+      }
+
+      auto current_it = std::find_if(
+          chain_metadata.begin(), chain_metadata.end(),
+          [](const auto& item) { return item.status == 0; });
+      if (current_it == chain_metadata.end()) {
+        trx.Rollback();
+        request.GetHttpResponse().SetStatus(
+            userver::server::http::HttpStatus::kConflict);
+        return ErrorMessage{"No pending approval steps"}.ToJsonString();
+      }
+
+      if (current_it->employee_id != user_id) {
+        trx.Rollback();
+        request.GetHttpResponse().SetStatus(
+            userver::server::http::HttpStatus::kBadRequest);
+        return ErrorMessage{"Not your turn to approve"}.ToJsonString();
+      }
+
+      if (request_body.approve) {
+        current_it->status = 1;
+        trx.Execute(
+            "UPDATE working_day_" + company_id + ".employee_document "
+            "SET signed = true "
+            "WHERE employee_id = $1 AND document_id = $2",
+            user_id, action_info.document_id.value());
+      } else {
+        current_it->status = 2;
+      }
+
+      size_t element_index = current_it - chain_metadata.begin();
+      trx.Execute(
+          "UPDATE working_day_" + company_id + ".documents "
+          "SET chain_metadata_new[" +
+              std::to_string(element_index + 1) + "] = $2 "
+          "WHERE id = $1",
+          action_info.document_id.value(),
+          DocumentsChainMetadataItemPg{current_it->employee_id,
+                                       current_it->requires_signature,
+                                       current_it->status});
     }
 
     auto action_name = ActionTypeToName(action_info.type);
@@ -284,58 +312,61 @@ class AbscenceVerdictHandler final
       notification_text += " был отклонен.";
     }
 
-
     if (request_body.notification_id.has_value()) {
-      auto result = trx.Execute("DELETE FROM working_day_" + company_id +
-                                    ".notifications "
-                                    "WHERE id = $1 ",
-                                request_body.notification_id.value());
+      trx.Execute("DELETE FROM working_day_" + company_id +
+                      ".notifications "
+                      "WHERE id = $1 ",
+                  request_body.notification_id.value());
     }
 
     auto notification_id = userver::utils::generators::GenerateUuid();
-    std::optional<std::string> maybe_action_id = request_body.approve ? std::optional(request_body.action_id) : std::nullopt;
-    auto result =
-        trx.Execute("INSERT INTO working_day_" + company_id +
-                        ".notifications(id, type, text, user_id, "
-                        "sender_id, action_id) "
-                        "VALUES($1, $2, $3, $4, $5, $6) "
-                        "ON CONFLICT (id) "
-                        "DO NOTHING",
-                    notification_id, action_info.type + "_" + action_status,
-                    notification_text, action_info.employee_id, user_id,
-                    maybe_action_id);
+    std::optional<std::string> maybe_action_id =
+        request_body.approve
+            ? std::optional(request_body.action_id)
+            : std::nullopt;
+    trx.Execute("INSERT INTO working_day_" + company_id +
+                    ".notifications(id, type, text, user_id, "
+                    "sender_id, action_id, document_id) "
+                    "VALUES($1, $2, $3, $4, $5, $6, $7) "
+                    "ON CONFLICT (id) "
+                    "DO NOTHING",
+                notification_id, action_info.type + "_" + action_status,
+                notification_text, action_info.employee_id, user_id,
+                maybe_action_id,
+                has_action_document
+                    ? std::optional(action_info.document_id.value())
+                    : std::nullopt);
 
     if (request_body.approve) {
-      auto result = trx.Execute("UPDATE working_day_" + company_id +
-                                    ".actions "
-                                    "SET status = $2 "
-                                    "WHERE id = $1 ",
-                                request_body.action_id, action_status);
+      trx.Execute("UPDATE working_day_" + company_id +
+                      ".actions "
+                      "SET status = $2 "
+                      "WHERE id = $1 ",
+                  request_body.action_id, action_status);
     } else {
-      auto result = trx.Execute("DELETE FROM working_day_" + company_id +
-                                    ".actions "
-                                    "WHERE id = $1 ",
-                                request_body.action_id);
+      trx.Execute("DELETE FROM working_day_" + company_id +
+                      ".actions "
+                      "WHERE id = $1 ",
+                  request_body.action_id);
     }
 
     trx.Commit();
 
-    if (request_body.approve) {
+    if (request_body.approve && has_action_document && !has_signature_chain) {
       auto tasks = tasks_.Lock();
       while (!tasks->empty() && tasks->front().IsFinished()) {
         tasks->pop();
       }
 
-      VacationDocumentRequest request{.action_id = request_body.action_id,
-                                      .user_id = user_id,
-                                      .company_id = company_id};
+      VacationDocumentRequest req{.action_id = request_body.action_id,
+                                  .company_id = company_id};
 
       tasks->push(userver::utils::AsyncBackground(
           "GenerateVacationDocument",
           userver::engine::current_task::GetTaskProcessor(),
-          [req = std::move(request), this]() mutable -> int {
+          [req = std::move(req), this]() mutable -> int {
             GenerateVacationDocument(std::move(req), this->pg_cluster_,
-                                     this->http_client_, this->pyservice_url);
+                                     this->http_client_, this->pyservice_url_);
             return 42;
           }));
     }
@@ -351,7 +382,7 @@ additionalProperties: false
 properties:
     pyservice-url:
         type: string
-        description: Url of python service
+        description: Url of python service (document/generate)
 )");
   }
 
@@ -361,7 +392,7 @@ properties:
   mutable userver::concurrent::Variable<
       std::queue<userver::engine::TaskWithResult<int>>>
       tasks_;
-  std::string pyservice_url;
+  std::string pyservice_url_;
 };
 
 }  // namespace
